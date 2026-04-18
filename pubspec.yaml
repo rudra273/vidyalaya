@@ -1,0 +1,26 @@
+name: vidyalaya
+description: "Vidyālaya — ଶିକ୍ଷାର ଦ୍ୱାର. A book reading app for Indian school students."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.1
+  go_router: ^17.2.1
+  google_fonts: ^8.0.2
+  flutter_pdfview: ^1.3.2
+  shared_preferences: ^2.5.0
+  http: ^1.3.0
+  path_provider: ^2.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
