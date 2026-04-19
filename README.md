@@ -42,4 +42,117 @@
 2. **Download Manager UI** — books are big PDFs, students need control over storage
 3. **Add all classes (1-10) seed data** — multiplies your user base instantly
 
-Which of these excite you? I can start building any of them.
+
+
+----- 
+Future plan------
+
+
+---
+
+**The Vector DB idea — how it works:**
+
+```
+PDF pages → OCR (ML Kit) → text chunks → 
+embed (Gemini embeddings) → store in vector DB → 
+student asks question / uploads photo → 
+OCR photo → embed query → similarity search → 
+retrieve relevant chunks → Gemini answers with context
+```
+
+Basically RAG — same concept as OrbitAI's Spaces but for textbooks. Answer is always grounded in the actual book content, not hallucinated.
+
+---
+
+**Full Feature Plan — Vidyalaya AI**
+
+---
+
+**1. PDF Reader Enhancements**
+- Page jump slider + "go to page" input
+- Brightness overlay control
+- Dark mode via `ColorFiltered` inversion
+- Sepia mode
+- Continuous scroll / paginated toggle
+- Reading progress bar
+- Last read page resume
+- Bookmarks per book
+
+---
+
+**2. Reading Habit System**
+- Reading session timer (auto start/stop)
+- Daily reading goal (user sets X minutes)
+- Streak tracker
+- Weekly reading time graph
+- Per-book reading time stats
+
+---
+
+**3. AI Reader Features (Per Page)**
+Triggered from floating AI button on reader screen:
+- **Explain** — simple explanation of page content
+- **Step by step** — for maths/science
+- **Quiz me** — 3 MCQs from page
+- **Simplify** — explain like I'm 12
+- **Translate to Odia** — for complex English pages
+
+Flow: screenshot current page → base64 → Gemini Vision API → bottom sheet response
+
+---
+
+**4. Homework Helper (RAG feature)**
+- Student types a question OR uploads a photo of their assignment
+- Photo → ML Kit OCR → extract question text
+- Query → Gemini embeddings → vector search → retrieve top 3-5 relevant book chunks
+- Gemini answers using retrieved context + cites which page/book
+- Works across all 10 Class 8 books simultaneously
+
+Vector DB options:
+- **Local** — SQLite + cosine similarity (simple, offline, good for single class)
+- **Cloud** — Pinecone / Supabase pgvector (better for multi-class, multi-year scale)
+
+For v1, local SQLite vector store is fine. Same pattern as OrbitAI RAG.
+
+---
+
+**5. Subscription / Monetization**
+
+Free tier:
+- All reader features free
+- 5 AI page explanations per day
+- 3 homework questions per day
+
+Premium (₹79-99/month):
+- Unlimited AI explanations
+- Unlimited homework helper
+- Quiz generation
+- Priority response
+
+Stack: Google Play Billing + RevenueCat for subscription management
+
+---
+
+**Tech Stack Summary**
+
+| Feature | Tech |
+|---|---|
+| PDF Viewer | `syncfusion_flutter_pdfviewer` |
+| Page screenshot | `flutter/rendering` RenderRepaintBoundary |
+| OCR | Google ML Kit Text Recognition |
+| AI (page features) | Gemini Flash Vision API |
+| Embeddings | Gemini Embedding API |
+| Vector DB (v1) | SQLite + cosine similarity |
+| Vector DB (v2) | Supabase pgvector |
+| Subscriptions | RevenueCat + Google Play Billing |
+| Local storage | Room / SharedPreferences |
+
+---
+
+**Build order I'd suggest:**
+
+1. PDF reader enhancements (dark mode, brightness, navigation)
+2. Reading habit system (progress, streak)
+3. AI page features (explain, quiz) — this is your subscription hook
+4. RAG / homework helper — this is your wow feature, build after AI is stable
+
