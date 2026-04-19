@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../app/theme.dart';
 
 /// Shell wrapper that provides the bottom navigation bar for tab routes.
 class AppShell extends StatelessWidget {
@@ -26,14 +25,15 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentIndex = _currentIndex(context);
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cs.surface,
           border: Border(
-            top: BorderSide(color: AppColors.border, width: 1),
+            top: BorderSide(color: cs.outline, width: 1),
           ),
         ),
         child: SafeArea(
@@ -78,6 +78,11 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final activeColor = cs.primary;
+    final inactiveColor = Theme.of(context).textTheme.bodySmall?.color ??
+        cs.onSurface.withValues(alpha: 0.5);
+
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -91,7 +96,7 @@ class _NavBarItem extends StatelessWidget {
             Icon(
               icon,
               size: 24,
-              color: isActive ? AppColors.teal : AppColors.textMuted,
+              color: isActive ? activeColor : inactiveColor,
             ),
             const SizedBox(height: 4),
             Text(
@@ -99,7 +104,7 @@ class _NavBarItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive ? AppColors.teal : AppColors.textMuted,
+                color: isActive ? activeColor : inactiveColor,
               ),
             ),
           ],

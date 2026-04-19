@@ -40,8 +40,9 @@ class _MiniBookCardState extends State<_MiniBookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
     final (subjectBg, subjectText) =
-        AppColors.getSubjectColor(widget.book.subject);
+        AppColors.getSubjectColorFor(widget.book.subject, brightness);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),

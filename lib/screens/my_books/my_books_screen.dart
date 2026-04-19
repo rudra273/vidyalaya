@@ -103,6 +103,8 @@ class _AddClassBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 24),
       child: GestureDetector(
@@ -113,22 +115,20 @@ class _AddClassBanner extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
             border: Border.all(
-              color: AppColors.teal.withValues(alpha: 0.3),
+              color: cs.primary.withValues(alpha: 0.3),
               width: 1.5,
-              // Dart/Flutter doesn't have CSS dashed border natively,
-              // so we use a lighter border colour to suggest "addable"
             ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.add_circle_outline,
-                  size: 20, color: AppColors.teal),
+                  size: 20, color: cs.primary),
               const SizedBox(width: 8),
               Text(
                 'Add another class',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppColors.teal,
+                      color: cs.primary,
                     ),
               ),
             ],

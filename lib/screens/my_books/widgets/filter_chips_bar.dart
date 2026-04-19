@@ -10,15 +10,19 @@ class FilterChipsBar extends ConsumerWidget {
     (null, 'All'),
     ('odia', 'Odia'),
     ('english', 'English'),
-    ('science', 'Science'),
     ('maths', 'Maths'),
-    ('social', 'Social'),
     ('hindi', 'Hindi'),
+    ('sanskrit', 'Sanskrit'),
+    ('science', 'Science'),
+    ('social_science', 'Social Sci'),
+    ('skill', 'Skill'),
+    ('work', 'Work'),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeFilter = ref.watch(subjectFilterProvider);
+    final cs = Theme.of(context).colorScheme;
 
     return SizedBox(
       height: 40,
@@ -40,18 +44,20 @@ class FilterChipsBar extends ConsumerWidget {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.tealLight : AppColors.surface,
+                color: isSelected ? cs.secondary : cs.surface,
                 borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.teal.withValues(alpha: 0.3)
-                      : AppColors.border,
+                      ? cs.primary.withValues(alpha: 0.3)
+                      : cs.outline,
                 ),
               ),
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: isSelected ? AppColors.teal : AppColors.textMuted,
+                      color: isSelected
+                          ? cs.primary
+                          : Theme.of(context).textTheme.bodySmall?.color,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.w400,
                     ),

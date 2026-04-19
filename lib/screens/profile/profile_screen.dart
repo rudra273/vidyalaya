@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../data/seed/seed_data.dart';
+import '../../providers/theme_provider.dart';
 import '../../providers/user_selection_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -24,10 +25,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
-    final available = availableClassNumbers;
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = ref.watch(themeModeProvider);
+    final mutedColor = Theme.of(context).textTheme.bodySmall?.color ??
+        cs.onSurface.withValues(alpha: 0.5);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Profile',
@@ -51,7 +55,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: AppColors.tealLight,
+                      color: cs.secondary,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -60,7 +64,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ? _nameController.text[0].toUpperCase()
                             : 'A',
                         style: TextStyle(
-                          color: AppColors.teal,
+                          color: cs.primary,
                           fontWeight: FontWeight.w700,
                           fontSize: 32,
                         ),
@@ -78,7 +82,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         hintText: 'Your name',
                         hintStyle:
                             Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: AppColors.textMuted,
+                                  color: mutedColor,
                                 ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
@@ -97,51 +101,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // ── Class Selection ────────────────────────────────────
+            // ── Settings ──────────────────────────────────────────
             Text(
-              'Your Classes',
+              'Settings',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Select the classes whose textbooks you want to access.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
             const SizedBox(height: 16),
-            ...List.generate(10, (index) {
-              final classNumber = index + 1;
-              final isAvailable = available.contains(classNumber);
-              final isChecked = selectedClasses.contains(classNumber);
 
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _ClassTile(
-                  classNumber: classNumber,
-                  isAvailable: isAvailable,
-                  isChecked: isChecked,
-                  onToggle: isAvailable
-                      ? () {
-                          ref
-                              .read(userSelectionProvider.notifier)
-                              .toggleClass(classNumber);
-                        }
-                      : null,
-                ),
-              );
-            }),
+            // Dark mode toggle
+            _DarkModeToggle(
+              isDark: themeMode == ThemeMode.dark ||
+                  (themeMode == ThemeMode.system && isDark),
+              onToggle: (value) {
+                ref.read(themeModeProvider.notifier).setThemeMode(
+                      value ? ThemeMode.dark : ThemeMode.light,
+                    );
+              },
+            ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 10),
+
+            // Manage classes — nav row
+            _SettingsNavRow(
+              icon: Icons.school_rounded,
+              title: 'Your Classes',
+              subtitle: selectedClasses.isEmpty
+                  ? 'No class selected'
+                  : selectedClasses.map((c) => 'Class $c').join(', '),
+              onTap: () => context.push('/class-selector'),
+            ),
+
+            const SizedBox(height: 28),
 
             // ── App Info ───────────────────────────────────────────
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: cs.surface,
                 borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: cs.outline),
               ),
               child: Column(
                 children: [
@@ -158,7 +159,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Text(
                     'ଶିକ୍ଷାର ଦ୍ୱାର',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
+                          color: mutedColor,
                         ),
                   ),
                 ],
@@ -172,86 +173,170 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-class _ClassTile extends StatelessWidget {
-  final int classNumber;
-  final bool isAvailable;
-  final bool isChecked;
-  final VoidCallback? onToggle;
+// ─── Settings Nav Row ────────────────────────────────────────────────────────
 
-  const _ClassTile({
-    required this.classNumber,
-    required this.isAvailable,
-    required this.isChecked,
-    this.onToggle,
+class _SettingsNavRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _SettingsNavRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return GestureDetector(
-      onTap: onToggle,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      onTap: onTap,
+      child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isChecked ? AppColors.tealLight : Colors.white,
+          color: cs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isChecked
-                ? AppColors.teal.withValues(alpha: 0.3)
-                : AppColors.border,
-          ),
+          border: Border.all(color: cs.outline),
         ),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: isChecked
-                    ? AppColors.teal.withValues(alpha: 0.1)
-                    : AppColors.surface,
+                color: cs.secondary,
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: Text(
-                  '$classNumber',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isChecked ? AppColors.teal : AppColors.navy,
-                  ),
-                ),
+                child: Icon(icon, size: 20, color: cs.primary),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Class $classNumber',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color:
-                              isAvailable ? AppColors.navy : AppColors.textMuted,
-                        ),
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  if (!isAvailable)
-                    Text(
-                      'Coming soon',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                          ),
-                    ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            if (isAvailable)
-              Checkbox(
-                value: isChecked,
-                onChanged: (_) => onToggle?.call(),
-              )
-            else
-              Icon(Icons.lock_outline, size: 16, color: AppColors.textMuted),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 22,
+              color: Theme.of(context).textTheme.bodySmall?.color,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dark Mode Toggle ────────────────────────────────────────────────────────
+
+class _DarkModeToggle extends StatelessWidget {
+  final bool isDark;
+  final ValueChanged<bool> onToggle;
+
+  const _DarkModeToggle({
+    required this.isDark,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () => onToggle(!isDark),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isDark ? cs.secondary : cs.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? cs.primary.withValues(alpha: 0.3) : cs.outline,
+          ),
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? cs.primary.withValues(alpha: 0.15)
+                    : cs.surface,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark
+                      ? cs.primary.withValues(alpha: 0.3)
+                      : cs.outline,
+                ),
+              ),
+              child: Center(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return RotationTransition(
+                      turns: Tween(begin: 0.75, end: 1.0).animate(animation),
+                      child: FadeTransition(opacity: animation, child: child),
+                    );
+                  },
+                  child: Icon(
+                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    key: ValueKey(isDark),
+                    size: 20,
+                    color: isDark ? cs.primary : cs.onSurface,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Dark Mode',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isDark ? 'Currently dark' : 'Currently light',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Switch(
+                key: ValueKey(isDark),
+                value: isDark,
+                onChanged: onToggle,
+                activeThumbColor: cs.primary,
+                activeTrackColor: cs.primary.withValues(alpha: 0.3),
+                inactiveThumbColor: cs.onSurface.withValues(alpha: 0.4),
+                inactiveTrackColor: cs.onSurface.withValues(alpha: 0.1),
+              ),
+            ),
           ],
         ),
       ),

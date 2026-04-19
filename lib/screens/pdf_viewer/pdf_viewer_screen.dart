@@ -4,8 +4,8 @@ import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import '../../app/theme.dart';
 import '../../data/models/book.dart';
+
 import '../../providers/reading_provider.dart';
 
 class PdfViewerScreen extends ConsumerStatefulWidget {
@@ -104,7 +104,6 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,6 +133,8 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   }
 
   Widget _buildLoadingView() {
+    final cs = Theme.of(context).colorScheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
@@ -153,7 +154,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
             Text(
               widget.book.title,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -167,9 +168,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     child: LinearProgressIndicator(
                       value: _downloadProgress > 0 ? _downloadProgress : null,
                       minHeight: 6,
-                      backgroundColor: AppColors.surface,
+                      backgroundColor: cs.surface,
                       valueColor:
-                          const AlwaysStoppedAnimation<Color>(AppColors.teal),
+                          AlwaysStoppedAnimation<Color>(cs.primary),
                     ),
                   ),
                   if (_downloadProgress > 0) ...[
@@ -205,7 +206,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
             Text(
               'Please check your internet connection and try again.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
               textAlign: TextAlign.center,
             ),

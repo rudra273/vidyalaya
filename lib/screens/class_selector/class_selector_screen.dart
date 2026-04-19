@@ -13,7 +13,6 @@ class ClassSelectorScreen extends ConsumerWidget {
     final available = availableClassNumbers;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           'Select Your Class',
@@ -34,7 +33,7 @@ class ClassSelectorScreen extends ConsumerWidget {
               'Select the classes whose textbooks you want to access. '
               'More classes will be added soon!',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
             ),
           ),
@@ -98,18 +97,22 @@ class _ClassTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final mutedColor = Theme.of(context).textTheme.bodySmall?.color ??
+        cs.onSurface.withValues(alpha: 0.5);
+
     return GestureDetector(
       onTap: onToggle,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isChecked ? AppColors.tealLight : Colors.white,
+          color: isChecked ? cs.secondary : cs.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isChecked
-                ? AppColors.teal.withValues(alpha: 0.3)
-                : AppColors.border,
+                ? cs.primary.withValues(alpha: 0.3)
+                : cs.outline,
           ),
         ),
         child: Row(
@@ -120,8 +123,8 @@ class _ClassTile extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: isChecked
-                    ? AppColors.teal.withValues(alpha: 0.1)
-                    : AppColors.surface,
+                    ? cs.primary.withValues(alpha: 0.1)
+                    : cs.surface,
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -130,7 +133,7 @@ class _ClassTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: isChecked ? AppColors.teal : AppColors.navy,
+                    color: isChecked ? cs.primary : cs.onSurface,
                   ),
                 ),
               ),
@@ -145,16 +148,14 @@ class _ClassTile extends StatelessWidget {
                   Text(
                     'Class $classNumber',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: isAvailable
-                              ? AppColors.navy
-                              : AppColors.textMuted,
+                          color: isAvailable ? cs.onSurface : mutedColor,
                         ),
                   ),
                   if (!isAvailable)
                     Text(
                       'Coming soon',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textMuted,
+                            color: mutedColor,
                             fontSize: 11,
                           ),
                     ),
@@ -169,7 +170,7 @@ class _ClassTile extends StatelessWidget {
                 onChanged: (_) => onToggle?.call(),
               )
             else
-              Icon(Icons.lock_outline, size: 18, color: AppColors.textMuted),
+              Icon(Icons.lock_outline, size: 18, color: mutedColor),
           ],
         ),
       ),

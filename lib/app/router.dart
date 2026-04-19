@@ -37,101 +37,107 @@ final goRouter = GoRouter(
         ),
         GoRoute(
           path: '/learn',
-          pageBuilder: (context, state) => NoTransitionPage(
-            child: Scaffold(
-              body: SafeArea(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🎓', style: TextStyle(fontSize: 56)),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Learn',
-                          style: Theme.of(context).textTheme.displaySmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Video lessons, chapter summaries, and interactive quizzes — all coming soon!',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF6B7080),
+          pageBuilder: (context, state) {
+            final cs = Theme.of(context).colorScheme;
+            return NoTransitionPage(
+              child: Scaffold(
+                body: SafeArea(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('🎓', style: TextStyle(fontSize: 56)),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Learn',
+                            style: Theme.of(context).textTheme.displaySmall,
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE1F5EE),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Coming Soon',
-                            style: TextStyle(
-                              color: Color(0xFF1D9E75),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
+                          const SizedBox(height: 8),
+                          Text(
+                            'Video lessons, chapter summaries, and interactive quizzes — all coming soon!',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodySmall?.color,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: cs.secondary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Coming Soon',
+                              style: TextStyle(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         GoRoute(
           path: '/progress',
-          pageBuilder: (context, state) => NoTransitionPage(
-            child: Scaffold(
-              body: SafeArea(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('📊', style: TextStyle(fontSize: 56)),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Progress',
-                          style: Theme.of(context).textTheme.displaySmall,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Track your reading streak, study time per subject, and books completed — coming soon!',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF6B7080),
+          pageBuilder: (context, state) {
+            final cs = Theme.of(context).colorScheme;
+            return NoTransitionPage(
+              child: Scaffold(
+                body: SafeArea(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('📊', style: TextStyle(fontSize: 56)),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Progress',
+                            style: Theme.of(context).textTheme.displaySmall,
                           ),
-                        ),
-                        const SizedBox(height: 24),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE1F5EE),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Coming Soon',
-                            style: TextStyle(
-                              color: Color(0xFF1D9E75),
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
+                          const SizedBox(height: 8),
+                          Text(
+                            'Track your reading streak, study time per subject, and books completed — coming soon!',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodySmall?.color,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: cs.secondary,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Coming Soon',
+                              style: TextStyle(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     ),

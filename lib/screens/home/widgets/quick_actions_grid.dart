@@ -12,6 +12,8 @@ class QuickActionsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Column(
       children: [
         Row(
@@ -19,7 +21,7 @@ class QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _ActionCard(
                 emoji: '📚',
-                emojiBg: AppColors.tealLight,
+                emojiBg: cs.secondary,
                 title: 'My Books',
                 subtitle: '$bookCount books added',
                 onTap: () => context.go('/my-books'),
@@ -29,7 +31,7 @@ class QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _ActionCard(
                 emoji: '📋',
-                emojiBg: AppColors.surface,
+                emojiBg: cs.surface,
                 title: 'Syllabus',
                 subtitle: 'Coming soon',
                 isDisabled: true,
@@ -44,7 +46,7 @@ class QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _ActionCard(
                 emoji: '🎓',
-                emojiBg: const Color(0xFFE8F0FE),
+                emojiBg: cs.surface,
                 title: 'Learn',
                 subtitle: 'Coming soon',
                 isDisabled: true,
@@ -55,7 +57,7 @@ class QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _ActionCard(
                 emoji: '📝',
-                emojiBg: const Color(0xFFFFF3E0),
+                emojiBg: cs.surface,
                 title: 'Assignment',
                 subtitle: 'Coming soon',
                 isDisabled: true,
@@ -95,6 +97,8 @@ class _ActionCardState extends State<_ActionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTapDown: widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
       onTapUp: widget.isDisabled ? null : (_) => setState(() => _isPressed = false),
@@ -108,9 +112,9 @@ class _ActionCardState extends State<_ActionCard> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: cs.surface,
               borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: cs.outline),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

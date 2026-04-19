@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../app/theme.dart';
 
 /// Reusable empty state widget with icon, title, subtitle, and optional CTA.
 class EmptyState extends StatelessWidget {
@@ -37,7 +36,7 @@ class EmptyState extends StatelessWidget {
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
                   ),
               textAlign: TextAlign.center,
             ),
