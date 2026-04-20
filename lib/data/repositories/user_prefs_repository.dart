@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/highlight.dart';
 
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
@@ -8,8 +9,9 @@ class UserPrefsRepository {
   static const _lastReadBookIdKey = 'last_read_book_id';
   static const _bookPagePrefix = 'book_page_';
   static const _bookmarksPrefix = 'bookmarks_';
-  static const _readerModeKey = 'reader_view_mode';  // 'paginated' | 'scroll'
-  static const _readerFilterKey = 'reader_filter';    // 'none' | 'dark' | 'sepia'
+  static const _highlightsPrefix = 'highlights_';
+  static const _readerModeKey = 'reader_view_mode';
+  static const _readerFilterKey = 'reader_filter';
 
   final SharedPreferences _prefs;
 
@@ -74,6 +76,46 @@ class UserPrefsRepository {
 
   bool isBookmarked(String bookId, int page) {
     return getBookmarks(bookId).contains(page);
+  }
+
+  // ─── Per-Book Highlights ────────────────────────────────────────────────
+
+  List<Highlight> getHighlights(String bookId) {
+    final jsonStr = _prefs.getString('$_highlightsPrefix$bookId');
+    if (jsonStr == null) return [];
+    final list = jsonDecode(jsonStr) as List;
+    return list.map((e) => Highlight.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  List<Highlight> getHighlightsForPage(String bookId, int page) {
+    return getHighlights(bookId).where((h) => h.pageNumber == page).toList();
+  }
+
+  Future<void> _saveHighlights(String bookId, List<Highlight> highlights) async {
+    final json = highlights.map((h) => h.toJson()).toList();
+    await _prefs.setString('$_highlightsPrefix$bookId', jsonEncode(json));
+  }
+
+  Future<void> addHighlight(Highlight highlight) async {
+    final highlights = getHighlights(highlight.bookId);
+    highlights.add(highlight);
+    await _saveHighlights(highlight.bookId, highlights);
+  }
+
+  Future<void> removeHighlight(String bookId, String highlightId) async {
+    final highlights = getHighlights(bookId);
+    highlights.removeWhere((h) => h.id == highlightId);
+    await _saveHighlights(bookId, highlights);
+  }
+
+  Future<void> updateHighlightNote(
+      String bookId, String highlightId, String? note) async {
+    final highlights = getHighlights(bookId);
+    final index = highlights.indexWhere((h) => h.id == highlightId);
+    if (index != -1) {
+      highlights[index] = highlights[index].copyWith(note: note);
+      await _saveHighlights(bookId, highlights);
+    }
   }
 
   // ─── Reader Preferences ─────────────────────────────────────────────────

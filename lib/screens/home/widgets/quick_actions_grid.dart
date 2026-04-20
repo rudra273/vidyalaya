@@ -12,8 +12,6 @@ class QuickActionsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Column(
       children: [
         Row(
@@ -21,7 +19,7 @@ class QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _ActionCard(
                 emoji: '📚',
-                emojiBg: cs.secondary,
+                emojiBg: AppColors.tealLight,
                 title: 'My Books',
                 subtitle: '$bookCount books added',
                 onTap: () => context.go('/my-books'),
@@ -31,7 +29,7 @@ class QuickActionsGrid extends StatelessWidget {
             Expanded(
               child: _ActionCard(
                 emoji: '📋',
-                emojiBg: cs.surface,
+                emojiBg: AppColors.surface,
                 title: 'Syllabus',
                 subtitle: 'Coming soon',
                 isDisabled: true,
@@ -45,19 +43,18 @@ class QuickActionsGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _ActionCard(
-                emoji: '🎓',
-                emojiBg: cs.surface,
-                title: 'Learn',
-                subtitle: 'Coming soon',
-                isDisabled: true,
-                onTap: () {},
+                emoji: '📝',
+                emojiBg: const Color(0xFFFFF8E1),
+                title: 'Notes',
+                subtitle: 'My highlights',
+                onTap: () => context.push('/notes'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _ActionCard(
                 emoji: '📝',
-                emojiBg: cs.surface,
+                emojiBg: const Color(0xFFFFF3E0),
                 title: 'Assignment',
                 subtitle: 'Coming soon',
                 isDisabled: true,

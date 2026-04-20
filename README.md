@@ -68,15 +68,7 @@ Basically RAG — same concept as OrbitAI's Spaces but for textbooks. Answer is 
 
 ---
 
-**1. PDF Reader Enhancements**
-- Page jump slider + "go to page" input
-- Brightness overlay control
-- Dark mode via `ColorFiltered` inversion
-- Sepia mode
-- Continuous scroll / paginated toggle
-- Reading progress bar
-- Last read page resume
-- Bookmarks per book
+
 
 ---
 
@@ -151,8 +143,13 @@ Stack: Google Play Billing + RevenueCat for subscription management
 
 **Build order I'd suggest:**
 
-1. PDF reader enhancements (dark mode, brightness, navigation)
 2. Reading habit system (progress, streak)
 3. AI page features (explain, quiz) — this is your subscription hook
 4. RAG / homework helper — this is your wow feature, build after AI is stable
+
+
+AI reader as loud.
+
+Create Time table
+add notes by clicking photo..
 

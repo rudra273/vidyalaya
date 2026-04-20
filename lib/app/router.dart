@@ -6,6 +6,8 @@ import '../screens/my_books/my_books_screen.dart';
 import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/notes/notes_screen.dart';
+import '../screens/notes/subject_notes_screen.dart';
 import '../widgets/app_shell.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -50,17 +52,14 @@ final goRouter = GoRouter(
                         children: [
                           const Text('🎓', style: TextStyle(fontSize: 56)),
                           const SizedBox(height: 20),
-                          Text(
-                            'Learn',
-                            style: Theme.of(context).textTheme.displaySmall,
-                          ),
+                          Text('Learn', style: Theme.of(context).textTheme.displaySmall),
                           const SizedBox(height: 8),
                           Text(
                             'Video lessons, chapter summaries, and interactive quizzes — all coming soon!',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).textTheme.bodySmall?.color,
-                            ),
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                ),
                           ),
                           const SizedBox(height: 24),
                           Container(
@@ -71,11 +70,7 @@ final goRouter = GoRouter(
                             ),
                             child: Text(
                               'Coming Soon',
-                              style: TextStyle(
-                                color: cs.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+                              style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                           ),
                         ],
@@ -102,17 +97,14 @@ final goRouter = GoRouter(
                         children: [
                           const Text('📊', style: TextStyle(fontSize: 56)),
                           const SizedBox(height: 20),
-                          Text(
-                            'Progress',
-                            style: Theme.of(context).textTheme.displaySmall,
-                          ),
+                          Text('Progress', style: Theme.of(context).textTheme.displaySmall),
                           const SizedBox(height: 8),
                           Text(
                             'Track your reading streak, study time per subject, and books completed — coming soon!',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).textTheme.bodySmall?.color,
-                            ),
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                ),
                           ),
                           const SizedBox(height: 24),
                           Container(
@@ -123,11 +115,7 @@ final goRouter = GoRouter(
                             ),
                             child: Text(
                               'Coming Soon',
-                              style: TextStyle(
-                                color: cs.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+                              style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                           ),
                         ],
@@ -152,12 +140,27 @@ final goRouter = GoRouter(
       builder: (context, state) => const ClassSelectorScreen(),
     ),
     GoRoute(
+      path: '/notes',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const NotesScreen(),
+    ),
+    GoRoute(
+      path: '/notes/:subject',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final subject = state.pathParameters['subject']!;
+        return SubjectNotesScreen(subject: subject);
+      },
+    ),
+    GoRoute(
       path: '/reader/:bookId',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) {
         final bookId = state.pathParameters['bookId']!;
         final book = getBookById(bookId);
-        return PdfViewerScreen(book: book!);
+        final pageStr = state.uri.queryParameters['page'];
+        final initialPage = pageStr != null ? int.tryParse(pageStr) : null;
+        return PdfViewerScreen(book: book!, initialPage: initialPage);
       },
     ),
   ],
