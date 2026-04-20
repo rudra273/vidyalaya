@@ -123,7 +123,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('📅', style: TextStyle(fontSize: 56)),
+                    Icon(Icons.event_note_rounded, size: 64, color: AppColors.textMuted.withValues(alpha: 0.5)),
                     const SizedBox(height: 20),
                     Text('No classes', style: Theme.of(context).textTheme.displaySmall),
                     const SizedBox(height: 8),

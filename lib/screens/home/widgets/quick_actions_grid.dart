@@ -13,7 +13,8 @@ class QuickActionsGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _ActionCard(
-                emoji: '🔖',
+                icon: Icons.bookmark_rounded,
+                iconColor: Colors.green.shade800,
                 emojiBg: const Color(0xFFE8F5E9),
                 title: 'Bookmarks',
                 subtitle: 'Saved pages',
@@ -23,7 +24,8 @@ class QuickActionsGrid extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _ActionCard(
-                emoji: '📅',
+                icon: Icons.calendar_month_rounded,
+                iconColor: Colors.blue.shade800,
                 emojiBg: const Color(0xFFE3F2FD), // Light blue
                 title: 'Timetable',
                 subtitle: 'My classes',
@@ -37,7 +39,8 @@ class QuickActionsGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _ActionCard(
-                emoji: '📝',
+                icon: Icons.edit_note_rounded,
+                iconColor: Colors.amber.shade900,
                 emojiBg: const Color(0xFFFFF8E1),
                 title: 'Notes',
                 subtitle: 'My highlights',
@@ -47,7 +50,8 @@ class QuickActionsGrid extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _ActionCard(
-                emoji: '📝',
+                icon: Icons.assignment_rounded,
+                iconColor: Colors.deepOrange.shade800,
                 emojiBg: const Color(0xFFFFF3E0),
                 title: 'Assignment',
                 subtitle: 'Coming soon',
@@ -63,7 +67,8 @@ class QuickActionsGrid extends StatelessWidget {
 }
 
 class _ActionCard extends StatefulWidget {
-  final String emoji;
+  final IconData icon;
+  final Color iconColor;
   final Color emojiBg;
   final String title;
   final String subtitle;
@@ -71,7 +76,8 @@ class _ActionCard extends StatefulWidget {
   final bool isDisabled;
 
   const _ActionCard({
-    required this.emoji,
+    required this.icon,
+    required this.iconColor,
     required this.emojiBg,
     required this.title,
     required this.subtitle,
@@ -118,9 +124,10 @@ class _ActionCardState extends State<_ActionCard> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
-                    child: Text(
-                      widget.emoji,
-                      style: const TextStyle(fontSize: 20),
+                    child: Icon(
+                      widget.icon,
+                      color: widget.iconColor,
+                      size: 22,
                     ),
                   ),
                 ),
