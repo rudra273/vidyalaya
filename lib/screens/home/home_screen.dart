@@ -16,7 +16,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lastReadBook = ref.watch(readingProvider);
     final books = ref.watch(selectedBooksProvider);
-
+    final cs = Theme.of(context).colorScheme;
 
     return SafeArea(
       child: CustomScrollView(
@@ -42,14 +42,14 @@ class HomeScreen extends ConsumerWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppColors.tealLight,
+                        color: cs.secondary,
                         shape: BoxShape.circle,
                       ),
                       child: Center(
                         child: Text(
                           'A',
                           style: TextStyle(
-                            color: AppColors.teal,
+                            color: cs.primary,
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                           ),
@@ -92,9 +92,7 @@ class HomeScreen extends ConsumerWidget {
               AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 0,
             ),
             sliver: SliverToBoxAdapter(
-              child: QuickActionsGrid(
-                bookCount: books.length,
-              ),
+              child: const QuickActionsGrid(),
             ),
           ),
 
@@ -120,7 +118,7 @@ class HomeScreen extends ConsumerWidget {
                       child: Text(
                         'See all',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.teal,
+                              color: cs.primary,
                               fontWeight: FontWeight.w500,
                             ),
                       ),

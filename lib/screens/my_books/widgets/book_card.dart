@@ -17,8 +17,10 @@ class _BookCardState extends State<BookCard> {
 
   @override
   Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final cs = Theme.of(context).colorScheme;
     final (subjectBg, subjectText) =
-        AppColors.getSubjectColor(widget.book.subject);
+        AppColors.getSubjectColorFor(widget.book.subject, brightness);
     final subjectLabel = widget.book.subject[0].toUpperCase() +
         widget.book.subject.substring(1);
 
@@ -33,9 +35,9 @@ class _BookCardState extends State<BookCard> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cs.surface,
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: cs.outline),
           ),
           child: Row(
             children: [
@@ -94,13 +96,14 @@ class _BookCardState extends State<BookCard> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: cs.surface,
                   shape: BoxShape.circle,
+                  border: Border.all(color: cs.outline),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_forward_ios,
                   size: 14,
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
                 ),
               ),
             ],

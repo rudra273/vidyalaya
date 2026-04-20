@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
 import 'app/router.dart';
 import 'providers/core_providers.dart';
+import 'providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,16 +20,20 @@ void main() async {
   );
 }
 
-class VidyalayaApp extends StatelessWidget {
+class VidyalayaApp extends ConsumerWidget {
   const VidyalayaApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp.router(
       title: 'Vidyālaya',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      routerConfig: goRouter,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }
