@@ -92,9 +92,7 @@ class HomeScreen extends ConsumerWidget {
               AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 0,
             ),
             sliver: SliverToBoxAdapter(
-              child: QuickActionsGrid(
-                bookCount: books.length,
-              ),
+              child: const QuickActionsGrid(),
             ),
           ),
 

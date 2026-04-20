@@ -8,6 +8,8 @@ import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
+import '../screens/bookmarks/bookmarks_screen.dart';
+import '../screens/downloads/manage_downloads_screen.dart';
 import '../widgets/app_shell.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -138,6 +140,16 @@ final goRouter = GoRouter(
       path: '/class-selector',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ClassSelectorScreen(),
+    ),
+    GoRoute(
+      path: '/manage-downloads',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const ManageDownloadsScreen(),
+    ),
+    GoRoute(
+      path: '/bookmarks',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const BookmarksScreen(),
     ),
     GoRoute(
       path: '/notes',

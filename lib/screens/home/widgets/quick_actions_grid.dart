@@ -3,12 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 
 class QuickActionsGrid extends StatelessWidget {
-  final int bookCount;
-
-  const QuickActionsGrid({
-    super.key,
-    required this.bookCount,
-  });
+  const QuickActionsGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,11 +13,11 @@ class QuickActionsGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _ActionCard(
-                emoji: '📚',
-                emojiBg: AppColors.tealLight,
-                title: 'My Books',
-                subtitle: '$bookCount books added',
-                onTap: () => context.go('/my-books'),
+                emoji: '🔖',
+                emojiBg: const Color(0xFFE8F5E9),
+                title: 'Bookmarks',
+                subtitle: 'Saved pages',
+                onTap: () => context.push('/bookmarks'),
               ),
             ),
             const SizedBox(width: 12),

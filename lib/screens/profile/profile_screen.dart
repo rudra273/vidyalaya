@@ -133,6 +133,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => context.push('/class-selector'),
             ),
 
+            const SizedBox(height: 10),
+
+            // Downloads — nav row
+            _SettingsNavRow(
+              icon: Icons.download_done_rounded,
+              title: 'Manage Downloads',
+              subtitle: 'Download or delete offline books',
+              onTap: () => context.push('/manage-downloads'),
+            ),
+
             const SizedBox(height: 28),
 
             // ── App Info ───────────────────────────────────────────
