@@ -23,12 +23,11 @@ class QuickActionsGrid extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _ActionCard(
-                emoji: '📋',
-                emojiBg: AppColors.surface,
-                title: 'Syllabus',
-                subtitle: 'Coming soon',
-                isDisabled: true,
-                onTap: () {},
+                emoji: '📅',
+                emojiBg: const Color(0xFFE3F2FD), // Light blue
+                title: 'Timetable',
+                subtitle: 'My classes',
+                onTap: () => context.push('/timetable'),
               ),
             ),
           ],

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/highlight.dart';
+import '../models/timetable_period.dart';
 
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
@@ -12,6 +13,7 @@ class UserPrefsRepository {
   static const _highlightsPrefix = 'highlights_';
   static const _readerModeKey = 'reader_view_mode';
   static const _readerFilterKey = 'reader_filter';
+  static const _timetableKey = 'timetable_data';
 
   final SharedPreferences _prefs;
 
@@ -134,5 +136,27 @@ class UserPrefsRepository {
 
   Future<void> setReaderFilter(String filter) async {
     await _prefs.setString(_readerFilterKey, filter);
+  }
+
+  // ─── Timetable ──────────────────────────────────────────────────────────
+
+  Map<String, List<TimetablePeriod>> getTimetable() {
+    final jsonStr = _prefs.getString(_timetableKey);
+    if (jsonStr == null) return {};
+
+    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+    return map.map((key, value) {
+      final list = (value as List)
+          .map((e) => TimetablePeriod.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return MapEntry(key, list);
+    });
+  }
+
+  Future<void> saveTimetable(Map<String, List<TimetablePeriod>> timetable) async {
+    final map = timetable.map((key, value) {
+      return MapEntry(key, value.map((p) => p.toJson()).toList());
+    });
+    await _prefs.setString(_timetableKey, jsonEncode(map));
   }
 }

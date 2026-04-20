@@ -10,6 +10,7 @@ import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
 import '../screens/downloads/manage_downloads_screen.dart';
+import '../screens/timetable/timetable_screen.dart';
 import '../widgets/app_shell.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -140,6 +141,11 @@ final goRouter = GoRouter(
       path: '/class-selector',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ClassSelectorScreen(),
+    ),
+    GoRoute(
+      path: '/timetable',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const TimetableScreen(),
     ),
     GoRoute(
       path: '/manage-downloads',
