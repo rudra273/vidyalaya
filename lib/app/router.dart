@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/core_providers.dart';
 import '../data/seed/seed_data.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
 import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
 import '../screens/downloads/manage_downloads_screen.dart';
 import '../screens/timetable/timetable_screen.dart';
+import '../screens/onboarding/welcome_screen.dart';
 import '../widgets/app_shell.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -20,10 +24,22 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 // ─── Router ─────────────────────────────────────────────────────────────────
 
-final goRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
-  initialLocation: '/',
-  routes: [
+final routerProvider = Provider<GoRouter>((ref) {
+  final prefsRepo = ref.watch(userPrefsRepositoryProvider);
+
+  return GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: '/',
+    redirect: (context, state) {
+      final isWelcome = state.matchedLocation == '/welcome';
+      final hasCompleted = prefsRepo.getHasCompletedOnboarding();
+      
+      if (!hasCompleted && !isWelcome) {
+        return '/welcome';
+      }
+      return null;
+    },
+    routes: [
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) => AppShell(child: child),
@@ -138,6 +154,16 @@ final goRouter = GoRouter(
       builder: (context, state) => const ProfileScreen(),
     ),
     GoRoute(
+      path: '/privacy-policy',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const PrivacyPolicyScreen(),
+    ),
+    GoRoute(
+      path: '/welcome',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
       path: '/class-selector',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const ClassSelectorScreen(),
@@ -183,3 +209,4 @@ final goRouter = GoRouter(
     ),
   ],
 );
+});

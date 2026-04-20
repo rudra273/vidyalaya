@@ -33,7 +33,7 @@ class VidyalayaApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      routerConfig: goRouter,
+      routerConfig: ref.watch(routerProvider),
     );
   }
 }

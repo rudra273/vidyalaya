@@ -26,7 +26,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
     final mutedColor = Theme.of(context).textTheme.bodySmall?.color ??
         cs.onSurface.withValues(alpha: 0.5);
@@ -110,14 +109,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Dark mode toggle
-            _DarkModeToggle(
-              isDark: themeMode == ThemeMode.dark ||
-                  (themeMode == ThemeMode.system && isDark),
-              onToggle: (value) {
-                ref.read(themeModeProvider.notifier).setThemeMode(
-                      value ? ThemeMode.dark : ThemeMode.light,
-                    );
+            // Theme selector (System, Light, Dark)
+            _ThemeSelector(
+              currentMode: themeMode,
+              onChanged: (mode) {
+                ref.read(themeModeProvider.notifier).setThemeMode(mode);
               },
             ),
 
@@ -143,6 +139,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => context.push('/manage-downloads'),
             ),
 
+            const SizedBox(height: 10),
+
+            // Privacy Policy — nav row
+            _SettingsNavRow(
+              icon: Icons.privacy_tip_rounded,
+              title: 'Privacy Policy',
+              subtitle: 'Read our data and privacy commitments',
+              onTap: () => context.push('/privacy-policy'),
+            ),
+
             const SizedBox(height: 28),
 
             // ── App Info ───────────────────────────────────────────
@@ -165,13 +171,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     'Version 0.1.0',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'ଶିକ୍ଷାର ଦ୍ୱାର',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: mutedColor,
-                        ),
-                  ),
+
                 ],
               ),
             ),
@@ -255,99 +255,100 @@ class _SettingsNavRow extends StatelessWidget {
   }
 }
 
-// ─── Dark Mode Toggle ────────────────────────────────────────────────────────
+// ─── Theme Selector ─────────────────────────────────────────────────────────
 
-class _DarkModeToggle extends StatelessWidget {
-  final bool isDark;
-  final ValueChanged<bool> onToggle;
+class _ThemeSelector extends StatelessWidget {
+  final ThemeMode currentMode;
+  final ValueChanged<ThemeMode> onChanged;
 
-  const _DarkModeToggle({
-    required this.isDark,
-    required this.onToggle,
+  const _ThemeSelector({
+    required this.currentMode,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: () => onToggle(!isDark),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isDark ? cs.secondary : cs.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDark ? cs.primary.withValues(alpha: 0.3) : cs.outline,
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outline),
+      ),
+      child: Row(
+        children: [
+          _ThemeOption(
+            label: 'System',
+            icon: Icons.settings_suggest_rounded,
+            isSelected: currentMode == ThemeMode.system,
+            onTap: () => onChanged(ThemeMode.system),
           ),
-        ),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? cs.primary.withValues(alpha: 0.15)
-                    : cs.surface,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDark
-                      ? cs.primary.withValues(alpha: 0.3)
-                      : cs.outline,
+          _ThemeOption(
+            label: 'Light',
+            icon: Icons.light_mode_rounded,
+            isSelected: currentMode == ThemeMode.light,
+            onTap: () => onChanged(ThemeMode.light),
+          ),
+          _ThemeOption(
+            label: 'Dark',
+            icon: Icons.dark_mode_rounded,
+            isSelected: currentMode == ThemeMode.dark,
+            onTap: () => onChanged(ThemeMode.dark),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeOption extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeOption({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? cs.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
                 ),
               ),
-              child: Center(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) {
-                    return RotationTransition(
-                      turns: Tween(begin: 0.75, end: 1.0).animate(animation),
-                      child: FadeTransition(opacity: animation, child: child),
-                    );
-                  },
-                  child: Icon(
-                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    key: ValueKey(isDark),
-                    size: 20,
-                    color: isDark ? cs.primary : cs.onSurface,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Dark Mode',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    isDark ? 'Currently dark' : 'Currently light',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Switch(
-                key: ValueKey(isDark),
-                value: isDark,
-                onChanged: onToggle,
-                activeThumbColor: cs.primary,
-                activeTrackColor: cs.primary.withValues(alpha: 0.3),
-                inactiveThumbColor: cs.onSurface.withValues(alpha: 0.4),
-                inactiveTrackColor: cs.onSurface.withValues(alpha: 0.1),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

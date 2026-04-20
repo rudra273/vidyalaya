@@ -14,10 +14,21 @@ class UserPrefsRepository {
   static const _readerModeKey = 'reader_view_mode';
   static const _readerFilterKey = 'reader_filter';
   static const _timetableKey = 'timetable_data';
+  static const _onboardingKey = 'has_completed_onboarding';
 
   final SharedPreferences _prefs;
 
   UserPrefsRepository(this._prefs);
+
+  // ─── Onboarding ─────────────────────────────────────────────────────────
+
+  bool getHasCompletedOnboarding() {
+    return _prefs.getBool(_onboardingKey) ?? false;
+  }
+
+  Future<void> setHasCompletedOnboarding(bool value) async {
+    await _prefs.setBool(_onboardingKey, value);
+  }
 
   // ─── Selected Classes ───────────────────────────────────────────────────
 

@@ -50,6 +50,27 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
   Future<void> _deleteBook(Book book) async {
     if (_booksDirPath == null) return;
     
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Book'),
+        content: Text('Are you sure you want to delete "${book.title}" from your device?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     final file = File('$_booksDirPath/${book.id}.pdf');
     if (file.existsSync()) {
       await file.delete();
