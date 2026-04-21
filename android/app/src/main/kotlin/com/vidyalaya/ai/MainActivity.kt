@@ -1,4 +1,4 @@
-package com.example.vidyalaya
+package com.vidyalaya.ai
 
 import io.flutter.embedding.android.FlutterActivity
 
