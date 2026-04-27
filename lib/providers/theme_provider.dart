@@ -10,14 +10,15 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
     final prefs = ref.read(sharedPreferencesProvider);
-    final stored = prefs.getString(_themeModeKey);
+    final stored = prefs.getString(_themeModeKey) ?? 'light'; // Default to light on first run
     switch (stored) {
       case 'dark':
         return ThemeMode.dark;
-      case 'light':
-        return ThemeMode.light;
-      default:
+      case 'system':
         return ThemeMode.system;
+      case 'light':
+      default:
+        return ThemeMode.light;
     }
   }
 
@@ -30,7 +31,7 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
       case ThemeMode.light:
         prefs.setString(_themeModeKey, 'light');
       case ThemeMode.system:
-        prefs.remove(_themeModeKey);
+        prefs.setString(_themeModeKey, 'system');
     }
   }
 

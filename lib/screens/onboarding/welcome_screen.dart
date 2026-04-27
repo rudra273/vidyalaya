@@ -15,6 +15,8 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   int _selectedClass = 8; // Default to class 8 since it's populated
+  String _selectedMedium = 'odia';
+
   late FixedExtentScrollController _scrollController;
 
   @override
@@ -58,7 +60,41 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 32),
+            
+            // Medium Selection
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: DropdownButtonFormField<String>(
+                value: _selectedMedium,
+                decoration: InputDecoration(
+                  labelText: 'Select Medium',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  filled: true,
+                  fillColor: cs.surface,
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'odia',
+                    child: Text('Odia Medium'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ncert',
+                    enabled: false,
+                    child: Text('NCERT (Coming Soon)', style: TextStyle(color: Colors.grey)),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedMedium = value);
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 32),
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Text(
@@ -69,7 +105,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 16),
 
             // Wheel Picker
             Expanded(
@@ -200,3 +236,4 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     );
   }
 }
+
