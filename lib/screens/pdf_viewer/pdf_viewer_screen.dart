@@ -10,6 +10,7 @@ import '../../data/models/book.dart';
 import '../../data/models/highlight.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/reading_provider.dart';
+import '../../providers/progress_provider.dart';
 import 'widgets/highlight_overlay.dart';
 
 class PdfViewerScreen extends ConsumerStatefulWidget {
@@ -47,9 +48,14 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   final _pageInputController = TextEditingController();
   final _noteController = TextEditingController();
 
+  // Progress Tracking
+  DateTime? _sessionStartTime;
+  final Set<int> _viewedPages = {};
+
   @override
   void initState() {
     super.initState();
+    _sessionStartTime = DateTime.now();
     _loadPreferences();
     _loadPdf();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -62,6 +68,20 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     _pageInputController.dispose();
     _noteController.dispose();
     _saveCurrentPage();
+    
+    // Log progress
+    final repo = ref.read(userPrefsRepositoryProvider);
+    if (_sessionStartTime != null) {
+      final seconds = DateTime.now().difference(_sessionStartTime!).inSeconds;
+      if (seconds > 0) repo.addStudySeconds(seconds);
+    }
+    if (_viewedPages.isNotEmpty) {
+      repo.addPagesRead(_viewedPages.length, widget.book.subject);
+    }
+    
+    // Invalidate progress provider so dashboard updates
+    ref.invalidate(progressProvider);
+    
     super.dispose();
   }
 
@@ -499,6 +519,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                         _currentPage = page ?? 0;
                         _totalPages = total ?? 0;
                       });
+                      _viewedPages.add(_currentPage);
                       _saveCurrentPage();
                       _loadPageHighlights();
                     }

@@ -196,4 +196,77 @@ class UserPrefsRepository {
     });
     await _prefs.setString(_timetableKey, jsonEncode(map));
   }
+
+  // ─── Progress Analytics ──────────────────────────────────────────────────
+
+  static const _totalStudySecondsKey = 'total_study_seconds';
+  static const _totalPagesReadKey = 'total_pages_read';
+  static const _pagesReadTodayKey = 'pages_read_today';
+  static const _lastActiveDateKey = 'last_active_date';
+  static const _currentStreakKey = 'current_streak';
+  static const _subjectProgressPrefix = 'subject_progress_';
+
+  int getTotalStudySeconds() => _prefs.getInt(_totalStudySecondsKey) ?? 0;
+  
+  Future<void> addStudySeconds(int seconds) async {
+    final current = getTotalStudySeconds();
+    await _prefs.setInt(_totalStudySecondsKey, current + seconds);
+  }
+
+  int getTotalPagesRead() => _prefs.getInt(_totalPagesReadKey) ?? 0;
+  
+  int getPagesReadToday() {
+    _markActiveDay();
+    return _prefs.getInt(_pagesReadTodayKey) ?? 0;
+  }
+
+  Future<void> addPagesRead(int pages, String subject) async {
+    _markActiveDay();
+    
+    final currentTotal = getTotalPagesRead();
+    await _prefs.setInt(_totalPagesReadKey, currentTotal + pages);
+    
+    final currentToday = _prefs.getInt(_pagesReadTodayKey) ?? 0;
+    await _prefs.setInt(_pagesReadTodayKey, currentToday + pages);
+
+    final subjectKey = '$_subjectProgressPrefix$subject';
+    final currentSubject = _prefs.getInt(subjectKey) ?? 0;
+    await _prefs.setInt(subjectKey, currentSubject + pages);
+  }
+
+  int getSubjectPages(String subject) {
+    return _prefs.getInt('$_subjectProgressPrefix$subject') ?? 0;
+  }
+
+  int getCurrentStreak() {
+    _markActiveDay();
+    return _prefs.getInt(_currentStreakKey) ?? 0;
+  }
+
+  void _markActiveDay() {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final lastDate = _prefs.getString(_lastActiveDateKey);
+    
+    if (lastDate != today) {
+      _prefs.setInt(_pagesReadTodayKey, 0);
+      
+      int streak = _prefs.getInt(_currentStreakKey) ?? 0;
+      if (lastDate != null) {
+        final last = DateTime.parse(lastDate);
+        final current = DateTime.parse(today);
+        final diff = current.difference(last).inDays;
+        
+        if (diff == 1) {
+          streak += 1;
+        } else {
+          streak = 1;
+        }
+      } else {
+        streak = 1;
+      }
+      
+      _prefs.setInt(_currentStreakKey, streak);
+      _prefs.setString(_lastActiveDateKey, today);
+    }
+  }
 }

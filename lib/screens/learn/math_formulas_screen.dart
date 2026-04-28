@@ -244,7 +244,7 @@ class _MathFormulasScreenState extends State<MathFormulasScreen> {
     final cs = Theme.of(context).colorScheme;
     
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Math Formulas'),
       ),
