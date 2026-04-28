@@ -17,6 +17,8 @@ import '../screens/downloads/manage_downloads_screen.dart';
 import '../screens/timetable/timetable_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
 import '../widgets/app_shell.dart';
+import '../screens/learn/learn_screen.dart';
+import '../screens/learn/math_formulas_screen.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
 
@@ -59,48 +61,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/learn',
-          pageBuilder: (context, state) {
-            final cs = Theme.of(context).colorScheme;
-            return NoTransitionPage(
-              child: Scaffold(
-                body: SafeArea(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🎓', style: TextStyle(fontSize: 56)),
-                          const SizedBox(height: 20),
-                          Text('Learn', style: Theme.of(context).textTheme.displaySmall),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Video lessons, chapter summaries, and interactive quizzes — all coming soon!',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
-                                ),
-                          ),
-                          const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: cs.secondary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Coming Soon',
-                              style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: LearnScreen(),
+          ),
         ),
         GoRoute(
           path: '/progress',
@@ -168,6 +131,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       path: '/welcome',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: '/learn/math-formulas',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const MathFormulasScreen(),
     ),
     GoRoute(
       path: '/class-selector',
