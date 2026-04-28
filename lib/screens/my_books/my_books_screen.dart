@@ -83,9 +83,36 @@ class MyBooksScreen extends ConsumerWidget {
                               onTap: () => context.push('/class-selector'),
                             );
                           }
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: BookCard(book: filteredBooks[index]),
+
+                          final book = filteredBooks[index];
+                          final isFirstOfClass = index == 0 ||
+                              filteredBooks[index - 1].classNumber !=
+                                  book.classNumber;
+                          final showClassTitle =
+                              selectedClasses.length > 1 && isFirstOfClass;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (showClassTitle)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      top: 8, bottom: 12),
+                                  child: Text(
+                                    'Class ${book.classNumber}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: BookCard(book: book),
+                              ),
+                            ],
                           );
                         },
                       ),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/highlight.dart';
 import '../models/timetable_period.dart';
+import '../models/time_slot.dart';
 
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
@@ -150,6 +151,31 @@ class UserPrefsRepository {
   }
 
   // ─── Timetable ──────────────────────────────────────────────────────────
+
+  static const _timeSlotsKey = 'time_slots_data';
+
+  List<TimeSlot> getTimeSlots() {
+    final jsonStr = _prefs.getString(_timeSlotsKey);
+    if (jsonStr == null) {
+      // Default time slots
+      return [
+        const TimeSlot(id: 'ts1', name: 'Period 1', startTime: '10:30', endTime: '11:15'),
+        const TimeSlot(id: 'ts2', name: 'Period 2', startTime: '11:15', endTime: '12:00'),
+        const TimeSlot(id: 'ts3', name: 'Short Break', startTime: '12:00', endTime: '12:15', isBreak: true),
+        const TimeSlot(id: 'ts4', name: 'Period 3', startTime: '12:15', endTime: '13:00'),
+        const TimeSlot(id: 'ts5', name: 'Lunch', startTime: '13:00', endTime: '14:00', isBreak: true),
+        const TimeSlot(id: 'ts6', name: 'Period 4', startTime: '14:00', endTime: '14:45'),
+        const TimeSlot(id: 'ts7', name: 'Period 5', startTime: '15:00', endTime: '15:45'),
+      ];
+    }
+    final list = jsonDecode(jsonStr) as List;
+    return list.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveTimeSlots(List<TimeSlot> slots) async {
+    final jsonList = slots.map((s) => s.toJson()).toList();
+    await _prefs.setString(_timeSlotsKey, jsonEncode(jsonList));
+  }
 
   Map<String, List<TimetablePeriod>> getTimetable() {
     final jsonStr = _prefs.getString(_timetableKey);

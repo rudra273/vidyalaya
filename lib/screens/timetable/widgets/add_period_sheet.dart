@@ -6,8 +6,18 @@ import '../../../data/models/timetable_period.dart';
 class AddPeriodSheet extends StatefulWidget {
   final TimetablePeriod? existingPeriod;
   final Function(TimetablePeriod) onAdd;
+  final String? initialSlotId;
+  final String? initialStartTime;
+  final String? initialEndTime;
 
-  const AddPeriodSheet({super.key, required this.onAdd, this.existingPeriod});
+  const AddPeriodSheet({
+    super.key,
+    required this.onAdd,
+    this.existingPeriod,
+    this.initialSlotId,
+    this.initialStartTime,
+    this.initialEndTime,
+  });
 
   @override
   State<AddPeriodSheet> createState() => _AddPeriodSheetState();
@@ -33,6 +43,9 @@ class _AddPeriodSheetState extends State<AddPeriodSheet> {
       _subjectController.text = widget.existingPeriod!.subject;
       _startController.text = widget.existingPeriod!.startTime;
       _endController.text = widget.existingPeriod!.endTime;
+    } else {
+      if (widget.initialStartTime != null) _startController.text = widget.initialStartTime!;
+      if (widget.initialEndTime != null) _endController.text = widget.initialEndTime!;
     }
   }
 
@@ -48,11 +61,14 @@ class _AddPeriodSheetState extends State<AddPeriodSheet> {
     final sub = _subjectController.text.trim();
     if (sub.isEmpty) return;
 
+    // Check if the user changed the time from the slot's original time
+    // For now, we simply keep the slotId.
     final period = TimetablePeriod(
       id: widget.existingPeriod?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       subject: sub,
       startTime: _startController.text.trim(),
       endTime: _endController.text.trim(),
+      slotId: widget.existingPeriod?.slotId ?? widget.initialSlotId,
     );
 
     widget.onAdd(period);

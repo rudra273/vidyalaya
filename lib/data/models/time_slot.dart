@@ -1,51 +1,51 @@
-class TimetablePeriod {
+class TimeSlot {
   final String id;
-  final String subject;
+  final String name;
   final String startTime;
   final String endTime;
-  final String? slotId;
+  final bool isBreak;
 
-  const TimetablePeriod({
+  const TimeSlot({
     required this.id,
-    required this.subject,
+    required this.name,
     required this.startTime,
     required this.endTime,
-    this.slotId,
+    this.isBreak = false,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'subject': subject,
+      'name': name,
       'startTime': startTime,
       'endTime': endTime,
-      if (slotId != null) 'slotId': slotId,
+      'isBreak': isBreak,
     };
   }
 
-  factory TimetablePeriod.fromJson(Map<String, dynamic> json) {
-    return TimetablePeriod(
+  factory TimeSlot.fromJson(Map<String, dynamic> json) {
+    return TimeSlot(
       id: json['id'] as String,
-      subject: json['subject'] as String,
+      name: json['name'] as String,
       startTime: json['startTime'] as String,
       endTime: json['endTime'] as String,
-      slotId: json['slotId'] as String?,
+      isBreak: json['isBreak'] as bool? ?? false,
     );
   }
 
-  TimetablePeriod copyWith({
+  TimeSlot copyWith({
     String? id,
-    String? subject,
+    String? name,
     String? startTime,
     String? endTime,
-    String? slotId,
+    bool? isBreak,
   }) {
-    return TimetablePeriod(
+    return TimeSlot(
       id: id ?? this.id,
-      subject: subject ?? this.subject,
+      name: name ?? this.name,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
-      slotId: slotId ?? this.slotId,
+      isBreak: isBreak ?? this.isBreak,
     );
   }
 }
