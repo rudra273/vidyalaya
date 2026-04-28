@@ -149,6 +149,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => context.push('/privacy-policy'),
             ),
 
+            const SizedBox(height: 10),
+
+            // About App — nav row
+            _SettingsNavRow(
+              icon: Icons.info_outline_rounded,
+              title: 'About Vidyālaya',
+              subtitle: 'Learn more about the app and its features',
+              onTap: () => context.push('/about'),
+            ),
+
             const SizedBox(height: 28),
 
             // ── App Info ───────────────────────────────────────────

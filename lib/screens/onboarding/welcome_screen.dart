@@ -66,7 +66,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: DropdownButtonFormField<String>(
-                value: _selectedMedium,
+                initialValue: _selectedMedium,
                 decoration: InputDecoration(
                   labelText: 'Select Medium',
                   border: OutlineInputBorder(

@@ -9,6 +9,7 @@ import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/privacy_policy_screen.dart';
+import '../screens/profile/about_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
@@ -157,6 +158,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       path: '/privacy-policy',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const PrivacyPolicyScreen(),
+    ),
+    GoRoute(
+      path: '/about',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AboutScreen(),
     ),
     GoRoute(
       path: '/welcome',
