@@ -5,7 +5,7 @@ import '../../app/theme.dart';
 class FormulaData {
   final String title;
   final String formula;
-  final _FormulaType type;
+  final FormulaType type;
   final String category;
   final String descEn;
   final String descOr;
@@ -20,7 +20,7 @@ class FormulaData {
   });
 }
 
-enum _FormulaType {
+enum FormulaType {
   simpleInterest,
   circleArea,
   circleCircumference,
@@ -45,7 +45,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Simple Interest (ସରଳ ସୁଧ)', 
     formula: 'SI = (P × R × T) / 100', 
-    type: _FormulaType.simpleInterest,
+    type: FormulaType.simpleInterest,
     category: 'Arithmetic',
     descEn: 'Calculates the simple interest earned on a principal sum over a period of time.',
     descOr: 'ଏକ ନିର୍ଦ୍ଦିଷ୍ଟ ସମୟ ପାଇଁ ମୂଳଧନ ଉପରେ ମିଳୁଥିବା ସରଳ ସୁଧ ହିସାବ କରେ।',
@@ -55,7 +55,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Quadratic Equation (ଦ୍ୱିଘାତ ସମୀକରଣ)', 
     formula: 'x = (-b ± √(b² - 4ac)) / 2a', 
-    type: _FormulaType.quadratic,
+    type: FormulaType.quadratic,
     category: 'Algebra',
     descEn: 'Finds the unknown variable x (roots) in a second-degree polynomial equation.',
     descOr: 'ଏକ ଦ୍ୱିଘାତ ସମୀକରଣରେ ଅଜ୍ଞାତ ରାଶି x ର ମୂଲ୍ୟ (ମୂଳ) ନିର୍ଣ୍ଣୟ କରେ।',
@@ -65,7 +65,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Area of a Circle (ବୃତ୍ତର କ୍ଷେତ୍ରଫଳ)', 
     formula: 'A = πr²', 
-    type: _FormulaType.circleArea,
+    type: FormulaType.circleArea,
     category: 'Geometry',
     descEn: 'Calculates the total 2D space enclosed within a circle.',
     descOr: 'ଏକ ବୃତ୍ତ ମଧ୍ୟରେ ଥିବା ସମୁଦାୟ ସ୍ଥାନ ବା କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
@@ -73,7 +73,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Circumference of Circle (ବୃତ୍ତର ପରିଧି)', 
     formula: 'C = 2πr', 
-    type: _FormulaType.circleCircumference,
+    type: FormulaType.circleCircumference,
     category: 'Geometry',
     descEn: 'Calculates the total length of the outer boundary of a circle.',
     descOr: 'ଏକ ବୃତ୍ତର ଚାରିପାଖର ସମୁଦାୟ ଦୈର୍ଘ୍ୟ ବା ପରିଧି ହିସାବ କରେ।',
@@ -81,7 +81,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Pythagorean Theorem (ପିଥାଗୋରାସ୍ ଉପପାଦ୍ୟ)', 
     formula: 'c = √(a² + b²)', 
-    type: _FormulaType.pythagoras,
+    type: FormulaType.pythagoras,
     category: 'Geometry',
     descEn: 'Finds the longest side (hypotenuse) of a right-angled triangle.',
     descOr: 'ଏକ ସମକୋଣୀ ତ୍ରିଭୁଜର ସବୁଠାରୁ ବଡ଼ ବାହୁ (କର୍ଣ୍ଣ) ନିର୍ଣ୍ଣୟ କରେ।',
@@ -89,7 +89,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Volume of a Cylinder (ସିଲିଣ୍ଡରର ଆୟତନ)', 
     formula: 'V = πr²h', 
-    type: _FormulaType.cylinderVolume,
+    type: FormulaType.cylinderVolume,
     category: 'Geometry',
     descEn: 'Calculates the total 3D space occupied by a cylinder.',
     descOr: 'ଏକ ସିଲିଣ୍ଡର ଦ୍ୱାରା ଅଧିକାର କରାଯାଇଥିବା ସମୁଦାୟ ଆୟତନ ହିସାବ କରେ।',
@@ -97,7 +97,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Perimeter of Rectangle (ଆୟତକ୍ଷେତ୍ରର ପରିସୀମା)', 
     formula: 'P = 2(l + w)', 
-    type: _FormulaType.rectanglePerimeter,
+    type: FormulaType.rectanglePerimeter,
     category: 'Geometry',
     descEn: 'Calculates the total length of the outer boundary of a rectangle.',
     descOr: 'ଏକ ଆୟତକ୍ଷେତ୍ରର ଚାରିପାଖର ସମୁଦାୟ ଦୈର୍ଘ୍ୟ ବା ପରିସୀମା ହିସାବ କରେ।',
@@ -105,7 +105,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Area of Rectangle (ଆୟତକ୍ଷେତ୍ରର କ୍ଷେତ୍ରଫଳ)', 
     formula: 'A = l × w', 
-    type: _FormulaType.rectangleArea,
+    type: FormulaType.rectangleArea,
     category: 'Geometry',
     descEn: 'Calculates the 2D surface area of a rectangle.',
     descOr: 'ଏକ ଆୟତକ୍ଷେତ୍ରର ପୃଷ୍ଠତଳର ସମୁଦାୟ କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
@@ -113,7 +113,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Perimeter of Square (ବର୍ଗକ୍ଷେତ୍ରର ପରିସୀମା)', 
     formula: 'P = 4a', 
-    type: _FormulaType.squarePerimeter,
+    type: FormulaType.squarePerimeter,
     category: 'Geometry',
     descEn: 'Calculates the total boundary length of a square.',
     descOr: 'ଏକ ବର୍ଗକ୍ଷେତ୍ରର ଚାରିପାଖର ସମୁଦାୟ ଦୈର୍ଘ୍ୟ ହିସାବ କରେ।',
@@ -121,7 +121,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Area of Square (ବର୍ଗକ୍ଷେତ୍ରର କ୍ଷେତ୍ରଫଳ)', 
     formula: 'A = a²', 
-    type: _FormulaType.squareArea,
+    type: FormulaType.squareArea,
     category: 'Geometry',
     descEn: 'Calculates the surface area enclosed by a square.',
     descOr: 'ଏକ ବର୍ଗକ୍ଷେତ୍ର ମଧ୍ୟରେ ଥିବା ସମୁଦାୟ କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
@@ -129,7 +129,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Area of Triangle (ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ)', 
     formula: 'A = ½ × b × h', 
-    type: _FormulaType.triangleArea,
+    type: FormulaType.triangleArea,
     category: 'Geometry',
     descEn: 'Calculates the space enclosed by a triangle using its base and height.',
     descOr: 'ଭୂମି ଏବଂ ଉଚ୍ଚତା ବ୍ୟବହାର କରି ଏକ ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
@@ -137,7 +137,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Volume of Cube (ଘନର ଆୟତନ)', 
     formula: 'V = a³', 
-    type: _FormulaType.cubeVolume,
+    type: FormulaType.cubeVolume,
     category: 'Geometry',
     descEn: 'Calculates the total 3D space occupied by a cube.',
     descOr: 'ଏକ ଘନ (Cube) ର ସମୁଦାୟ ଆୟତନ ହିସାବ କରେ।',
@@ -145,7 +145,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Volume of Cuboid (ଆୟତଘନର ଆୟତନ)', 
     formula: 'V = l × w × h', 
-    type: _FormulaType.cuboidVolume,
+    type: FormulaType.cuboidVolume,
     category: 'Geometry',
     descEn: 'Calculates the 3D space enclosed by a rectangular cuboid.',
     descOr: 'ଏକ ଆୟତଘନ (Cuboid) ର ସମୁଦାୟ ଆୟତନ ହିସାବ କରେ।',
@@ -155,7 +155,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Area of Triangle (Trig) (ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ)', 
     formula: 'A = ½ ab sin(C)', 
-    type: _FormulaType.triangleAreaTrig,
+    type: FormulaType.triangleAreaTrig,
     category: 'Trigonometry',
     descEn: 'Calculates the area of a triangle using two sides and the included angle.',
     descOr: 'ଦୁଇଟି ବାହୁ ଏବଂ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣ ବ୍ୟବହାର କରି ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
@@ -165,7 +165,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Speed, Distance, Time (ବେଗ, ଦୂରତା, ସମୟ)', 
     formula: 's = d / t', 
-    type: _FormulaType.speedDistanceTime,
+    type: FormulaType.speedDistanceTime,
     category: 'Science',
     descEn: 'Calculates the speed of an object based on distance traveled over time.',
     descOr: 'ଦୂରତା ଏବଂ ସମୟ ଉପରେ ଭିତ୍ତି କରି ଏକ ବସ୍ତୁର ବେଗ ହିସାବ କରେ।',
@@ -173,7 +173,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Fahrenheit to Celsius (ଫାରେନହାଇଟରୁ ସେଲସିୟସ)', 
     formula: 'C = (F - 32) × 5/9', 
-    type: _FormulaType.fahrenheitToCelsius,
+    type: FormulaType.fahrenheitToCelsius,
     category: 'Science',
     descEn: 'Converts temperature from the Fahrenheit scale to the Celsius scale.',
     descOr: 'ତାପମାତ୍ରାକୁ ଫାରେନହାଇଟ୍ ରୁ ସେଲସିୟସ୍ ସ୍କେଲ୍ କୁ ପରିବର୍ତ୍ତନ କରେ।',
@@ -181,7 +181,7 @@ const _allFormulas = [
   FormulaData(
     title: 'Celsius to Fahrenheit (ସେଲସିୟସରୁ ଫାରେନହାଇଟ)', 
     formula: 'F = (C × 9/5) + 32', 
-    type: _FormulaType.celsiusToFahrenheit,
+    type: FormulaType.celsiusToFahrenheit,
     category: 'Science',
     descEn: 'Converts temperature from the Celsius scale to the Fahrenheit scale.',
     descOr: 'ତାପମାତ୍ରାକୁ ସେଲସିୟସ୍ ରୁ ଫାରେନହାଇଟ୍ ସ୍କେଲ୍ କୁ ପରିବର୍ତ୍ତନ କରେ।',
@@ -456,23 +456,23 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
   void _setupControllers() {
     List<String> keys = [];
     switch (widget.formulaData.type) {
-      case _FormulaType.simpleInterest: keys = ['P', 'R', 'T']; break;
-      case _FormulaType.circleArea: keys = ['r']; break;
-      case _FormulaType.circleCircumference: keys = ['r']; break;
-      case _FormulaType.pythagoras: keys = ['a', 'b']; break;
-      case _FormulaType.cylinderVolume: keys = ['r', 'h']; break;
-      case _FormulaType.quadratic: keys = ['a', 'b', 'c']; break;
-      case _FormulaType.rectanglePerimeter: keys = ['l', 'w']; break;
-      case _FormulaType.rectangleArea: keys = ['l', 'w']; break;
-      case _FormulaType.squarePerimeter: keys = ['a']; break;
-      case _FormulaType.squareArea: keys = ['a']; break;
-      case _FormulaType.triangleArea: keys = ['b', 'h']; break;
-      case _FormulaType.cubeVolume: keys = ['a']; break;
-      case _FormulaType.cuboidVolume: keys = ['l', 'w', 'h']; break;
-      case _FormulaType.speedDistanceTime: keys = ['d', 't']; break;
-      case _FormulaType.fahrenheitToCelsius: keys = ['F']; break;
-      case _FormulaType.celsiusToFahrenheit: keys = ['C']; break;
-      case _FormulaType.triangleAreaTrig: keys = ['a', 'b', 'C (deg)']; break;
+      case FormulaType.simpleInterest: keys = ['P', 'R', 'T']; break;
+      case FormulaType.circleArea: keys = ['r']; break;
+      case FormulaType.circleCircumference: keys = ['r']; break;
+      case FormulaType.pythagoras: keys = ['a', 'b']; break;
+      case FormulaType.cylinderVolume: keys = ['r', 'h']; break;
+      case FormulaType.quadratic: keys = ['a', 'b', 'c']; break;
+      case FormulaType.rectanglePerimeter: keys = ['l', 'w']; break;
+      case FormulaType.rectangleArea: keys = ['l', 'w']; break;
+      case FormulaType.squarePerimeter: keys = ['a']; break;
+      case FormulaType.squareArea: keys = ['a']; break;
+      case FormulaType.triangleArea: keys = ['b', 'h']; break;
+      case FormulaType.cubeVolume: keys = ['a']; break;
+      case FormulaType.cuboidVolume: keys = ['l', 'w', 'h']; break;
+      case FormulaType.speedDistanceTime: keys = ['d', 't']; break;
+      case FormulaType.fahrenheitToCelsius: keys = ['F']; break;
+      case FormulaType.celsiusToFahrenheit: keys = ['C']; break;
+      case FormulaType.triangleAreaTrig: keys = ['a', 'b', 'C (deg)']; break;
     }
     for (var key in keys) {
       _controllers[key] = TextEditingController();
@@ -485,31 +485,31 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
       _result = null;
       try {
         switch (widget.formulaData.type) {
-          case _FormulaType.simpleInterest:
+          case FormulaType.simpleInterest:
             final p = double.tryParse(_controllers['P']!.text);
             final r = double.tryParse(_controllers['R']!.text);
             final t = double.tryParse(_controllers['T']!.text);
             if (p != null && r != null && t != null) _result = 'SI = ${((p * r * t) / 100).toStringAsFixed(2)}';
             break;
-          case _FormulaType.circleArea:
+          case FormulaType.circleArea:
             final r = double.tryParse(_controllers['r']!.text);
             if (r != null) _result = 'A = ${(pi * r * r).toStringAsFixed(4)}';
             break;
-          case _FormulaType.circleCircumference:
+          case FormulaType.circleCircumference:
             final r = double.tryParse(_controllers['r']!.text);
             if (r != null) _result = 'C = ${(2 * pi * r).toStringAsFixed(4)}';
             break;
-          case _FormulaType.pythagoras:
+          case FormulaType.pythagoras:
             final a = double.tryParse(_controllers['a']!.text);
             final b = double.tryParse(_controllers['b']!.text);
             if (a != null && b != null) _result = 'c = ${sqrt((a * a) + (b * b)).toStringAsFixed(4)}';
             break;
-          case _FormulaType.cylinderVolume:
+          case FormulaType.cylinderVolume:
             final r = double.tryParse(_controllers['r']!.text);
             final h = double.tryParse(_controllers['h']!.text);
             if (r != null && h != null) _result = 'V = ${(pi * r * r * h).toStringAsFixed(4)}';
             break;
-          case _FormulaType.quadratic:
+          case FormulaType.quadratic:
             final a = double.tryParse(_controllers['a']!.text);
             final b = double.tryParse(_controllers['b']!.text);
             final c = double.tryParse(_controllers['c']!.text);
@@ -532,53 +532,53 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
               }
             }
             break;
-          case _FormulaType.rectanglePerimeter:
+          case FormulaType.rectanglePerimeter:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
             if (l != null && w != null) _result = 'P = ${(2 * (l + w)).toStringAsFixed(2)}';
             break;
-          case _FormulaType.rectangleArea:
+          case FormulaType.rectangleArea:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
             if (l != null && w != null) _result = 'A = ${(l * w).toStringAsFixed(2)}';
             break;
-          case _FormulaType.squarePerimeter:
+          case FormulaType.squarePerimeter:
             final a = double.tryParse(_controllers['a']!.text);
             if (a != null) _result = 'P = ${(4 * a).toStringAsFixed(2)}';
             break;
-          case _FormulaType.squareArea:
+          case FormulaType.squareArea:
             final a = double.tryParse(_controllers['a']!.text);
             if (a != null) _result = 'A = ${(a * a).toStringAsFixed(2)}';
             break;
-          case _FormulaType.triangleArea:
+          case FormulaType.triangleArea:
             final b = double.tryParse(_controllers['b']!.text);
             final h = double.tryParse(_controllers['h']!.text);
             if (b != null && h != null) _result = 'A = ${(0.5 * b * h).toStringAsFixed(2)}';
             break;
-          case _FormulaType.cubeVolume:
+          case FormulaType.cubeVolume:
             final a = double.tryParse(_controllers['a']!.text);
             if (a != null) _result = 'V = ${(a * a * a).toStringAsFixed(2)}';
             break;
-          case _FormulaType.cuboidVolume:
+          case FormulaType.cuboidVolume:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
             final h = double.tryParse(_controllers['h']!.text);
             if (l != null && w != null && h != null) _result = 'V = ${(l * w * h).toStringAsFixed(2)}';
             break;
-          case _FormulaType.speedDistanceTime:
+          case FormulaType.speedDistanceTime:
             final d = double.tryParse(_controllers['d']!.text);
             final t = double.tryParse(_controllers['t']!.text);
             if (d != null && t != null && t != 0) _result = 's = ${(d / t).toStringAsFixed(2)}';
             break;
-          case _FormulaType.fahrenheitToCelsius:
+          case FormulaType.fahrenheitToCelsius:
             final f = double.tryParse(_controllers['F']!.text);
             if (f != null) _result = 'C = ${((f - 32) * 5 / 9).toStringAsFixed(2)}°C';
             break;
-          case _FormulaType.celsiusToFahrenheit:
+          case FormulaType.celsiusToFahrenheit:
             final c = double.tryParse(_controllers['C']!.text);
             if (c != null) _result = 'F = ${((c * 9 / 5) + 32).toStringAsFixed(2)}°F';
             break;
-          case _FormulaType.triangleAreaTrig:
+          case FormulaType.triangleAreaTrig:
             final a = double.tryParse(_controllers['a']!.text);
             final b = double.tryParse(_controllers['b']!.text);
             final angleDeg = double.tryParse(_controllers['C (deg)']!.text);
@@ -596,58 +596,58 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
 
   String _getHint(String key) {
     switch (widget.formulaData.type) {
-      case _FormulaType.simpleInterest:
+      case FormulaType.simpleInterest:
         if (key == 'P') return 'Principal (e.g. 1000)';
         if (key == 'R') return 'Rate % (e.g. 5)';
         if (key == 'T') return 'Time in years (e.g. 2)';
         break;
-      case _FormulaType.circleArea:
-      case _FormulaType.circleCircumference:
+      case FormulaType.circleArea:
+      case FormulaType.circleCircumference:
         if (key == 'r') return 'Radius (e.g. 5)';
         break;
-      case _FormulaType.pythagoras:
+      case FormulaType.pythagoras:
         if (key == 'a') return 'Side a (e.g. 3)';
         if (key == 'b') return 'Side b (e.g. 4)';
         break;
-      case _FormulaType.cylinderVolume:
+      case FormulaType.cylinderVolume:
         if (key == 'r') return 'Radius (e.g. 3)';
         if (key == 'h') return 'Height (e.g. 10)';
         break;
-      case _FormulaType.quadratic:
+      case FormulaType.quadratic:
         if (key == 'a') return 'Coefficient a';
         if (key == 'b') return 'Coefficient b';
         if (key == 'c') return 'Constant c';
         break;
-      case _FormulaType.rectanglePerimeter:
-      case _FormulaType.rectangleArea:
+      case FormulaType.rectanglePerimeter:
+      case FormulaType.rectangleArea:
         if (key == 'l') return 'Length (e.g. 5)';
         if (key == 'w') return 'Width (e.g. 3)';
         break;
-      case _FormulaType.squarePerimeter:
-      case _FormulaType.squareArea:
-      case _FormulaType.cubeVolume:
+      case FormulaType.squarePerimeter:
+      case FormulaType.squareArea:
+      case FormulaType.cubeVolume:
         if (key == 'a') return 'Side length (e.g. 4)';
         break;
-      case _FormulaType.triangleArea:
+      case FormulaType.triangleArea:
         if (key == 'b') return 'Base (e.g. 10)';
         if (key == 'h') return 'Height (e.g. 5)';
         break;
-      case _FormulaType.cuboidVolume:
+      case FormulaType.cuboidVolume:
         if (key == 'l') return 'Length (e.g. 5)';
         if (key == 'w') return 'Width (e.g. 3)';
         if (key == 'h') return 'Height (e.g. 2)';
         break;
-      case _FormulaType.speedDistanceTime:
+      case FormulaType.speedDistanceTime:
         if (key == 'd') return 'Distance (e.g. 100)';
         if (key == 't') return 'Time (e.g. 2)';
         break;
-      case _FormulaType.fahrenheitToCelsius:
+      case FormulaType.fahrenheitToCelsius:
         if (key == 'F') return 'Fahrenheit (e.g. 98.6)';
         break;
-      case _FormulaType.celsiusToFahrenheit:
+      case FormulaType.celsiusToFahrenheit:
         if (key == 'C') return 'Celsius (e.g. 37)';
         break;
-      case _FormulaType.triangleAreaTrig:
+      case FormulaType.triangleAreaTrig:
         if (key == 'a') return 'Side a (e.g. 10)';
         if (key == 'b') return 'Side b (e.g. 12)';
         if (key == 'C (deg)') return 'Included Angle (e.g. 30)';
