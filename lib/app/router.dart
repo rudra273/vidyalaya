@@ -21,6 +21,9 @@ import '../screens/learn/learn_screen.dart';
 import '../screens/learn/math_formulas_screen.dart';
 import '../screens/learn/periodic_table_screen.dart';
 import '../screens/learn/timeline_screen.dart';
+import '../screens/learn/diagrams_screen.dart';
+import '../screens/learn/diagram_viewer_screen.dart';
+import '../data/seed/diagrams_data.dart';
 import '../screens/progress/progress_screen.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -110,6 +113,19 @@ final routerProvider = Provider<GoRouter>((ref) {
       path: '/learn/timeline',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const TimelineScreen(),
+    ),
+    GoRoute(
+      path: '/learn/diagrams',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const DiagramsScreen(),
+    ),
+    GoRoute(
+      path: '/learn/diagrams/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final diagram = state.extra as Diagram;
+        return DiagramViewerScreen(diagram: diagram);
+      },
     ),
     GoRoute(
       path: '/class-selector',

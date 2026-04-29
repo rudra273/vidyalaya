@@ -672,158 +672,160 @@ class _CalculatorSheetState extends State<_CalculatorSheet> {
         left: 24,
         right: 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  widget.formulaData.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Formula Descriptions (English and Odia)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? cs.surfaceContainerHighest.withValues(alpha: 0.3) : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.info_outline, size: 18, color: cs.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        widget.formulaData.descEn,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurface,
-                        ),
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: Text(
+                    widget.formulaData.title,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 1),
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.translate, size: 18, color: cs.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        widget.formulaData.descOr,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurface,
-                          height: 1.5,
-                        ),
-                      ),
-                    ),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
             ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
-            ),
-            child: Text(
-              widget.formulaData.formula,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 18,
-                color: cs.primary,
-                fontWeight: FontWeight.bold,
+            
+            const SizedBox(height: 12),
+            
+            // Formula Descriptions (English and Odia)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? cs.surfaceContainerHighest.withValues(alpha: 0.3) : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, size: 18, color: cs.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          widget.formulaData.descEn,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.translate, size: 18, color: cs.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          widget.formulaData.descOr,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          ..._controllers.entries.map((e) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: TextField(
-                controller: e.value,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                decoration: InputDecoration(
-                  labelText: _getHint(e.key),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      '${e.key} =',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
-                        color: cs.primary,
-                        fontSize: 16,
+            
+            const SizedBox(height: 16),
+            
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                widget.formulaData.formula,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 18,
+                  color: cs.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ..._controllers.entries.map((e) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: TextField(
+                  controller: e.value,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: InputDecoration(
+                    labelText: _getHint(e.key),
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        '${e.key} =',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.bold,
+                          color: cs.primary,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
+              );
+            }),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: _result != null ? cs.primary : cs.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
               ),
-            );
-          }),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _result != null ? cs.primary : cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Result',
-                  style: TextStyle(
-                    color: _result != null ? cs.onPrimary.withValues(alpha: 0.8) : AppColors.textMuted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+              child: Column(
+                children: [
+                  Text(
+                    'Result',
+                    style: TextStyle(
+                      color: _result != null ? cs.onPrimary.withValues(alpha: 0.8) : AppColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _result ?? 'Enter values to calculate',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: _result != null ? cs.onPrimary : AppColors.textMuted,
+                  const SizedBox(height: 8),
+                  Text(
+                    _result ?? 'Enter values to calculate',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: _result != null ? cs.onPrimary : AppColors.textMuted,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

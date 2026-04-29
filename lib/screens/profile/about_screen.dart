@@ -52,7 +52,9 @@ class AboutScreen extends StatelessWidget {
               content: '• Clean UI/UX: A highly student-friendly, distraction-free interface designed to make learning intuitive.\n'
                        '• Tailored Reading Modes: Enjoy customizable reading modes, including Sepia and Dark Mode, specifically tailored to reduce eye strain during night-time reading.\n'
                        '• True Offline Access: Download your books once and read them anytime, anywhere—no active internet connection is required.\n'
-                       '• Study Management: Keep your education on track by setting daily timetables and monitoring your habit progress.',
+                       '• Interactive Learning: Explore math formulas, science diagrams, the periodic table, and historical timelines in the dedicated Learn module.\n'
+                       '• Progress Analytics: Monitor your daily study habits, build reading streaks, and view detailed analytics of your learning journey over time.\n'
+                       '• Study Management: Keep your education on track by setting daily timetables and organizing tasks.',
             ),
 
             Container(
