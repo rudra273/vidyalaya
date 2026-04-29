@@ -178,7 +178,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Version 0.1.0',
+                    'Version 1.0.0',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
 
