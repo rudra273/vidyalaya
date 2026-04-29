@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/highlight.dart';
 import '../models/timetable_period.dart';
+import '../models/time_slot.dart';
 
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
@@ -151,6 +152,31 @@ class UserPrefsRepository {
 
   // ─── Timetable ──────────────────────────────────────────────────────────
 
+  static const _timeSlotsKey = 'time_slots_data';
+
+  List<TimeSlot> getTimeSlots() {
+    final jsonStr = _prefs.getString(_timeSlotsKey);
+    if (jsonStr == null) {
+      // Default time slots
+      return [
+        const TimeSlot(id: 'ts1', name: 'Period 1', startTime: '10:30', endTime: '11:15'),
+        const TimeSlot(id: 'ts2', name: 'Period 2', startTime: '11:15', endTime: '12:00'),
+        const TimeSlot(id: 'ts3', name: 'Short Break', startTime: '12:00', endTime: '12:15', isBreak: true),
+        const TimeSlot(id: 'ts4', name: 'Period 3', startTime: '12:15', endTime: '13:00'),
+        const TimeSlot(id: 'ts5', name: 'Lunch', startTime: '13:00', endTime: '14:00', isBreak: true),
+        const TimeSlot(id: 'ts6', name: 'Period 4', startTime: '14:00', endTime: '14:45'),
+        const TimeSlot(id: 'ts7', name: 'Period 5', startTime: '15:00', endTime: '15:45'),
+      ];
+    }
+    final list = jsonDecode(jsonStr) as List;
+    return list.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<void> saveTimeSlots(List<TimeSlot> slots) async {
+    final jsonList = slots.map((s) => s.toJson()).toList();
+    await _prefs.setString(_timeSlotsKey, jsonEncode(jsonList));
+  }
+
   Map<String, List<TimetablePeriod>> getTimetable() {
     final jsonStr = _prefs.getString(_timetableKey);
     if (jsonStr == null) return {};
@@ -169,5 +195,78 @@ class UserPrefsRepository {
       return MapEntry(key, value.map((p) => p.toJson()).toList());
     });
     await _prefs.setString(_timetableKey, jsonEncode(map));
+  }
+
+  // ─── Progress Analytics ──────────────────────────────────────────────────
+
+  static const _totalStudySecondsKey = 'total_study_seconds';
+  static const _totalPagesReadKey = 'total_pages_read';
+  static const _pagesReadTodayKey = 'pages_read_today';
+  static const _lastActiveDateKey = 'last_active_date';
+  static const _currentStreakKey = 'current_streak';
+  static const _subjectProgressPrefix = 'subject_progress_';
+
+  int getTotalStudySeconds() => _prefs.getInt(_totalStudySecondsKey) ?? 0;
+  
+  Future<void> addStudySeconds(int seconds) async {
+    final current = getTotalStudySeconds();
+    await _prefs.setInt(_totalStudySecondsKey, current + seconds);
+  }
+
+  int getTotalPagesRead() => _prefs.getInt(_totalPagesReadKey) ?? 0;
+  
+  int getPagesReadToday() {
+    _markActiveDay();
+    return _prefs.getInt(_pagesReadTodayKey) ?? 0;
+  }
+
+  Future<void> addPagesRead(int pages, String subject) async {
+    _markActiveDay();
+    
+    final currentTotal = getTotalPagesRead();
+    await _prefs.setInt(_totalPagesReadKey, currentTotal + pages);
+    
+    final currentToday = _prefs.getInt(_pagesReadTodayKey) ?? 0;
+    await _prefs.setInt(_pagesReadTodayKey, currentToday + pages);
+
+    final subjectKey = '$_subjectProgressPrefix$subject';
+    final currentSubject = _prefs.getInt(subjectKey) ?? 0;
+    await _prefs.setInt(subjectKey, currentSubject + pages);
+  }
+
+  int getSubjectPages(String subject) {
+    return _prefs.getInt('$_subjectProgressPrefix$subject') ?? 0;
+  }
+
+  int getCurrentStreak() {
+    _markActiveDay();
+    return _prefs.getInt(_currentStreakKey) ?? 0;
+  }
+
+  void _markActiveDay() {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    final lastDate = _prefs.getString(_lastActiveDateKey);
+    
+    if (lastDate != today) {
+      _prefs.setInt(_pagesReadTodayKey, 0);
+      
+      int streak = _prefs.getInt(_currentStreakKey) ?? 0;
+      if (lastDate != null) {
+        final last = DateTime.parse(lastDate);
+        final current = DateTime.parse(today);
+        final diff = current.difference(last).inDays;
+        
+        if (diff == 1) {
+          streak += 1;
+        } else {
+          streak = 1;
+        }
+      } else {
+        streak = 1;
+      }
+      
+      _prefs.setInt(_currentStreakKey, streak);
+      _prefs.setString(_lastActiveDateKey, today);
+    }
   }
 }

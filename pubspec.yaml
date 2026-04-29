@@ -27,10 +27,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+    - assets/diagrams/
 
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/icon/image.png"
+  image_path: "assets/icon/square.png"
   remove_alpha_ios: true
   min_sdk_android: 21

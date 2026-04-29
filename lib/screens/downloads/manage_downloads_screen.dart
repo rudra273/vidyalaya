@@ -166,38 +166,64 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
         slivers: [
           if (downloadedBooks.isNotEmpty) ...[
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: Text('Downloaded (${downloadedBooks.length})', 
-                  style: Theme.of(context).textTheme.titleMedium),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildBookItem(downloadedBooks[index], true, isDark, cs),
-                childCount: downloadedBooks.length,
-              ),
-            ),
+            ..._buildBookGroups(downloadedBooks, true, isDark, cs),
           ],
           if (notDownloadedBooks.isNotEmpty) ...[
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: Text('Available for Download (${notDownloadedBooks.length})', 
-                  style: Theme.of(context).textTheme.titleMedium),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) => _buildBookItem(notDownloadedBooks[index], false, isDark, cs),
-                childCount: notDownloadedBooks.length,
-              ),
-            ),
+            ..._buildBookGroups(notDownloadedBooks, false, isDark, cs),
           ],
           const SliverPadding(padding: EdgeInsets.only(bottom: 30)),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildBookGroups(List<Book> books, bool isDownloaded, bool isDark, ColorScheme cs) {
+    if (books.isEmpty) return [];
+    
+    final grouped = <int, List<Book>>{};
+    for (var b in books) {
+      grouped.putIfAbsent(b.classNumber, () => []).add(b);
+    }
+    
+    final sortedKeys = grouped.keys.toList()..sort();
+    final slivers = <Widget>[];
+    
+    for (var classNum in sortedKeys) {
+      slivers.add(
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+          sliver: SliverToBoxAdapter(
+            child: Text('Class $classNum', 
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: cs.onSurface,
+                fontWeight: FontWeight.w600,
+              )),
+          ),
+        ),
+      );
+      slivers.add(
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => _buildBookItem(grouped[classNum]![index], isDownloaded, isDark, cs),
+            childCount: grouped[classNum]!.length,
+          ),
+        ),
+      );
+    }
+    return slivers;
   }
 
   Widget _buildBookItem(Book book, bool isDownloaded, bool isDark, ColorScheme cs) {

@@ -9,6 +9,7 @@ import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/privacy_policy_screen.dart';
+import '../screens/profile/about_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
@@ -16,6 +17,14 @@ import '../screens/downloads/manage_downloads_screen.dart';
 import '../screens/timetable/timetable_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
 import '../widgets/app_shell.dart';
+import '../screens/learn/learn_screen.dart';
+import '../screens/learn/math_formulas_screen.dart';
+import '../screens/learn/periodic_table_screen.dart';
+import '../screens/learn/timeline_screen.dart';
+import '../screens/learn/diagrams_screen.dart';
+import '../screens/learn/diagram_viewer_screen.dart';
+import '../data/seed/diagrams_data.dart';
+import '../screens/progress/progress_screen.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
 
@@ -58,93 +67,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         GoRoute(
           path: '/learn',
-          pageBuilder: (context, state) {
-            final cs = Theme.of(context).colorScheme;
-            return NoTransitionPage(
-              child: Scaffold(
-                body: SafeArea(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('🎓', style: TextStyle(fontSize: 56)),
-                          const SizedBox(height: 20),
-                          Text('Learn', style: Theme.of(context).textTheme.displaySmall),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Video lessons, chapter summaries, and interactive quizzes — all coming soon!',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
-                                ),
-                          ),
-                          const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: cs.secondary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Coming Soon',
-                              style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: LearnScreen(),
+          ),
         ),
         GoRoute(
           path: '/progress',
-          pageBuilder: (context, state) {
-            final cs = Theme.of(context).colorScheme;
-            return NoTransitionPage(
-              child: Scaffold(
-                body: SafeArea(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('📊', style: TextStyle(fontSize: 56)),
-                          const SizedBox(height: 20),
-                          Text('Progress', style: Theme.of(context).textTheme.displaySmall),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Track your reading streak, study time per subject, and books completed — coming soon!',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
-                                ),
-                          ),
-                          const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: cs.secondary,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'Coming Soon',
-                              style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: ProgressScreen(),
+          ),
         ),
       ],
     ),
@@ -159,9 +90,42 @@ final routerProvider = Provider<GoRouter>((ref) {
       builder: (context, state) => const PrivacyPolicyScreen(),
     ),
     GoRoute(
+      path: '/about',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const AboutScreen(),
+    ),
+    GoRoute(
       path: '/welcome',
       parentNavigatorKey: _rootNavigatorKey,
       builder: (context, state) => const WelcomeScreen(),
+    ),
+    GoRoute(
+      path: '/learn/math-formulas',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const MathFormulasScreen(),
+    ),
+    GoRoute(
+      path: '/learn/periodic-table',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const PeriodicTableScreen(),
+    ),
+    GoRoute(
+      path: '/learn/timeline',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const TimelineScreen(),
+    ),
+    GoRoute(
+      path: '/learn/diagrams',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) => const DiagramsScreen(),
+    ),
+    GoRoute(
+      path: '/learn/diagrams/:id',
+      parentNavigatorKey: _rootNavigatorKey,
+      builder: (context, state) {
+        final diagram = state.extra as Diagram;
+        return DiagramViewerScreen(diagram: diagram);
+      },
     ),
     GoRoute(
       path: '/class-selector',

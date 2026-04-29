@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/user_selection_provider.dart';
+import '../../data/models/book.dart';
 import '../../widgets/empty_state.dart';
 import 'widgets/filter_chips_bar.dart';
-import 'widgets/book_card.dart';
+import 'widgets/book_grid_card.dart';
 
 class MyBooksScreen extends ConsumerWidget {
   const MyBooksScreen({super.key});
@@ -17,8 +18,14 @@ class MyBooksScreen extends ConsumerWidget {
     final filteredBooks = ref.watch(filteredBooksProvider);
     final allSelectedBooks = ref.watch(selectedBooksProvider);
 
-
     final hasSelection = selectedClasses.isNotEmpty;
+
+    // Group books by class
+    final booksByClass = <int, List<Book>>{};
+    for (var book in filteredBooks) {
+      booksByClass.putIfAbsent(book.classNumber, () => []).add(book);
+    }
+    final sortedClasses = booksByClass.keys.toList()..sort();
 
     return SafeArea(
       child: Column(
@@ -61,8 +68,7 @@ class MyBooksScreen extends ConsumerWidget {
                 ? EmptyState(
                     emoji: '📖',
                     title: 'No class selected',
-                    subtitle:
-                        'Select your class to get started with your textbooks.',
+                    subtitle: 'Select your class to get started with your textbooks.',
                     ctaLabel: 'Select Class',
                     onCtaTap: () => context.push('/class-selector'),
                   )
@@ -72,22 +78,50 @@ class MyBooksScreen extends ConsumerWidget {
                         title: 'No books found',
                         subtitle: 'Try a different subject filter.',
                       )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.screenPadding,
-                        ),
-                        itemCount: filteredBooks.length + 1, // +1 for add banner
-                        itemBuilder: (context, index) {
-                          if (index == filteredBooks.length) {
-                            return _AddClassBanner(
-                              onTap: () => context.push('/class-selector'),
-                            );
-                          }
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: BookCard(book: filteredBooks[index]),
-                          );
-                        },
+                    : CustomScrollView(
+                        slivers: [
+                          for (var classNum in sortedClasses) ...[
+                            if (selectedClasses.length > 1)
+                              SliverPadding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 12),
+                                sliver: SliverToBoxAdapter(
+                                  child: Text(
+                                    'Class $classNum',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+                              sliver: SliverGrid(
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio: 0.85,
+                                ),
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    return BookGridCard(book: booksByClass[classNum]![index]);
+                                  },
+                                  childCount: booksByClass[classNum]!.length,
+                                ),
+                              ),
+                            ),
+                          ],
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.screenPadding, vertical: 24),
+                            sliver: SliverToBoxAdapter(
+                              child: _AddClassBanner(
+                                onTap: () => context.push('/class-selector'),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
           ),
         ],
