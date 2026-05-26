@@ -1,0 +1,160 @@
+import 'dart:convert';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:vidyalaya/data/models/learn_assist.dart';
+import 'package:vidyalaya/data/services/learn_assist_service.dart';
+
+void main() {
+  group('LearnAssistRequest', () {
+    test('serializes with a selected subject', () {
+      const request = LearnAssistRequest(
+        query: 'Who was Major Somnath Sharma?',
+        board: 'scert_odisha',
+        classNo: 8,
+        subject: 'english',
+        language: 'en',
+        debug: false,
+      );
+
+      expect(request.toJson(), {
+        'query': 'Who was Major Somnath Sharma?',
+        'board': 'scert_odisha',
+        'class_no': 8,
+        'subject': 'english',
+        'language': 'en',
+        'debug': false,
+      });
+    });
+
+    test('serializes subject as null for all subjects', () {
+      const request = LearnAssistRequest(
+        query: 'Question',
+        board: 'scert_odisha',
+        classNo: 8,
+        subject: null,
+        language: 'en',
+      );
+
+      expect(request.toJson()['subject'], isNull);
+      expect(request.toJson()['debug'], isFalse);
+    });
+  });
+
+  group('LearnAssistResponse', () {
+    test('parses citations with int, array, and null page_no values', () {
+      final response = LearnAssistResponse.fromJson({
+        'answer': 'Answer [1]',
+        'citations': [
+          {
+            'label': '[1]',
+            'book_name': 'Jasmine',
+            'source_pdf': 'English_Jasmine.pdf',
+            'page_no': 69,
+            'score': 0.75,
+            'chunk_ids': ['chunk_1'],
+          },
+          {
+            'label': '[2]',
+            'book_name': 'Science',
+            'source_pdf': null,
+            'page_no': [10, 11],
+            'score': null,
+            'chunk_ids': ['chunk_2'],
+          },
+          {
+            'label': '[3]',
+            'book_name': null,
+            'source_pdf': null,
+            'page_no': null,
+            'score': null,
+            'chunk_ids': [],
+          },
+        ],
+        'retrieval': {
+          'query': 'Question',
+          'board': 'scert_odisha',
+          'class_no': 8,
+          'subject_filter': 'english',
+          'subjects_found': ['english'],
+          'pages_found': [62, 69],
+          'top_score': 0.75,
+          'context_block_count': 4,
+          'tool_used': true,
+        },
+        'context_blocks': null,
+      });
+
+      expect(response.answer, 'Answer [1]');
+      expect(response.citations[0].pageNumbers, [69]);
+      expect(response.citations[1].pageNumbers, [10, 11]);
+      expect(response.citations[2].pageNumbers, isEmpty);
+      expect(response.retrieval.subjectFilter, 'english');
+      expect(response.retrieval.toolUsed, isTrue);
+    });
+
+    test('parses empty citations', () {
+      final response = LearnAssistResponse.fromJson({
+        'answer': 'Answer',
+        'citations': [],
+        'retrieval': {'class_no': 8},
+      });
+
+      expect(response.citations, isEmpty);
+    });
+  });
+
+  group('LearnAssistService', () {
+    test('throws API exception for error responses', () async {
+      final service = LearnAssistService(
+        client: MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'error': {'code': 'bad_request', 'message': 'query is required'},
+            }),
+            400,
+          ),
+        ),
+      );
+
+      expect(
+        service.chat(
+          const LearnAssistRequest(
+            query: '',
+            board: 'scert_odisha',
+            classNo: 8,
+          ),
+        ),
+        throwsA(
+          isA<LearnAssistApiException>()
+              .having((error) => error.code, 'code', 'bad_request')
+              .having((error) => error.message, 'message', 'query is required'),
+        ),
+      );
+    });
+
+    test('throws API exception for invalid JSON', () async {
+      final service = LearnAssistService(
+        client: MockClient((_) async => http.Response('not json', 200)),
+      );
+
+      expect(
+        service.chat(
+          const LearnAssistRequest(
+            query: 'Question',
+            board: 'scert_odisha',
+            classNo: 8,
+          ),
+        ),
+        throwsA(
+          isA<LearnAssistApiException>().having(
+            (error) => error.code,
+            'code',
+            'invalid_response',
+          ),
+        ),
+      );
+    });
+  });
+}

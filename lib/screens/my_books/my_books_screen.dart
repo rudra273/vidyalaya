@@ -15,6 +15,7 @@ class MyBooksScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedClasses = ref.watch(userSelectionProvider);
+    final selectedBoard = ref.watch(userBoardProvider);
     final filteredBooks = ref.watch(filteredBooksProvider);
     final allSelectedBooks = ref.watch(selectedBooksProvider);
 
@@ -34,7 +35,10 @@ class MyBooksScreen extends ConsumerWidget {
           // ── Header ────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 0,
+              AppSpacing.screenPadding,
+              16,
+              AppSpacing.screenPadding,
+              0,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +50,7 @@ class MyBooksScreen extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   hasSelection
-                      ? '${selectedClasses.map((c) => "Class $c").join(", ")} · Odia Medium · ${allSelectedBooks.length} books'
+                      ? '${selectedClasses.map((c) => "Class $c").join(", ")} · $selectedBoard · ${allSelectedBooks.length} books'
                       : 'No class selected',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -68,61 +72,72 @@ class MyBooksScreen extends ConsumerWidget {
                 ? EmptyState(
                     emoji: '📖',
                     title: 'No class selected',
-                    subtitle: 'Select your class to get started with your textbooks.',
+                    subtitle:
+                        'Select your class to get started with your textbooks.',
                     ctaLabel: 'Select Class',
                     onCtaTap: () => context.push('/class-selector'),
                   )
                 : filteredBooks.isEmpty
-                    ? EmptyState(
-                        emoji: '🔍',
-                        title: 'No books found',
-                        subtitle: 'Try a different subject filter.',
-                      )
-                    : CustomScrollView(
-                        slivers: [
-                          for (var classNum in sortedClasses) ...[
-                            if (selectedClasses.length > 1)
-                              SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 12),
-                                sliver: SliverToBoxAdapter(
-                                  child: Text(
-                                    'Class $classNum',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                ),
+                ? EmptyState(
+                    emoji: '🔍',
+                    title: 'No books found',
+                    subtitle: 'Try a different subject filter.',
+                  )
+                : CustomScrollView(
+                    slivers: [
+                      for (var classNum in sortedClasses) ...[
+                        if (selectedClasses.length > 1)
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.screenPadding,
+                              16,
+                              AppSpacing.screenPadding,
+                              12,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: Text(
+                                'Class $classNum',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
                               ),
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-                              sliver: SliverGrid(
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            ),
+                          ),
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.screenPadding,
+                          ),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
                                   mainAxisSpacing: 16,
                                   crossAxisSpacing: 16,
                                   childAspectRatio: 0.85,
                                 ),
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) {
-                                    return BookGridCard(book: booksByClass[classNum]![index]);
-                                  },
-                                  childCount: booksByClass[classNum]!.length,
-                                ),
-                              ),
-                            ),
-                          ],
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.screenPadding, vertical: 24),
-                            sliver: SliverToBoxAdapter(
-                              child: _AddClassBanner(
-                                onTap: () => context.push('/class-selector'),
-                              ),
-                            ),
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              return BookGridCard(
+                                book: booksByClass[classNum]![index],
+                              );
+                            }, childCount: booksByClass[classNum]!.length),
                           ),
-                        ],
+                        ),
+                      ],
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screenPadding,
+                          vertical: 24,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: _AddClassBanner(
+                            onTap: () => context.push('/class-selector'),
+                          ),
+                        ),
                       ),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -156,14 +171,13 @@ class _AddClassBanner extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_circle_outline,
-                  size: 20, color: cs.primary),
+              Icon(Icons.add_circle_outline, size: 20, color: cs.primary),
               const SizedBox(width: 8),
               Text(
                 'Add another class',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: cs.primary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: cs.primary),
               ),
             ],
           ),

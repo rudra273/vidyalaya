@@ -8,6 +8,7 @@ import '../models/time_slot.dart';
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
 class UserPrefsRepository {
   static const _selectedClassesKey = 'selected_classes';
+  static const _selectedBoardKey = 'selected_board';
   static const _lastReadBookIdKey = 'last_read_book_id';
   static const _bookPagePrefix = 'book_page_';
   static const _bookmarksPrefix = 'bookmarks_';
@@ -42,6 +43,16 @@ class UserPrefsRepository {
 
   Future<void> setSelectedClasses(Set<int> classes) async {
     await _prefs.setString(_selectedClassesKey, jsonEncode(classes.toList()));
+  }
+
+  // ─── Selected Board ─────────────────────────────────────────────────────
+
+  String getSelectedBoard() {
+    return _prefs.getString(_selectedBoardKey) ?? 'scert_odisha';
+  }
+
+  Future<void> setSelectedBoard(String board) async {
+    await _prefs.setString(_selectedBoardKey, board);
   }
 
   // ─── Last Read Book ─────────────────────────────────────────────────────
@@ -98,14 +109,19 @@ class UserPrefsRepository {
     final jsonStr = _prefs.getString('$_highlightsPrefix$bookId');
     if (jsonStr == null) return [];
     final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => Highlight.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => Highlight.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   List<Highlight> getHighlightsForPage(String bookId, int page) {
     return getHighlights(bookId).where((h) => h.pageNumber == page).toList();
   }
 
-  Future<void> _saveHighlights(String bookId, List<Highlight> highlights) async {
+  Future<void> _saveHighlights(
+    String bookId,
+    List<Highlight> highlights,
+  ) async {
     final json = highlights.map((h) => h.toJson()).toList();
     await _prefs.setString('$_highlightsPrefix$bookId', jsonEncode(json));
   }
@@ -123,7 +139,10 @@ class UserPrefsRepository {
   }
 
   Future<void> updateHighlightNote(
-      String bookId, String highlightId, String? note) async {
+    String bookId,
+    String highlightId,
+    String? note,
+  ) async {
     final highlights = getHighlights(bookId);
     final index = highlights.indexWhere((h) => h.id == highlightId);
     if (index != -1) {
@@ -159,17 +178,56 @@ class UserPrefsRepository {
     if (jsonStr == null) {
       // Default time slots
       return [
-        const TimeSlot(id: 'ts1', name: 'Period 1', startTime: '10:30', endTime: '11:15'),
-        const TimeSlot(id: 'ts2', name: 'Period 2', startTime: '11:15', endTime: '12:00'),
-        const TimeSlot(id: 'ts3', name: 'Short Break', startTime: '12:00', endTime: '12:15', isBreak: true),
-        const TimeSlot(id: 'ts4', name: 'Period 3', startTime: '12:15', endTime: '13:00'),
-        const TimeSlot(id: 'ts5', name: 'Lunch', startTime: '13:00', endTime: '14:00', isBreak: true),
-        const TimeSlot(id: 'ts6', name: 'Period 4', startTime: '14:00', endTime: '14:45'),
-        const TimeSlot(id: 'ts7', name: 'Period 5', startTime: '15:00', endTime: '15:45'),
+        const TimeSlot(
+          id: 'ts1',
+          name: 'Period 1',
+          startTime: '10:30',
+          endTime: '11:15',
+        ),
+        const TimeSlot(
+          id: 'ts2',
+          name: 'Period 2',
+          startTime: '11:15',
+          endTime: '12:00',
+        ),
+        const TimeSlot(
+          id: 'ts3',
+          name: 'Short Break',
+          startTime: '12:00',
+          endTime: '12:15',
+          isBreak: true,
+        ),
+        const TimeSlot(
+          id: 'ts4',
+          name: 'Period 3',
+          startTime: '12:15',
+          endTime: '13:00',
+        ),
+        const TimeSlot(
+          id: 'ts5',
+          name: 'Lunch',
+          startTime: '13:00',
+          endTime: '14:00',
+          isBreak: true,
+        ),
+        const TimeSlot(
+          id: 'ts6',
+          name: 'Period 4',
+          startTime: '14:00',
+          endTime: '14:45',
+        ),
+        const TimeSlot(
+          id: 'ts7',
+          name: 'Period 5',
+          startTime: '15:00',
+          endTime: '15:45',
+        ),
       ];
     }
     final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => TimeSlot.fromJson(e as Map<String, dynamic>)).toList();
+    return list
+        .map((e) => TimeSlot.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> saveTimeSlots(List<TimeSlot> slots) async {
@@ -190,7 +248,9 @@ class UserPrefsRepository {
     });
   }
 
-  Future<void> saveTimetable(Map<String, List<TimetablePeriod>> timetable) async {
+  Future<void> saveTimetable(
+    Map<String, List<TimetablePeriod>> timetable,
+  ) async {
     final map = timetable.map((key, value) {
       return MapEntry(key, value.map((p) => p.toJson()).toList());
     });
@@ -207,14 +267,14 @@ class UserPrefsRepository {
   static const _subjectProgressPrefix = 'subject_progress_';
 
   int getTotalStudySeconds() => _prefs.getInt(_totalStudySecondsKey) ?? 0;
-  
+
   Future<void> addStudySeconds(int seconds) async {
     final current = getTotalStudySeconds();
     await _prefs.setInt(_totalStudySecondsKey, current + seconds);
   }
 
   int getTotalPagesRead() => _prefs.getInt(_totalPagesReadKey) ?? 0;
-  
+
   int getPagesReadToday() {
     _markActiveDay();
     return _prefs.getInt(_pagesReadTodayKey) ?? 0;
@@ -222,10 +282,10 @@ class UserPrefsRepository {
 
   Future<void> addPagesRead(int pages, String subject) async {
     _markActiveDay();
-    
+
     final currentTotal = getTotalPagesRead();
     await _prefs.setInt(_totalPagesReadKey, currentTotal + pages);
-    
+
     final currentToday = _prefs.getInt(_pagesReadTodayKey) ?? 0;
     await _prefs.setInt(_pagesReadTodayKey, currentToday + pages);
 
@@ -246,16 +306,16 @@ class UserPrefsRepository {
   void _markActiveDay() {
     final today = DateTime.now().toIso8601String().split('T')[0];
     final lastDate = _prefs.getString(_lastActiveDateKey);
-    
+
     if (lastDate != today) {
       _prefs.setInt(_pagesReadTodayKey, 0);
-      
+
       int streak = _prefs.getInt(_currentStreakKey) ?? 0;
       if (lastDate != null) {
         final last = DateTime.parse(lastDate);
         final current = DateTime.parse(today);
         final diff = current.difference(last).inDays;
-        
+
         if (diff == 1) {
           streak += 1;
         } else {
@@ -264,7 +324,7 @@ class UserPrefsRepository {
       } else {
         streak = 1;
       }
-      
+
       _prefs.setInt(_currentStreakKey, streak);
       _prefs.setString(_lastActiveDateKey, today);
     }

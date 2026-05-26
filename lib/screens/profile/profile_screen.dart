@@ -25,9 +25,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
+    final selectedBoard = ref.watch(userBoardProvider);
     final cs = Theme.of(context).colorScheme;
     final themeMode = ref.watch(themeModeProvider);
-    final mutedColor = Theme.of(context).textTheme.bodySmall?.color ??
+    final mutedColor =
+        Theme.of(context).textTheme.bodySmall?.color ??
         cs.onSurface.withValues(alpha: 0.5);
 
     return Scaffold(
@@ -79,10 +81,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       style: Theme.of(context).textTheme.headlineMedium,
                       decoration: InputDecoration(
                         hintText: 'Your name',
-                        hintStyle:
-                            Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: mutedColor,
-                                ),
+                        hintStyle: Theme.of(
+                          context,
+                        ).textTheme.headlineMedium?.copyWith(color: mutedColor),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -93,7 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   Text(
-                    'BSE Odisha · Odia Medium',
+                    selectedBoard,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -103,10 +104,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 28),
 
             // ── Settings ──────────────────────────────────────────
-            Text(
-              'Settings',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text('Settings', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
 
             // Theme selector (System, Light, Dark)
@@ -181,7 +179,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     'Version 1.0.0',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-
                 ],
               ),
             ),
@@ -230,19 +227,14 @@ class _SettingsNavRow extends StatelessWidget {
                 color: cs.secondary,
                 shape: BoxShape.circle,
               ),
-              child: Center(
-                child: Icon(icon, size: 20, color: cs.primary),
-              ),
+              child: Center(child: Icon(icon, size: 20, color: cs.primary)),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
@@ -271,10 +263,7 @@ class _ThemeSelector extends StatelessWidget {
   final ThemeMode currentMode;
   final ValueChanged<ThemeMode> onChanged;
 
-  const _ThemeSelector({
-    required this.currentMode,
-    required this.onChanged,
-  });
+  const _ThemeSelector({required this.currentMode, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +335,9 @@ class _ThemeOption extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
+                color: isSelected
+                    ? cs.onPrimary
+                    : cs.onSurface.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 4),
               Text(
@@ -354,7 +345,9 @@ class _ThemeOption extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
+                  color: isSelected
+                      ? cs.onPrimary
+                      : cs.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],

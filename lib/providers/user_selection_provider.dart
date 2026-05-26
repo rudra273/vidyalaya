@@ -31,7 +31,25 @@ class UserSelectionNotifier extends Notifier<Set<int>> {
   }
 }
 
-final userSelectionProvider =
-    NotifierProvider<UserSelectionNotifier, Set<int>>(
+final userSelectionProvider = NotifierProvider<UserSelectionNotifier, Set<int>>(
   UserSelectionNotifier.new,
+);
+
+/// Notifier that manages the user's selected syllabus board.
+class UserBoardNotifier extends Notifier<String> {
+  @override
+  String build() {
+    final repo = ref.read(userPrefsRepositoryProvider);
+    return repo.getSelectedBoard();
+  }
+
+  void setBoard(String board) {
+    state = board;
+    final repo = ref.read(userPrefsRepositoryProvider);
+    repo.setSelectedBoard(board);
+  }
+}
+
+final userBoardProvider = NotifierProvider<UserBoardNotifier, String>(
+  UserBoardNotifier.new,
 );

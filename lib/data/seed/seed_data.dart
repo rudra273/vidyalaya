@@ -13,27 +13,27 @@ import 'scert/scert_class_8.dart';
 
 // ─── Boards ─────────────────────────────────────────────────────────────────
 
-const bseOdisha = Board(
-  id: 'bse_odisha',
-  name: 'BSE Odisha',
+const scertOdisha = Board(
+  id: 'scert_odisha',
+  name: 'scert_odisha',
   state: 'Odisha',
 );
+
+const ncert = Board(id: 'ncert', name: 'ncert', state: 'India');
+
+const List<Board> boards = [scertOdisha, ncert];
 
 // ─── Mediums ────────────────────────────────────────────────────────────────
 
 const odiaMedium = Medium(
   id: 'odia_medium',
   label: 'Odia Medium',
-  boardId: 'bse_odisha',
+  boardId: 'scert_odisha',
 );
 
 // ─── Class Levels ───────────────────────────────────────────────────────────
 
-const class8 = ClassLevel(
-  id: 'cl8',
-  number: 8,
-  mediumId: 'odia_medium',
-);
+const class8 = ClassLevel(id: 'cl8', number: 8, mediumId: 'odia_medium');
 
 // ─── Books — All Classes ──────────────────────────────────────────────────────
 
