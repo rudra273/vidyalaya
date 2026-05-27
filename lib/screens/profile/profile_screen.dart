@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_selection_provider.dart';
 
@@ -15,6 +16,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController(text: 'Student');
+  bool _isAuthBusy = false;
 
   @override
   void dispose() {
@@ -26,6 +28,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
     final selectedBoard = ref.watch(userBoardProvider);
+    final authState = ref.watch(authStateProvider);
     final cs = Theme.of(context).colorScheme;
     final themeMode = ref.watch(themeModeProvider);
     final mutedColor =
@@ -98,6 +101,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            authState.when(
+              data: (user) => _AccountPanel(
+                displayName: user?.displayName,
+                email: user?.email,
+                photoUrl: user?.photoURL,
+                isSignedIn: user != null,
+                isBusy: _isAuthBusy,
+                onSignIn: _signInWithGoogle,
+                onSignOut: _signOut,
+              ),
+              loading: () => const _AccountPanel.loading(),
+              error: (error, stackTrace) => _AccountPanel.error(
+                message: error.toString(),
+                isBusy: _isAuthBusy,
+                onRetry: () => ref.invalidate(authStateProvider),
               ),
             ),
 
@@ -184,6 +207,187 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    await _runAuthAction(() {
+      return ref.read(authRepositoryProvider).signInWithGoogle();
+    });
+  }
+
+  Future<void> _signOut() async {
+    await _runAuthAction(() {
+      return ref.read(authRepositoryProvider).signOut();
+    });
+  }
+
+  Future<void> _runAuthAction(Future<void> Function() action) async {
+    setState(() => _isAuthBusy = true);
+    try {
+      await action();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) {
+        setState(() => _isAuthBusy = false);
+      }
+    }
+  }
+}
+
+// ─── Account Panel ─────────────────────────────────────────────────────────
+
+class _AccountPanel extends StatelessWidget {
+  final String? displayName;
+  final String? email;
+  final String? photoUrl;
+  final bool isSignedIn;
+  final bool isBusy;
+  final VoidCallback? onSignIn;
+  final VoidCallback? onSignOut;
+  final String? errorMessage;
+  final VoidCallback? onRetry;
+
+  const _AccountPanel({
+    required this.displayName,
+    required this.email,
+    required this.photoUrl,
+    required this.isSignedIn,
+    required this.isBusy,
+    required this.onSignIn,
+    required this.onSignOut,
+  }) : errorMessage = null,
+       onRetry = null;
+
+  const _AccountPanel.loading()
+    : displayName = null,
+      email = null,
+      photoUrl = null,
+      isSignedIn = false,
+      isBusy = true,
+      onSignIn = null,
+      onSignOut = null,
+      errorMessage = null,
+      onRetry = null;
+
+  const _AccountPanel.error({
+    required String message,
+    required this.isBusy,
+    required this.onRetry,
+  }) : displayName = null,
+       email = null,
+       photoUrl = null,
+       isSignedIn = false,
+       onSignIn = null,
+       onSignOut = null,
+       errorMessage = message;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bodySmall = Theme.of(context).textTheme.bodySmall;
+    final title = isSignedIn ? (displayName ?? 'Google account') : 'Account';
+    final subtitle = errorMessage ?? email ?? 'Sign in to sync your profile';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: cs.outline),
+      ),
+      child: Row(
+        children: [
+          _AccountAvatar(
+            photoUrl: photoUrl,
+            displayName: displayName,
+            isSignedIn: isSignedIn,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: bodySmall?.copyWith(
+                    color: errorMessage == null ? bodySmall.color : cs.error,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          if (isBusy)
+            const SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            )
+          else if (errorMessage != null)
+            IconButton(
+              tooltip: 'Retry',
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+            )
+          else
+            IconButton.filledTonal(
+              tooltip: isSignedIn ? 'Sign out' : 'Sign in with Google',
+              onPressed: isSignedIn ? onSignOut : onSignIn,
+              icon: Icon(
+                isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountAvatar extends StatelessWidget {
+  final String? photoUrl;
+  final String? displayName;
+  final bool isSignedIn;
+
+  const _AccountAvatar({
+    required this.photoUrl,
+    required this.displayName,
+    required this.isSignedIn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final firstLetter = (displayName?.trim().isNotEmpty ?? false)
+        ? displayName!.trim()[0].toUpperCase()
+        : 'G';
+
+    if (photoUrl != null && photoUrl!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 24,
+        backgroundImage: NetworkImage(photoUrl!),
+        backgroundColor: cs.secondary,
+      );
+    }
+
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: cs.secondary,
+      child: Text(
+        isSignedIn ? firstLetter : 'G',
+        style: TextStyle(
+          color: cs.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
         ),
       ),
     );
