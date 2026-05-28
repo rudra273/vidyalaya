@@ -24,6 +24,7 @@ import '../screens/learn/periodic_table_screen.dart';
 import '../screens/learn/timeline_screen.dart';
 import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/diagram_viewer_screen.dart';
+import '../screens/learn/cosmulator_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../screens/progress/progress_screen.dart';
 
@@ -115,6 +116,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/learn/timeline',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const TimelineScreen(),
+      ),
+      GoRoute(
+        path: '/learn/cosmulator',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CosmulatorScreen(),
       ),
       GoRoute(
         path: '/learn/diagrams',

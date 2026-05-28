@@ -312,7 +312,66 @@ class LearnScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Row 6: Interactive Quizzes
+
+                  // Row 6: Cosmulator
+                  GestureDetector(
+                    onTap: () => context.push('/learn/cosmulator'),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: isDark ? cs.surface : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: cs.outlineVariant),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.indigoAccent.withValues(
+                                alpha: 0.15,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.public,
+                              color: Colors.indigoAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Cosmulator',
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Explore the solar system and galaxy in 3D',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: AppColors.textMuted),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: AppColors.textMuted),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Row 7: Interactive Quizzes
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(20),
@@ -384,7 +443,7 @@ class LearnScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // Row 7: Virtual Science Lab
+                  // Row 8: Virtual Science Lab
                   Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(20),
