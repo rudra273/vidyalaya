@@ -4,60 +4,68 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/learn_assist.dart';
+import 'learn_assist_service.dart';
 
-typedef FirebaseIdTokenProvider =
-    Future<String?> Function({required bool forceRefresh});
+class BackendUser {
+  final String userId;
+  final String? email;
+  final String? name;
 
-class LearnAssistService {
-  static final defaultBaseUrl = Uri.parse(
-    'https://vidyalaya-ai-production.up.railway.app',
-  );
+  const BackendUser({required this.userId, this.email, this.name});
 
+  factory BackendUser.fromJson(Map<String, dynamic> json) {
+    return BackendUser(
+      userId: json['user_id'] as String? ?? '',
+      email: json['email'] as String?,
+      name: json['name'] as String?,
+    );
+  }
+}
+
+class BackendAuthService {
   final http.Client _client;
   final Uri _baseUrl;
   final FirebaseIdTokenProvider _idTokenProvider;
 
-  LearnAssistService({
+  BackendAuthService({
     required http.Client client,
     required FirebaseIdTokenProvider idTokenProvider,
     Uri? baseUrl,
   }) : _client = client,
        _idTokenProvider = idTokenProvider,
-       _baseUrl = baseUrl ?? defaultBaseUrl;
+       _baseUrl = baseUrl ?? LearnAssistService.defaultBaseUrl;
 
-  Future<LearnAssistResponse> chat(LearnAssistRequest request) async {
-    final uri = _baseUrl.resolve('/learnassist/chat');
+  Future<BackendUser> me() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/auth/me'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
 
-    final response = await _postChat(uri, request, forceRefresh: false);
-    final decoded = _decodeJsonObject(response.body);
-    return LearnAssistResponse.fromJson(decoded);
+    return BackendUser.fromJson(_decodeJsonObject(response.body));
   }
 
-  Future<http.Response> _postChat(
-    Uri uri,
-    LearnAssistRequest request, {
+  Future<http.Response> _sendWithAuth({
     required bool forceRefresh,
+    required Future<http.Response> Function(String token) requestBuilder,
   }) async {
     final token = await _idTokenProvider(forceRefresh: forceRefresh);
     if (token == null || token.isEmpty) {
       throw const LearnAssistApiException(
         'unauthorized',
-        'Please sign in to use Learn Assist.',
+        'Please sign in again.',
       );
     }
 
     http.Response response;
     try {
-      response = await _client
-          .post(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(const Duration(seconds: 30));
+      response = await requestBuilder(token);
     } on TimeoutException {
       throw const LearnAssistApiException(
         'network_error',
@@ -71,7 +79,7 @@ class LearnAssistService {
     }
 
     if (response.statusCode == 401 && !forceRefresh) {
-      return _postChat(uri, request, forceRefresh: true);
+      return _sendWithAuth(forceRefresh: true, requestBuilder: requestBuilder);
     }
 
     final decoded = _decodeJsonObject(response.body);

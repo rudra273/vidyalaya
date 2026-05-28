@@ -108,6 +108,7 @@ void main() {
   group('LearnAssistService', () {
     test('throws API exception for error responses', () async {
       final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
         client: MockClient(
           (_) async => http.Response(
             jsonEncode({
@@ -136,6 +137,7 @@ void main() {
 
     test('throws API exception for invalid JSON', () async {
       final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
         client: MockClient((_) async => http.Response('not json', 200)),
       );
 
@@ -155,6 +157,94 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('sends bearer token without user identity fields', () async {
+      late http.Request capturedRequest;
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+        client: MockClient((request) async {
+          capturedRequest = request;
+          return http.Response(
+            jsonEncode({
+              'answer': 'Answer',
+              'citations': [],
+              'retrieval': {'class_no': 8},
+            }),
+            200,
+          );
+        }),
+      );
+
+      await service.chat(
+        const LearnAssistRequest(
+          query: 'Question',
+          board: 'scert_odisha',
+          classNo: 8,
+          subject: null,
+          language: 'en',
+        ),
+      );
+
+      final body = jsonDecode(capturedRequest.body) as Map<String, dynamic>;
+      expect(capturedRequest.headers['Authorization'], 'Bearer firebase-token');
+      expect(capturedRequest.headers['Content-Type'], 'application/json');
+      expect(body, isNot(contains('user_id')));
+      expect(body, isNot(contains('email')));
+      expect(body, isNot(contains('name')));
+      expect(body, isNot(contains('picture')));
+      expect(body['subject'], isNull);
+    });
+
+    test('refreshes token once when the backend returns 401', () async {
+      final forceRefreshValues = <bool>[];
+      final authorizationHeaders = <String?>[];
+      var callCount = 0;
+
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async {
+          forceRefreshValues.add(forceRefresh);
+          return forceRefresh ? 'fresh-token' : 'stale-token';
+        },
+        client: MockClient((request) async {
+          callCount += 1;
+          authorizationHeaders.add(request.headers['Authorization']);
+          if (callCount == 1) {
+            return http.Response(
+              jsonEncode({
+                'error': {
+                  'code': 'unauthorized',
+                  'message': 'Invalid or expired bearer token.',
+                },
+              }),
+              401,
+            );
+          }
+          return http.Response(
+            jsonEncode({
+              'answer': 'Answer',
+              'citations': [],
+              'retrieval': {'class_no': 8},
+            }),
+            200,
+          );
+        }),
+      );
+
+      final response = await service.chat(
+        const LearnAssistRequest(
+          query: 'Question',
+          board: 'scert_odisha',
+          classNo: 8,
+        ),
+      );
+
+      expect(response.answer, 'Answer');
+      expect(forceRefreshValues, [false, true]);
+      expect(authorizationHeaders, [
+        'Bearer stale-token',
+        'Bearer fresh-token',
+      ]);
     });
   });
 }

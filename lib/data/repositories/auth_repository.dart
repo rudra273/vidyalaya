@@ -1,15 +1,22 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../services/backend_auth_service.dart';
+
+const _googleServerClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
 class AuthRepository {
   AuthRepository({
     required FirebaseAuth firebaseAuth,
     required GoogleSignIn googleSignIn,
+    required BackendAuthService backendAuthService,
   }) : _firebaseAuth = firebaseAuth,
-       _googleSignIn = googleSignIn;
+       _googleSignIn = googleSignIn,
+       _backendAuthService = backendAuthService;
 
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
+  final BackendAuthService _backendAuthService;
   Future<void>? _googleSignInInit;
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
@@ -30,7 +37,10 @@ class AuthRepository {
       idToken: googleAuth.idToken,
     );
 
-    return _firebaseAuth.signInWithCredential(credential);
+    final userCredential = await _firebaseAuth.signInWithCredential(credential);
+    await userCredential.user?.updatePhotoURL(null);
+    await _backendAuthService.me();
+    return userCredential;
   }
 
   Future<void> signOut() async {
@@ -43,6 +53,10 @@ class AuthRepository {
   }
 
   Future<void> _ensureGoogleSignInInitialized() {
-    return _googleSignInInit ??= _googleSignIn.initialize();
+    return _googleSignInInit ??= _googleSignIn.initialize(
+      serverClientId: _googleServerClientId.isEmpty
+          ? null
+          : _googleServerClientId,
+    );
   }
 }

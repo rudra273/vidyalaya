@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
@@ -110,11 +113,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               data: (user) => _AccountPanel(
                 displayName: user?.displayName,
                 email: user?.email,
-                photoUrl: user?.photoURL,
                 isSignedIn: user != null,
                 isBusy: _isAuthBusy,
                 onSignIn: _signInWithGoogle,
                 onSignOut: _signOut,
+                onCopyIdToken: kDebugMode && user != null
+                    ? _copyFirebaseIdToken
+                    : null,
               ),
               loading: () => const _AccountPanel.loading(),
               error: (error, stackTrace) => _AccountPanel.error(
@@ -224,6 +229,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
+  Future<void> _copyFirebaseIdToken() async {
+    await _runAuthAction(() async {
+      final token = await FirebaseAuth.instance.currentUser?.getIdToken(true);
+      if (token == null || token.isEmpty) {
+        throw StateError('Please sign in again.');
+      }
+
+      await Clipboard.setData(ClipboardData(text: token));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Firebase ID token copied.')),
+      );
+    });
+  }
+
   Future<void> _runAuthAction(Future<void> Function() action) async {
     setState(() => _isAuthBusy = true);
     try {
@@ -246,33 +266,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 class _AccountPanel extends StatelessWidget {
   final String? displayName;
   final String? email;
-  final String? photoUrl;
   final bool isSignedIn;
   final bool isBusy;
   final VoidCallback? onSignIn;
   final VoidCallback? onSignOut;
+  final VoidCallback? onCopyIdToken;
   final String? errorMessage;
   final VoidCallback? onRetry;
 
   const _AccountPanel({
     required this.displayName,
     required this.email,
-    required this.photoUrl,
     required this.isSignedIn,
     required this.isBusy,
     required this.onSignIn,
     required this.onSignOut,
+    this.onCopyIdToken,
   }) : errorMessage = null,
        onRetry = null;
 
   const _AccountPanel.loading()
     : displayName = null,
       email = null,
-      photoUrl = null,
       isSignedIn = false,
       isBusy = true,
       onSignIn = null,
       onSignOut = null,
+      onCopyIdToken = null,
       errorMessage = null,
       onRetry = null;
 
@@ -282,10 +302,10 @@ class _AccountPanel extends StatelessWidget {
     required this.onRetry,
   }) : displayName = null,
        email = null,
-       photoUrl = null,
        isSignedIn = false,
        onSignIn = null,
        onSignOut = null,
+       onCopyIdToken = null,
        errorMessage = message;
 
   @override
@@ -304,11 +324,7 @@ class _AccountPanel extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _AccountAvatar(
-            photoUrl: photoUrl,
-            displayName: displayName,
-            isSignedIn: isSignedIn,
-          ),
+          _AccountAvatar(displayName: displayName, isSignedIn: isSignedIn),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -340,12 +356,25 @@ class _AccountPanel extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded),
             )
           else
-            IconButton.filledTonal(
-              tooltip: isSignedIn ? 'Sign out' : 'Sign in with Google',
-              onPressed: isSignedIn ? onSignOut : onSignIn,
-              icon: Icon(
-                isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onCopyIdToken != null) ...[
+                  IconButton(
+                    tooltip: 'Copy Firebase ID token',
+                    onPressed: onCopyIdToken,
+                    icon: const Icon(Icons.key_rounded),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                IconButton.filledTonal(
+                  tooltip: isSignedIn ? 'Sign out' : 'Sign in with Google',
+                  onPressed: isSignedIn ? onSignOut : onSignIn,
+                  icon: Icon(
+                    isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
+                  ),
+                ),
+              ],
             ),
         ],
       ),
@@ -354,15 +383,10 @@ class _AccountPanel extends StatelessWidget {
 }
 
 class _AccountAvatar extends StatelessWidget {
-  final String? photoUrl;
   final String? displayName;
   final bool isSignedIn;
 
-  const _AccountAvatar({
-    required this.photoUrl,
-    required this.displayName,
-    required this.isSignedIn,
-  });
+  const _AccountAvatar({required this.displayName, required this.isSignedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -370,14 +394,6 @@ class _AccountAvatar extends StatelessWidget {
     final firstLetter = (displayName?.trim().isNotEmpty ?? false)
         ? displayName!.trim()[0].toUpperCase()
         : 'G';
-
-    if (photoUrl != null && photoUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: 24,
-        backgroundImage: NetworkImage(photoUrl!),
-        backgroundColor: cs.secondary,
-      );
-    }
 
     return CircleAvatar(
       radius: 24,

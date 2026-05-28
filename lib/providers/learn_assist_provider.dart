@@ -3,11 +3,18 @@ import 'package:http/http.dart' as http;
 
 import '../data/seed/seed_data.dart';
 import '../data/services/learn_assist_service.dart';
+import 'auth_provider.dart';
 
 final learnAssistServiceProvider = Provider<LearnAssistService>((ref) {
   final client = http.Client();
   ref.onDispose(client.close);
-  return LearnAssistService(client: client);
+  return LearnAssistService(
+    client: client,
+    idTokenProvider: ({required forceRefresh}) async {
+      final user = ref.read(firebaseAuthProvider).currentUser;
+      return user?.getIdToken(forceRefresh);
+    },
+  );
 });
 
 int resolveLearnAssistClass(Set<int> selectedClasses) {
