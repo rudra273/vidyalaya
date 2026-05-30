@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_selection_provider.dart';
@@ -19,19 +20,44 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _nameController = TextEditingController(text: 'Student');
+  final _schoolController = TextEditingController();
+  int _selectedClass = 8;
+  String _preferredLanguage = 'en';
   bool _isAuthBusy = false;
+  bool _isProfileSaving = false;
+  String? _appliedProfileKey;
+
+  @override
+  void initState() {
+    super.initState();
+    final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
+    if (selectedClasses.isNotEmpty) {
+      _selectedClass = selectedClasses.first;
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _schoolController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
-    final selectedBoard = ref.watch(userBoardProvider);
     final authState = ref.watch(authStateProvider);
+    final accountState = ref.watch(backendAccountCacheProvider);
+    final isSignedIn = authState.maybeWhen(
+      data: (user) => user != null,
+      orElse: () => false,
+    );
+    final cachedProfile = accountState.profile.maybeWhen(
+      data: (profile) => profile,
+      orElse: () => null,
+    );
+    final isProfileLoading = accountState.profile is AsyncLoading;
+    _applyCachedProfile(cachedProfile);
     final cs = Theme.of(context).colorScheme;
     final themeMode = ref.watch(themeModeProvider);
     final mutedColor =
@@ -100,7 +126,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                   ),
                   Text(
-                    selectedBoard,
+                    'scert_odisha',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -110,23 +136,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 28),
 
             authState.when(
-              data: (user) => _AccountPanel(
-                displayName: user?.displayName,
-                email: user?.email,
-                isSignedIn: user != null,
-                isBusy: _isAuthBusy,
-                onSignIn: _signInWithGoogle,
-                onSignOut: _signOut,
-                onCopyIdToken: kDebugMode && user != null
-                    ? _copyFirebaseIdToken
-                    : null,
-              ),
+              data: (user) {
+                _hydrateFromFirebaseUser(user);
+                _ensureCachedProfile(user);
+                return _AccountPanel(
+                  displayName: user?.displayName,
+                  email: user?.email,
+                  isSignedIn: user != null,
+                  isBusy: _isAuthBusy,
+                  onSignIn: _signInWithGoogle,
+                  onSignOut: _signOut,
+                  onCopyIdToken: kDebugMode && user != null
+                      ? _copyFirebaseIdToken
+                      : null,
+                );
+              },
               loading: () => const _AccountPanel.loading(),
               error: (error, stackTrace) => _AccountPanel.error(
                 message: error.toString(),
                 isBusy: _isAuthBusy,
                 onRetry: () => ref.invalidate(authStateProvider),
               ),
+            ),
+
+            const SizedBox(height: 28),
+
+            _StudentProfilePanel(
+              isSignedIn: isSignedIn,
+              isLoading: isProfileLoading,
+              isSaving: _isProfileSaving,
+              selectedClass: _selectedClass,
+              preferredLanguage: _preferredLanguage,
+              schoolController: _schoolController,
+              onClassChanged: (value) => setState(() => _selectedClass = value),
+              onLanguageChanged: (value) {
+                setState(() => _preferredLanguage = value);
+              },
+              onSave: _saveStudentProfile,
             ),
 
             const SizedBox(height: 28),
@@ -225,8 +271,119 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _signOut() async {
     await _runAuthAction(() {
+      _appliedProfileKey = null;
       return ref.read(authRepositoryProvider).signOut();
     });
+  }
+
+  void _hydrateFromFirebaseUser(User? user) {
+    if (user == null) {
+      if (_appliedProfileKey != null || _nameController.text != 'Student') {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          setState(() {
+            _appliedProfileKey = null;
+            _nameController.text = 'Student';
+            _schoolController.clear();
+          });
+        });
+      }
+      return;
+    }
+
+    final displayName = user.displayName?.trim();
+    if (displayName != null &&
+        displayName.isNotEmpty &&
+        _nameController.text == 'Student') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _nameController.text = displayName);
+      });
+    }
+  }
+
+  void _ensureCachedProfile(User? user) {
+    if (user == null || _isProfileSaving) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(backendAccountCacheProvider.notifier).ensureProfile();
+    });
+  }
+
+  void _applyCachedProfile(StudentProfile? profile) {
+    if (profile == null) return;
+    final key = [
+      profile.classNo,
+      profile.preferredLanguage,
+      profile.schoolName ?? '',
+      profile.updatedAt?.toIso8601String() ?? '',
+    ].join('|');
+    if (_appliedProfileKey == key) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _appliedProfileKey == key || _isProfileSaving) return;
+      setState(() {
+        _appliedProfileKey = key;
+        _selectedClass = profile.classNo;
+        _preferredLanguage = profile.preferredLanguage;
+        _schoolController.text = profile.schoolName ?? '';
+      });
+      _syncLocalProfile(profile.classNo);
+    });
+  }
+
+  Future<void> _saveStudentProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please sign in to save your profile.')),
+      );
+      return;
+    }
+
+    setState(() => _isProfileSaving = true);
+    try {
+      final name = _nameController.text.trim();
+      if (name.isNotEmpty && name != user.displayName) {
+        await user.updateDisplayName(name);
+      }
+
+      final savedProfile = await ref
+          .read(backendAccountCacheProvider.notifier)
+          .saveProfile(
+            StudentProfile(
+              board: 'scert_odisha',
+              classNo: _selectedClass,
+              preferredLanguage: _preferredLanguage,
+              schoolName: _schoolController.text,
+            ),
+          );
+
+      _syncLocalProfile(savedProfile.classNo);
+      if (!mounted) return;
+      setState(() {
+        _selectedClass = savedProfile.classNo;
+        _preferredLanguage = savedProfile.preferredLanguage;
+        _schoolController.text = savedProfile.schoolName ?? '';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) {
+        setState(() => _isProfileSaving = false);
+      }
+    }
+  }
+
+  void _syncLocalProfile(int classNo) {
+    ref.read(userBoardProvider.notifier).setBoard('scert_odisha');
+    ref.read(userSelectionProvider.notifier).setClasses({classNo});
   }
 
   Future<void> _copyFirebaseIdToken() async {
@@ -258,6 +415,130 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _isAuthBusy = false);
       }
     }
+  }
+}
+
+// ─── Student Profile Panel ─────────────────────────────────────────────────
+
+class _StudentProfilePanel extends StatelessWidget {
+  final bool isSignedIn;
+  final bool isLoading;
+  final bool isSaving;
+  final int selectedClass;
+  final String preferredLanguage;
+  final TextEditingController schoolController;
+  final ValueChanged<int> onClassChanged;
+  final ValueChanged<String> onLanguageChanged;
+  final VoidCallback onSave;
+
+  const _StudentProfilePanel({
+    required this.isSignedIn,
+    required this.isLoading,
+    required this.isSaving,
+    required this.selectedClass,
+    required this.preferredLanguage,
+    required this.schoolController,
+    required this.onClassChanged,
+    required this.onLanguageChanged,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isBusy = isLoading || isSaving;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: cs.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Student Profile',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              ),
+              if (isLoading)
+                const SizedBox.square(
+                  dimension: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          DropdownButtonFormField<int>(
+            key: ValueKey('student-class-$selectedClass'),
+            initialValue: selectedClass,
+            decoration: const InputDecoration(
+              labelText: 'Class',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (var classNo = 1; classNo <= 12; classNo++)
+                DropdownMenuItem(value: classNo, child: Text('Class $classNo')),
+            ],
+            onChanged: isBusy
+                ? null
+                : (value) {
+                    if (value != null) onClassChanged(value);
+                  },
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            key: ValueKey('preferred-language-$preferredLanguage'),
+            initialValue: preferredLanguage,
+            decoration: const InputDecoration(
+              labelText: 'Preferred language',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'en', child: Text('English')),
+              DropdownMenuItem(value: 'or', child: Text('Odia')),
+              DropdownMenuItem(value: 'hi', child: Text('Hindi')),
+            ],
+            onChanged: isBusy
+                ? null
+                : (value) {
+                    if (value != null) onLanguageChanged(value);
+                  },
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: schoolController,
+            enabled: !isBusy,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'School name',
+              hintText: 'Optional',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: isSignedIn && !isBusy ? onSave : null,
+              icon: isSaving
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                    )
+                  : const Icon(Icons.save_rounded),
+              label: Text(isSignedIn ? 'Save Profile' : 'Sign in to save'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

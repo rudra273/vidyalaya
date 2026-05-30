@@ -57,7 +57,7 @@ class LearnAssistService {
             },
             body: jsonEncode(request.toJson()),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 100));
     } on TimeoutException {
       throw const LearnAssistApiException(
         'network_error',

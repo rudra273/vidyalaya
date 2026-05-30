@@ -1,5 +1,5 @@
 class LearnAssistRequest {
-  final String query;
+  final String message;
   final String board;
   final int classNo;
   final String? subject;
@@ -7,7 +7,7 @@ class LearnAssistRequest {
   final bool debug;
 
   const LearnAssistRequest({
-    required this.query,
+    required this.message,
     required this.board,
     required this.classNo,
     this.subject,
@@ -16,7 +16,7 @@ class LearnAssistRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'query': query,
+    'message': message,
     'board': board,
     'class_no': classNo,
     'subject': subject,
@@ -29,11 +29,13 @@ class LearnAssistResponse {
   final String answer;
   final List<LearnAssistCitation> citations;
   final LearnAssistRetrieval retrieval;
+  final LearnAssistUsage? usage;
 
   const LearnAssistResponse({
     required this.answer,
     required this.citations,
     required this.retrieval,
+    this.usage,
   });
 
   factory LearnAssistResponse.fromJson(Map<String, dynamic> json) {
@@ -45,6 +47,9 @@ class LearnAssistResponse {
       retrieval: LearnAssistRetrieval.fromJson(
         json['retrieval'] as Map<String, dynamic>? ?? const {},
       ),
+      usage: json['usage'] is Map<String, dynamic>
+          ? LearnAssistUsage.fromJson(json['usage'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
@@ -118,6 +123,32 @@ class LearnAssistRetrieval {
       topScore: _asDouble(json['top_score']),
       contextBlockCount: json['context_block_count'] as int? ?? 0,
       toolUsed: json['tool_used'] as bool? ?? false,
+    );
+  }
+}
+
+class LearnAssistUsage {
+  final String dateIst;
+  final int used;
+  final int limit;
+  final int remaining;
+  final bool unlimited;
+
+  const LearnAssistUsage({
+    required this.dateIst,
+    required this.used,
+    required this.limit,
+    required this.remaining,
+    required this.unlimited,
+  });
+
+  factory LearnAssistUsage.fromJson(Map<String, dynamic> json) {
+    return LearnAssistUsage(
+      dateIst: json['date_ist'] as String? ?? '',
+      used: json['used'] as int? ?? 0,
+      limit: json['limit'] as int? ?? 0,
+      remaining: json['remaining'] as int? ?? 0,
+      unlimited: json['unlimited'] as bool? ?? false,
     );
   }
 }

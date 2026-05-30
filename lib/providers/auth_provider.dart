@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
+import '../data/models/learn_assist.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/services/backend_auth_service.dart';
 
@@ -38,3 +39,372 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
+
+class BackendAccountState {
+  final String? uid;
+  final AsyncValue<BackendUser?> user;
+  final AsyncValue<StudentProfile?> profile;
+  final AsyncValue<LearnAssistUsage?> usage;
+  final AsyncValue<ChatHistoryPage?> history;
+  final bool userLoaded;
+  final bool profileLoaded;
+  final bool usageLoaded;
+  final bool historyLoaded;
+
+  const BackendAccountState({
+    this.uid,
+    this.user = const AsyncData(null),
+    this.profile = const AsyncData(null),
+    this.usage = const AsyncData(null),
+    this.history = const AsyncData(null),
+    this.userLoaded = false,
+    this.profileLoaded = false,
+    this.usageLoaded = false,
+    this.historyLoaded = false,
+  });
+
+  BackendAccountState copyWith({
+    String? uid,
+    AsyncValue<BackendUser?>? user,
+    AsyncValue<StudentProfile?>? profile,
+    AsyncValue<LearnAssistUsage?>? usage,
+    AsyncValue<ChatHistoryPage?>? history,
+    bool? userLoaded,
+    bool? profileLoaded,
+    bool? usageLoaded,
+    bool? historyLoaded,
+  }) {
+    return BackendAccountState(
+      uid: uid ?? this.uid,
+      user: user ?? this.user,
+      profile: profile ?? this.profile,
+      usage: usage ?? this.usage,
+      history: history ?? this.history,
+      userLoaded: userLoaded ?? this.userLoaded,
+      profileLoaded: profileLoaded ?? this.profileLoaded,
+      usageLoaded: usageLoaded ?? this.usageLoaded,
+      historyLoaded: historyLoaded ?? this.historyLoaded,
+    );
+  }
+}
+
+class BackendAccountCache extends Notifier<BackendAccountState> {
+  Future<BackendUser?>? _userRequest;
+  Future<StudentProfile?>? _profileRequest;
+  Future<LearnAssistUsage?>? _usageRequest;
+  Future<ChatHistoryPage?>? _historyRequest;
+
+  @override
+  BackendAccountState build() {
+    final uid = ref
+        .watch(authStateProvider)
+        .maybeWhen(data: (user) => user?.uid, orElse: () => null);
+
+    if (uid == null) {
+      _userRequest = null;
+      _profileRequest = null;
+      _usageRequest = null;
+      _historyRequest = null;
+      return const BackendAccountState();
+    }
+
+    if (stateOrNull?.uid != uid) {
+      _userRequest = null;
+      _profileRequest = null;
+      _usageRequest = null;
+      _historyRequest = null;
+      return BackendAccountState(uid: uid);
+    }
+
+    return stateOrNull ?? BackendAccountState(uid: uid);
+  }
+
+  Future<BackendUser?> ensureUser({bool forceRefresh = false}) {
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.userLoaded &&
+        state.user is AsyncData<BackendUser?> &&
+        _asyncData(state.user) != null) {
+      return Future.value(_asyncData(state.user));
+    }
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.userLoaded &&
+        state.user is AsyncError<BackendUser?>) {
+      return Future.value(_asyncData(state.user));
+    }
+    if (!forceRefresh && _userRequest != null) return _userRequest!;
+
+    final previous = _asyncData(state.user);
+    state = state.copyWith(uid: uid, user: const AsyncLoading());
+    _userRequest = _loadUser(uid, previous);
+    return _userRequest!;
+  }
+
+  Future<StudentProfile?> ensureProfile({bool forceRefresh = false}) {
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.profileLoaded &&
+        state.profile is AsyncData<StudentProfile?>) {
+      return Future.value(_asyncData(state.profile));
+    }
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.profileLoaded &&
+        state.profile is AsyncError<StudentProfile?>) {
+      return Future.value(_asyncData(state.profile));
+    }
+    if (!forceRefresh && _profileRequest != null) return _profileRequest!;
+
+    final previous = _asyncData(state.profile);
+    state = state.copyWith(uid: uid, profile: const AsyncLoading());
+    _profileRequest = _loadProfile(uid, previous);
+    return _profileRequest!;
+  }
+
+  Future<LearnAssistUsage?> ensureUsage({bool forceRefresh = false}) {
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.usageLoaded &&
+        state.usage is AsyncData<LearnAssistUsage?> &&
+        _asyncData(state.usage) != null) {
+      return Future.value(_asyncData(state.usage));
+    }
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.usageLoaded &&
+        state.usage is AsyncError<LearnAssistUsage?>) {
+      return Future.value(_asyncData(state.usage));
+    }
+    if (!forceRefresh && _usageRequest != null) return _usageRequest!;
+
+    final previous = _asyncData(state.usage);
+    state = state.copyWith(uid: uid, usage: const AsyncLoading());
+    _usageRequest = _loadUsage(uid, previous);
+    return _usageRequest!;
+  }
+
+  Future<ChatHistoryPage?> ensureHistory({bool forceRefresh = false}) {
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.historyLoaded &&
+        state.history is AsyncData<ChatHistoryPage?>) {
+      return Future.value(_asyncData(state.history));
+    }
+    if (!forceRefresh &&
+        state.uid == uid &&
+        state.historyLoaded &&
+        state.history is AsyncError<ChatHistoryPage?>) {
+      return Future.value(_asyncData(state.history));
+    }
+    if (!forceRefresh && _historyRequest != null) return _historyRequest!;
+
+    final previous = _asyncData(state.history);
+    state = state.copyWith(uid: uid, history: const AsyncLoading());
+    _historyRequest = _loadHistory(uid, previous);
+    return _historyRequest!;
+  }
+
+  Future<ChatHistoryPage?> loadOlderHistory() {
+    final current = _asyncData(state.history);
+    final before = current?.nextBefore;
+    if (before == null) return Future.value(current);
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    if (_historyRequest != null) return _historyRequest!;
+
+    state = state.copyWith(uid: uid, history: const AsyncLoading());
+    _historyRequest = _loadHistory(uid, current, before: before);
+    return _historyRequest!;
+  }
+
+  Future<StudentProfile> saveProfile(StudentProfile profile) async {
+    final uid = _requireUid();
+    final previous = _asyncData(state.profile);
+    state = state.copyWith(uid: uid, profile: const AsyncLoading());
+    try {
+      final saved = await ref
+          .read(backendAuthServiceProvider)
+          .updateProfile(profile);
+      if (_currentUid == uid) {
+        state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
+      }
+      return saved;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = state.copyWith(profile: AsyncError(error, stackTrace));
+      }
+      if (previous != null && _currentUid == uid) {
+        state = state.copyWith(profile: AsyncData(previous));
+      }
+      rethrow;
+    }
+  }
+
+  void updateUsage(LearnAssistUsage usage) {
+    final uid = _currentUid;
+    if (uid == null) return;
+    state = state.copyWith(
+      uid: uid,
+      usage: AsyncData(usage),
+      usageLoaded: true,
+    );
+  }
+
+  void markHistoryStale() {
+    final uid = _currentUid;
+    if (uid == null) return;
+    state = state.copyWith(uid: uid, historyLoaded: false);
+  }
+
+  void prependLatestHistoryMessages(List<ChatHistoryMessage> messages) {
+    final uid = _currentUid;
+    if (uid == null || messages.isEmpty) return;
+    final current = _asyncData(state.history);
+    if (current == null) return;
+    final existingIds = current.messages.map((message) => message.id).toSet();
+    final uniqueMessages = [
+      ...messages.where((message) => !existingIds.contains(message.id)),
+      ...current.messages,
+    ]..sort((a, b) => b.id.compareTo(a.id));
+    state = state.copyWith(
+      uid: uid,
+      history: AsyncData(
+        ChatHistoryPage(
+          messages: uniqueMessages,
+          nextBefore: current.nextBefore,
+        ),
+      ),
+      historyLoaded: true,
+    );
+  }
+
+  Future<BackendUser?> _loadUser(String uid, BackendUser? previous) async {
+    try {
+      final user = await ref.read(backendAuthServiceProvider).me();
+      if (_currentUid == uid) {
+        state = state.copyWith(user: AsyncData(user), userLoaded: true);
+      }
+      return user;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = state.copyWith(
+          user: AsyncError(error, stackTrace),
+          userLoaded: true,
+        );
+      }
+      return previous;
+    } finally {
+      _userRequest = null;
+    }
+  }
+
+  Future<StudentProfile?> _loadProfile(
+    String uid,
+    StudentProfile? previous,
+  ) async {
+    try {
+      final profile = await ref.read(backendAuthServiceProvider).profile();
+      if (_currentUid == uid) {
+        state = state.copyWith(
+          profile: AsyncData(profile),
+          profileLoaded: true,
+        );
+      }
+      return profile;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = state.copyWith(
+          profile: AsyncError(error, stackTrace),
+          profileLoaded: true,
+        );
+      }
+      return previous;
+    } finally {
+      _profileRequest = null;
+    }
+  }
+
+  Future<LearnAssistUsage?> _loadUsage(
+    String uid,
+    LearnAssistUsage? previous,
+  ) async {
+    try {
+      final usage = await ref.read(backendAuthServiceProvider).usage();
+      if (_currentUid == uid) {
+        state = state.copyWith(usage: AsyncData(usage), usageLoaded: true);
+      }
+      return usage;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = state.copyWith(
+          usage: AsyncError(error, stackTrace),
+          usageLoaded: true,
+        );
+      }
+      return previous;
+    } finally {
+      _usageRequest = null;
+    }
+  }
+
+  Future<ChatHistoryPage?> _loadHistory(
+    String uid,
+    ChatHistoryPage? previous, {
+    int? before,
+  }) async {
+    try {
+      final page = await ref
+          .read(backendAuthServiceProvider)
+          .history(before: before);
+      final mergedPage = before == null || previous == null
+          ? page
+          : ChatHistoryPage(
+              messages: [...previous.messages, ...page.messages],
+              nextBefore: page.nextBefore,
+            );
+      if (_currentUid == uid) {
+        state = state.copyWith(
+          history: AsyncData(mergedPage),
+          historyLoaded: true,
+        );
+      }
+      return mergedPage;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = state.copyWith(
+          history: AsyncError(error, stackTrace),
+          historyLoaded: true,
+        );
+      }
+      return previous;
+    } finally {
+      _historyRequest = null;
+    }
+  }
+
+  String? get _currentUid => ref.read(firebaseAuthProvider).currentUser?.uid;
+
+  String _requireUid() {
+    final uid = _currentUid;
+    if (uid == null) throw StateError('Please sign in again.');
+    return uid;
+  }
+}
+
+final backendAccountCacheProvider =
+    NotifierProvider<BackendAccountCache, BackendAccountState>(
+      BackendAccountCache.new,
+    );
+
+T? _asyncData<T>(AsyncValue<T?> value) {
+  return value.maybeWhen(data: (data) => data, orElse: () => null);
+}

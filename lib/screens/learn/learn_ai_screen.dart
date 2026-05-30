@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../data/models/learn_assist.dart';
+import '../../data/services/backend_auth_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
 
@@ -27,6 +29,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void initState() {
     super.initState();
     _selectedClass = resolveLearnAssistClass(ref.read(userSelectionProvider));
+    _ensureAccountSummary();
   }
 
   @override
@@ -40,7 +43,6 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final query = _messageController.text.trim();
     if (query.isEmpty || _isSending) return;
 
-    final board = ref.read(userBoardProvider);
     final language = _languageMode == 'auto'
         ? detectLearnAssistLanguage(query)
         : _languageMode;
@@ -56,8 +58,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     try {
       final response = await service.chat(
         LearnAssistRequest(
-          query: query,
-          board: board.isEmpty ? 'scert_odisha' : board,
+          message: query,
+          board: 'scert_odisha',
           classNo: _selectedClass,
           subject: _selectedSubject,
           language: language,
@@ -66,11 +68,18 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       );
 
       if (!mounted) return;
+      if (response.usage != null) {
+        ref
+            .read(backendAccountCacheProvider.notifier)
+            .updateUsage(response.usage!);
+      }
+      ref.read(backendAccountCacheProvider.notifier).markHistoryStale();
       setState(() {
         _messages.add(
           _ChatMessage.assistant(
             response.answer,
             citations: response.citations,
+            usage: response.usage,
           ),
         );
         _isSending = false;
@@ -104,9 +113,27 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     });
   }
 
+  void _ensureAccountSummary() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cache = ref.read(backendAccountCacheProvider.notifier);
+      cache.ensureUser();
+      cache.ensureUsage();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
+    final authState = ref.watch(authStateProvider);
+    final accountState = ref.watch(backendAccountCacheProvider);
+    final isSignedIn = authState.maybeWhen(
+      data: (user) => user != null,
+      orElse: () => false,
+    );
+    if (isSignedIn && (!accountState.userLoaded || !accountState.usageLoaded)) {
+      _ensureAccountSummary();
+    }
     final classOptions = learnAssistClassOptions(selectedClasses);
     final subjectOptions = learnAssistSubjectsForClass(_selectedClass);
     if (!classOptions.contains(_selectedClass)) {
@@ -123,10 +150,22 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           'Learn with AI',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Chat history',
+            onPressed: isSignedIn ? _showHistory : null,
+            icon: const Icon(Icons.history_rounded),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
           children: [
+            _PlanUsageBar(
+              isSignedIn: isSignedIn,
+              user: accountState.user,
+              usage: accountState.usage,
+            ),
             _ContextControls(
               classOptions: classOptions,
               selectedClass: _selectedClass,
@@ -174,6 +213,337 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _showHistory() async {
+    ref.read(backendAccountCacheProvider.notifier).ensureHistory();
+    final selectedMessages = await showModalBottomSheet<List<_ChatMessage>>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (context) => const _HistorySheet(),
+    );
+
+    if (!mounted || selectedMessages == null || selectedMessages.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(selectedMessages);
+    });
+    _scrollToBottom();
+  }
+}
+
+class _HistorySheet extends ConsumerWidget {
+  const _HistorySheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accountState = ref.watch(backendAccountCacheProvider);
+    final history = accountState.history.maybeWhen(
+      data: (value) => value,
+      orElse: () => null,
+    );
+    final isLoading = accountState.history is AsyncLoading;
+    final error = accountState.history.maybeWhen(
+      error: (error, _) => error,
+      orElse: () => null,
+    );
+    final messages =
+        history == null ? const <ChatHistoryMessage>[] : [...history.messages]
+          ..sort((a, b) => a.id.compareTo(b.id));
+
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.78,
+      minChildSize: 0.45,
+      maxChildSize: 0.92,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                12,
+                AppSpacing.screenPadding,
+                8,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Chat History',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Refresh',
+                    onPressed: isLoading
+                        ? null
+                        : () => ref
+                              .read(backendAccountCacheProvider.notifier)
+                              .ensureHistory(forceRefresh: true),
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            if (isLoading) const LinearProgressIndicator(minHeight: 2),
+            if (error != null)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                child: Text(
+                  error.toString(),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            Expanded(
+              child: messages.isEmpty && !isLoading
+                  ? const Center(child: Text('No saved chats yet.'))
+                  : ListView.separated(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.screenPadding,
+                        8,
+                        AppSpacing.screenPadding,
+                        16,
+                      ),
+                      itemCount: messages.length + 1,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        if (index == messages.length) {
+                          return _HistoryActions(
+                            canLoadOlder: history?.nextBefore != null,
+                            canUseHistory: messages.isNotEmpty,
+                            isLoading: isLoading,
+                            onLoadOlder: () => ref
+                                .read(backendAccountCacheProvider.notifier)
+                                .loadOlderHistory(),
+                            onUseHistory: () {
+                              final chatMessages = messages
+                                  .map(_ChatMessage.fromHistory)
+                                  .where(
+                                    (message) => message.text.trim().isNotEmpty,
+                                  )
+                                  .toList();
+                              Navigator.of(context).pop(chatMessages);
+                            },
+                          );
+                        }
+
+                        return _HistoryMessageTile(message: messages[index]);
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _HistoryMessageTile extends StatelessWidget {
+  final ChatHistoryMessage message;
+
+  const _HistoryMessageTile({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isHuman = message.role == 'human';
+
+    return Align(
+      alignment: isHuman ? Alignment.centerRight : Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.82,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isHuman ? cs.primaryContainer : cs.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message.content,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (message.citations.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final citation in message.citations)
+                      _CitationChip(citation: citation),
+                  ],
+                ),
+              ],
+              if (message.createdAt != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _formatHistoryTime(message.createdAt!),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryActions extends StatelessWidget {
+  final bool canLoadOlder;
+  final bool canUseHistory;
+  final bool isLoading;
+  final VoidCallback onLoadOlder;
+  final VoidCallback onUseHistory;
+
+  const _HistoryActions({
+    required this.canLoadOlder,
+    required this.canUseHistory,
+    required this.isLoading,
+    required this.onLoadOlder,
+    required this.onUseHistory,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (canLoadOlder)
+          OutlinedButton.icon(
+            onPressed: isLoading ? null : onLoadOlder,
+            icon: const Icon(Icons.expand_more_rounded),
+            label: const Text('Load Older'),
+          ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: canUseHistory ? onUseHistory : null,
+            icon: const Icon(Icons.restore_rounded),
+            label: const Text('Show In Chat'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlanUsageBar extends StatelessWidget {
+  final bool isSignedIn;
+  final AsyncValue<BackendUser?> user;
+  final AsyncValue<LearnAssistUsage?> usage;
+
+  const _PlanUsageBar({
+    required this.isSignedIn,
+    required this.user,
+    required this.usage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    if (!isSignedIn) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenPadding,
+          8,
+          AppSpacing.screenPadding,
+          8,
+        ),
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+        child: Row(
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 18, color: cs.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Sign in to use Learn AI',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final backendUser = user.maybeWhen(
+      data: (value) => value,
+      orElse: () => null,
+    );
+    final currentUsage = usage.maybeWhen(
+      data: (value) => value,
+      orElse: () => null,
+    );
+    final isLoading = user is AsyncLoading || usage is AsyncLoading;
+    final planKey = backendUser?.planKey ?? 'free';
+    final planLabel = _planLabel(planKey);
+    final limit = currentUsage?.limit ?? backendUser?.planDailyLimit;
+    final usageLabel = currentUsage == null
+        ? limit == null
+              ? 'Usage loading'
+              : '$limit/day'
+        : currentUsage.unlimited
+        ? 'Unlimited'
+        : '${currentUsage.remaining} left today';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        8,
+        AppSpacing.screenPadding,
+        8,
+      ),
+      color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+      child: Row(
+        children: [
+          Icon(Icons.workspace_premium_rounded, size: 18, color: cs.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$planLabel plan',
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          if (isLoading)
+            const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else
+            Text(
+              usageLabel,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+            ),
+        ],
       ),
     );
   }
@@ -433,6 +803,15 @@ class _MessageBubble extends StatelessWidget {
                   ],
                 ),
               ],
+              if (message.usage != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  _formatUsage(message.usage!),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: textColor.withValues(alpha: 0.72),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -572,11 +951,13 @@ class _ChatMessage {
   final _MessageRole role;
   final String text;
   final List<LearnAssistCitation> citations;
+  final LearnAssistUsage? usage;
 
   const _ChatMessage({
     required this.role,
     required this.text,
     this.citations = const [],
+    this.usage,
   });
 
   factory _ChatMessage.user(String text) {
@@ -586,20 +967,55 @@ class _ChatMessage {
   factory _ChatMessage.assistant(
     String text, {
     List<LearnAssistCitation> citations = const [],
+    LearnAssistUsage? usage,
   }) {
     return _ChatMessage(
       role: _MessageRole.assistant,
       text: text,
       citations: citations,
+      usage: usage,
     );
   }
 
   factory _ChatMessage.error(String text) {
     return _ChatMessage(role: _MessageRole.error, text: text);
   }
+
+  factory _ChatMessage.fromHistory(ChatHistoryMessage message) {
+    final role = switch (message.role) {
+      'human' => _MessageRole.user,
+      'ai' => _MessageRole.assistant,
+      _ => _MessageRole.assistant,
+    };
+    return _ChatMessage(
+      role: role,
+      text: message.content,
+      citations: message.citations,
+    );
+  }
 }
 
 enum _MessageRole { user, assistant, error }
+
+String _formatUsage(LearnAssistUsage usage) {
+  if (usage.unlimited) return 'Unlimited plan';
+  return 'Daily usage: ${usage.used}/${usage.limit} used, ${usage.remaining} left';
+}
+
+String _formatHistoryTime(DateTime value) {
+  final local = value.toLocal();
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '${local.day}/${local.month}/${local.year} $hour:$minute';
+}
+
+String _planLabel(String planKey) {
+  return switch (planKey) {
+    'plus' => 'Plus',
+    'pro' => 'Pro',
+    _ => 'Free',
+  };
+}
 
 String _formatSubject(String subject) {
   return subject

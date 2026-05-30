@@ -10,7 +10,7 @@ void main() {
   group('LearnAssistRequest', () {
     test('serializes with a selected subject', () {
       const request = LearnAssistRequest(
-        query: 'Who was Major Somnath Sharma?',
+        message: 'Who was Major Somnath Sharma?',
         board: 'scert_odisha',
         classNo: 8,
         subject: 'english',
@@ -19,7 +19,7 @@ void main() {
       );
 
       expect(request.toJson(), {
-        'query': 'Who was Major Somnath Sharma?',
+        'message': 'Who was Major Somnath Sharma?',
         'board': 'scert_odisha',
         'class_no': 8,
         'subject': 'english',
@@ -30,7 +30,7 @@ void main() {
 
     test('serializes subject as null for all subjects', () {
       const request = LearnAssistRequest(
-        query: 'Question',
+        message: 'Question',
         board: 'scert_odisha',
         classNo: 8,
         subject: null,
@@ -112,7 +112,10 @@ void main() {
         client: MockClient(
           (_) async => http.Response(
             jsonEncode({
-              'error': {'code': 'bad_request', 'message': 'query is required'},
+              'error': {
+                'code': 'bad_request',
+                'message': 'message is required',
+              },
             }),
             400,
           ),
@@ -122,7 +125,7 @@ void main() {
       expect(
         service.chat(
           const LearnAssistRequest(
-            query: '',
+            message: '',
             board: 'scert_odisha',
             classNo: 8,
           ),
@@ -130,7 +133,11 @@ void main() {
         throwsA(
           isA<LearnAssistApiException>()
               .having((error) => error.code, 'code', 'bad_request')
-              .having((error) => error.message, 'message', 'query is required'),
+              .having(
+                (error) => error.message,
+                'message',
+                'message is required',
+              ),
         ),
       );
     });
@@ -144,7 +151,7 @@ void main() {
       expect(
         service.chat(
           const LearnAssistRequest(
-            query: 'Question',
+            message: 'Question',
             board: 'scert_odisha',
             classNo: 8,
           ),
@@ -178,7 +185,7 @@ void main() {
 
       await service.chat(
         const LearnAssistRequest(
-          query: 'Question',
+          message: 'Question',
           board: 'scert_odisha',
           classNo: 8,
           subject: null,
@@ -193,6 +200,8 @@ void main() {
       expect(body, isNot(contains('email')));
       expect(body, isNot(contains('name')));
       expect(body, isNot(contains('picture')));
+      expect(body, isNot(contains('query')));
+      expect(body['message'], 'Question');
       expect(body['subject'], isNull);
     });
 
@@ -233,7 +242,7 @@ void main() {
 
       final response = await service.chat(
         const LearnAssistRequest(
-          query: 'Question',
+          message: 'Question',
           board: 'scert_odisha',
           classNo: 8,
         ),

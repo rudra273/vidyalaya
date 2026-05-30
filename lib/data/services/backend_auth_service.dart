@@ -8,16 +8,136 @@ import 'learn_assist_service.dart';
 
 class BackendUser {
   final String userId;
+  final String? firebaseUid;
+  final String? dbId;
   final String? email;
   final String? name;
+  final String? role;
+  final String? status;
+  final String? planKey;
+  final int? planDailyLimit;
+  final String? planProvider;
+  final String? planModel;
 
-  const BackendUser({required this.userId, this.email, this.name});
+  const BackendUser({
+    required this.userId,
+    this.firebaseUid,
+    this.dbId,
+    this.email,
+    this.name,
+    this.role,
+    this.status,
+    this.planKey,
+    this.planDailyLimit,
+    this.planProvider,
+    this.planModel,
+  });
 
   factory BackendUser.fromJson(Map<String, dynamic> json) {
     return BackendUser(
       userId: json['user_id'] as String? ?? '',
+      firebaseUid: json['firebase_uid'] as String?,
+      dbId: json['db_id'] as String?,
       email: json['email'] as String?,
       name: json['name'] as String?,
+      role: json['role'] as String?,
+      status: json['status'] as String?,
+      planKey: json['plan_key'] as String?,
+      planDailyLimit: json['plan_daily_limit'] as int?,
+      planProvider: json['plan_provider'] as String?,
+      planModel: json['plan_model'] as String?,
+    );
+  }
+}
+
+class StudentProfile {
+  final String board;
+  final int classNo;
+  final String preferredLanguage;
+  final String? schoolName;
+  final bool onboardingCompleted;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  const StudentProfile({
+    required this.board,
+    required this.classNo,
+    required this.preferredLanguage,
+    this.schoolName,
+    this.onboardingCompleted = false,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  factory StudentProfile.fromJson(Map<String, dynamic> json) {
+    return StudentProfile(
+      board: json['board'] as String? ?? 'scert_odisha',
+      classNo: json['class_no'] as int? ?? 8,
+      preferredLanguage: json['preferred_language'] as String? ?? 'en',
+      schoolName: json['school_name'] as String?,
+      onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+      createdAt: _parseDateTime(json['created_at']),
+      updatedAt: _parseDateTime(json['updated_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final trimmedSchoolName = schoolName?.trim();
+    return {
+      'board': board,
+      'class_no': classNo,
+      'preferred_language': preferredLanguage,
+      'school_name': trimmedSchoolName == null || trimmedSchoolName.isEmpty
+          ? null
+          : trimmedSchoolName,
+    };
+  }
+}
+
+class ProfileNotFoundException implements Exception {
+  const ProfileNotFoundException();
+}
+
+class ChatHistoryPage {
+  final List<ChatHistoryMessage> messages;
+  final int? nextBefore;
+
+  const ChatHistoryPage({required this.messages, this.nextBefore});
+
+  factory ChatHistoryPage.fromJson(Map<String, dynamic> json) {
+    return ChatHistoryPage(
+      messages: _asMapList(
+        json['messages'],
+      ).map(ChatHistoryMessage.fromJson).toList(),
+      nextBefore: json['next_before'] as int?,
+    );
+  }
+}
+
+class ChatHistoryMessage {
+  final int id;
+  final String role;
+  final String content;
+  final List<LearnAssistCitation> citations;
+  final DateTime? createdAt;
+
+  const ChatHistoryMessage({
+    required this.id,
+    required this.role,
+    required this.content,
+    this.citations = const [],
+    this.createdAt,
+  });
+
+  factory ChatHistoryMessage.fromJson(Map<String, dynamic> json) {
+    return ChatHistoryMessage(
+      id: json['id'] as int? ?? 0,
+      role: json['role'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+      citations: _asMapList(
+        json['citations'],
+      ).map(LearnAssistCitation.fromJson).toList(),
+      createdAt: _parseDateTime(json['created_at']),
     );
   }
 }
@@ -49,6 +169,83 @@ class BackendAuthService {
     );
 
     return BackendUser.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<StudentProfile?> profile() async {
+    try {
+      final response = await _sendWithAuth(
+        forceRefresh: false,
+        requestBuilder: (token) {
+          return _client
+              .get(
+                _baseUrl.resolve('/me/profile'),
+                headers: {'Authorization': 'Bearer $token'},
+              )
+              .timeout(const Duration(seconds: 20));
+        },
+      );
+
+      return StudentProfile.fromJson(_decodeJsonObject(response.body));
+    } on ProfileNotFoundException {
+      return null;
+    }
+  }
+
+  Future<StudentProfile> updateProfile(StudentProfile profile) async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .put(
+              _baseUrl.resolve('/me/profile'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+              body: jsonEncode(profile.toJson()),
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+
+    return StudentProfile.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<LearnAssistUsage> usage() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/me/usage'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+
+    return LearnAssistUsage.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<ChatHistoryPage> history({int limit = 30, int? before}) async {
+    final queryParameters = <String, String>{'limit': '$limit'};
+    if (before != null) queryParameters['before'] = '$before';
+
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl
+                  .resolve('/me/history')
+                  .replace(queryParameters: queryParameters),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+
+    return ChatHistoryPage.fromJson(_decodeJsonObject(response.body));
   }
 
   Future<http.Response> _sendWithAuth({
@@ -85,6 +282,10 @@ class BackendAuthService {
     final decoded = _decodeJsonObject(response.body);
     final error = decoded['error'];
     if (error is Map<String, dynamic>) {
+      if (response.statusCode == 404 &&
+          error['message'] == 'Profile not found.') {
+        throw const ProfileNotFoundException();
+      }
       throw LearnAssistApiException(
         error['code'] as String? ?? 'service_error',
         response.statusCode == 401
@@ -119,4 +320,14 @@ class BackendAuthService {
       'The AI service returned an invalid response.',
     );
   }
+}
+
+DateTime? _parseDateTime(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
+}
+
+List<Map<String, dynamic>> _asMapList(Object? value) {
+  if (value is! List) return const [];
+  return value.whereType<Map<String, dynamic>>().toList();
 }
