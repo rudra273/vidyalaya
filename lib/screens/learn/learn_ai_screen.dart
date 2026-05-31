@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
@@ -220,14 +221,26 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       data: (user) => user != null,
       orElse: () => false,
     );
+    // Kick off user/usage fetch in background if not yet loaded — only once.
     if (isSignedIn && (!accountState.userLoaded || !accountState.usageLoaded)) {
       _ensureAccountSummary();
     }
+    // Derive the effective class from profile selection (not user-choosable in UI).
     final classOptions = learnAssistClassOptions(selectedClasses);
-    final subjectOptions = learnAssistSubjectsForClass(_selectedClass);
-    if (!classOptions.contains(_selectedClass)) {
-      _selectedClass = classOptions.first;
+    final effectiveClass = classOptions.contains(_selectedClass)
+        ? _selectedClass
+        : classOptions.first;
+    if (effectiveClass != _selectedClass) {
+      // Profile changed class — sync without triggering a rebuild loop.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _switchConversation(() {
+          _selectedClass = effectiveClass;
+          _selectedSubject = null;
+        });
+      });
     }
+    final subjectOptions = learnAssistSubjectsForClass(_selectedClass);
     if (_selectedSubject != null &&
         !subjectOptions.contains(_selectedSubject)) {
       _selectedSubject = null;
@@ -243,25 +256,19 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           _channelTitle(widget.channel),
           style: Theme.of(context).textTheme.headlineMedium,
         ),
+        actions: [
+          _PlanUsageBadge(
+            isSignedIn: isSignedIn,
+            user: accountState.user,
+            usage: accountState.usage,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Column(
           children: [
-            _PlanUsageBar(
-              isSignedIn: isSignedIn,
-              user: accountState.user,
-              usage: accountState.usage,
-            ),
             _ContextControls(
-              classOptions: classOptions,
-              selectedClass: _selectedClass,
-              onClassChanged: (value) {
-                if (value == _selectedClass) return;
-                _switchConversation(() {
-                  _selectedClass = value;
-                  _selectedSubject = null;
-                });
-              },
               subjectOptions: subjectOptions,
               selectedSubject: _selectedSubject,
               onSubjectChanged: (value) {
@@ -317,12 +324,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   }
 }
 
-class _PlanUsageBar extends StatelessWidget {
+/// Compact plan + usage badge shown in the AppBar actions row.
+class _PlanUsageBadge extends StatelessWidget {
   final bool isSignedIn;
   final AsyncValue<BackendUser?> user;
   final AsyncValue<LearnAssistUsage?> usage;
 
-  const _PlanUsageBar({
+  const _PlanUsageBadge({
     required this.isSignedIn,
     required this.user,
     required this.usage,
@@ -331,86 +339,61 @@ class _PlanUsageBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
     if (!isSignedIn) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenPadding,
-          8,
-          AppSpacing.screenPadding,
-          8,
-        ),
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
-        child: Row(
-          children: [
-            Icon(Icons.lock_outline_rounded, size: 18, color: cs.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Sign in to use Learn AI',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.lock_outline_rounded, size: 16, color: cs.primary),
+          const SizedBox(width: 4),
+          Text(
+            'Sign in',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
+          ),
+        ],
       );
     }
 
-    final backendUser = user.maybeWhen(
-      data: (value) => value,
-      orElse: () => null,
-    );
-    final currentUsage = usage.maybeWhen(
-      data: (value) => value,
-      orElse: () => null,
-    );
+    final backendUser = user.maybeWhen(data: (v) => v, orElse: () => null);
+    final currentUsage = usage.maybeWhen(data: (v) => v, orElse: () => null);
     final isLoading = user is AsyncLoading || usage is AsyncLoading;
+
     final planKey = backendUser?.planKey ?? 'free';
     final planLabel = _planLabel(planKey);
-    final limit = currentUsage?.limit ?? backendUser?.planDailyLimit;
-    final usageLabel = currentUsage == null
-        ? limit == null
-              ? 'Usage loading'
-              : '$limit/day'
-        : currentUsage.unlimited
-        ? 'Unlimited'
-        : '${currentUsage.remaining} left today';
+
+    String usageLabel;
+    if (isLoading) {
+      usageLabel = '...';
+    } else if (currentUsage == null) {
+      usageLabel = planLabel;
+    } else if (currentUsage.unlimited) {
+      usageLabel = '$planLabel · ∞';
+    } else {
+      usageLabel = '$planLabel · ${currentUsage.remaining} left';
+    }
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        8,
-        AppSpacing.screenPadding,
-        8,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant),
       ),
-      color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.workspace_premium_rounded, size: 18, color: cs.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$planLabel plan',
-              style: Theme.of(
-                context,
-              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+          Icon(Icons.workspace_premium_rounded, size: 14, color: cs.primary),
+          const SizedBox(width: 5),
+          Text(
+            usageLabel,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: cs.onSurface,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          if (isLoading)
-            const SizedBox.square(
-              dimension: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Text(
-              usageLabel,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-            ),
         ],
       ),
     );
@@ -418,9 +401,6 @@ class _PlanUsageBar extends StatelessWidget {
 }
 
 class _ContextControls extends StatelessWidget {
-  final List<int> classOptions;
-  final int selectedClass;
-  final ValueChanged<int> onClassChanged;
   final List<String> subjectOptions;
   final String? selectedSubject;
   final ValueChanged<String?> onSubjectChanged;
@@ -428,9 +408,6 @@ class _ContextControls extends StatelessWidget {
   final ValueChanged<String> onLanguageChanged;
 
   const _ContextControls({
-    required this.classOptions,
-    required this.selectedClass,
-    required this.onClassChanged,
     required this.subjectOptions,
     required this.selectedSubject,
     required this.onSubjectChanged,
@@ -448,7 +425,7 @@ class _ContextControls extends StatelessWidget {
         AppSpacing.screenPadding,
         8,
         AppSpacing.screenPadding,
-        12,
+        10,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -456,24 +433,8 @@ class _ContextControls extends StatelessWidget {
       ),
       child: Wrap(
         spacing: 8,
-        runSpacing: 8,
+        runSpacing: 6,
         children: [
-          if (classOptions.length > 1)
-            _DropdownPill<int>(
-              value: selectedClass,
-              items: [
-                for (final classNo in classOptions)
-                  DropdownMenuItem(
-                    value: classNo,
-                    child: Text('Class $classNo'),
-                  ),
-              ],
-              onChanged: (value) {
-                if (value != null) onClassChanged(value);
-              },
-            )
-          else
-            _StaticPill(label: 'Class $selectedClass'),
           _DropdownPill<String>(
             value: selectedSubject ?? 'all',
             items: [
@@ -494,7 +455,7 @@ class _ContextControls extends StatelessWidget {
           _DropdownPill<String>(
             value: languageMode,
             items: const [
-              DropdownMenuItem(value: 'auto', child: Text('Auto language')),
+              DropdownMenuItem(value: 'auto', child: Text('Auto')),
               DropdownMenuItem(value: 'en', child: Text('English')),
               DropdownMenuItem(value: 'or', child: Text('Odia')),
             ],
@@ -545,28 +506,6 @@ class _DropdownPill<T> extends StatelessWidget {
   }
 }
 
-class _StaticPill extends StatelessWidget {
-  final String label;
-
-  const _StaticPill({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-        border: Border.all(color: cs.outline),
-      ),
-      alignment: Alignment.center,
-      child: Text(label, style: Theme.of(context).textTheme.labelLarge),
-    );
-  }
-}
 
 class _EmptyChat extends StatelessWidget {
   const _EmptyChat();
@@ -658,7 +597,6 @@ class _MessageView extends StatelessWidget {
   Widget _buildAssistant(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isError = message.role == _MessageRole.error;
-    final textColor = isError ? cs.error : cs.onSurface;
 
     return Container(
       width: double.infinity,
@@ -666,12 +604,35 @@ class _MessageView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            message.text,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: textColor, height: 1.45),
-          ),
+          if (isError)
+            Text(
+              message.text,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: cs.error,
+                height: 1.45,
+              ),
+            )
+          else
+            MarkdownBody(
+              data: message.text,
+              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                p: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+                strong: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  height: 1.45,
+                  fontWeight: FontWeight.w700,
+                ),
+                listBullet: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+                blockquote: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  height: 1.45,
+                  color: AppColors.textMuted,
+                ),
+                code: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontFamily: 'monospace',
+                  backgroundColor: cs.surfaceContainerHighest,
+                ),
+              ),
+              shrinkWrap: true,
+            ),
           if (message.citations.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
