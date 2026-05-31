@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:vidyalaya/data/models/learn_assist.dart';
+import 'package:vidyalaya/data/services/backend_auth_service.dart';
 import 'package:vidyalaya/data/services/learn_assist_service.dart';
 
 void main() {
@@ -22,6 +23,7 @@ void main() {
         'message': 'Who was Major Somnath Sharma?',
         'board': 'scert_odisha',
         'class_no': 8,
+        'channel': LearnAssistChannel.learnAssist,
         'subject': 'english',
         'language': 'en',
         'debug': false,
@@ -102,6 +104,128 @@ void main() {
       });
 
       expect(response.citations, isEmpty);
+    });
+  });
+
+  group('cache model serialization', () {
+    test('round-trips LearnAssistUsage', () {
+      const usage = LearnAssistUsage(
+        dateIst: '2026-05-31',
+        used: 2,
+        limit: 10,
+        remaining: 8,
+        unlimited: false,
+      );
+
+      final roundTripped = LearnAssistUsage.fromJson(usage.toJson());
+
+      expect(roundTripped.dateIst, usage.dateIst);
+      expect(roundTripped.used, usage.used);
+      expect(roundTripped.limit, usage.limit);
+      expect(roundTripped.remaining, usage.remaining);
+      expect(roundTripped.unlimited, usage.unlimited);
+    });
+
+    test('round-trips LearnAssistCitation', () {
+      const citation = LearnAssistCitation(
+        label: '[1]',
+        bookName: 'Science',
+        sourcePdf: 'science.pdf',
+        pageNumbers: [10, 11],
+        score: 0.85,
+        chunkIds: ['chunk-1'],
+      );
+
+      final roundTripped = LearnAssistCitation.fromJson(citation.toJson());
+
+      expect(roundTripped.label, citation.label);
+      expect(roundTripped.bookName, citation.bookName);
+      expect(roundTripped.sourcePdf, citation.sourcePdf);
+      expect(roundTripped.pageNumbers, citation.pageNumbers);
+      expect(roundTripped.score, citation.score);
+      expect(roundTripped.chunkIds, citation.chunkIds);
+    });
+
+    test('round-trips backend user', () {
+      const user = BackendUser(
+        userId: 'user-1',
+        firebaseUid: 'firebase-1',
+        dbId: 'db-1',
+        email: 'student@example.com',
+        name: 'Student',
+        role: 'student',
+        status: 'active',
+        planKey: 'free',
+        planDailyLimit: 10,
+        planProvider: 'openai',
+        planModel: 'gpt-5-mini',
+      );
+
+      final roundTripped = BackendUser.fromJson(user.toJson());
+
+      expect(roundTripped.userId, user.userId);
+      expect(roundTripped.firebaseUid, user.firebaseUid);
+      expect(roundTripped.dbId, user.dbId);
+      expect(roundTripped.email, user.email);
+      expect(roundTripped.name, user.name);
+      expect(roundTripped.role, user.role);
+      expect(roundTripped.status, user.status);
+      expect(roundTripped.planKey, user.planKey);
+      expect(roundTripped.planDailyLimit, user.planDailyLimit);
+      expect(roundTripped.planProvider, user.planProvider);
+      expect(roundTripped.planModel, user.planModel);
+    });
+
+    test('round-trips full student profile cache JSON', () {
+      final profile = StudentProfile(
+        board: 'scert_odisha',
+        classNo: 8,
+        preferredLanguage: 'or',
+        schoolName: 'Demo School',
+        onboardingCompleted: true,
+        createdAt: DateTime.utc(2026, 5, 30, 10),
+        updatedAt: DateTime.utc(2026, 5, 31, 11),
+      );
+
+      final roundTripped = StudentProfile.fromJson(profile.toCacheJson());
+
+      expect(roundTripped.board, profile.board);
+      expect(roundTripped.classNo, profile.classNo);
+      expect(roundTripped.preferredLanguage, profile.preferredLanguage);
+      expect(roundTripped.schoolName, profile.schoolName);
+      expect(roundTripped.onboardingCompleted, profile.onboardingCompleted);
+      expect(roundTripped.createdAt, profile.createdAt);
+      expect(roundTripped.updatedAt, profile.updatedAt);
+    });
+
+    test('round-trips chat history page', () {
+      final page = ChatHistoryPage(
+        nextBefore: 42,
+        messages: [
+          ChatHistoryMessage(
+            id: 7,
+            role: 'assistant',
+            content: 'Answer',
+            citations: const [LearnAssistCitation(label: '[1]')],
+            createdAt: DateTime.utc(2026, 5, 31, 12),
+          ),
+        ],
+      );
+
+      final roundTripped = ChatHistoryPage.fromJson(page.toJson());
+
+      expect(roundTripped.nextBefore, page.nextBefore);
+      expect(roundTripped.messages.single.id, page.messages.single.id);
+      expect(roundTripped.messages.single.role, page.messages.single.role);
+      expect(
+        roundTripped.messages.single.content,
+        page.messages.single.content,
+      );
+      expect(
+        roundTripped.messages.single.createdAt,
+        page.messages.single.createdAt,
+      );
+      expect(roundTripped.messages.single.citations.single.label, '[1]');
     });
   });
 

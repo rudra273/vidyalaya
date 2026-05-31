@@ -1,11 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/cache/cache_store.dart';
 import '../data/repositories/user_prefs_repository.dart';
 
 /// Provider for SharedPreferences instance.
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError(
     'sharedPreferencesProvider must be overridden in ProviderScope',
+  );
+});
+
+final cacheStoreProvider = Provider<CacheStore>((ref) {
+  throw UnimplementedError(
+    'cacheStoreProvider must be overridden in ProviderScope',
   );
 });
 

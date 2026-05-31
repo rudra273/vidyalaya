@@ -99,6 +99,15 @@ class LearnAssistCitation {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+    'label': label,
+    'book_name': bookName,
+    'source_pdf': sourcePdf,
+    'page_no': pageNumbers,
+    'score': score,
+    'chunk_ids': chunkIds,
+  };
+
   String get pageLabel {
     if (pageNumbers.isEmpty) return '';
     if (pageNumbers.length == 1) return 'p. ${pageNumbers.first}';
@@ -168,6 +177,14 @@ class LearnAssistUsage {
       unlimited: json['unlimited'] as bool? ?? false,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'date_ist': dateIst,
+    'used': used,
+    'limit': limit,
+    'remaining': remaining,
+    'unlimited': unlimited,
+  };
 }
 
 class LearnAssistApiException implements Exception {

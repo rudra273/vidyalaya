@@ -33,6 +33,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
   // Inline history (loaded into the top of the chat for the current conversation).
   bool _isLoadingHistory = false;
+  bool _isRevalidating = false;
   bool _isLoadingOlder = false;
   int? _historyNextBefore;
 
@@ -66,6 +67,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       applySelection();
       _messages.clear();
       _historyNextBefore = null;
+      _isRevalidating = false;
     });
     _loadHistory();
   }
@@ -74,19 +76,38 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   Future<void> _loadHistory() async {
     final isSignedIn = ref.read(firebaseAuthProvider).currentUser != null;
     if (!isSignedIn) return;
-    setState(() => _isLoadingHistory = true);
 
     final selector = _selector;
     final cache = ref.read(backendAccountCacheProvider.notifier);
+    final cachedPage = cache.peekHistory(selector);
+    if (cachedPage != null) {
+      setState(() {
+        _historyNextBefore = cachedPage.nextBefore;
+        _messages
+          ..clear()
+          ..addAll(_historyToMessages(cachedPage));
+        _isLoadingHistory = false;
+        _isRevalidating = true;
+      });
+    } else {
+      setState(() {
+        _isLoadingHistory = true;
+        _isRevalidating = false;
+      });
+    }
+
     final page = await cache.ensureHistory(selector, forceRefresh: true);
 
     if (!mounted || selector != _selector) return;
     setState(() {
+      _isRevalidating = false;
       _isLoadingHistory = false;
       _historyNextBefore = page?.nextBefore;
       // Insert history ahead of anything sent while it was loading (rare race),
       // so live turns are never lost and history always reads above them.
-      final live = _messages.where((m) => !m.fromHistory).toList(growable: false);
+      final live = _messages
+          .where((m) => !m.fromHistory)
+          .toList(growable: false);
       _messages
         ..clear()
         ..addAll(_historyToMessages(page))
@@ -163,6 +184,25 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             .read(backendAccountCacheProvider.notifier)
             .updateUsage(response.usage!);
       }
+      final now = DateTime.now();
+      final localId = now.microsecondsSinceEpoch;
+      ref
+          .read(backendAccountCacheProvider.notifier)
+          .prependLatestHistoryMessages([
+            ChatHistoryMessage(
+              id: localId,
+              role: 'user',
+              content: query,
+              createdAt: now,
+            ),
+            ChatHistoryMessage(
+              id: localId + 1,
+              role: 'assistant',
+              content: response.answer,
+              citations: response.citations,
+              createdAt: now,
+            ),
+          ]);
       ref.read(backendAccountCacheProvider.notifier).markHistoryStale();
       setState(() {
         _messages.add(
@@ -280,7 +320,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                 setState(() => _languageMode = value);
               },
             ),
-            if (_isLoadingHistory) const LinearProgressIndicator(minHeight: 2),
+            if (_isLoadingHistory)
+              const LinearProgressIndicator(minHeight: 2)
+            else if (_isRevalidating)
+              const _HistoryUpdatingBar(),
             Expanded(
               child: _messages.isEmpty && !_isLoadingHistory
                   ? const _EmptyChat()
@@ -506,6 +549,20 @@ class _DropdownPill<T> extends StatelessWidget {
   }
 }
 
+class _HistoryUpdatingBar extends StatelessWidget {
+  const _HistoryUpdatingBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return LinearProgressIndicator(
+      minHeight: 1,
+      backgroundColor: Colors.transparent,
+      color: cs.primary.withValues(alpha: 0.35),
+    );
+  }
+}
 
 class _EmptyChat extends StatelessWidget {
   const _EmptyChat();
@@ -584,10 +641,9 @@ class _MessageView extends StatelessWidget {
           ),
           child: Text(
             message.text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: cs.onPrimary,
-              height: 1.35,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: cs.onPrimary, height: 1.35),
           ),
         ),
       ),
@@ -607,30 +663,32 @@ class _MessageView extends StatelessWidget {
           if (isError)
             Text(
               message.text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.error,
-                height: 1.45,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: cs.error, height: 1.45),
             )
           else
             MarkdownBody(
               data: message.text,
-              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-                p: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
-                strong: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.45,
-                  fontWeight: FontWeight.w700,
-                ),
-                listBullet: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
-                blockquote: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.45,
-                  color: AppColors.textMuted,
-                ),
-                code: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontFamily: 'monospace',
-                  backgroundColor: cs.surfaceContainerHighest,
-                ),
-              ),
+              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                  .copyWith(
+                    p: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(height: 1.45),
+                    strong: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      height: 1.45,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    listBullet: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(height: 1.45),
+                    blockquote: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(height: 1.45, color: AppColors.textMuted),
+                    code: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontFamily: 'monospace',
+                      backgroundColor: cs.surfaceContainerHighest,
+                    ),
+                  ),
               shrinkWrap: true,
             ),
           if (message.citations.isNotEmpty) ...[
@@ -648,9 +706,9 @@ class _MessageView extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               _formatUsage(message.usage!),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textMuted,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
             ),
           ],
         ],

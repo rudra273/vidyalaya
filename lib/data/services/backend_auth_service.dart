@@ -48,6 +48,20 @@ class BackendUser {
       planModel: json['plan_model'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'user_id': userId,
+    'firebase_uid': firebaseUid,
+    'db_id': dbId,
+    'email': email,
+    'name': name,
+    'role': role,
+    'status': status,
+    'plan_key': planKey,
+    'plan_daily_limit': planDailyLimit,
+    'plan_provider': planProvider,
+    'plan_model': planModel,
+  };
 }
 
 class StudentProfile {
@@ -92,6 +106,16 @@ class StudentProfile {
           : trimmedSchoolName,
     };
   }
+
+  Map<String, dynamic> toCacheJson() => {
+    'board': board,
+    'class_no': classNo,
+    'preferred_language': preferredLanguage,
+    'school_name': schoolName,
+    'onboarding_completed': onboardingCompleted,
+    'created_at': createdAt?.toIso8601String(),
+    'updated_at': updatedAt?.toIso8601String(),
+  };
 }
 
 class ProfileNotFoundException implements Exception {
@@ -112,6 +136,11 @@ class ChatHistoryPage {
       nextBefore: json['next_before'] as int?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'messages': messages.map((message) => message.toJson()).toList(),
+    'next_before': nextBefore,
+  };
 }
 
 class ChatHistoryMessage {
@@ -140,6 +169,14 @@ class ChatHistoryMessage {
       createdAt: _parseDateTime(json['created_at']),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'role': role,
+    'content': content,
+    'citations': citations.map((citation) => citation.toJson()).toList(),
+    'created_at': createdAt?.toIso8601String(),
+  };
 }
 
 class BackendAuthService {

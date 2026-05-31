@@ -1,11 +1,16 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
+import '../data/cache/cache_store.dart';
 import '../data/models/learn_assist.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/services/backend_auth_service.dart';
+import 'core_providers.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
@@ -131,7 +136,12 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         .watch(authStateProvider)
         .maybeWhen(data: (user) => user?.uid, orElse: () => null);
 
+    final previousUid = stateOrNull?.uid;
+
     if (uid == null) {
+      if (previousUid != null) {
+        unawaited(_cache.deleteNamespace(previousUid));
+      }
       _userRequest = null;
       _profileRequest = null;
       _usageRequest = null;
@@ -139,7 +149,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       return const BackendAccountState();
     }
 
-    if (stateOrNull?.uid != uid) {
+    if (previousUid != uid) {
+      if (previousUid != null) {
+        unawaited(_cache.deleteNamespace(previousUid));
+      }
       _userRequest = null;
       _profileRequest = null;
       _usageRequest = null;
@@ -153,72 +166,58 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<BackendUser?> ensureUser({bool forceRefresh = false}) {
     final uid = _currentUid;
     if (uid == null) return Future.value(null);
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.userLoaded &&
-        state.user is AsyncData<BackendUser?> &&
-        _asyncData(state.user) != null) {
-      return Future.value(_asyncData(state.user));
-    }
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.userLoaded &&
-        state.user is AsyncError<BackendUser?>) {
-      return Future.value(_asyncData(state.user));
-    }
-    if (!forceRefresh && _userRequest != null) return _userRequest!;
+    _hydrateUserFromCache(uid);
 
-    final previous = _asyncData(state.user);
-    state = state.copyWith(uid: uid, user: const AsyncLoading());
-    _userRequest = _loadUser(uid, previous);
-    return _userRequest!;
+    final cached = _asyncData(state.user);
+    final hasCache = state.userLoaded && cached != null;
+    if (_userRequest == null && (forceRefresh || _shouldRevalidate())) {
+      if (!hasCache) {
+        state = state.copyWith(uid: uid, user: const AsyncLoading());
+      }
+      _userRequest = _loadUser(uid, cached);
+    }
+
+    return hasCache
+        ? Future.value(cached)
+        : (_userRequest ?? Future.value(null));
   }
 
   Future<StudentProfile?> ensureProfile({bool forceRefresh = false}) {
     final uid = _currentUid;
     if (uid == null) return Future.value(null);
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.profileLoaded &&
-        state.profile is AsyncData<StudentProfile?>) {
-      return Future.value(_asyncData(state.profile));
-    }
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.profileLoaded &&
-        state.profile is AsyncError<StudentProfile?>) {
-      return Future.value(_asyncData(state.profile));
-    }
-    if (!forceRefresh && _profileRequest != null) return _profileRequest!;
+    _hydrateProfileFromCache(uid);
 
-    final previous = _asyncData(state.profile);
-    state = state.copyWith(uid: uid, profile: const AsyncLoading());
-    _profileRequest = _loadProfile(uid, previous);
-    return _profileRequest!;
+    final cached = _asyncData(state.profile);
+    final hasCache = state.profileLoaded && cached != null;
+    if (_profileRequest == null && (forceRefresh || _shouldRevalidate())) {
+      if (!hasCache) {
+        state = state.copyWith(uid: uid, profile: const AsyncLoading());
+      }
+      _profileRequest = _loadProfile(uid, cached);
+    }
+
+    return hasCache
+        ? Future.value(cached)
+        : (_profileRequest ?? Future.value(null));
   }
 
   Future<LearnAssistUsage?> ensureUsage({bool forceRefresh = false}) {
     final uid = _currentUid;
     if (uid == null) return Future.value(null);
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.usageLoaded &&
-        state.usage is AsyncData<LearnAssistUsage?> &&
-        _asyncData(state.usage) != null) {
-      return Future.value(_asyncData(state.usage));
-    }
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.usageLoaded &&
-        state.usage is AsyncError<LearnAssistUsage?>) {
-      return Future.value(_asyncData(state.usage));
-    }
-    if (!forceRefresh && _usageRequest != null) return _usageRequest!;
+    _hydrateUsageFromCache(uid);
 
-    final previous = _asyncData(state.usage);
-    state = state.copyWith(uid: uid, usage: const AsyncLoading());
-    _usageRequest = _loadUsage(uid, previous);
-    return _usageRequest!;
+    final cached = _asyncData(state.usage);
+    final hasCache = state.usageLoaded && cached != null;
+    if (_usageRequest == null && (forceRefresh || _shouldRevalidate())) {
+      if (!hasCache) {
+        state = state.copyWith(uid: uid, usage: const AsyncLoading());
+      }
+      _usageRequest = _loadUsage(uid, cached);
+    }
+
+    return hasCache
+        ? Future.value(cached)
+        : (_usageRequest ?? Future.value(null));
   }
 
   /// Loads history for one conversation, identified by [selector]
@@ -231,30 +230,29 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   }) {
     final uid = _currentUid;
     if (uid == null) return Future.value(null);
+    _hydrateHistoryFromCache(uid, selector);
 
     final sameSelector = state.historySelector == selector;
-    if (!forceRefresh &&
-        sameSelector &&
-        state.uid == uid &&
-        state.historyLoaded &&
-        (state.history is AsyncData<ChatHistoryPage?> ||
-            state.history is AsyncError<ChatHistoryPage?>)) {
-      return Future.value(_asyncData(state.history));
-    }
-    if (!forceRefresh && sameSelector && _historyRequest != null) {
-      return _historyRequest!;
+    final cached = sameSelector ? _asyncData(state.history) : null;
+    final hasCache = state.historyLoaded && cached != null;
+
+    if (_historyRequest == null && (forceRefresh || _shouldRevalidate())) {
+      if (!hasCache) {
+        state = state.copyWith(
+          uid: uid,
+          history: const AsyncLoading(),
+          historySelector: selector,
+        );
+      }
+      _historyRequest = _loadHistory(uid, selector, cached);
     }
 
-    // Different conversation (or forced): drop the old page so stale messages
-    // never flash, and fetch fresh from the first page.
-    final previous = sameSelector ? _asyncData(state.history) : null;
-    state = state.copyWith(
-      uid: uid,
-      history: const AsyncLoading(),
-      historySelector: selector,
-    );
-    _historyRequest = _loadHistory(uid, selector, previous);
-    return _historyRequest!;
+    if (hasCache && forceRefresh && _historyRequest != null) {
+      return _historyRequest!;
+    }
+    return hasCache
+        ? Future.value(cached)
+        : (_historyRequest ?? Future.value(null));
   }
 
   Future<ChatHistoryPage?> loadOlderHistory() {
@@ -267,7 +265,6 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     if (uid == null) return Future.value(null);
     if (_historyRequest != null) return _historyRequest!;
 
-    state = state.copyWith(uid: uid, history: const AsyncLoading());
     _historyRequest = _loadHistory(uid, selector, current, before: before);
     return _historyRequest!;
   }
@@ -281,6 +278,11 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           .read(backendAuthServiceProvider)
           .updateProfile(profile);
       if (_currentUid == uid) {
+        await _cache.write<StudentProfile>(
+          _profileKey(uid),
+          saved,
+          (profile) => profile.toCacheJson(),
+        );
         state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
       }
       return saved;
@@ -298,6 +300,13 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   void updateUsage(LearnAssistUsage usage) {
     final uid = _currentUid;
     if (uid == null) return;
+    unawaited(
+      _cache.write<LearnAssistUsage>(
+        _usageKey(uid),
+        usage,
+        (usage) => usage.toJson(),
+      ),
+    );
     state = state.copyWith(
       uid: uid,
       usage: AsyncData(usage),
@@ -314,8 +323,11 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   void prependLatestHistoryMessages(List<ChatHistoryMessage> messages) {
     final uid = _currentUid;
     if (uid == null || messages.isEmpty) return;
-    final current = _asyncData(state.history);
-    if (current == null) return;
+    final selector = state.historySelector;
+    if (selector == null) return;
+    final current =
+        _asyncData(state.history) ??
+        const ChatHistoryPage(messages: [], nextBefore: null);
     final existingIds = current.messages.map((message) => message.id).toSet();
     final uniqueMessages = [
       ...messages.where((message) => !existingIds.contains(message.id)),
@@ -331,21 +343,41 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       ),
       historyLoaded: true,
     );
+    unawaited(
+      _cache.write<ChatHistoryPage>(
+        _historyKey(uid, selector),
+        ChatHistoryPage(
+          messages: uniqueMessages,
+          nextBefore: current.nextBefore,
+        ),
+        (page) => page.toJson(),
+      ),
+    );
   }
 
   Future<BackendUser?> _loadUser(String uid, BackendUser? previous) async {
     try {
       final user = await ref.read(backendAuthServiceProvider).me();
       if (_currentUid == uid) {
-        state = state.copyWith(user: AsyncData(user), userLoaded: true);
+        await _cache.write<BackendUser>(
+          _userKey(uid),
+          user,
+          (user) => user.toJson(),
+        );
+        final changed = !_jsonEquals(previous?.toJson(), user.toJson());
+        state = changed
+            ? state.copyWith(user: AsyncData(user), userLoaded: true)
+            : state.copyWith(userLoaded: true);
       }
       return user;
     } catch (error, stackTrace) {
       if (_currentUid == uid) {
-        state = state.copyWith(
-          user: AsyncError(error, stackTrace),
-          userLoaded: true,
-        );
+        state = previous == null
+            ? state.copyWith(
+                user: AsyncError(error, stackTrace),
+                userLoaded: true,
+              )
+            : state.copyWith(userLoaded: true);
       }
       return previous;
     } finally {
@@ -360,18 +392,32 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     try {
       final profile = await ref.read(backendAuthServiceProvider).profile();
       if (_currentUid == uid) {
-        state = state.copyWith(
-          profile: AsyncData(profile),
-          profileLoaded: true,
+        if (profile == null) {
+          await _cache.delete(_profileKey(uid));
+        } else {
+          await _cache.write<StudentProfile>(
+            _profileKey(uid),
+            profile,
+            (profile) => profile.toCacheJson(),
+          );
+        }
+        final changed = !_jsonEquals(
+          previous?.toCacheJson(),
+          profile?.toCacheJson(),
         );
+        state = changed
+            ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
+            : state.copyWith(profileLoaded: true);
       }
       return profile;
     } catch (error, stackTrace) {
       if (_currentUid == uid) {
-        state = state.copyWith(
-          profile: AsyncError(error, stackTrace),
-          profileLoaded: true,
-        );
+        state = previous == null
+            ? state.copyWith(
+                profile: AsyncError(error, stackTrace),
+                profileLoaded: true,
+              )
+            : state.copyWith(profileLoaded: true);
       }
       return previous;
     } finally {
@@ -386,15 +432,25 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     try {
       final usage = await ref.read(backendAuthServiceProvider).usage();
       if (_currentUid == uid) {
-        state = state.copyWith(usage: AsyncData(usage), usageLoaded: true);
+        await _cache.write<LearnAssistUsage>(
+          _usageKey(uid),
+          usage,
+          (usage) => usage.toJson(),
+        );
+        final changed = !_jsonEquals(previous?.toJson(), usage.toJson());
+        state = changed
+            ? state.copyWith(usage: AsyncData(usage), usageLoaded: true)
+            : state.copyWith(usageLoaded: true);
       }
       return usage;
     } catch (error, stackTrace) {
       if (_currentUid == uid) {
-        state = state.copyWith(
-          usage: AsyncError(error, stackTrace),
-          usageLoaded: true,
-        );
+        state = previous == null
+            ? state.copyWith(
+                usage: AsyncError(error, stackTrace),
+                usageLoaded: true,
+              )
+            : state.copyWith(usageLoaded: true);
       }
       return previous;
     } finally {
@@ -425,18 +481,30 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
               nextBefore: page.nextBefore,
             );
       if (_currentUid == uid) {
-        state = state.copyWith(
-          history: AsyncData(mergedPage),
-          historyLoaded: true,
+        await _cache.write<ChatHistoryPage>(
+          _historyKey(uid, selector),
+          mergedPage,
+          (page) => page.toJson(),
         );
+        final changed = !_jsonEquals(previous?.toJson(), mergedPage.toJson());
+        state = changed
+            ? state.copyWith(
+                history: AsyncData(mergedPage),
+                historyLoaded: true,
+                historySelector: selector,
+              )
+            : state.copyWith(historyLoaded: true, historySelector: selector);
       }
       return mergedPage;
     } catch (error, stackTrace) {
       if (_currentUid == uid) {
-        state = state.copyWith(
-          history: AsyncError(error, stackTrace),
-          historyLoaded: true,
-        );
+        state = previous == null
+            ? state.copyWith(
+                history: AsyncError(error, stackTrace),
+                historyLoaded: true,
+                historySelector: selector,
+              )
+            : state.copyWith(historyLoaded: true, historySelector: selector);
       }
       return previous;
     } finally {
@@ -445,6 +513,93 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   }
 
   String? get _currentUid => ref.read(firebaseAuthProvider).currentUser?.uid;
+
+  CacheStore get _cache => ref.read(cacheStoreProvider);
+
+  String _userKey(String uid) => CacheStore.key(uid: uid, name: 'backend_user');
+  String _profileKey(String uid) {
+    return CacheStore.key(uid: uid, name: 'student_profile');
+  }
+
+  String _usageKey(String uid) => CacheStore.key(uid: uid, name: 'usage');
+
+  String _historyKey(String uid, HistorySelector selector) {
+    return CacheStore.key(
+      uid: uid,
+      name:
+          'history:${selector.channel}:${selector.board}:${selector.classNo}:${selector.subject ?? "_all"}',
+    );
+  }
+
+  bool _shouldRevalidate() => true;
+
+  void _hydrateUserFromCache(String uid) {
+    if (state.uid == uid && state.userLoaded) return;
+    final entry = _cache.readWithMeta<BackendUser>(
+      _userKey(uid),
+      (json) => BackendUser.fromJson(_jsonMap(json)),
+    );
+    if (entry != null) {
+      state = state.copyWith(
+        uid: uid,
+        user: AsyncData(entry.value),
+        userLoaded: true,
+      );
+    }
+  }
+
+  void _hydrateProfileFromCache(String uid) {
+    if (state.uid == uid && state.profileLoaded) return;
+    final entry = _cache.readWithMeta<StudentProfile>(
+      _profileKey(uid),
+      (json) => StudentProfile.fromJson(_jsonMap(json)),
+    );
+    if (entry != null) {
+      state = state.copyWith(
+        uid: uid,
+        profile: AsyncData(entry.value),
+        profileLoaded: true,
+      );
+    }
+  }
+
+  void _hydrateUsageFromCache(String uid) {
+    if (state.uid == uid && state.usageLoaded) return;
+    final entry = _cache.readWithMeta<LearnAssistUsage>(
+      _usageKey(uid),
+      (json) => LearnAssistUsage.fromJson(_jsonMap(json)),
+    );
+    if (entry != null) {
+      state = state.copyWith(
+        uid: uid,
+        usage: AsyncData(entry.value),
+        usageLoaded: true,
+      );
+    }
+  }
+
+  void _hydrateHistoryFromCache(String uid, HistorySelector selector) {
+    if (state.historySelector == selector && state.historyLoaded) return;
+    final entry = _cache.readWithMeta<ChatHistoryPage>(
+      _historyKey(uid, selector),
+      (json) => ChatHistoryPage.fromJson(_jsonMap(json)),
+    );
+    if (entry != null) {
+      state = state.copyWith(
+        uid: uid,
+        history: AsyncData(entry.value),
+        historySelector: selector,
+        historyLoaded: true,
+      );
+    }
+  }
+
+  ChatHistoryPage? peekHistory(HistorySelector selector) {
+    final uid = _currentUid;
+    if (uid == null) return null;
+    _hydrateHistoryFromCache(uid, selector);
+    return state.historySelector == selector ? _asyncData(state.history) : null;
+  }
 
   String _requireUid() {
     final uid = _currentUid;
@@ -460,4 +615,12 @@ final backendAccountCacheProvider =
 
 T? _asyncData<T>(AsyncValue<T?> value) {
   return value.maybeWhen(data: (data) => data, orElse: () => null);
+}
+
+Map<String, dynamic> _jsonMap(Object json) {
+  return Map<String, dynamic>.from(json as Map);
+}
+
+bool _jsonEquals(Object? left, Object? right) {
+  return jsonEncode(left) == jsonEncode(right);
 }
