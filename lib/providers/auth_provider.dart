@@ -40,12 +40,40 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
+/// Identifies one conversation's history thread (mirrors the backend thread id).
+/// Used as the cache key so switching subject/agent re-fetches the right history.
+class HistorySelector {
+  final String channel;
+  final String board;
+  final int classNo;
+  final String? subject;
+
+  const HistorySelector({
+    required this.channel,
+    required this.board,
+    required this.classNo,
+    this.subject,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is HistorySelector &&
+      other.channel == channel &&
+      other.board == board &&
+      other.classNo == classNo &&
+      other.subject == subject;
+
+  @override
+  int get hashCode => Object.hash(channel, board, classNo, subject);
+}
+
 class BackendAccountState {
   final String? uid;
   final AsyncValue<BackendUser?> user;
   final AsyncValue<StudentProfile?> profile;
   final AsyncValue<LearnAssistUsage?> usage;
   final AsyncValue<ChatHistoryPage?> history;
+  final HistorySelector? historySelector;
   final bool userLoaded;
   final bool profileLoaded;
   final bool usageLoaded;
@@ -57,6 +85,7 @@ class BackendAccountState {
     this.profile = const AsyncData(null),
     this.usage = const AsyncData(null),
     this.history = const AsyncData(null),
+    this.historySelector,
     this.userLoaded = false,
     this.profileLoaded = false,
     this.usageLoaded = false,
@@ -69,6 +98,7 @@ class BackendAccountState {
     AsyncValue<StudentProfile?>? profile,
     AsyncValue<LearnAssistUsage?>? usage,
     AsyncValue<ChatHistoryPage?>? history,
+    HistorySelector? historySelector,
     bool? userLoaded,
     bool? profileLoaded,
     bool? usageLoaded,
@@ -80,6 +110,7 @@ class BackendAccountState {
       profile: profile ?? this.profile,
       usage: usage ?? this.usage,
       history: history ?? this.history,
+      historySelector: historySelector ?? this.historySelector,
       userLoaded: userLoaded ?? this.userLoaded,
       profileLoaded: profileLoaded ?? this.profileLoaded,
       usageLoaded: usageLoaded ?? this.usageLoaded,
@@ -190,30 +221,45 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     return _usageRequest!;
   }
 
-  Future<ChatHistoryPage?> ensureHistory({bool forceRefresh = false}) {
+  /// Loads history for one conversation, identified by [selector]
+  /// (channel + board + class + subject). When the selector differs from what is
+  /// cached, the cache is reset and re-fetched so each subject/agent shows only
+  /// its own messages.
+  Future<ChatHistoryPage?> ensureHistory(
+    HistorySelector selector, {
+    bool forceRefresh = false,
+  }) {
     final uid = _currentUid;
     if (uid == null) return Future.value(null);
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.historyLoaded &&
-        state.history is AsyncData<ChatHistoryPage?>) {
-      return Future.value(_asyncData(state.history));
-    }
-    if (!forceRefresh &&
-        state.uid == uid &&
-        state.historyLoaded &&
-        state.history is AsyncError<ChatHistoryPage?>) {
-      return Future.value(_asyncData(state.history));
-    }
-    if (!forceRefresh && _historyRequest != null) return _historyRequest!;
 
-    final previous = _asyncData(state.history);
-    state = state.copyWith(uid: uid, history: const AsyncLoading());
-    _historyRequest = _loadHistory(uid, previous);
+    final sameSelector = state.historySelector == selector;
+    if (!forceRefresh &&
+        sameSelector &&
+        state.uid == uid &&
+        state.historyLoaded &&
+        (state.history is AsyncData<ChatHistoryPage?> ||
+            state.history is AsyncError<ChatHistoryPage?>)) {
+      return Future.value(_asyncData(state.history));
+    }
+    if (!forceRefresh && sameSelector && _historyRequest != null) {
+      return _historyRequest!;
+    }
+
+    // Different conversation (or forced): drop the old page so stale messages
+    // never flash, and fetch fresh from the first page.
+    final previous = sameSelector ? _asyncData(state.history) : null;
+    state = state.copyWith(
+      uid: uid,
+      history: const AsyncLoading(),
+      historySelector: selector,
+    );
+    _historyRequest = _loadHistory(uid, selector, previous);
     return _historyRequest!;
   }
 
   Future<ChatHistoryPage?> loadOlderHistory() {
+    final selector = state.historySelector;
+    if (selector == null) return Future.value(null);
     final current = _asyncData(state.history);
     final before = current?.nextBefore;
     if (before == null) return Future.value(current);
@@ -222,7 +268,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     if (_historyRequest != null) return _historyRequest!;
 
     state = state.copyWith(uid: uid, history: const AsyncLoading());
-    _historyRequest = _loadHistory(uid, current, before: before);
+    _historyRequest = _loadHistory(uid, selector, current, before: before);
     return _historyRequest!;
   }
 
@@ -358,13 +404,20 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
 
   Future<ChatHistoryPage?> _loadHistory(
     String uid,
+    HistorySelector selector,
     ChatHistoryPage? previous, {
     int? before,
   }) async {
     try {
       final page = await ref
           .read(backendAuthServiceProvider)
-          .history(before: before);
+          .history(
+            board: selector.board,
+            classNo: selector.classNo,
+            channel: selector.channel,
+            subject: selector.subject,
+            before: before,
+          );
       final mergedPage = before == null || previous == null
           ? page
           : ChatHistoryPage(

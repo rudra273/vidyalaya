@@ -1,7 +1,22 @@
+/// Agent/surface the student is talking to (the backend "channel"). Each is its
+/// own conversation with isolated memory. Only [learnAssist] is live today;
+/// [tutor] is reserved for the upcoming AI Tutor agent.
+class LearnAssistChannel {
+  const LearnAssistChannel._();
+
+  static const learnAssist = 'learn_assist';
+  static const tutor = 'tutor';
+}
+
 class LearnAssistRequest {
   final String message;
   final String board;
   final int classNo;
+
+  /// Agent/surface, e.g. [LearnAssistChannel.learnAssist].
+  final String channel;
+
+  /// Academic subject, or null for cross-subject "ask anything".
   final String? subject;
   final String? language;
   final bool debug;
@@ -10,6 +25,7 @@ class LearnAssistRequest {
     required this.message,
     required this.board,
     required this.classNo,
+    this.channel = LearnAssistChannel.learnAssist,
     this.subject,
     this.language,
     this.debug = false,
@@ -19,6 +35,7 @@ class LearnAssistRequest {
     'message': message,
     'board': board,
     'class_no': classNo,
+    'channel': channel,
     'subject': subject,
     'language': language,
     'debug': debug,

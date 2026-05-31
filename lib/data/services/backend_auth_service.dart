@@ -227,8 +227,25 @@ class BackendAuthService {
     return LearnAssistUsage.fromJson(_decodeJsonObject(response.body));
   }
 
-  Future<ChatHistoryPage> history({int limit = 30, int? before}) async {
-    final queryParameters = <String, String>{'limit': '$limit'};
+  /// Loads one conversation's history. The backend scopes history to the same
+  /// (channel, board, class, subject) thread the chat used, so [board] and
+  /// [classNo] are required and must match what chat sends. [subject] null = the
+  /// cross-subject "general" conversation.
+  Future<ChatHistoryPage> history({
+    required String board,
+    required int classNo,
+    String channel = LearnAssistChannel.learnAssist,
+    String? subject,
+    int limit = 30,
+    int? before,
+  }) async {
+    final queryParameters = <String, String>{
+      'board': board,
+      'class_no': '$classNo',
+      'channel': channel,
+      'limit': '$limit',
+    };
+    if (subject != null) queryParameters['subject'] = subject;
     if (before != null) queryParameters['before'] = '$before';
 
     final response = await _sendWithAuth(

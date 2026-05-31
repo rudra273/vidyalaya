@@ -9,7 +9,12 @@ import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
-  const LearnAiScreen({super.key});
+  final String channel;
+
+  const LearnAiScreen({
+    super.key,
+    this.channel = LearnAssistChannel.learnAssist,
+  });
 
   @override
   ConsumerState<LearnAiScreen> createState() => _LearnAiScreenState();
@@ -25,11 +30,24 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   String _languageMode = 'auto';
   bool _isSending = false;
 
+  // Inline history (loaded into the top of the chat for the current conversation).
+  bool _isLoadingHistory = false;
+  bool _isLoadingOlder = false;
+  int? _historyNextBefore;
+
+  HistorySelector get _selector => HistorySelector(
+    channel: widget.channel,
+    board: 'scert_odisha',
+    classNo: _selectedClass,
+    subject: _selectedSubject,
+  );
+
   @override
   void initState() {
     super.initState();
     _selectedClass = resolveLearnAssistClass(ref.read(userSelectionProvider));
     _ensureAccountSummary();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
   }
 
   @override
@@ -37,6 +55,76 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Switch the active conversation (subject/class change): clear what's on
+  /// screen and load that conversation's own saved history, so the screen always
+  /// matches the model's per-conversation memory.
+  void _switchConversation(VoidCallback applySelection) {
+    setState(() {
+      applySelection();
+      _messages.clear();
+      _historyNextBefore = null;
+    });
+    _loadHistory();
+  }
+
+  /// Load the first page of history for the current selector into the chat.
+  Future<void> _loadHistory() async {
+    final isSignedIn = ref.read(firebaseAuthProvider).currentUser != null;
+    if (!isSignedIn) return;
+    setState(() => _isLoadingHistory = true);
+
+    final selector = _selector;
+    final cache = ref.read(backendAccountCacheProvider.notifier);
+    final page = await cache.ensureHistory(selector, forceRefresh: true);
+
+    if (!mounted || selector != _selector) return;
+    setState(() {
+      _isLoadingHistory = false;
+      _historyNextBefore = page?.nextBefore;
+      // Insert history ahead of anything sent while it was loading (rare race),
+      // so live turns are never lost and history always reads above them.
+      final live = _messages.where((m) => !m.fromHistory).toList(growable: false);
+      _messages
+        ..clear()
+        ..addAll(_historyToMessages(page))
+        ..addAll(live);
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _loadOlderHistory() async {
+    if (_isLoadingOlder || _historyNextBefore == null) return;
+    setState(() => _isLoadingOlder = true);
+
+    final selector = _selector;
+    final cache = ref.read(backendAccountCacheProvider.notifier);
+    final page = await cache.loadOlderHistory();
+
+    if (!mounted || selector != _selector) return;
+    setState(() {
+      _isLoadingOlder = false;
+      _historyNextBefore = page?.nextBefore;
+      // Rebuild the leading history block (full merged page) ahead of any
+      // messages sent this session.
+      final liveMessages = _messages
+          .where((m) => !m.fromHistory)
+          .toList(growable: false);
+      _messages
+        ..clear()
+        ..addAll(_historyToMessages(page))
+        ..addAll(liveMessages);
+    });
+  }
+
+  List<_ChatMessage> _historyToMessages(ChatHistoryPage? page) {
+    if (page == null) return const [];
+    final sorted = [...page.messages]..sort((a, b) => a.id.compareTo(b.id));
+    return sorted
+        .map(_ChatMessage.fromHistory)
+        .where((m) => m.text.trim().isNotEmpty)
+        .toList();
   }
 
   Future<void> _sendMessage() async {
@@ -61,6 +149,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           message: query,
           board: 'scert_odisha',
           classNo: _selectedClass,
+          channel: widget.channel,
           subject: _selectedSubject,
           language: language,
           debug: false,
@@ -144,19 +233,16 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       _selectedSubject = null;
     }
 
+    // Leading "load older" row shows only when the conversation has older pages.
+    final hasOlder = _historyNextBefore != null;
+    final leadingCount = hasOlder ? 1 : 0;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Learn with AI',
+          _channelTitle(widget.channel),
           style: Theme.of(context).textTheme.headlineMedium,
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Chat history',
-            onPressed: isSignedIn ? _showHistory : null,
-            icon: const Icon(Icons.history_rounded),
-          ),
-        ],
       ),
       body: SafeArea(
         child: Column(
@@ -170,7 +256,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
               classOptions: classOptions,
               selectedClass: _selectedClass,
               onClassChanged: (value) {
-                setState(() {
+                if (value == _selectedClass) return;
+                _switchConversation(() {
                   _selectedClass = value;
                   _selectedSubject = null;
                 });
@@ -178,15 +265,17 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
               subjectOptions: subjectOptions,
               selectedSubject: _selectedSubject,
               onSubjectChanged: (value) {
-                setState(() => _selectedSubject = value);
+                if (value == _selectedSubject) return;
+                _switchConversation(() => _selectedSubject = value);
               },
               languageMode: _languageMode,
               onLanguageChanged: (value) {
                 setState(() => _languageMode = value);
               },
             ),
+            if (_isLoadingHistory) const LinearProgressIndicator(minHeight: 2),
             Expanded(
-              child: _messages.isEmpty
+              child: _messages.isEmpty && !_isLoadingHistory
                   ? const _EmptyChat()
                   : ListView.separated(
                       controller: _scrollController,
@@ -196,13 +285,23 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                         AppSpacing.screenPadding,
                         16,
                       ),
-                      itemCount: _messages.length + (_isSending ? 1 : 0),
+                      itemCount:
+                          leadingCount +
+                          _messages.length +
+                          (_isSending ? 1 : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        if (_isSending && index == _messages.length) {
-                          return const _TypingBubble();
+                        if (hasOlder && index == 0) {
+                          return _LoadOlderButton(
+                            isLoading: _isLoadingOlder,
+                            onPressed: _loadOlderHistory,
+                          );
                         }
-                        return _MessageBubble(message: _messages[index]);
+                        final messageIndex = index - leadingCount;
+                        if (_isSending && messageIndex == _messages.length) {
+                          return const _TypingIndicator();
+                        }
+                        return _MessageView(message: _messages[messageIndex]);
                       },
                     ),
             ),
@@ -214,237 +313,6 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Future<void> _showHistory() async {
-    ref.read(backendAccountCacheProvider.notifier).ensureHistory();
-    final selectedMessages = await showModalBottomSheet<List<_ChatMessage>>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      builder: (context) => const _HistorySheet(),
-    );
-
-    if (!mounted || selectedMessages == null || selectedMessages.isEmpty) {
-      return;
-    }
-
-    setState(() {
-      _messages
-        ..clear()
-        ..addAll(selectedMessages);
-    });
-    _scrollToBottom();
-  }
-}
-
-class _HistorySheet extends ConsumerWidget {
-  const _HistorySheet();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final accountState = ref.watch(backendAccountCacheProvider);
-    final history = accountState.history.maybeWhen(
-      data: (value) => value,
-      orElse: () => null,
-    );
-    final isLoading = accountState.history is AsyncLoading;
-    final error = accountState.history.maybeWhen(
-      error: (error, _) => error,
-      orElse: () => null,
-    );
-    final messages =
-        history == null ? const <ChatHistoryMessage>[] : [...history.messages]
-          ..sort((a, b) => a.id.compareTo(b.id));
-
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.78,
-      minChildSize: 0.45,
-      maxChildSize: 0.92,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                12,
-                AppSpacing.screenPadding,
-                8,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Chat History',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Refresh',
-                    onPressed: isLoading
-                        ? null
-                        : () => ref
-                              .read(backendAccountCacheProvider.notifier)
-                              .ensureHistory(forceRefresh: true),
-                    icon: const Icon(Icons.refresh_rounded),
-                  ),
-                  IconButton(
-                    tooltip: 'Close',
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ),
-            if (isLoading) const LinearProgressIndicator(minHeight: 2),
-            if (error != null)
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.screenPadding),
-                child: Text(
-                  error.toString(),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            Expanded(
-              child: messages.isEmpty && !isLoading
-                  ? const Center(child: Text('No saved chats yet.'))
-                  : ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenPadding,
-                        8,
-                        AppSpacing.screenPadding,
-                        16,
-                      ),
-                      itemCount: messages.length + 1,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        if (index == messages.length) {
-                          return _HistoryActions(
-                            canLoadOlder: history?.nextBefore != null,
-                            canUseHistory: messages.isNotEmpty,
-                            isLoading: isLoading,
-                            onLoadOlder: () => ref
-                                .read(backendAccountCacheProvider.notifier)
-                                .loadOlderHistory(),
-                            onUseHistory: () {
-                              final chatMessages = messages
-                                  .map(_ChatMessage.fromHistory)
-                                  .where(
-                                    (message) => message.text.trim().isNotEmpty,
-                                  )
-                                  .toList();
-                              Navigator.of(context).pop(chatMessages);
-                            },
-                          );
-                        }
-
-                        return _HistoryMessageTile(message: messages[index]);
-                      },
-                    ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _HistoryMessageTile extends StatelessWidget {
-  final ChatHistoryMessage message;
-
-  const _HistoryMessageTile({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isHuman = message.role == 'human';
-
-    return Align(
-      alignment: isHuman ? Alignment.centerRight : Alignment.centerLeft,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.82,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isHuman ? cs.primaryContainer : cs.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: cs.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                message.content,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              if (message.citations.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final citation in message.citations)
-                      _CitationChip(citation: citation),
-                  ],
-                ),
-              ],
-              if (message.createdAt != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _formatHistoryTime(message.createdAt!),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HistoryActions extends StatelessWidget {
-  final bool canLoadOlder;
-  final bool canUseHistory;
-  final bool isLoading;
-  final VoidCallback onLoadOlder;
-  final VoidCallback onUseHistory;
-
-  const _HistoryActions({
-    required this.canLoadOlder,
-    required this.canUseHistory,
-    required this.isLoading,
-    required this.onLoadOlder,
-    required this.onUseHistory,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (canLoadOlder)
-          OutlinedButton.icon(
-            onPressed: isLoading ? null : onLoadOlder,
-            icon: const Icon(Icons.expand_more_rounded),
-            label: const Text('Load Older'),
-          ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: canUseHistory ? onUseHistory : null,
-            icon: const Icon(Icons.restore_rounded),
-            label: const Text('Show In Chat'),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -745,29 +613,24 @@ class _EmptyChat extends StatelessWidget {
   }
 }
 
-class _MessageBubble extends StatelessWidget {
+/// A single chat message. The student's own messages keep a compact bubble on
+/// the right; the AI's answers (and errors) render as plain, full-width text on
+/// the left - no chat bubble - so long explanations read like a document.
+class _MessageView extends StatelessWidget {
   final _ChatMessage message;
 
-  const _MessageBubble({required this.message});
+  const _MessageView({required this.message});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isUser = message.role == _MessageRole.user;
-    final isError = message.role == _MessageRole.error;
-    final bubbleColor = isUser
-        ? cs.primary
-        : isError
-        ? cs.errorContainer
-        : cs.surface;
-    final textColor = isUser
-        ? cs.onPrimary
-        : isError
-        ? cs.onErrorContainer
-        : cs.onSurface;
+    return isUser ? _buildUser(context) : _buildAssistant(context);
+  }
 
+  Widget _buildUser(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: Alignment.centerRight,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width * 0.82,
@@ -775,47 +638,90 @@ class _MessageBubble extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: bubbleColor,
-            borderRadius: BorderRadius.circular(16).copyWith(
-              bottomRight: isUser ? const Radius.circular(4) : null,
-              bottomLeft: !isUser ? const Radius.circular(4) : null,
-            ),
-            border: isUser ? null : Border.all(color: cs.outlineVariant),
+            color: cs.primary,
+            borderRadius: BorderRadius.circular(
+              16,
+            ).copyWith(bottomRight: const Radius.circular(4)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                message.text,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: textColor,
-                  height: 1.35,
-                ),
-              ),
-              if (message.citations.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final citation in message.citations)
-                      _CitationChip(citation: citation),
-                  ],
-                ),
-              ],
-              if (message.usage != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  _formatUsage(message.usage!),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: textColor.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
-            ],
+          child: Text(
+            message.text,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: cs.onPrimary,
+              height: 1.35,
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAssistant(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isError = message.role == _MessageRole.error;
+    final textColor = isError ? cs.error : cs.onSurface;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message.text,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: textColor, height: 1.45),
+          ),
+          if (message.citations.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final citation in message.citations)
+                  _CitationChip(citation: citation),
+              ],
+            ),
+          ],
+          if (message.usage != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _formatUsage(message.usage!),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Inline "load older messages" header, shown at the top of the chat when the
+/// conversation has earlier history pages.
+class _LoadOlderButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  const _LoadOlderButton({required this.isLoading, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: isLoading
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          : TextButton.icon(
+              onPressed: onPressed,
+              icon: const Icon(Icons.expand_less_rounded, size: 18),
+              label: const Text('Load older messages'),
+            ),
     );
   }
 }
@@ -851,30 +757,18 @@ class _CitationChip extends StatelessWidget {
   }
 }
 
-class _TypingBubble extends StatelessWidget {
-  const _TypingBubble();
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator();
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(
-            16,
-          ).copyWith(bottomLeft: const Radius.circular(4)),
-          border: Border.all(color: cs.outlineVariant),
-        ),
-        child: Text(
-          'Thinking...',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Text(
+        'Thinking...',
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
       ),
     );
   }
@@ -953,11 +847,16 @@ class _ChatMessage {
   final List<LearnAssistCitation> citations;
   final LearnAssistUsage? usage;
 
+  /// True for messages loaded from saved history (vs. sent this session). Lets
+  /// "load older" rebuild the leading history block without dropping live turns.
+  final bool fromHistory;
+
   const _ChatMessage({
     required this.role,
     required this.text,
     this.citations = const [],
     this.usage,
+    this.fromHistory = false,
   });
 
   factory _ChatMessage.user(String text) {
@@ -991,22 +890,24 @@ class _ChatMessage {
       role: role,
       text: message.content,
       citations: message.citations,
+      fromHistory: true,
     );
   }
 }
 
 enum _MessageRole { user, assistant, error }
 
+/// Friendly title per agent/channel shown in the chat app bar.
+String _channelTitle(String channel) {
+  return switch (channel) {
+    LearnAssistChannel.tutor => 'AI Tutor',
+    _ => 'Q&A',
+  };
+}
+
 String _formatUsage(LearnAssistUsage usage) {
   if (usage.unlimited) return 'Unlimited plan';
   return 'Daily usage: ${usage.used}/${usage.limit} used, ${usage.remaining} left';
-}
-
-String _formatHistoryTime(DateTime value) {
-  final local = value.toLocal();
-  final hour = local.hour.toString().padLeft(2, '0');
-  final minute = local.minute.toString().padLeft(2, '0');
-  return '${local.day}/${local.month}/${local.year} $hour:$minute';
 }
 
 String _planLabel(String planKey) {

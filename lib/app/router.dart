@@ -26,6 +26,7 @@ import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
 import '../data/seed/diagrams_data.dart';
+import '../data/models/learn_assist.dart';
 import '../screens/progress/progress_screen.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -100,7 +101,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/learn/ai',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const LearnAiScreen(),
+        builder: (context, state) {
+          final channel =
+              state.uri.queryParameters['channel'] ??
+              LearnAssistChannel.learnAssist;
+          return LearnAiScreen(channel: channel);
+        },
       ),
       GoRoute(
         path: '/learn/math-formulas',
