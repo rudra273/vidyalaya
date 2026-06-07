@@ -1,270 +1,316 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ─── Colour Palette ─────────────────────────────────────────────────────────
+// ─── Calm Scholar palette ─────────────────────────────────────────────────
+// Refined, academic, whitespace-led. Light + dark designed in parallel.
 
 class AppColors {
   AppColors._();
 
-  // ─── Light Mode ─────────────────────────────────────────────────────────
+  // ─── LIGHT ────────────────────────────────────────────────────────────
+  static const Color paper = Color(0xFFF4F3EC);
+  static const Color paper2 = Color(0xFFEDEBE1);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surface2 = Color(0xFFFAF9F3);
+  static const Color surface3 = Color(0xFFF1EFE6);
 
-  // Background
-  static const Color background = Color(0xFFFAFAF7);
-  static const Color surface = Color(0xFFF4F3EE);
-  static const Color navy = Color(0xFF1A1F2E);
+  static const Color ink = Color(0xFF16201B);
+  static const Color ink2 = Color(0xFF4C564F);
+  static const Color ink3 = Color(0xFF8A938C);
 
-  // Accent (primary)
-  static const Color teal = Color(0xFF1D9E75);
-  static const Color tealLight = Color(0xFFE1F5EE);
+  static const Color hairline = Color(0xFFE5E3D7);
+  static const Color hairline2 = Color(0xFFEEEBE0);
 
-  // Subject colour coding
-  static const Color amberLight = Color(0xFFFAEEDA);
-  static const Color amberDark = Color(0xFF854F0B);
-  static const Color blueLight = Color(0xFFE6F1FB);
-  static const Color blueDark = Color(0xFF185FA5);
-  static const Color coralLight = Color(0xFFFAECE7);
-  static const Color coralDark = Color(0xFF993C1D);
-  static const Color greenLight = Color(0xFFEAF3DE);
-  static const Color greenDark = Color(0xFF3B6D11);
-  static const Color pinkLight = Color(0xFFFBEAF0);
-  static const Color pinkDark = Color(0xFF993556);
-  // Science — purple
-  static const Color purpleLight = Color(0xFFF0EAFA);
-  static const Color purpleDark = Color(0xFF5B3DAA);
-  // Skill — cyan
-  static const Color cyanLight = Color(0xFFE0F7FA);
-  static const Color cyanDark = Color(0xFF006D7A);
-  // Work — orange
-  static const Color orangeLight = Color(0xFFFFF3E0);
-  static const Color orangeDark = Color(0xFFB45309);
+  // Dark hero card (light theme)
+  static const Color hero = Color(0xFF0F2A1F);
+  static const Color hero2 = Color(0xFF143527);
+  static const Color heroInk = Color(0xFFF2F6F2);
+  static const Color heroInk2 = Color(0x9EF2F6F2);
+  static const Color heroLine = Color(0x14FFFFFF);
 
-  // Muted
-  static const Color textMuted = Color(0xFF6B7080);
-  static final Color border = const Color(0xFF1A1F2E).withValues(alpha: 0.09);
+  // Brand green
+  static const Color green50 = Color(0xFFE9F4EE);
+  static const Color green100 = Color(0xFFD3E8DC);
+  static const Color green500 = Color(0xFF1F9F6A);
+  static const Color green600 = Color(0xFF16855A);
+  static const Color green700 = Color(0xFF0E6444);
 
-  // ─── Dark Mode ──────────────────────────────────────────────────────────
+  // Subject / tool hues (light)
+  static const Color cAi = Color(0xFF16855A);
+  static const Color cTutor = Color(0xFF6E56CF);
+  static const Color cEnglish = Color(0xFF2F6FB5);
+  static const Color cMaths = Color(0xFFC75B3F);
+  static const Color cScience = Color(0xFF138B82);
+  static const Color cOdia = Color(0xFFB9742B);
+  static const Color cHindi = Color(0xFFC24D77);
+  static const Color cSanskrit = Color(0xFF7A57C2);
+  static const Color cSocial = Color(0xFFB5862B);
+  static const Color cFormulas = Color(0xFF3D6CC9);
+  static const Color cPeriodic = Color(0xFF9B4FB5);
+  static const Color cDiagrams = Color(0xFF138B82);
+  static const Color cTimeline = Color(0xFFB5862B);
+  static const Color cCosmos = Color(0xFF3A66C9);
 
-  // Background — deep charcoal with a subtle warm undertone
-  static const Color darkBackground = Color(0xFF0F1117);
-  static const Color darkSurface = Color(0xFF1A1D27);
-  static const Color darkSurfaceElevated = Color(0xFF232835);
+  // ─── DARK ─────────────────────────────────────────────────────────────
+  static const Color paperDark = Color(0xFF0D1411);
+  static const Color paper2Dark = Color(0xFF121A16);
+  static const Color surfaceDark = Color(0xFF161F1A);
+  static const Color surface2Dark = Color(0xFF1B2620);
+  static const Color surface3Dark = Color(0xFF202D26);
 
-  // Text
-  static const Color darkTextPrimary = Color(0xFFF0F1F5);
-  static const Color darkTextSecondary = Color(0xFF9EA3B5);
+  static const Color inkDark = Color(0xFFEBEEEA);
+  static const Color ink2Dark = Color(0xFFA6B1AA);
+  static const Color ink3Dark = Color(0xFF73807A);
 
-  // Accent — vibrant teal, slightly brighter for dark mode contrast
-  static const Color darkTeal = Color(0xFF2BD89E);
-  static const Color darkTealSurface = Color(0xFF142E24);
+  static const Color hairlineDark = Color(0xFF28342E);
+  static const Color hairline2Dark = Color(0xFF202B25);
 
-  // Border
-  static final Color darkBorder = Colors.white.withValues(alpha: 0.08);
+  static const Color heroDark = Color(0xFF14241C);
+  static const Color hero2Dark = Color(0xFF102019);
+  static const Color heroLineDark = Color(0x2978D2AA);
 
-  // Subject colours — vibrant neon-ish tones for dark backgrounds
-  static const Color darkAmberBg = Color(0xFF2B2114);
-  static const Color darkAmberText = Color(0xFFF5B756);
-  static const Color darkBlueBg = Color(0xFF14202E);
-  static const Color darkBlueText = Color(0xFF5AA8F2);
-  static const Color darkCoralBg = Color(0xFF2B1A14);
-  static const Color darkCoralText = Color(0xFFFF8A65);
-  static const Color darkGreenBg = Color(0xFF172514);
-  static const Color darkGreenText = Color(0xFF7BCF4A);
-  static const Color darkPinkBg = Color(0xFF2B1420);
-  static const Color darkPinkText = Color(0xFFF06EA0);
-  static const Color darkPurpleBg = Color(0xFF1F1630);
-  static const Color darkPurpleText = Color(0xFFA78BFA);
+  static const Color green50Dark = Color(0xFF0F2A1F);
+  static const Color green100Dark = Color(0xFF15392A);
+  static const Color green500Dark = Color(0xFF36C188);
+  static const Color green600Dark = Color(0xFF2BAE78);
+  static const Color green700Dark = Color(0xFF239A69);
+  static const Color onGreenDark = Color(0xFF06150D);
 
-  // Dark skill/work tones
-  static const Color darkCyanBg = Color(0xFF0E2428);
-  static const Color darkCyanText = Color(0xFF4DD9E8);
-  static const Color darkOrangeBg = Color(0xFF2B1E10);
-  static const Color darkOrangeText = Color(0xFFFBBA43);
+  // Subject hues (dark, brightened)
+  static const Color cAiDark = Color(0xFF36C188);
+  static const Color cTutorDark = Color(0xFF9D88EE);
+  static const Color cEnglishDark = Color(0xFF5E9BDD);
+  static const Color cMathsDark = Color(0xFFE8806A);
+  static const Color cScienceDark = Color(0xFF3DB6AC);
+  static const Color cOdiaDark = Color(0xFFDBA158);
+  static const Color cHindiDark = Color(0xFFE27CA1);
+  static const Color cSanskritDark = Color(0xFFA88DE8);
+  static const Color cSocialDark = Color(0xFFD9B05B);
+  static const Color cFormulasDark = Color(0xFF6E97E6);
+  static const Color cPeriodicDark = Color(0xFFC684DA);
+  static const Color cDiagramsDark = Color(0xFF3DB6AC);
+  static const Color cTimelineDark = Color(0xFFD9B05B);
+  static const Color cCosmosDark = Color(0xFF6E92E8);
 
-  // Subject colour map (light)
-  static const Map<String, (Color, Color)> subjectColors = {
-    'odia': (amberLight, amberDark),
-    'english': (blueLight, blueDark),
-    'maths': (coralLight, coralDark),
-    'social': (greenLight, greenDark),
-    'social_science': (greenLight, greenDark),
-    'hindi': (pinkLight, pinkDark),
-    'sanskrit': (pinkLight, pinkDark),
-    'science': (purpleLight, purpleDark),
-    'skill': (cyanLight, cyanDark),
-    'work': (orangeLight, orangeDark),
-  };
+  // ─── Subject color mapping ───────────────────────────────────────────
+  static Color subjectColor(String subject, Brightness brightness) {
+    final dark = brightness == Brightness.dark;
+    switch (subject.toLowerCase()) {
+      case 'odia':
+        return dark ? cOdiaDark : cOdia;
+      case 'english':
+        return dark ? cEnglishDark : cEnglish;
+      case 'maths':
+      case 'math':
+        return dark ? cMathsDark : cMaths;
+      case 'hindi':
+        return dark ? cHindiDark : cHindi;
+      case 'sanskrit':
+        return dark ? cSanskritDark : cSanskrit;
+      case 'science':
+        return dark ? cScienceDark : cScience;
+      case 'social':
+      case 'social_science':
+        return dark ? cSocialDark : cSocial;
+      case 'skill':
+        return dark ? cDiagramsDark : cDiagrams;
+      case 'work':
+        return dark ? cOdiaDark : cOdia;
+      default:
+        return dark ? green500Dark : green600;
+    }
+  }
 
-  // Subject colour map (dark)
-  static const Map<String, (Color, Color)> darkSubjectColors = {
-    'odia': (darkAmberBg, darkAmberText),
-    'english': (darkBlueBg, darkBlueText),
-    'maths': (darkCoralBg, darkCoralText),
-    'social': (darkGreenBg, darkGreenText),
-    'social_science': (darkGreenBg, darkGreenText),
-    'hindi': (darkPinkBg, darkPinkText),
-    'sanskrit': (darkPinkBg, darkPinkText),
-    'science': (darkPurpleBg, darkPurpleText),
-    'skill': (darkCyanBg, darkCyanText),
-    'work': (darkOrangeBg, darkOrangeText),
-  };
+  // ─── Back-compat shims (legacy code still references these) ──────────
+  static const Color background = paper;
+  static const Color navy = ink;
+  static const Color teal = green600;
+  static const Color tealLight = green50;
+  static const Color textMuted = ink3;
+  static final Color border = hairline;
+
+  static const Color darkBackground = paperDark;
+  static const Color darkSurface = surfaceDark;
+  static const Color darkSurfaceElevated = surface2Dark;
+  static const Color darkTextPrimary = inkDark;
+  static const Color darkTextSecondary = ink2Dark;
+  static const Color darkTeal = green500Dark;
+  static const Color darkTealSurface = green50Dark;
+  static final Color darkBorder = hairlineDark;
 
   static (Color bg, Color text) getSubjectColor(String subject) {
-    return subjectColors[subject.toLowerCase()] ?? (surface, navy);
+    final fg = subjectColor(subject, Brightness.light);
+    return (Color.alphaBlend(fg.withValues(alpha: 0.14), surface), fg);
   }
 
   static (Color bg, Color text) getDarkSubjectColor(String subject) {
-    return darkSubjectColors[subject.toLowerCase()] ??
-        (darkSurface, darkTextPrimary);
+    final fg = subjectColor(subject, Brightness.dark);
+    return (Color.alphaBlend(fg.withValues(alpha: 0.18), surfaceDark), fg);
   }
 
-  /// Returns subject colors appropriate for the current brightness.
   static (Color bg, Color text) getSubjectColorFor(
     String subject,
     Brightness brightness,
   ) {
-    if (brightness == Brightness.dark) {
-      return getDarkSubjectColor(subject);
-    }
-    return getSubjectColor(subject);
+    final fg = subjectColor(subject, brightness);
+    final surf = brightness == Brightness.dark ? surfaceDark : surface;
+    return (Color.alphaBlend(fg.withValues(alpha: 0.15), surf), fg);
   }
 }
 
-// ─── Spacing ────────────────────────────────────────────────────────────────
+// ─── Spacing & radii ──────────────────────────────────────────────────────
 
 class AppSpacing {
   AppSpacing._();
   static const double screenPadding = 20.0;
-  static const double cardRadius = 16.0;
-  static const double chipRadius = 20.0;
+  static const double sectionGap = 26.0;
+  static const double cardPad = 18.0;
+  static const double stackGap = 12.0;
+  static const double tilePad = 16.0;
+
+  static const double cardRadius = 20.0;
+  static const double tileRadius = 15.0;
+  static const double chipRadius = 999.0;
+  static const double inputRadius = 14.0;
 }
 
-// ─── Theme ──────────────────────────────────────────────────────────────────
+// ─── Theme ────────────────────────────────────────────────────────────────
 
 class AppTheme {
   AppTheme._();
 
-  // ─── Light TextTheme ─────────────────────────────────────────────────
-
-  static TextTheme _buildTextTheme({required Color primary, required Color muted}) {
-    final displayFont = GoogleFonts.fraunces();
-    final bodyFont = GoogleFonts.dmSans();
+  static TextTheme _buildTextTheme({
+    required Color primary,
+    required Color muted,
+  }) {
+    final serif = GoogleFonts.spectral();
+    final body = GoogleFonts.hankenGrotesk();
 
     return TextTheme(
-      // Fraunces — headings & display
-      displayLarge: displayFont.copyWith(
+      // Spectral — serif display
+      displayLarge: serif.copyWith(
         fontSize: 32,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
+        color: primary,
+        letterSpacing: -0.3,
+        height: 1.05,
+      ),
+      displayMedium: serif.copyWith(
+        fontSize: 30,
+        fontWeight: FontWeight.w600,
+        color: primary,
+        letterSpacing: -0.3,
+        height: 1.05,
+      ),
+      displaySmall: serif.copyWith(
+        fontSize: 27,
+        fontWeight: FontWeight.w600,
+        color: primary,
+        letterSpacing: -0.3,
+        height: 1.1,
+      ),
+      headlineLarge: serif.copyWith(
+        fontSize: 25,
+        fontWeight: FontWeight.w600,
+        color: primary,
+        height: 1.15,
+      ),
+      headlineMedium: serif.copyWith(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
         color: primary,
         height: 1.2,
       ),
-      displayMedium: displayFont.copyWith(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: primary,
-        height: 1.2,
-      ),
-      displaySmall: displayFont.copyWith(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: primary,
-        height: 1.3,
-      ),
-      headlineLarge: displayFont.copyWith(
-        fontSize: 24,
-        fontWeight: FontWeight.w700,
-        color: primary,
-      ),
-      headlineMedium: displayFont.copyWith(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: primary,
-      ),
-      headlineSmall: displayFont.copyWith(
+      headlineSmall: serif.copyWith(
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: primary,
+        height: 1.2,
       ),
 
-      // DM Sans — body & UI
-      titleLarge: bodyFont.copyWith(
+      // Hanken Grotesk — body & UI
+      titleLarge: body.copyWith(
         fontSize: 16,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleMedium: bodyFont.copyWith(
+      titleMedium: body.copyWith(
         fontSize: 14,
         fontWeight: FontWeight.w600,
         color: primary,
       ),
-      titleSmall: bodyFont.copyWith(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
+      titleSmall: body.copyWith(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w600,
         color: primary,
       ),
-      bodyLarge: bodyFont.copyWith(
-        fontSize: 16,
+      bodyLarge: body.copyWith(
+        fontSize: 15,
         fontWeight: FontWeight.w400,
         color: primary,
+        height: 1.45,
       ),
-      bodyMedium: bodyFont.copyWith(
+      bodyMedium: body.copyWith(
+        fontSize: 13.5,
+        fontWeight: FontWeight.w400,
+        color: primary,
+        height: 1.45,
+      ),
+      bodySmall: body.copyWith(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w400,
+        color: muted,
+        height: 1.45,
+      ),
+      labelLarge: body.copyWith(
         fontSize: 14,
-        fontWeight: FontWeight.w400,
+        fontWeight: FontWeight.w600,
         color: primary,
       ),
-      bodySmall: bodyFont.copyWith(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        color: muted,
-      ),
-      labelLarge: bodyFont.copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: primary,
-      ),
-      labelMedium: bodyFont.copyWith(
+      labelMedium: body.copyWith(
         fontSize: 12,
         fontWeight: FontWeight.w500,
         color: muted,
       ),
-      labelSmall: bodyFont.copyWith(
-        fontSize: 11,
-        fontWeight: FontWeight.w400,
+      labelSmall: body.copyWith(
+        fontSize: 11.5,
+        fontWeight: FontWeight.w700,
         color: muted,
+        letterSpacing: 1.4,
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Light Theme
-  // ═══════════════════════════════════════════════════════════════════════
-
+  // ── Light ───────────────────────────────────────────────────────────
   static ThemeData get lightTheme {
     final textTheme = _buildTextTheme(
-      primary: AppColors.navy,
-      muted: AppColors.textMuted,
+      primary: AppColors.ink,
+      muted: AppColors.ink3,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.background,
-      colorScheme: ColorScheme.light(
-        primary: AppColors.teal,
+      scaffoldBackgroundColor: AppColors.paper,
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.green600,
         onPrimary: Colors.white,
-        secondary: AppColors.tealLight,
-        onSecondary: AppColors.teal,
+        secondary: AppColors.green50,
+        onSecondary: AppColors.green700,
         surface: AppColors.surface,
-        onSurface: AppColors.navy,
-        outline: AppColors.border,
+        onSurface: AppColors.ink,
+        surfaceContainerHighest: AppColors.surface3,
+        outline: AppColors.hairline,
+        outlineVariant: AppColors.hairline2,
       ),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.paper,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.headlineLarge,
-        iconTheme: const IconThemeData(color: AppColors.navy),
+        titleTextStyle: textTheme.displaySmall,
+        iconTheme: const IconThemeData(color: AppColors.ink),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
@@ -272,151 +318,181 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          side: BorderSide(color: AppColors.border),
+          side: const BorderSide(color: AppColors.hairline),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,
-        selectedColor: AppColors.tealLight,
+        selectedColor: AppColors.green600,
         labelStyle: textTheme.labelLarge,
+        secondaryLabelStyle: textTheme.labelLarge?.copyWith(color: Colors.white),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
         ),
-        side: BorderSide(color: AppColors.border),
+        side: const BorderSide(color: AppColors.hairline),
         showCheckmark: false,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: AppColors.teal,
-        unselectedItemColor: AppColors.textMuted,
+        backgroundColor: AppColors.surface,
+        selectedItemColor: AppColors.green600,
+        unselectedItemColor: AppColors.ink3,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        unselectedLabelStyle: TextStyle(fontSize: 12),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.teal;
+          if (states.contains(WidgetState.selected)) return AppColors.green600;
           return Colors.transparent;
         }),
         checkColor: WidgetStateProperty.all(Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        side: BorderSide(color: AppColors.textMuted, width: 1.5),
+        side: const BorderSide(color: AppColors.ink3, width: 1.5),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.teal,
+          backgroundColor: AppColors.green600,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
           textStyle: textTheme.labelLarge?.copyWith(color: Colors.white),
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.teal,
+        color: AppColors.green600,
       ),
-      dividerTheme: DividerThemeData(
-        color: AppColors.border,
+      dividerTheme: const DividerThemeData(
+        color: AppColors.hairline2,
         thickness: 1,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface3,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.hairline2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.hairline2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.green600, width: 1.4),
+        ),
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Dark Theme — Vibrant & Premium
-  // ═══════════════════════════════════════════════════════════════════════
-
+  // ── Dark ────────────────────────────────────────────────────────────
   static ThemeData get darkTheme {
     final textTheme = _buildTextTheme(
-      primary: AppColors.darkTextPrimary,
-      muted: AppColors.darkTextSecondary,
+      primary: AppColors.inkDark,
+      muted: AppColors.ink3Dark,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.darkBackground,
-      colorScheme: ColorScheme.dark(
-        primary: AppColors.darkTeal,
-        onPrimary: AppColors.darkBackground,
-        secondary: AppColors.darkTealSurface,
-        onSecondary: AppColors.darkTeal,
-        surface: AppColors.darkSurface,
-        onSurface: AppColors.darkTextPrimary,
-        outline: AppColors.darkBorder,
+      scaffoldBackgroundColor: AppColors.paperDark,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.green500Dark,
+        onPrimary: AppColors.onGreenDark,
+        secondary: AppColors.green50Dark,
+        onSecondary: AppColors.green500Dark,
+        surface: AppColors.surfaceDark,
+        onSurface: AppColors.inkDark,
+        surfaceContainerHighest: AppColors.surface3Dark,
+        outline: AppColors.hairlineDark,
+        outlineVariant: AppColors.hairline2Dark,
       ),
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.darkBackground,
+        backgroundColor: AppColors.paperDark,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.headlineLarge,
-        iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+        titleTextStyle: textTheme.displaySmall,
+        iconTheme: const IconThemeData(color: AppColors.inkDark),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.darkSurface,
+        color: AppColors.surfaceDark,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          side: BorderSide(color: AppColors.darkBorder),
+          side: const BorderSide(color: AppColors.hairlineDark),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.darkSurface,
-        selectedColor: AppColors.darkTealSurface,
+        backgroundColor: AppColors.surfaceDark,
+        selectedColor: AppColors.green500Dark,
         labelStyle: textTheme.labelLarge,
+        secondaryLabelStyle: textTheme.labelLarge
+            ?.copyWith(color: AppColors.onGreenDark),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
         ),
-        side: BorderSide(color: AppColors.darkBorder),
+        side: const BorderSide(color: AppColors.hairlineDark),
         showCheckmark: false,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.darkSurface,
-        selectedItemColor: AppColors.darkTeal,
-        unselectedItemColor: AppColors.darkTextSecondary,
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppColors.surfaceDark,
+        selectedItemColor: AppColors.green500Dark,
+        unselectedItemColor: AppColors.ink3Dark,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle:
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-        unselectedLabelStyle: const TextStyle(fontSize: 12),
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return AppColors.darkTeal;
+          if (states.contains(WidgetState.selected)) {
+            return AppColors.green500Dark;
+          }
           return Colors.transparent;
         }),
-        checkColor: WidgetStateProperty.all(AppColors.darkBackground),
+        checkColor: WidgetStateProperty.all(AppColors.onGreenDark),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        side: BorderSide(color: AppColors.darkTextSecondary, width: 1.5),
+        side: const BorderSide(color: AppColors.ink3Dark, width: 1.5),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.darkTeal,
-          foregroundColor: AppColors.darkBackground,
+          backgroundColor: AppColors.green500Dark,
+          foregroundColor: AppColors.onGreenDark,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
           textStyle: textTheme.labelLarge?.copyWith(
-            color: AppColors.darkBackground,
+            color: AppColors.onGreenDark,
           ),
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.darkTeal,
+        color: AppColors.green500Dark,
       ),
-      dividerTheme: DividerThemeData(
-        color: AppColors.darkBorder,
+      dividerTheme: const DividerThemeData(
+        color: AppColors.hairline2Dark,
         thickness: 1,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surface3Dark,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.hairline2Dark),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(color: AppColors.hairline2Dark),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+          borderSide: const BorderSide(
+            color: AppColors.green500Dark,
+            width: 1.4,
+          ),
+        ),
       ),
     );
   }

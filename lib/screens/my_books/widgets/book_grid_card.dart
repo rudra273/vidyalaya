@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../data/models/book.dart';
+import '../../../widgets/calm_widgets.dart';
 
 class BookGridCard extends StatefulWidget {
   final Book book;
@@ -13,97 +14,57 @@ class BookGridCard extends StatefulWidget {
 }
 
 class _BookGridCardState extends State<BookGridCard> {
-  bool _isPressed = false;
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final cs = Theme.of(context).colorScheme;
-    final (subjectBg, subjectText) =
-        AppColors.getSubjectColorFor(widget.book.subject, brightness);
-    final subjectLabel = widget.book.subject[0].toUpperCase() +
-        widget.book.subject.substring(1);
+    final col = AppColors.subjectColor(widget.book.subject, brightness);
+    final meta = subjectMeta(widget.book.subject);
 
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
       onTap: () => context.push('/reader/${widget.book.id}'),
       child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
+        scale: _pressed ? 0.98 : 1,
+        duration: const Duration(milliseconds: 120),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 0.74,
+              child: BookCover(
+                subjectKey: widget.book.subject,
+                title: widget.book.title,
+                big: true,
+                radius: 16,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Emoji cover
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: subjectBg,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: subjectBg.withValues(alpha: 0.4),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    widget.book.coverEmoji,
-                    style: const TextStyle(fontSize: 32),
+            ),
+            const SizedBox(height: 9),
+            Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: col,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ),
-              const Spacer(),
-
-              // Title
-              Text(
-                widget.book.title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-
-              // Subject tag
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: subjectBg.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: subjectBg.withValues(alpha: 0.3)),
+                const SizedBox(width: 6),
+                Text(
+                  meta.label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: col,
+                      ),
                 ),
-                child: Text(
-                  subjectLabel,
-                  style: TextStyle(
-                    color: subjectText,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );

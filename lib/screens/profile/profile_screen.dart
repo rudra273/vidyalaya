@@ -8,7 +8,10 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/books_provider.dart';
+import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
+import '../../widgets/calm_widgets.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -18,7 +21,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final _nameController = TextEditingController(text: 'Student');
   final _schoolController = TextEditingController();
   int _selectedClass = 8;
   String _preferredLanguage = 'en';
@@ -37,7 +39,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _schoolController.dispose();
     super.dispose();
   }
@@ -50,143 +51,148 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       data: (user) => user != null,
       orElse: () => false,
     );
+    final user = authState.maybeWhen(data: (u) => u, orElse: () => null);
+    _ensureCachedProfile(user);
     final cachedProfile = accountState.profile.maybeWhen(
       data: (profile) => profile,
       orElse: () => null,
     );
     final isProfileLoading = accountState.profile is AsyncLoading;
     _applyCachedProfile(cachedProfile);
-    final cs = Theme.of(context).colorScheme;
-    final mutedColor =
-        Theme.of(context).textTheme.bodySmall?.color ??
-        cs.onSurface.withValues(alpha: 0.5);
+
+    final displayName =
+        (user?.displayName?.trim().isNotEmpty ?? false) ? user!.displayName! : 'Student';
+    final email = user?.email ?? '—';
+    final avatarLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S';
+
+    final progress = ref.watch(progressProvider);
+    final books = ref.watch(selectedBooksProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            tooltip: 'Settings',
-            onPressed: () => context.push('/settings'),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
-            // ── Avatar & Name ──────────────────────────────────────
-            Center(
-              child: Column(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: cs.secondary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _nameController.text.isNotEmpty
-                            ? _nameController.text[0].toUpperCase()
-                            : 'A',
-                        style: TextStyle(
-                          color: cs.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: 200,
-                    child: TextField(
-                      controller: _nameController,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      decoration: InputDecoration(
-                        hintText: 'Your name',
-                        hintStyle: Theme.of(
-                          context,
-                        ).textTheme.headlineMedium?.copyWith(color: mutedColor),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  Text(
-                    'scert_odisha',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+            PageTitle(
+              title: 'Profile',
+              trailing: IconBox(
+                icon: Icons.settings_rounded,
+                onTap: () => context.push('/settings'),
               ),
             ),
 
-            const SizedBox(height: 28),
+            // ── Identity ─────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 14, 0, 6),
+              child: Center(
+                child: Column(
+                  children: [
+                    _BigAvatar(letter: avatarLetter),
+                    const SizedBox(height: 12),
+                    Text(displayName,
+                        style:
+                            Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  fontSize: 23,
+                                )),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.verified_user_outlined,
+                          size: 15,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.ink3Dark
+                              : AppColors.ink3,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'SCERT Odisha',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-            authState.when(
-              data: (user) {
-                _hydrateFromFirebaseUser(user);
-                _ensureCachedProfile(user);
-                return _AccountPanel(
-                  displayName: user?.displayName,
-                  email: user?.email,
-                  isSignedIn: user != null,
+            // ── Learning summary stats ───────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding, 14, AppSpacing.screenPadding, 0),
+              child: _StatsStrip(
+                streak: progress.currentStreak,
+                aiSessions: progress.aiSessions,
+                books: books.length,
+              ),
+            ),
+
+            // ── Account row ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
+              child: const SectionHead(label: 'Account'),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: authState.when(
+                data: (u) => _AccountRow(
+                  letter: avatarLetter,
+                  name: displayName,
+                  email: u != null ? email : 'Sign in to sync your profile',
+                  isSignedIn: u != null,
                   isBusy: _isAuthBusy,
-                  onSignIn: _signInWithGoogle,
-                  onSignOut: _signOut,
-                  onCopyIdToken: kDebugMode && user != null
-                      ? _copyFirebaseIdToken
-                      : null,
-                );
-              },
-              loading: () => const _AccountPanel.loading(),
-              error: (error, stackTrace) => _AccountPanel.error(
-                message: error.toString(),
-                isBusy: _isAuthBusy,
-                onRetry: () => ref.invalidate(authStateProvider),
+                  onCopyToken:
+                      kDebugMode && u != null ? _copyFirebaseIdToken : null,
+                  onAction: u != null ? _signOut : _signInWithGoogle,
+                ),
+                loading: () => _AccountRow.loading(letter: avatarLetter),
+                error: (e, _) => _AccountRow(
+                  letter: 'G',
+                  name: 'Account',
+                  email: e.toString(),
+                  isSignedIn: false,
+                  isBusy: _isAuthBusy,
+                  onAction: () => ref.invalidate(authStateProvider),
+                  errored: true,
+                ),
               ),
             ),
 
-            const SizedBox(height: 28),
-
-            _StudentProfilePanel(
-              isSignedIn: isSignedIn,
-              isLoading: isProfileLoading,
-              isSaving: _isProfileSaving,
-              selectedClass: _selectedClass,
-              preferredLanguage: _preferredLanguage,
-              schoolController: _schoolController,
-              onClassChanged: (value) => setState(() => _selectedClass = value),
-              onLanguageChanged: (value) {
-                setState(() => _preferredLanguage = value);
-              },
-              onSave: _saveStudentProfile,
+            // ── Student profile form ─────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
+              child: const SectionHead(label: 'Student profile'),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: _StudentForm(
+                isSignedIn: isSignedIn,
+                isLoading: isProfileLoading,
+                isSaving: _isProfileSaving,
+                selectedClass: _selectedClass,
+                preferredLanguage: _preferredLanguage,
+                schoolController: _schoolController,
+                onClassChanged: (v) => setState(() => _selectedClass = v),
+                onLanguageChanged: (v) =>
+                    setState(() => _preferredLanguage = v),
+                onSave: _saveStudentProfile,
+              ),
             ),
 
-            const SizedBox(height: 28),
-
-            // ── My Learning → standalone Progress page ─────────────
-            _SettingsNavRow(
-              icon: Icons.bar_chart_rounded,
-              title: 'My Learning',
-              subtitle: 'Streak, AI sessions, tools & reading progress',
-              onTap: () => context.push('/progress'),
+            const SizedBox(height: 18),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: _MyLearningRow(
+                onTap: () => context.push('/progress'),
+              ),
             ),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -204,32 +210,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _appliedProfileKey = null;
       return ref.read(authRepositoryProvider).signOut();
     });
-  }
-
-  void _hydrateFromFirebaseUser(User? user) {
-    if (user == null) {
-      if (_appliedProfileKey != null || _nameController.text != 'Student') {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          setState(() {
-            _appliedProfileKey = null;
-            _nameController.text = 'Student';
-            _schoolController.clear();
-          });
-        });
-      }
-      return;
-    }
-
-    final displayName = user.displayName?.trim();
-    if (displayName != null &&
-        displayName.isNotEmpty &&
-        _nameController.text == 'Student') {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() => _nameController.text = displayName);
-      });
-    }
   }
 
   void _ensureCachedProfile(User? user) {
@@ -273,11 +253,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     setState(() => _isProfileSaving = true);
     try {
-      final name = _nameController.text.trim();
-      if (name.isNotEmpty && name != user.displayName) {
-        await user.updateDisplayName(name);
-      }
-
       final savedProfile = await ref
           .read(backendAccountCacheProvider.notifier)
           .saveProfile(
@@ -301,9 +276,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
       if (mounted) {
         setState(() => _isProfileSaving = false);
@@ -337,9 +311,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await action();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
       if (mounted) {
         setState(() => _isAuthBusy = false);
@@ -348,9 +321,324 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-// ─── Student Profile Panel ─────────────────────────────────────────────────
+// ─── Big avatar (identity) ────────────────────────────────────────────────
 
-class _StudentProfilePanel extends StatelessWidget {
+class _BigAvatar extends StatelessWidget {
+  final String letter;
+
+  const _BigAvatar({required this.letter});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+          cs.surface,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark ? AppColors.green100Dark : AppColors.green100,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        letter,
+        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+              fontSize: 38,
+              color: cs.primary,
+            ),
+      ),
+    );
+  }
+}
+
+// ─── Stats strip ──────────────────────────────────────────────────────────
+
+class _StatsStrip extends StatelessWidget {
+  final int streak;
+  final int aiSessions;
+  final int books;
+
+  const _StatsStrip({
+    required this.streak,
+    required this.aiSessions,
+    required this.books,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPad),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _Stat(
+              color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+              icon: Icons.local_fire_department_rounded,
+              value: '$streak',
+              label: 'Day streak',
+            ),
+          ),
+          _Divider(),
+          Expanded(
+            child: _Stat(
+              color: isDark ? AppColors.cAiDark : AppColors.cAi,
+              icon: Icons.auto_awesome_rounded,
+              value: '$aiSessions',
+              label: 'AI sessions',
+            ),
+          ),
+          _Divider(),
+          Expanded(
+            child: _Stat(
+              color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+              icon: Icons.menu_book_rounded,
+              value: '$books',
+              label: 'Books',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  final Color color;
+  final IconData icon;
+  final String value;
+  final String label;
+
+  const _Stat({
+    required this.color,
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 20, color: color),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontSize: 22,
+                height: 1,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 56,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.hairline2Dark
+          : AppColors.hairline2,
+    );
+  }
+}
+
+// ─── Account row ──────────────────────────────────────────────────────────
+
+class _AccountRow extends StatelessWidget {
+  final String letter;
+  final String name;
+  final String email;
+  final bool isSignedIn;
+  final bool isBusy;
+  final bool errored;
+  final VoidCallback? onCopyToken;
+  final VoidCallback? onAction;
+
+  const _AccountRow({
+    required this.letter,
+    required this.name,
+    required this.email,
+    required this.isSignedIn,
+    required this.isBusy,
+    this.onCopyToken,
+    this.onAction,
+    this.errored = false,
+  });
+
+  factory _AccountRow.loading({required String letter}) => _AccountRow(
+        letter: letter,
+        name: 'Account',
+        email: 'Loading…',
+        isSignedIn: false,
+        isBusy: true,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dangerColor = isDark ? AppColors.cMathsDark : AppColors.cMaths;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPad),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Row(
+        children: [
+          _SmallAvatar(letter: isSignedIn ? letter : 'G'),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 15,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: errored ? cs.error : null,
+                        fontSize: 12.5,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          if (isBusy)
+            const SizedBox.square(
+              dimension: 22,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            )
+          else ...[
+            if (onCopyToken != null) ...[
+              _SquareIconButton(
+                icon: Icons.vpn_key_rounded,
+                tint: cs.onSurface.withValues(alpha: 0.6),
+                bg: isDark ? AppColors.surface3Dark : AppColors.surface3,
+                onTap: onCopyToken,
+              ),
+              const SizedBox(width: 8),
+            ],
+            _SquareIconButton(
+              icon: isSignedIn
+                  ? Icons.logout_rounded
+                  : Icons.login_rounded,
+              tint: isSignedIn ? dangerColor : cs.primary,
+              bg: isSignedIn
+                  ? Color.alphaBlend(
+                      dangerColor.withValues(alpha: 0.12), cs.surface)
+                  : Color.alphaBlend(
+                      cs.primary.withValues(alpha: 0.14), cs.surface),
+              onTap: onAction,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SmallAvatar extends StatelessWidget {
+  final String letter;
+
+  const _SmallAvatar({required this.letter});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+          cs.surface,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark ? AppColors.green100Dark : AppColors.green100,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        letter,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontSize: 18,
+              color: cs.primary,
+            ),
+      ),
+    );
+  }
+}
+
+class _SquareIconButton extends StatelessWidget {
+  final IconData icon;
+  final Color tint;
+  final Color bg;
+  final VoidCallback? onTap;
+
+  const _SquareIconButton({
+    required this.icon,
+    required this.tint,
+    required this.bg,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 18, color: tint),
+      ),
+    );
+  }
+}
+
+// ─── Student form ─────────────────────────────────────────────────────────
+
+class _StudentForm extends StatelessWidget {
   final bool isSignedIn;
   final bool isLoading;
   final bool isSaving;
@@ -361,7 +649,7 @@ class _StudentProfilePanel extends StatelessWidget {
   final ValueChanged<String> onLanguageChanged;
   final VoidCallback onSave;
 
-  const _StudentProfilePanel({
+  const _StudentForm({
     required this.isSignedIn,
     required this.isLoading,
     required this.isSaving,
@@ -377,312 +665,248 @@ class _StudentProfilePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isBusy = isLoading || isSaving;
+    final langLabel = const {
+      'en': 'English',
+      'or': 'Odia',
+      'hi': 'Hindi',
+    }[preferredLanguage] ??
+        'English';
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.cardPad),
       decoration: BoxDecoration(
         color: cs.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Student Profile',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-              if (isLoading)
-                const SizedBox.square(
-                  dimension: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.4),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          DropdownButtonFormField<int>(
-            key: ValueKey('student-class-$selectedClass'),
-            initialValue: selectedClass,
-            decoration: const InputDecoration(
-              labelText: 'Class',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              for (var classNo = 1; classNo <= 12; classNo++)
-                DropdownMenuItem(value: classNo, child: Text('Class $classNo')),
-            ],
-            onChanged: isBusy
+          _Field<int>(
+            label: 'Class',
+            value: 'Class $selectedClass',
+            onTap: isBusy
                 ? null
-                : (value) {
-                    if (value != null) onClassChanged(value);
-                  },
+                : () => _showClassPicker(context, onClassChanged, selectedClass),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            key: ValueKey('preferred-language-$preferredLanguage'),
-            initialValue: preferredLanguage,
-            decoration: const InputDecoration(
-              labelText: 'Preferred language',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(value: 'en', child: Text('English')),
-              DropdownMenuItem(value: 'or', child: Text('Odia')),
-              DropdownMenuItem(value: 'hi', child: Text('Hindi')),
-            ],
-            onChanged: isBusy
+          _Field<String>(
+            label: 'Preferred language',
+            value: langLabel,
+            onTap: isBusy
                 ? null
-                : (value) {
-                    if (value != null) onLanguageChanged(value);
-                  },
+                : () => _showLanguagePicker(
+                    context, onLanguageChanged, preferredLanguage),
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: schoolController,
-            enabled: !isBusy,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'School name',
-              hintText: 'Optional',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 14),
+          _SchoolField(controller: schoolController, enabled: !isBusy),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: ElevatedButton.icon(
               onPressed: isSignedIn && !isBusy ? onSave : null,
               icon: isSaving
                   ? const SizedBox.square(
                       dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                      child:
+                          CircularProgressIndicator(strokeWidth: 2.2),
                     )
-                  : const Icon(Icons.save_rounded),
-              label: Text(isSignedIn ? 'Save Profile' : 'Sign in to save'),
+                  : const Icon(Icons.check_rounded, size: 18),
+              label:
+                  Text(isSignedIn ? 'Save profile' : 'Sign in to save'),
             ),
           ),
         ],
       ),
     );
   }
-}
 
-// ─── Account Panel ─────────────────────────────────────────────────────────
-
-class _AccountPanel extends StatelessWidget {
-  final String? displayName;
-  final String? email;
-  final bool isSignedIn;
-  final bool isBusy;
-  final VoidCallback? onSignIn;
-  final VoidCallback? onSignOut;
-  final VoidCallback? onCopyIdToken;
-  final String? errorMessage;
-  final VoidCallback? onRetry;
-
-  const _AccountPanel({
-    required this.displayName,
-    required this.email,
-    required this.isSignedIn,
-    required this.isBusy,
-    required this.onSignIn,
-    required this.onSignOut,
-    this.onCopyIdToken,
-  }) : errorMessage = null,
-       onRetry = null;
-
-  const _AccountPanel.loading()
-    : displayName = null,
-      email = null,
-      isSignedIn = false,
-      isBusy = true,
-      onSignIn = null,
-      onSignOut = null,
-      onCopyIdToken = null,
-      errorMessage = null,
-      onRetry = null;
-
-  const _AccountPanel.error({
-    required String message,
-    required this.isBusy,
-    required this.onRetry,
-  }) : displayName = null,
-       email = null,
-       isSignedIn = false,
-       onSignIn = null,
-       onSignOut = null,
-       onCopyIdToken = null,
-       errorMessage = message;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final bodySmall = Theme.of(context).textTheme.bodySmall;
-    final title = isSignedIn ? (displayName ?? 'Google account') : 'Account';
-    final subtitle = errorMessage ?? email ?? 'Sign in to sync your profile';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: cs.outline),
+  void _showClassPicker(BuildContext context,
+      ValueChanged<int> onChanged, int current) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Row(
-        children: [
-          _AccountAvatar(displayName: displayName, isSignedIn: isSignedIn),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: bodySmall?.copyWith(
-                    color: errorMessage == null ? bodySmall.color : cs.error,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+      builder: (ctx) {
+        return SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: 12,
+            itemBuilder: (_, i) {
+              final c = i + 1;
+              return ListTile(
+                title: Text('Class $c'),
+                trailing: c == current
+                    ? Icon(Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  onChanged(c);
+                },
+              );
+            },
           ),
-          const SizedBox(width: 12),
-          if (isBusy)
-            const SizedBox.square(
-              dimension: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            )
-          else if (errorMessage != null)
-            IconButton(
-              tooltip: 'Retry',
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-            )
-          else
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onCopyIdToken != null) ...[
-                  IconButton(
-                    tooltip: 'Copy Firebase ID token',
-                    onPressed: onCopyIdToken,
-                    icon: const Icon(Icons.key_rounded),
-                  ),
-                  const SizedBox(width: 4),
-                ],
-                IconButton.filledTonal(
-                  tooltip: isSignedIn ? 'Sign out' : 'Sign in with Google',
-                  onPressed: isSignedIn ? onSignOut : onSignIn,
-                  icon: Icon(
-                    isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
-                  ),
-                ),
-              ],
-            ),
-        ],
+        );
+      },
+    );
+  }
+
+  void _showLanguagePicker(BuildContext context,
+      ValueChanged<String> onChanged, String current) {
+    const langs = {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'};
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: langs.entries.map((e) {
+              return ListTile(
+                title: Text(e.value),
+                trailing: e.key == current
+                    ? Icon(Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  onChanged(e.key);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }
 
-class _AccountAvatar extends StatelessWidget {
-  final String? displayName;
-  final bool isSignedIn;
+class _Field<T> extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
 
-  const _AccountAvatar({required this.displayName, required this.isSignedIn});
+  const _Field({required this.label, required this.value, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final firstLetter = (displayName?.trim().isNotEmpty ?? false)
-        ? displayName!.trim()[0].toUpperCase()
-        : 'G';
-
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: cs.secondary,
-      child: Text(
-        isSignedIn ? firstLetter : 'G',
-        style: TextStyle(
-          color: cs.primary,
-          fontWeight: FontWeight.w700,
-          fontSize: 18,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+              ),
         ),
-      ),
+        const SizedBox(height: 7),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surface3Dark : AppColors.surface3,
+              border: Border.all(
+                color: isDark
+                    ? AppColors.hairline2Dark
+                    : AppColors.hairline2,
+              ),
+              borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: cs.onSurface,
+                        ),
+                  ),
+                ),
+                Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 19,
+                    color:
+                        isDark ? AppColors.ink3Dark : AppColors.ink3),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-// ─── Settings Nav Row ────────────────────────────────────────────────────────
+class _SchoolField extends StatelessWidget {
+  final TextEditingController controller;
+  final bool enabled;
 
-class _SettingsNavRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
+  const _SchoolField({required this.controller, required this.enabled});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'School name',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+              ),
+        ),
+        const SizedBox(height: 7),
+        TextField(
+          controller: controller,
+          enabled: enabled,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(
+            hintText: 'e.g. SSVM',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MyLearningRow extends StatelessWidget {
   final VoidCallback onTap;
 
-  const _SettingsNavRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _MyLearningRow({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outline),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: cs.secondary,
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: Icon(icon, size: 20, color: cs.primary)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
-          ],
-        ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: ListRow(
+        color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+        icon: Icons.bar_chart_rounded,
+        title: 'My Learning',
+        sub: 'Streak, AI sessions, tools & reading progress',
+        onTap: onTap,
+        last: true,
       ),
     );
   }

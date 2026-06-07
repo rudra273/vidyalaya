@@ -23,9 +23,10 @@ class FilterChipsBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activeFilter = ref.watch(subjectFilterProvider);
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SizedBox(
-      height: 40,
+      height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding:
@@ -41,25 +42,27 @@ class FilterChipsBar extends ConsumerWidget {
               ref.read(subjectFilterProvider.notifier).setFilter(value);
             },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? cs.secondary : cs.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+                color: isSelected ? cs.primary : cs.surface,
+                borderRadius:
+                    BorderRadius.circular(AppSpacing.chipRadius),
                 border: Border.all(
                   color: isSelected
-                      ? cs.primary.withValues(alpha: 0.3)
+                      ? Colors.transparent
                       : cs.outline,
                 ),
               ),
+              alignment: Alignment.center,
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontSize: 13.5,
                       color: isSelected
-                          ? cs.primary
-                          : Theme.of(context).textTheme.bodySmall?.color,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w400,
+                          ? cs.onPrimary
+                          : (isDark ? AppColors.ink2Dark : AppColors.ink2),
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ),

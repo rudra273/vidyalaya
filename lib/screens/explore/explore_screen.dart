@@ -5,84 +5,60 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
-import '../../widgets/feature_card.dart';
+import '../../widgets/calm_widgets.dart';
 
-/// The **Explore** tab (formerly "Learn"): the interactive learning *tools*,
-/// de-tangled from AI (the AI agents now live in the Learn AI tab).
-///
-/// Tools are driven from data and laid out as a 2-column grid to keep the scroll
-/// short. Opening a live tool records learning activity (bumps the tools-opened
-/// counter and keeps the learning streak alive).
+/// The **Explore** tab — interactive learning tools, presented as a tasteful
+/// duotone grid (faint glyph backdrop, tinted tile, serif title) plus a
+/// "Coming soon" group.
 class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
-  void _openTool(BuildContext context, WidgetRef ref, _ExploreTool tool) {
-    // Record before navigating away so the activity always lands.
-    ref.read(userPrefsRepositoryProvider).recordToolOpened(tool.data.id);
+  void _open(BuildContext context, WidgetRef ref, _Tool tool) {
+    ref.read(userPrefsRepositoryProvider).recordToolOpened(tool.id);
     ref.read(progressProvider.notifier).refresh();
     context.push(tool.route);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tools = _tools(isDark);
+    final soon = _soon(isDark);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                16,
-                AppSpacing.screenPadding,
-                16,
-              ),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Explore',
-                  style: Theme.of(context).textTheme.displaySmall,
-                ),
-              ),
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 28),
+          children: [
+            const PageTitle(
+              title: 'Explore',
+              sub: 'Hands-on, interactive learning',
             ),
-            _SectionHeader(icon: Icons.science_rounded, title: 'Explore & Play'),
-            SliverPadding(
+            const SizedBox(height: AppSpacing.sectionGap - 14),
+            const Padding(
+              padding:
+                  EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              child: SectionHead(label: 'Explore & Play'),
+            ),
+            Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              sliver: SliverGrid(
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.95,
-                    ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final tool = _interactiveTools[index];
-                  return FeatureCard(
-                    data: tool.data,
-                    onTap: () => _openTool(context, ref, tool),
-                  );
-                }, childCount: _interactiveTools.length),
+                  horizontal: AppSpacing.screenPadding),
+              child: _Grid(
+                items: tools,
+                onTap: (t) => _open(context, ref, t),
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            _SectionHeader(icon: Icons.upcoming_rounded, title: 'Coming soon'),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                0,
-                AppSpacing.screenPadding,
-                24,
-              ),
-              sliver: SliverList.separated(
-                itemCount: _comingSoon.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => FeatureCard(
-                  data: _comingSoon[index],
-                  layout: FeatureCardLayout.row,
-                ),
-              ),
+            const SizedBox(height: AppSpacing.sectionGap),
+            const Padding(
+              padding:
+                  EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              child: SectionHead(label: 'Coming soon'),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: _Grid(items: soon, soon: true),
             ),
           ],
         ),
@@ -91,116 +67,208 @@ class ExploreScreen extends ConsumerWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
+class _Grid extends StatelessWidget {
+  final List<_Tool> items;
+  final bool soon;
+  final ValueChanged<_Tool>? onTap;
 
-  const _SectionHeader({required this.icon, required this.title});
+  const _Grid({required this.items, this.soon = false, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      const gap = AppSpacing.stackGap;
+      final cellW = (c.maxWidth - gap) / 2;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: items.map((t) {
+          return SizedBox(
+            width: cellW,
+            child: _ToolCard(
+              tool: t,
+              soon: soon,
+              onTap: onTap == null ? null : () => onTap!(t),
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
+}
+
+class _ToolCard extends StatelessWidget {
+  final _Tool tool;
+  final bool soon;
+  final VoidCallback? onTap;
+
+  const _ToolCard({required this.tool, this.soon = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        0,
-        AppSpacing.screenPadding,
-        12,
-      ),
-      sliver: SliverToBoxAdapter(
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: cs.primary),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: soon ? null : onTap,
+      child: Opacity(
+        opacity: soon ? 0.72 : 1,
+        child: Container(
+          height: 152,
+          padding: const EdgeInsets.all(AppSpacing.cardPad),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: Border.all(color: cs.outline),
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          ),
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              // faint glyph backdrop
+              Positioned(
+                right: -16,
+                bottom: -18,
+                child: Icon(
+                  tool.icon,
+                  size: 92,
+                  color: tool.color.withValues(alpha: 0.12),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Tile(color: tool.color, icon: tool.icon, size: 46),
+                      if (soon)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color:
+                                  isDark ? AppColors.hairlineDark : AppColors.hairline,
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'SOON',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                              color: isDark
+                                  ? AppColors.ink3Dark
+                                  : AppColors.ink3,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    tool.title,
+                    style:
+                        Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontSize: 16.5,
+                              height: 1.12,
+                            ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    tool.sub,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12.5,
+                        ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// A live interactive tool: its card data + the route it opens.
-class _ExploreTool {
-  final FeatureCardData data;
+// ─── Tool data ───────────────────────────────────────────────────────────
+
+class _Tool {
+  final String id;
+  final String title;
+  final String sub;
+  final IconData icon;
+  final Color color;
   final String route;
 
-  const _ExploreTool({required this.data, required this.route});
+  const _Tool({
+    required this.id,
+    required this.title,
+    required this.sub,
+    required this.icon,
+    required this.color,
+    this.route = '',
+  });
 }
 
-const _interactiveTools = <_ExploreTool>[
-  _ExploreTool(
-    route: '/learn/math-formulas',
-    data: FeatureCardData(
-      id: 'math-formulas',
-      title: 'Math Formulas',
-      subtitle: 'Formulas & calculator',
-      icon: Icons.functions,
-      color: Colors.blueAccent,
-    ),
-  ),
-  _ExploreTool(
-    route: '/learn/periodic-table',
-    data: FeatureCardData(
-      id: 'periodic-table',
-      title: 'Periodic Table',
-      subtitle: 'Explore the elements',
-      icon: Icons.science,
-      color: Colors.purpleAccent,
-    ),
-  ),
-  _ExploreTool(
-    route: '/learn/diagrams',
-    data: FeatureCardData(
-      id: 'diagrams',
-      title: 'Science Diagrams',
-      subtitle: 'Interactive diagrams',
-      icon: Icons.schema,
-      color: Colors.teal,
-    ),
-  ),
-  _ExploreTool(
-    route: '/learn/timeline',
-    data: FeatureCardData(
-      id: 'timeline',
-      title: 'Timeline',
-      subtitle: 'Major history events',
-      icon: Icons.history_edu,
-      color: Colors.amber,
-    ),
-  ),
-  _ExploreTool(
-    route: '/learn/cosmulator',
-    data: FeatureCardData(
-      id: 'cosmulator',
-      title: 'Cosmulator',
-      subtitle: 'Solar system in 3D',
-      icon: Icons.public,
-      color: Colors.indigoAccent,
-    ),
-  ),
-];
+List<_Tool> _tools(bool isDark) => [
+      _Tool(
+        id: 'math-formulas',
+        title: 'Math Formulas',
+        sub: 'Formulas & calculator',
+        icon: Icons.functions_rounded,
+        color: isDark ? AppColors.cFormulasDark : AppColors.cFormulas,
+        route: '/learn/math-formulas',
+      ),
+      _Tool(
+        id: 'periodic-table',
+        title: 'Periodic Table',
+        sub: 'Explore the elements',
+        icon: Icons.grid_view_rounded,
+        color: isDark ? AppColors.cPeriodicDark : AppColors.cPeriodic,
+        route: '/learn/periodic-table',
+      ),
+      _Tool(
+        id: 'diagrams',
+        title: 'Science Diagrams',
+        sub: 'Interactive diagrams',
+        icon: Icons.account_tree_rounded,
+        color: isDark ? AppColors.cDiagramsDark : AppColors.cDiagrams,
+        route: '/learn/diagrams',
+      ),
+      _Tool(
+        id: 'timeline',
+        title: 'Timeline',
+        sub: 'Major history events',
+        icon: Icons.timeline_rounded,
+        color: isDark ? AppColors.cTimelineDark : AppColors.cTimeline,
+        route: '/learn/timeline',
+      ),
+      _Tool(
+        id: 'cosmulator',
+        title: 'Cosmulator',
+        sub: 'Solar system in 3D',
+        icon: Icons.public_rounded,
+        color: isDark ? AppColors.cCosmosDark : AppColors.cCosmos,
+        route: '/learn/cosmulator',
+      ),
+    ];
 
-const _comingSoon = <FeatureCardData>[
-  FeatureCardData(
-    id: 'quizzes',
-    title: 'Interactive Quizzes',
-    subtitle: 'Chapter-wise quizzes with score tracking',
-    icon: Icons.quiz,
-    color: Colors.pinkAccent,
-    status: FeatureStatus.comingSoon,
-  ),
-  FeatureCardData(
-    id: 'virtual-lab',
-    title: 'Virtual Science Lab',
-    subtitle: 'Safe physics & chemistry experiments',
-    icon: Icons.biotech,
-    color: Colors.lightGreen,
-    status: FeatureStatus.comingSoon,
-  ),
-];
+List<_Tool> _soon(bool isDark) => [
+      _Tool(
+        id: 'quizzes',
+        title: 'Quizzes',
+        sub: 'Test yourself',
+        icon: Icons.help_outline_rounded,
+        color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+      ),
+      _Tool(
+        id: 'virtual-lab',
+        title: 'Virtual Science Lab',
+        sub: 'Run experiments',
+        icon: Icons.science_rounded,
+        color: isDark ? AppColors.cScienceDark : AppColors.cScience,
+      ),
+    ];

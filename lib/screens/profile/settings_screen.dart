@@ -4,174 +4,137 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../providers/theme_provider.dart';
+import '../../widgets/calm_widgets.dart';
 
-/// Dedicated **App Settings** page, reached from the gear icon on Profile.
-/// Holds app-level preferences (theme), data management (downloads), legal
-/// (privacy/about), and version info — kept separate from the user's identity.
+/// **App Settings** — appearance, data, about.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Settings', style: Theme.of(context).textTheme.headlineMedium),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
           children: [
-            // ── Appearance ─────────────────────────────────────────
-            _SectionLabel('APPEARANCE'),
+            PageTitle(
+              title: 'Settings',
+              onBack: () => context.canPop() ? context.pop() : context.go('/profile'),
+            ),
+
             const SizedBox(height: 12),
-            _ThemeSelector(
-              currentMode: themeMode,
-              onChanged: (mode) =>
-                  ref.read(themeModeProvider.notifier).setThemeMode(mode),
+
+            // ── Appearance ────────────────────────────────────────
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: SectionHead(label: 'Appearance'),
             ),
-
-            const SizedBox(height: 28),
-
-            // ── Data ───────────────────────────────────────────────
-            _SectionLabel('DATA'),
-            const SizedBox(height: 12),
-            _SettingsNavRow(
-              icon: Icons.download_done_rounded,
-              title: 'Manage Downloads',
-              subtitle: 'Download or delete offline books',
-              onTap: () => context.push('/manage-downloads'),
-            ),
-
-            const SizedBox(height: 28),
-
-            // ── About ──────────────────────────────────────────────
-            _SectionLabel('ABOUT'),
-            const SizedBox(height: 12),
-            _SettingsNavRow(
-              icon: Icons.privacy_tip_rounded,
-              title: 'Privacy Policy',
-              subtitle: 'Read our data and privacy commitments',
-              onTap: () => context.push('/privacy-policy'),
-            ),
-            const SizedBox(height: 10),
-            _SettingsNavRow(
-              icon: Icons.info_outline_rounded,
-              title: 'About Vidyālaya',
-              subtitle: 'Learn more about the app and its features',
-              onTap: () => context.push('/about'),
-            ),
-
-            const SizedBox(height: 28),
-
-            // ── App info ───────────────────────────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: cs.outline),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: _ThemeSegmented(
+                current: themeMode,
+                onChanged: (m) =>
+                    ref.read(themeModeProvider.notifier).setThemeMode(m),
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Data ──────────────────────────────────────────────
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: SectionHead(label: 'Data'),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  border: Border.all(color: cs.outline),
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                ),
+                child: ListRow(
+                  color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                  icon: Icons.file_download_outlined,
+                  title: 'Manage downloads',
+                  sub: 'Download or delete offline books',
+                  onTap: () => context.push('/manage-downloads'),
+                  last: true,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── About ─────────────────────────────────────────────
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: SectionHead(label: 'About'),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  border: Border.all(color: cs.outline),
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                ),
+                child: Column(
+                  children: [
+                    ListRow(
+                      color:
+                          isDark ? AppColors.cScienceDark : AppColors.cScience,
+                      icon: Icons.privacy_tip_outlined,
+                      title: 'Privacy Policy',
+                      sub: 'Our data & privacy commitments',
+                      onTap: () => context.push('/privacy-policy'),
+                    ),
+                    ListRow(
+                      color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
+                      icon: Icons.info_outline_rounded,
+                      title: 'About Vidyālaya',
+                      sub: 'Learn more about the app',
+                      onTap: () => context.push('/about'),
+                      last: true,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── App info ──────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
               child: Column(
                 children: [
-                  Text('Vidyālaya', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
+                  Text('Vidyālaya',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontSize: 17,
+                                color: isDark
+                                    ? AppColors.ink2Dark
+                                    : AppColors.ink2,
+                              )),
+                  const SizedBox(height: 3),
                   Text(
                     'Version 1.0.0',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12.5,
+                        ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-
-  const _SectionLabel(this.label);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            letterSpacing: 1.2,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textMuted,
-          ),
-    );
-  }
-}
-
-// ─── Settings Nav Row ────────────────────────────────────────────────────────
-
-class _SettingsNavRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _SettingsNavRow({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outline),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: cs.secondary,
-                shape: BoxShape.circle,
-              ),
-              child: Center(child: Icon(icon, size: 20, color: cs.primary)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 22,
-              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ],
         ),
@@ -180,43 +143,44 @@ class _SettingsNavRow extends StatelessWidget {
   }
 }
 
-// ─── Theme Selector ─────────────────────────────────────────────────────────
+// ─── Theme segmented picker (System / Light / Dark) ──────────────────────
 
-class _ThemeSelector extends StatelessWidget {
-  final ThemeMode currentMode;
+class _ThemeSegmented extends StatelessWidget {
+  final ThemeMode current;
   final ValueChanged<ThemeMode> onChanged;
 
-  const _ThemeSelector({required this.currentMode, required this.onChanged});
+  const _ThemeSegmented({required this.current, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? AppColors.surface3Dark : AppColors.surface3;
+    final border = isDark ? AppColors.hairline2Dark : AppColors.hairline2;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline),
+        color: bg,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          _ThemeOption(
+          _Segment(
             label: 'System',
-            icon: Icons.settings_suggest_rounded,
-            isSelected: currentMode == ThemeMode.system,
+            icon: Icons.brightness_auto_rounded,
+            active: current == ThemeMode.system,
             onTap: () => onChanged(ThemeMode.system),
           ),
-          _ThemeOption(
+          _Segment(
             label: 'Light',
             icon: Icons.light_mode_rounded,
-            isSelected: currentMode == ThemeMode.light,
+            active: current == ThemeMode.light,
             onTap: () => onChanged(ThemeMode.light),
           ),
-          _ThemeOption(
+          _Segment(
             label: 'Dark',
             icon: Icons.dark_mode_rounded,
-            isSelected: currentMode == ThemeMode.dark,
+            active: current == ThemeMode.dark,
             onTap: () => onChanged(ThemeMode.dark),
           ),
         ],
@@ -225,52 +189,52 @@ class _ThemeSelector extends StatelessWidget {
   }
 }
 
-class _ThemeOption extends StatelessWidget {
+class _Segment extends StatelessWidget {
   final String label;
   final IconData icon;
-  final bool isSelected;
+  final bool active;
   final VoidCallback onTap;
 
-  const _ThemeOption({
+  const _Segment({
     required this.label,
     required this.icon,
-    required this.isSelected,
+    required this.active,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? cs.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            color: active ? cs.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
-                size: 20,
-                color: isSelected
+                size: 19,
+                color: active
                     ? cs.onPrimary
-                    : cs.onSurface.withValues(alpha: 0.6),
+                    : (isDark ? AppColors.ink2Dark : AppColors.ink2),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 5),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: active
                       ? cs.onPrimary
-                      : cs.onSurface.withValues(alpha: 0.6),
+                      : (isDark ? AppColors.ink2Dark : AppColors.ink2),
                 ),
               ),
             ],

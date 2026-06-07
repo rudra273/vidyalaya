@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../app/theme.dart';
 
-/// Shell wrapper that provides the bottom navigation bar for tab routes.
+/// Shell wrapper that provides the Calm Scholar bottom navigation for tab
+/// routes — pill background on the active item, refined typography.
 class AppShell extends StatelessWidget {
   final Widget child;
 
@@ -26,33 +28,33 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentIndex = _currentIndex(context);
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hair = isDark ? AppColors.hairline2Dark : AppColors.hairline2;
 
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: cs.surface,
-          border: Border(
-            top: BorderSide(color: cs.outline, width: 1),
-          ),
+          border: Border(top: BorderSide(color: hair, width: 1)),
         ),
         child: SafeArea(
-          child: SizedBox(
-            height: 64,
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: List.generate(_tabs.length, (index) {
                 final isActive = index == currentIndex;
                 final tab = _tabs[index];
-                return _NavBarItem(
-                  icon: tab.$2,
-                  label: tab.$3,
-                  isActive: isActive,
-                  onTap: () {
-                    if (index != currentIndex) {
-                      context.go(tab.$1);
-                    }
-                  },
+                return Expanded(
+                  child: _NavBarItem(
+                    icon: tab.$2,
+                    label: tab.$3,
+                    isActive: isActive,
+                    onTap: () {
+                      if (index != currentIndex) context.go(tab.$1);
+                    },
+                  ),
                 );
               }),
             ),
@@ -79,32 +81,45 @@ class _NavBarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = cs.primary;
-    final inactiveColor = Theme.of(context).textTheme.bodySmall?.color ??
-        cs.onSurface.withValues(alpha: 0.5);
+    final inactiveColor = isDark ? AppColors.ink3Dark : AppColors.ink3;
+    final pill = Color.alphaBlend(
+      activeColor.withValues(alpha: isDark ? 0.18 : 0.14),
+      cs.surface,
+    );
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
-        width: 80,
-        height: 48,
+        height: 56,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 24,
-              color: isActive ? activeColor : inactiveColor,
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 56,
+              height: 30,
+              decoration: BoxDecoration(
+                color: isActive ? pill : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 22,
+                color: isActive ? activeColor : inactiveColor,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                 color: isActive ? activeColor : inactiveColor,
+                letterSpacing: 0.1,
               ),
             ),
           ],
