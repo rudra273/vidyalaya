@@ -17,7 +17,9 @@ import '../screens/downloads/manage_downloads_screen.dart';
 import '../screens/timetable/timetable_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
 import '../widgets/app_shell.dart';
-import '../screens/learn/learn_screen.dart';
+import '../screens/explore/explore_screen.dart';
+import '../screens/learn_ai/learn_ai_hub_screen.dart';
+import '../screens/learn_ai/tutor_mock_screen.dart';
 import '../screens/learn/learn_ai_screen.dart';
 import '../screens/learn/math_formulas_screen.dart';
 import '../screens/learn/periodic_table_screen.dart';
@@ -27,7 +29,6 @@ import '../screens/learn/diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../data/models/learn_assist.dart';
-import '../screens/progress/progress_screen.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
 
@@ -62,22 +63,27 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
-            path: '/my-books',
+            path: '/learn-ai',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: LearnAiHubScreen()),
+          ),
+          GoRoute(
+            path: '/explore',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ExploreScreen()),
+          ),
+          GoRoute(
+            path: '/library',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: MyBooksScreen()),
           ),
-          GoRoute(
-            path: '/learn',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: LearnScreen()),
-          ),
-          GoRoute(
-            path: '/progress',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: ProgressScreen()),
-          ),
         ],
       ),
+      // Redirects for routes renamed in the AI-first refactor, so old/deep
+      // links don't break: Learn → Explore, My Books → Library, Progress → Me.
+      GoRoute(path: '/learn', redirect: (_, _) => '/explore'),
+      GoRoute(path: '/my-books', redirect: (_, _) => '/library'),
+      GoRoute(path: '/progress', redirect: (_, _) => '/profile'),
       GoRoute(
         path: '/profile',
         parentNavigatorKey: _rootNavigatorKey,
@@ -107,6 +113,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               LearnAssistChannel.learnAssist;
           return LearnAiScreen(channel: channel);
         },
+      ),
+      GoRoute(
+        path: '/learn-ai/tutor',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TutorMockScreen(),
       ),
       GoRoute(
         path: '/learn/math-formulas',

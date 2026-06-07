@@ -1,11 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core_providers.dart';
 
+/// Aggregated *learning* statistics (not reading alone): the streak counts any
+/// learning activity, and AI sessions + tools opened sit alongside reading.
 class ProgressStats {
-  final int currentStreak;
+  final int currentStreak; // learning streak — any activity keeps it alive
   final int totalPagesRead;
   final int totalStudySeconds;
   final int pagesReadToday;
+  final int aiSessions;
+  final int toolsOpened;
   final Map<String, int> subjectPages;
 
   const ProgressStats({
@@ -13,6 +17,8 @@ class ProgressStats {
     required this.totalPagesRead,
     required this.totalStudySeconds,
     required this.pagesReadToday,
+    required this.aiSessions,
+    required this.toolsOpened,
     required this.subjectPages,
   });
 }
@@ -30,6 +36,8 @@ class ProgressNotifier extends Notifier<ProgressStats> {
     final totalPagesRead = repo.getTotalPagesRead();
     final totalStudySeconds = repo.getTotalStudySeconds();
     final pagesReadToday = repo.getPagesReadToday();
+    final aiSessions = repo.getAiSessions();
+    final toolsOpened = repo.getToolsOpened();
 
     // Standard subjects
     final subjects = ['Mathematics', 'Science', 'Odia', 'English', 'History', 'Geography'];
@@ -47,6 +55,8 @@ class ProgressNotifier extends Notifier<ProgressStats> {
       totalPagesRead: totalPagesRead,
       totalStudySeconds: totalStudySeconds,
       pagesReadToday: pagesReadToday,
+      aiSessions: aiSessions,
+      toolsOpened: toolsOpened,
       subjectPages: subjectPages,
     );
   }

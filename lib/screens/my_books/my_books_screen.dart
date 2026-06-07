@@ -44,7 +44,7 @@ class MyBooksScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'My Books',
+                  'Library',
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 4),

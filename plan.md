@@ -1,432 +1,310 @@
-# Offline-First Persistent Cache (Hive) — Architecture Plan
+# Vidyālaya — AI-First Refactor — Implementation Plan
 
-> Status: **planned, not yet implemented.** This document is the implementation
-> blueprint for the next release. Code referenced here (e.g. `CacheStore`,
-> `cacheStoreProvider`) does not exist yet.
+> **Status:** planned, not yet implemented. Phased, file-by-file blueprint for the
+> AI-first repositioning. Direction decided (see "Decisions"); high-level rationale
+> lives in `refactor_highlevel.md`.
 
 ## Context
 
-**Problem:** Every time the user opens the Q&A chat or the profile screen, the app
-shows loading spinners while it re-fetches data it already had seconds ago. Chat
-history is the worst offender — it shows a "loading all chat" indicator on every
-open because `ensureHistory(selector, forceRefresh: true)` always blocks on the
-network. All backend data (`BackendUser`, `StudentProfile`, `LearnAssistUsage`,
-chat history) lives **in memory only** and is lost on every app restart.
+The app's priority inverted. New order:
+1. **AI Learning** (primary) — Q&A (live) + **Tutor** (mock for now) + future agents.
+2. **Interactive Learning** (secondary) — the tools in today's Learn tab
+   (Math, Periodic Table, Diagrams, Timeline, Cosmulator, Quizzes, Virtual Lab).
+3. **Reading books** (tertiary) — board PDFs; kept, but demoted.
 
-**Goal:** A persistent, offline-first cache so screens paint **instantly** from
-local storage (no spinner unless truly cold), then silently revalidate in the
-background. Built as a **reusable framework** so future endpoints (e.g. the
-upcoming Tutor agent) get offline-first for free.
+Today the nav is `Home · My Books · Learn · Progress`, AI is buried as one card
+inside Learn, and Progress measures **reading only**. This refactor re-centers the
+app on **AI + learning activity**.
 
-**Decisions:**
-- Storage engine: **Hive** — the maintained `hive_ce` / `hive_ce_flutter` fork
-  (classic `hive` is discontinued).
-- Refresh policy: **stale-while-revalidate (SWR)** — paint cache with no spinner,
-  refetch in background, update the UI silently only if data changed.
-- Scope: chat history **+** user/profile/usage **+** a reusable generic cache
-  framework.
+## Decisions (locked)
 
-## Recommended approach
+- **Landing:** keep a **Home dashboard** (Option B). App does **not** open into chat.
+- **Bottom nav (4 tabs):** `Home · Learn AI · Explore · Library`.
+  - Library **stays in nav** (user requirement) as the **3rd feature** (tab #4 slot).
+  - AI is tab #2 and prominent; books demoted but present.
+  - **Me/Profile** is reached from the **Home avatar** (as Profile is today), keeping
+    the bar at 4 tabs. **Progress is merged into Me.**
+- **Tutor:** **mock UI only** — agent picker + a scripted guided-lesson mockup.
+  No real agent/backend yet. Reuses the chat shell so the real agent drops in later.
+- **Progress → "learning", not "reading":** count AI sessions, tools opened, and
+  reading. Streak becomes a **learning streak** (any learning activity counts).
+  Merged into the **Me** screen.
+- **Books:** **kept** (not removed). Demoted to tab #3 / renamed `Library`.
+  Add a `booksEnabled` flag now (defaults **true**) so books *can* be hidden later
+  without dead links — but it stays on for now.
 
-**JSON-in-box over Hive**, reusing each model's existing `fromJson`/`toJson` — no
-TypeAdapters, no codegen. One generic `CacheStore` backed by a single Hive box of
-`String → String` (JSON-encoded `CacheEntry` envelopes). Per-uid namespaced keys,
-with a schema `version` field inside each envelope for cheap lazy schema-busting.
-`BackendAccountCache` hydrates synchronously from the cache before any network
-call (so the first paint has data and `loaded = true`), then runs the existing
-`_loadX` as a background revalidate.
+## Final navigation
 
-## Dependencies
-
-Add to `pubspec.yaml` under `dependencies` (`path_provider` already present, used
-by `hive_ce_flutter.initFlutter` internally):
-
-```yaml
-  hive_ce: ^2.11.3
-  hive_ce_flutter: ^2.3.1
 ```
+🏠 Home        🤖 Learn AI      🧭 Explore       📚 Library
+ (dashboard)   (AI agents)     (tools)         (books, #3 feature)
+                                          avatar → 👤 Me (profile + progress)
+```
+
+- `Home` — dashboard (greeting, learning streak, jump-back, big "Ask AI" CTA).
+- `Learn AI` — agent hub: Q&A (live) + Tutor (mock). Reusable chat shell.
+- `Explore` — the de-tangled tools (was `Learn`), sectioned + 2-col grid.
+- `Library` — was `My Books`; reading, demoted, `booksEnabled`-gated.
+- `Me` — merge of Profile + Progress; **learning** metrics + settings.
 
 ---
 
-## Phase 1 — Framework, bootstrap & serialization
+## Phase 0 — Learning-activity tracking (foundation)
 
-### New file: `lib/data/cache/cache_store.dart`
+Everything downstream (Home streak, Me dashboard) needs a unified activity signal.
+Generalize today's reading-only tracking into **learning** tracking.
 
+### `lib/data/repositories/user_prefs_repository.dart`
+
+Current keys: `total_study_seconds`, `total_pages_read`, `pages_read_today`,
+`last_active_date`, `current_streak`, per-subject pages. The streak already keys off
+`last_active_date` inside `addPagesRead` → `_updateStreak`. **Generalize the trigger.**
+
+- Extract the streak/today-rollover logic out of `addPagesRead` into a private
+  `_recordActivityToday()` and call it from **every** learning action.
+- Add counters:
+  ```dart
+  static const _aiSessionsKey  = 'ai_sessions_total';
+  static const _toolsOpenedKey = 'tools_opened_total';
+
+  int getAiSessions()  => _prefs.getInt(_aiSessionsKey) ?? 0;
+  int getToolsOpened() => _prefs.getInt(_toolsOpenedKey) ?? 0;
+
+  Future<void> recordAiSession() async {
+    await _prefs.setInt(_aiSessionsKey, getAiSessions() + 1);
+    await _recordActivityToday(); // streak counts AI too
+  }
+  Future<void> recordToolOpened(String toolId) async {
+    await _prefs.setInt(_toolsOpenedKey, getToolsOpened() + 1);
+    await _recordActivityToday();
+  }
+  ```
+- `addPagesRead` now also calls `_recordActivityToday()` (no behavior change for reading;
+  it just shares the same streak/rollover code).
+
+> Net effect: **any** learning action (read a page, send an AI message, open a tool)
+> keeps the streak alive — that's the "learning everything" requirement.
+
+### `lib/providers/progress_provider.dart`
+
+Rename intent from reading → learning. Extend `ProgressStats`:
 ```dart
-/// Envelope persisted for every cached value.
-class CacheEntry<T> {
-  final T value;
-  final DateTime savedAt;
-  const CacheEntry({required this.value, required this.savedAt});
-}
-
-/// Bump this to invalidate ALL cached envelopes on next read (schema-busting).
-const int kCacheSchemaVersion = 1;
-
-/// JSON-in-box cache over a single Hive box (String key -> String JSON).
-/// Each stored record is: { "v": <version>, "savedAt": <ISO8601>, "value": <T-as-json> }.
-class CacheStore {
-  final Box<String> _box;
-  CacheStore(this._box);
-
-  static const boxName = 'app_cache';
-
-  /// Per-uid namespacing: "<uid>:<name>". Pass uid=null for app-global keys.
-  static String key({String? uid, required String name}) =>
-      uid == null ? 'global:$name' : '$uid:$name';
-
-  /// Reads value only (null on miss / decode failure / version skew).
-  /// [fromJson] rebuilds T from the decoded `value` payload (Map or List).
-  T? read<T>(String key, T Function(Object json) fromJson) =>
-      readWithMeta<T>(key, fromJson)?.value;
-
-  /// Reads value + savedAt. Drops & treats as miss on corruption or version skew.
-  CacheEntry<T>? readWithMeta<T>(String key, T Function(Object json) fromJson) {
-    final raw = _box.get(key);
-    if (raw == null) return null;
-    try {
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      if (decoded['v'] != kCacheSchemaVersion) {
-        _box.delete(key); // lazy schema-bust
-        return null;
-      }
-      return CacheEntry(
-        value: fromJson(decoded['value'] as Object),
-        savedAt: DateTime.parse(decoded['savedAt'] as String),
-      );
-    } catch (_) {
-      _box.delete(key); // corrupt entry -> drop, treat as miss
-      return null;
-    }
-  }
-
-  /// Writes value as JSON. [toJson] must return a JSON-encodable Object
-  /// (Map for objects, List for collections of toJson'd items).
-  Future<void> write<T>(String key, T value, Object Function(T value) toJson) {
-    return _box.put(key, jsonEncode({
-      'v': kCacheSchemaVersion,
-      'savedAt': DateTime.now().toIso8601String(),
-      'value': toJson(value),
-    }));
-  }
-
-  Future<void> delete(String key) => _box.delete(key);
-
-  /// Clear-on-signout: deletes every key under one uid namespace.
-  Future<void> deleteNamespace(String uid) async {
-    final prefix = '$uid:';
-    final keys = _box.keys
-        .whereType<String>()
-        .where((k) => k.startsWith(prefix))
-        .toList();
-    await _box.deleteAll(keys);
-  }
+class ProgressStats {
+  final int currentStreak;        // now a LEARNING streak
+  final int totalPagesRead;
+  final int totalStudySeconds;
+  final int pagesReadToday;
+  final int aiSessions;           // new
+  final int toolsOpened;          // new
+  final Map<String, int> subjectPages;
+  ...
 }
 ```
-
-Design notes:
-- Single box + key namespacing keeps init/lifecycle trivial vs. multiple boxes.
-- `fromJson(Object)` (not `Map`) so the same store serves object payloads (Map)
-  and collection payloads (List).
-- `version` lives per-entry; a single `kCacheSchemaVersion` bump invalidates
-  everything lazily on read — no migration code.
-
-### `lib/providers/core_providers.dart` — add a provider (mirrors `sharedPreferencesProvider`)
-
-```dart
-final cacheStoreProvider = Provider<CacheStore>((ref) {
-  throw UnimplementedError('cacheStoreProvider must be overridden in ProviderScope');
-});
-```
-
-### `lib/main.dart` — open Hive before `runApp`, add the override
-
-```dart
-await Firebase.initializeApp();
-final prefs = await SharedPreferences.getInstance();
-await Hive.initFlutter();                                       // new
-final cacheBox = await Hive.openBox<String>(CacheStore.boxName);// new
-final cacheStore = CacheStore(cacheBox);                        // new
-runApp(ProviderScope(overrides: [
-  sharedPreferencesProvider.overrideWithValue(prefs),
-  cacheStoreProvider.overrideWithValue(cacheStore),             // new
-], child: const VidyalayaApp()));
-```
-
-### Model `toJson` additions
-
-DateTime fields → `toIso8601String()` (mirroring `Highlight`). Each model's
-existing `fromJson` already reads these keys, so cache **reads** reuse `X.fromJson`.
-
-In `lib/data/services/backend_auth_service.dart`:
-
-```dart
-// BackendUser — snake_case keys matching its fromJson.
-Map<String, dynamic> toJson() => {
-  'user_id': userId, 'firebase_uid': firebaseUid, 'db_id': dbId,
-  'email': email, 'name': name, 'role': role, 'status': status,
-  'plan_key': planKey, 'plan_daily_limit': planDailyLimit,
-  'plan_provider': planProvider, 'plan_model': planModel,
-};
-
-// ChatHistoryMessage
-Map<String, dynamic> toJson() => {
-  'id': id, 'role': role, 'content': content,
-  'citations': citations.map((c) => c.toJson()).toList(),
-  'created_at': createdAt?.toIso8601String(),
-};
-
-// ChatHistoryPage
-Map<String, dynamic> toJson() => {
-  'messages': messages.map((m) => m.toJson()).toList(),
-  'next_before': nextBefore,
-};
-```
-
-**⚠️ `StudentProfile` caveat:** it already has a `toJson`, but it is **lossy** — it
-was built for the PUT body and drops `onboarding_completed`, `created_at`,
-`updated_at`. **Do not reuse it for caching.** Add a separate full-fidelity
-`toCacheJson()`; cache reads use the existing full `StudentProfile.fromJson`:
-
-```dart
-Map<String, dynamic> toCacheJson() => {
-  'board': board, 'class_no': classNo, 'preferred_language': preferredLanguage,
-  'school_name': schoolName, 'onboarding_completed': onboardingCompleted,
-  'created_at': createdAt?.toIso8601String(),
-  'updated_at': updatedAt?.toIso8601String(),
-};
-```
-
-In `lib/data/models/learn_assist.dart`:
-
-```dart
-// LearnAssistUsage
-Map<String, dynamic> toJson() => {
-  'date_ist': dateIst, 'used': used, 'limit': limit,
-  'remaining': remaining, 'unlimited': unlimited,
-};
-
-// LearnAssistCitation — keys matching its fromJson; page_no as the list form.
-Map<String, dynamic> toJson() => {
-  'label': label, 'book_name': bookName, 'source_pdf': sourcePdf,
-  'page_no': pageNumbers, 'score': score, 'chunk_ids': chunkIds,
-};
-```
-
-**Unit test:** round-trip every model `toJson → fromJson` and assert equality
-(catches the `StudentProfile` lossy trap and any DateTime/format drift).
+`_loadStats()` reads the new counters. Keep the `progressProvider` name (no rename
+churn); it's now a learning-stats provider.
 
 ---
 
-## Phase 2 — Account / profile / usage SWR
+## Phase 1 — Reusable AI agent shell + Learn AI tab
 
-All in `lib/providers/auth_provider.dart` (`BackendAccountCache`). Keep all public
-method signatures and the `_loadX` network paths intact.
+### New: `lib/screens/learn_ai/agent.dart`
+Declarative agent registry so future agents are a list entry, not a new screen:
+```dart
+enum AgentStatus { live, mock, comingSoon }
 
-- Add `CacheStore get _cache => ref.read(cacheStoreProvider);` and key helpers:
-  ```dart
-  String _userKey(String uid)    => CacheStore.key(uid: uid, name: 'backend_user');
-  String _profileKey(String uid) => CacheStore.key(uid: uid, name: 'student_profile');
-  String _usageKey(String uid)   => CacheStore.key(uid: uid, name: 'usage');
-  ```
-- Add hydrate helpers, each guarded by the corresponding `loaded` bool:
-  ```dart
-  void _hydrateUserFromCache(String uid) {
-    if (state.userLoaded) return;
-    final entry = _cache.readWithMeta<BackendUser>(
-        _userKey(uid), (j) => BackendUser.fromJson(j as Map<String, dynamic>));
-    if (entry != null) {
-      state = state.copyWith(uid: uid, user: AsyncData(entry.value), userLoaded: true);
-    }
-  }
-  // analogous: _hydrateProfileFromCache, _hydrateUsageFromCache
-  ```
-- **`ensureX` SWR rewrite** (same shape for user/profile/usage). Hydrate first; if a
-  cache hit exists, **do not** flip to `AsyncLoading` (that's the spinner cause) —
-  keep painting cached data and fire `_loadX` in the background (single-flight via
-  the existing `_xRequest` field). Show `AsyncLoading` only on a true cold miss:
-  ```dart
-  Future<BackendUser?> ensureUser({bool forceRefresh = false}) {
-    final uid = _currentUid;
-    if (uid == null) return Future.value(null);
-    _hydrateUserFromCache(uid);
+class LearnAgent {
+  final String id, title, subtitle;
+  final IconData icon;
+  final AgentStatus status;
+  final String? channel; // LearnAssistChannel for live agents
+  const LearnAgent({...});
+}
 
-    final cached = _asyncData(state.user);
-    final hasCache = state.userLoaded && cached != null;
+const learnAgents = <LearnAgent>[
+  LearnAgent(id: 'qa', title: 'Q&A', subtitle: 'Ask anything from your books',
+      icon: Icons.auto_awesome, status: AgentStatus.live,
+      channel: LearnAssistChannel.learnAssist),
+  LearnAgent(id: 'tutor', title: 'AI Tutor',
+      subtitle: 'Step-by-step guided lessons', icon: Icons.school_rounded,
+      status: AgentStatus.mock),
+];
+```
 
-    if (_userRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) state = state.copyWith(uid: uid, user: const AsyncLoading());
-      _userRequest = _loadUser(uid, cached);
-    }
-    return hasCache ? Future.value(cached) : (_userRequest ?? Future.value(null));
-  }
-  ```
-- In each `_loadX` **success** branch: write the cache **and diff** — only
-  `copyWith(AsyncData(fresh))` if the value actually changed (compare via a value
-  helper or `jsonEncode(toJson)`), else just set `xLoaded = true`. Avoids needless
-  rebuilds:
-  ```dart
-  final user = await ref.read(backendAuthServiceProvider).me();
-  if (_currentUid == uid) {
-    final changed = !_userEquals(_asyncData(state.user), user);
-    await _cache.write<BackendUser>(_userKey(uid), user, (u) => u.toJson());
-    if (changed) state = state.copyWith(user: AsyncData(user), userLoaded: true);
-    else if (!state.userLoaded) state = state.copyWith(userLoaded: true);
-  }
-  ```
-- In each `_loadX` **failure** branch: **keep the cache** — when `cached != null`,
-  do not overwrite visible `AsyncData(cached)` with `AsyncError` (silent failure).
-- `saveProfile`: on success write `_profileKey` via `toCacheJson()`; existing error
-  rollback stays.
-- `updateUsage`: write `_usageKey` whenever usage updates from a chat response (badge
-  survives restart).
-- **Clear-on-signout**: in the notifier `build()`, track `previousUid`; when `uid`
-  becomes null (or changes) and a previous uid existed, call
-  `_cache.deleteNamespace(previousUid)`. Wipes the per-uid namespace exactly on
-  sign-out / account switch. (SharedPreferences prefs are out of scope, untouched.)
+### New: `lib/screens/learn_ai/learn_ai_hub_screen.dart` (the new tab)
+- Header "Learn with AI".
+- An **agent picker**: one prominent card per `learnAgents` entry.
+  - `live` → `context.push('/learn/ai?channel=...')` (existing chat).
+  - `mock` → `context.push('/learn-ai/tutor')` (Phase 2 mock).
+- Below: recent conversations (reuse history via `backendAccountCacheProvider`).
+- This is the **landing for the Learn AI tab**, not a blank chat (Class-5 safe).
+
+### Existing chat: `lib/screens/learn/learn_ai_screen.dart`
+- No structural change. On a successful send, call
+  `userPrefsRepository.recordAiSession()` then `ref.read(progressProvider.notifier).refresh()`.
+  (Hook where `prependLatestHistoryMessages` runs.)
 
 ---
 
-## Phase 3 — Chat history SWR + UI
+## Phase 2 — Tutor (mock only)
 
-### `lib/providers/auth_provider.dart`
+### New: `lib/screens/learn_ai/widgets/chat_bubble.dart`
+Extract the user/assistant bubble widgets from `learn_ai_screen.dart` so both the
+live chat and the Tutor mock share one look.
 
-- History cache key (per conversation):
-  ```dart
-  String _historyKey(String uid, HistorySelector s) => CacheStore.key(
-      uid: uid,
-      name: 'history:${s.channel}:${s.board}:${s.classNo}:${s.subject ?? "_all"}');
-  ```
-- `_hydrateHistoryFromCache(uid, selector)` — on a selector switch, hydrate the NEW
-  selector's cached page so chat repaints that conversation instantly (no
-  `AsyncLoading` flash):
-  ```dart
-  void _hydrateHistoryFromCache(String uid, HistorySelector selector) {
-    if (state.historySelector == selector && state.historyLoaded) return;
-    final entry = _cache.readWithMeta<ChatHistoryPage>(
-        _historyKey(uid, selector),
-        (j) => ChatHistoryPage.fromJson(j as Map<String, dynamic>));
-    if (entry != null) {
-      state = state.copyWith(
-        uid: uid,
-        history: AsyncData(entry.value),
-        historySelector: selector,
-        historyLoaded: true,
-      );
-    }
-  }
-  ```
-- `ensureHistory`: hydrate-then-background-revalidate. The background fetch always
-  uses `before: null` (first page) — same as today's `forceRefresh: true`. Do not
-  flip to `AsyncLoading` when a cached page is present. On success, replace and
-  `_cache.write(_historyKey, mergedPage, (p) => p.toJson())`.
-- `loadOlderHistory`: after a successful merge, **rewrite the full merged page** to
-  the history key so an offline reopen shows everything loaded so far. Keep the
-  existing `_historyRequest` single-flight guard so older-page loads and background
-  revalidate don't collide.
-- `prependLatestHistoryMessages`: after building the new `ChatHistoryPage`, **write
-  through** to the history cache so a just-sent message persists immediately
-  (offline-visible, no refetch). This is what makes "after a chat send the persisted
-  history updates" pass.
-- `markHistoryStale`: keep setting `historyLoaded = false` (forces the next
-  `ensureHistory` to revalidate) but **do not delete** the cache — the stale page
-  still paints instantly while the refetch runs.
-- Add a synchronous accessor for the screen:
-  ```dart
-  ChatHistoryPage? peekHistory(HistorySelector selector) {
-    final uid = _currentUid;
-    if (uid == null) return null;
-    _hydrateHistoryFromCache(uid, selector);
-    return state.historySelector == selector ? _asyncData(state.history) : null;
-  }
-  ```
+### New: `lib/screens/learn_ai/tutor_mock_screen.dart`
+A **convincing mock**, clearly labelled, no backend:
+- Subject chips (Math, Science, English, …) — selectable, cosmetic.
+- A pre-scripted "lesson" bubble flow (static) showing the intended step-by-step UX.
+- A pinned banner: "AI Tutor preview — full tutoring coming soon."
+- Composer disabled or replies with a canned "coming soon" message.
+- **No** network calls.
 
-### `lib/screens/learn/learn_ai_screen.dart`
-
-- Add an `_isRevalidating` flag (subtle background-refresh state, distinct from the
-  cold `_isLoadingHistory`).
-- `_loadHistory()`: read `cache.peekHistory(selector)` first. If non-null, paint it
-  immediately **without** setting `_isLoadingHistory = true`; set `_isRevalidating`
-  around the background `await cache.ensureHistory(selector, forceRefresh: true)`.
-  Only set `_isLoadingHistory = true` on a true cold cache miss:
-  ```dart
-  final cache = ref.read(backendAccountCacheProvider.notifier);
-  final cachedPage = cache.peekHistory(selector);
-  if (cachedPage != null) {
-    setState(() {
-      _historyNextBefore = cachedPage.nextBefore;
-      _messages..clear()..addAll(_historyToMessages(cachedPage));
-      _isRevalidating = true;            // subtle, not a blocking spinner
-    });
-  } else {
-    setState(() => _isLoadingHistory = true); // cold miss only
-  }
-  final page = await cache.ensureHistory(selector, forceRefresh: true);
-  if (!mounted || selector != _selector) return;
-  setState(() {
-    _isRevalidating = false;
-    _isLoadingHistory = false;
-    _historyNextBefore = page?.nextBefore;
-    final live = _messages.where((m) => !m.fromHistory).toList(growable: false);
-    _messages..clear()..addAll(_historyToMessages(page))..addAll(live);
-  });
-  ```
-- Gate the full-width `LinearProgressIndicator` to the cold-miss case only. For the
-  cache-hit case show a subtle affordance (thin low-opacity bar or a small
-  "Updating…" chip) driven by `_isRevalidating`.
-- `_EmptyChat` condition (`_messages.isEmpty && !_isLoadingHistory`) stays valid — a
-  cache hit makes `_messages` non-empty, so no empty-state flash.
-- `forceRefresh: true` now means "revalidate in background", not "block with spinner".
+### Route (`lib/app/router.dart`)
+```dart
+GoRoute(path: '/learn-ai/tutor', parentNavigatorKey: _rootNavigatorKey,
+    builder: (_, __) => const TutorMockScreen()),
+```
 
 ---
 
-## Phase 4 — Documentation deliverable
+## Phase 3 — Explore tab (de-tangled tools) + FeatureCard
 
-This file (`plan.md`).
+### New: `lib/widgets/feature_card.dart`
+Extract the repeated ~60-line inlined card (used ~10× in `learn_screen.dart`) into one
+data-driven widget: `FeatureCard({icon, iconColor, bg, title, subtitle, status, onTap})`
+with a `FeatureCardData` model and a `status` (live / comingSoon) badge.
+
+### New: `lib/screens/explore/explore_screen.dart` (renamed Learn, AI removed)
+Drive from a data list, **sectioned** + a 2-col grid (halves the scroll):
+- **🔬 Explore & Play** (2-col grid): Periodic Table · Diagrams · Cosmulator ·
+  Timeline · Math Formulas. Each `onTap` → existing route **and**
+  `userPrefsRepository.recordToolOpened(id)` + `progressProvider.refresh()`.
+- **🎯 Coming soon** (muted): Quizzes · Virtual Lab.
+- **AI cards are REMOVED here** — they now live in the Learn AI tab.
+
+Replace the old `learn_screen.dart` with `explore_screen.dart` (delete the AI/Tutor cards).
 
 ---
 
-## Lifecycle & design notes
+## Phase 4 — Home dashboard
 
-- **Schema bump:** increment `kCacheSchemaVersion` whenever a persisted model shape
-  changes — `readWithMeta` lazily drops mismatched entries on next read. Zero
-  migration code.
-- **TTL:** intentionally absent (SWR always revalidates). The single optional gate
-  is `_shouldRevalidate()` using `readWithMeta(...).savedAt`; ship it as `=> true`
-  and document where a max-age comparison would slot in if ever needed:
-  ```dart
-  bool _shouldRevalidate() => true; // SWR: always. Gate on savedAt for a max-age.
-  ```
-- **Single box + namespacing** keeps init and lifecycle trivial vs. multiple boxes.
+### `lib/screens/home/home_screen.dart`
+Re-center from "continue reading" to "continue learning":
+- Greeting + avatar (avatar still → `/profile`, i.e. **Me**).
+- **Big primary CTA:** "Ask AI 💬" → Learn AI tab.
+- **Learning streak** chip (`progressProvider.currentStreak`, now learning-wide).
+- **Jump back in:** last AI thread (if any) **then** continue-reading (reading below AI).
+- Keep `EXPLORE` quick-actions (Bookmarks · Notes · Timetable); drop "Assignment".
+- `RECENTLY ADDED` books row → only shown when `booksEnabled`.
+
+### `lib/screens/home/widgets/quick_actions_grid.dart`
+Migrate to the new `FeatureCard`; remove the disabled "Assignment (soon)" tile.
+
+---
+
+## Phase 5 — Library (demote + flag)
+
+### `lib/providers/core_providers.dart`
+```dart
+final booksEnabledProvider = Provider<bool>((_) => true); // flip to hide later
+```
+
+### `lib/screens/my_books/my_books_screen.dart`
+- Retitle to **"Library"** (file stays `my_books_screen.dart` to avoid churn).
+- No feature changes; just demoted to tab #3.
+
+### Gate entry points on `booksEnabled`
+- The Library **tab** (Phase 6), the Home `RECENTLY ADDED` row, and the
+  continue-reading surface read `booksEnabledProvider` and hide cleanly when false.
+  (Default true → no visible change now; ready for copyright pressure later.)
+
+---
+
+## Phase 6 — Navigation rewrite
+
+### `lib/widgets/app_shell.dart`
+```dart
+static const _tabs = [
+  ('/',         Icons.home_rounded,        'Home'),
+  ('/learn-ai', Icons.auto_awesome,        'Learn AI'),
+  ('/explore',  Icons.explore_rounded,     'Explore'),
+  ('/library',  Icons.menu_book_rounded,   'Library'),
+];
+```
+Keep the existing `_NavBarItem` look; Class-5 pass: ≥56dp targets, keep icon+label.
+
+### `lib/app/router.dart`
+- Shell routes: `/` (Home), `/learn-ai` (LearnAiHubScreen), `/explore`
+  (ExploreScreen), `/library` (MyBooksScreen).
+- Keep `/learn/ai`, `/learn/math-formulas`, `/learn/periodic-table`,
+  `/learn/timeline`, `/learn/diagrams`, `/learn/cosmulator` as **detail routes**
+  (re-pointed from the new tabs).
+- Add `/learn-ai/tutor`.
+- Redirects (avoid dead links / saved deep links):
+  `/learn` → `/explore`, `/my-books` → `/library`, `/progress` → `/profile`.
+- Remove the `/progress` shell route (merged into Me).
+
+---
+
+## Phase 7 — Merge Progress → Me (Profile)
+
+### `lib/screens/profile/profile_screen.dart` → conceptually "Me"
+Insert a **"My Learning"** section near the top (above the existing settings),
+reusing the Progress widgets:
+- Move `_StatCard` row, the goal ring, and `_SubjectProgressBar` from
+  `progress_screen.dart` into `lib/screens/profile/widgets/learning_summary.dart`.
+- Headline the **learning streak** + new stat cards: AI sessions, Tools explored,
+  Pages read, Time. Keep the subject-focus bars.
+- Reframe "Daily Reading Goal" copy → "Daily Learning Goal" (any activity counts),
+  or keep the reading goal as one card among the learning stats.
+- Existing Profile sections (Classes, Downloads, Notes, Privacy, About, theme, auth)
+  stay below.
+
+### `lib/screens/progress/progress_screen.dart`
+- Delete the screen. Its widgets now live in `profile/widgets/learning_summary.dart`.
+
+---
 
 ## Critical files
 
 | File | Change |
 |------|--------|
-| `lib/data/cache/cache_store.dart` | **new** — the framework (`CacheStore`, `CacheEntry`, `kCacheSchemaVersion`) |
-| `lib/providers/auth_provider.dart` | SWR integration — largest change |
-| `lib/data/services/backend_auth_service.dart` | `toJson` additions + `StudentProfile.toCacheJson` |
-| `lib/data/models/learn_assist.dart` | `toJson` additions |
-| `lib/providers/core_providers.dart` | `cacheStoreProvider` |
-| `lib/main.dart` | Hive bootstrap + override |
-| `lib/screens/learn/learn_ai_screen.dart` | cache-first paint, gated spinner |
-| `plan.md` | **new** — this doc |
+| `lib/data/repositories/user_prefs_repository.dart` | learning-activity counters + unified streak trigger |
+| `lib/providers/progress_provider.dart` | add `aiSessions`, `toolsOpened`; learning streak |
+| `lib/providers/core_providers.dart` | `booksEnabledProvider` |
+| `lib/screens/learn_ai/agent.dart` | **new** — agent registry |
+| `lib/screens/learn_ai/learn_ai_hub_screen.dart` | **new** — Learn AI tab landing |
+| `lib/screens/learn_ai/tutor_mock_screen.dart` | **new** — Tutor mock |
+| `lib/screens/learn_ai/widgets/chat_bubble.dart` | **new** — extracted bubbles |
+| `lib/screens/learn/learn_ai_screen.dart` | record AI session on send |
+| `lib/widgets/feature_card.dart` | **new** — data-driven card |
+| `lib/screens/explore/explore_screen.dart` | **new** — tools only (was Learn, AI removed) |
+| `lib/screens/learn/learn_screen.dart` | removed/replaced by Explore |
+| `lib/screens/home/home_screen.dart` | AI-first dashboard |
+| `lib/screens/home/widgets/quick_actions_grid.dart` | FeatureCard migration |
+| `lib/screens/my_books/my_books_screen.dart` | retitle "Library"; `booksEnabled` gating |
+| `lib/widgets/app_shell.dart` | new 4-tab set |
+| `lib/app/router.dart` | new shell routes + redirects (`/learn`→`/explore`, `/my-books`→`/library`, `/progress`→`/profile`) |
+| `lib/screens/profile/profile_screen.dart` | "My Learning" section (Progress merged in) |
+| `lib/screens/profile/widgets/learning_summary.dart` | **new** — moved Progress widgets |
+| `lib/screens/progress/progress_screen.dart` | deleted / redirect |
 
 ## Verification
 
-1. **Cold start, instant content:** sign in, open Q&A + see the plan badge,
-   force-kill, reopen → first frame shows cached history + badge with no
-   `LinearProgressIndicator` and no badge "…".
-2. **Airplane mode:** enable airplane mode, reopen → last cached
-   history/user/profile/usage all visible, no error UI (silent-failure path); only
-   *sending* errors.
-3. **Sign-out wipe:** sign out → no keys remain under that uid (inspect
-   `_box.keys`); sign in with a different account → no prior user's data leaks.
-4. **Chat send persists:** send a message online, force-kill, reopen offline → the
-   just-sent turn appears (proves write-through in `prependLatestHistoryMessages`).
-5. **Revalidate diff:** with cache present, change profile/usage server-side, reopen
-   → cache paints first, then UI silently updates once `_loadX` returns changed
-   data; no spinner during the swap.
-6. **Schema bust:** bump `kCacheSchemaVersion`, reopen → old entries dropped lazily,
-   refetched, no crash.
-7. `flutter analyze` clean; round-trip unit tests green.
+1. **Nav order:** bottom bar reads `Home · Learn AI · Explore · Library`; AI is tab #2,
+   Library is the 3rd feature, no Progress tab.
+2. **AI-first Home:** Home shows greeting + "Ask AI" CTA + learning streak; reading is
+   below AI, not the hero.
+3. **Learn AI tab:** lands on the agent picker (Q&A live, Tutor mock) — not a blank chat.
+4. **Tutor mock:** opens a clearly-labelled preview; no network call; composer canned.
+5. **Explore:** tools only (no AI cards), 2-col grid, shorter scroll; opening a tool
+   bumps `toolsOpened` and the streak.
+6. **Learning streak counts everything:** send an AI message OR open a tool OR read a
+   page → streak stays alive (not reading-only). Verify via the Me dashboard.
+7. **Me merge:** Profile shows "My Learning" (streak + AI sessions + tools + pages) and
+   all old settings; `/progress` redirects to `/profile`.
+8. **Books kept but flaggable:** `booksEnabled=true` → Library tab + Home book row
+   visible; setting it false hides them with **no dead links** (don't ship false).
+9. **Redirects:** `/learn`→`/explore`, `/my-books`→`/library`, `/progress`→`/profile`.
+10. `flutter analyze` clean.
+```

@@ -10,6 +10,7 @@ import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_selection_provider.dart';
+import 'widgets/learning_summary.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -174,6 +175,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               },
               onSave: _saveStudentProfile,
             ),
+
+            const SizedBox(height: 28),
+
+            // ── My Learning (merged from the old Progress screen) ──
+            const LearningSummary(),
 
             const SizedBox(height: 28),
 

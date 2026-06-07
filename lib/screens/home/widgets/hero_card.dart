@@ -68,7 +68,7 @@ class _LibraryHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           GestureDetector(
-            onTap: () => context.go('/my-books'),
+            onTap: () => context.go('/library'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
@@ -76,7 +76,7 @@ class _LibraryHeroCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Go to My Books →',
+                'Go to Library →',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: cs.onPrimary,
                     ),

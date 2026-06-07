@@ -20,3 +20,11 @@ final cacheStoreProvider = Provider<CacheStore>((ref) {
 final userPrefsRepositoryProvider = Provider<UserPrefsRepository>((ref) {
   return UserPrefsRepository(ref.watch(sharedPreferencesProvider));
 });
+
+/// Whether the reading/books feature ("Library") is enabled.
+///
+/// Books are now the app's tertiary feature and carry copyright risk, so every
+/// book surface (the Library tab, the Home "recently added" row, continue-
+/// reading) reads this flag and hides cleanly when it is false — leaving AI and
+/// the tools fully functional with no dead links. Defaults to true for now.
+final booksEnabledProvider = Provider<bool>((ref) => true);

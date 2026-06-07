@@ -257,7 +257,11 @@ class UserPrefsRepository {
     await _prefs.setString(_timetableKey, jsonEncode(map));
   }
 
-  // ─── Progress Analytics ──────────────────────────────────────────────────
+  // ─── Learning Analytics ──────────────────────────────────────────────────
+  //
+  // Tracks ALL learning activity, not just reading: pages read, AI sessions,
+  // and interactive tools opened. The streak is a *learning* streak — any of
+  // these actions keeps it alive (see [_recordActivityToday]).
 
   static const _totalStudySecondsKey = 'total_study_seconds';
   static const _totalPagesReadKey = 'total_pages_read';
@@ -265,6 +269,8 @@ class UserPrefsRepository {
   static const _lastActiveDateKey = 'last_active_date';
   static const _currentStreakKey = 'current_streak';
   static const _subjectProgressPrefix = 'subject_progress_';
+  static const _aiSessionsKey = 'ai_sessions_total';
+  static const _toolsOpenedKey = 'tools_opened_total';
 
   int getTotalStudySeconds() => _prefs.getInt(_totalStudySecondsKey) ?? 0;
 
@@ -276,12 +282,12 @@ class UserPrefsRepository {
   int getTotalPagesRead() => _prefs.getInt(_totalPagesReadKey) ?? 0;
 
   int getPagesReadToday() {
-    _markActiveDay();
+    _recordActivityToday();
     return _prefs.getInt(_pagesReadTodayKey) ?? 0;
   }
 
   Future<void> addPagesRead(int pages, String subject) async {
-    _markActiveDay();
+    await _recordActivityToday();
 
     final currentTotal = getTotalPagesRead();
     await _prefs.setInt(_totalPagesReadKey, currentTotal + pages);
@@ -298,17 +304,39 @@ class UserPrefsRepository {
     return _prefs.getInt('$_subjectProgressPrefix$subject') ?? 0;
   }
 
+  // ─── AI sessions & tools (learning activity) ──────────────────────────────
+
+  int getAiSessions() => _prefs.getInt(_aiSessionsKey) ?? 0;
+
+  int getToolsOpened() => _prefs.getInt(_toolsOpenedKey) ?? 0;
+
+  /// Records one AI Q&A/Tutor interaction. Keeps the learning streak alive.
+  Future<void> recordAiSession() async {
+    await _prefs.setInt(_aiSessionsKey, getAiSessions() + 1);
+    await _recordActivityToday();
+  }
+
+  /// Records opening an interactive learning tool. Keeps the learning streak
+  /// alive. [toolId] is accepted for future per-tool analytics.
+  Future<void> recordToolOpened(String toolId) async {
+    await _prefs.setInt(_toolsOpenedKey, getToolsOpened() + 1);
+    await _recordActivityToday();
+  }
+
   int getCurrentStreak() {
-    _markActiveDay();
+    _recordActivityToday();
     return _prefs.getInt(_currentStreakKey) ?? 0;
   }
 
-  void _markActiveDay() {
+  /// Rolls over the day and advances the learning streak. Idempotent within a
+  /// day. Called by every learning action (reading, AI, tools) so the streak
+  /// reflects all learning — not reading alone.
+  Future<void> _recordActivityToday() async {
     final today = DateTime.now().toIso8601String().split('T')[0];
     final lastDate = _prefs.getString(_lastActiveDateKey);
 
     if (lastDate != today) {
-      _prefs.setInt(_pagesReadTodayKey, 0);
+      await _prefs.setInt(_pagesReadTodayKey, 0);
 
       int streak = _prefs.getInt(_currentStreakKey) ?? 0;
       if (lastDate != null) {
@@ -325,8 +353,8 @@ class UserPrefsRepository {
         streak = 1;
       }
 
-      _prefs.setInt(_currentStreakKey, streak);
-      _prefs.setString(_lastActiveDateKey, today);
+      await _prefs.setInt(_currentStreakKey, streak);
+      await _prefs.setString(_lastActiveDateKey, today);
     }
   }
 }

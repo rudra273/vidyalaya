@@ -8,6 +8,8 @@ import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
+import '../../providers/core_providers.dart';
+import '../../providers/progress_provider.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
@@ -204,6 +206,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             ),
           ]);
       ref.read(backendAccountCacheProvider.notifier).markHistoryStale();
+      // Count this as learning activity: bumps the AI-session counter and keeps
+      // the learning streak alive, then refresh the stats so Home/Me update.
+      await ref.read(userPrefsRepositoryProvider).recordAiSession();
+      ref.read(progressProvider.notifier).refresh();
       setState(() {
         _messages.add(
           _ChatMessage.assistant(
