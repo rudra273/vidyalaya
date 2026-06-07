@@ -7,7 +7,11 @@ import '../../../providers/progress_provider.dart';
 /// (Profile) page and reframed around *learning* activity (AI + tools + reading)
 /// rather than reading alone. Drop into a scrolling Column.
 class LearningSummary extends ConsumerWidget {
-  const LearningSummary({super.key});
+  /// Whether to render the inline "My Learning" title. The standalone Progress
+  /// page sets this false (it shows the title in its app bar instead).
+  final bool showHeader;
+
+  const LearningSummary({super.key, this.showHeader = true});
 
   // Daily learning goal, measured in pages read today (any activity keeps the
   // streak; the ring still tracks reading as the concrete daily target).
@@ -27,8 +31,10 @@ class LearningSummary extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('My Learning', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 16),
+        if (showHeader) ...[
+          Text('My Learning', style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 16),
+        ],
 
         // Headline learning stats.
         Row(

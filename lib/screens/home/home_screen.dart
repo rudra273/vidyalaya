@@ -46,11 +46,14 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   if (streak > 0) ...[
-                    _StreakChip(streak: streak),
+                    GestureDetector(
+                      onTap: () => context.push('/progress'),
+                      child: _StreakChip(streak: streak),
+                    ),
                     const SizedBox(width: 12),
                   ],
                   GestureDetector(
-                    onTap: () => context.push('/profile'),
+                    onTap: () => context.go('/profile'),
                     child: Container(
                       width: 40,
                       height: 40,
@@ -75,13 +78,23 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Ask AI hero (primary CTA) ───────────────────────────
+          // ── Ask AI hero (primary CTA) → Q&A directly ────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0,
             ),
             sliver: SliverToBoxAdapter(
-              child: _AskAiCard(onTap: () => context.go('/learn-ai')),
+              child: _AskAiCard(onTap: () => context.push('/learn/ai')),
+            ),
+          ),
+
+          // ── AI Tutor (mock preview) ─────────────────────────────
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: _TutorCard(onTap: () => context.push('/learn-ai/tutor')),
             ),
           ),
 
@@ -245,7 +258,7 @@ class _AskAiCard extends StatelessWidget {
                   const Text('🤖', style: TextStyle(fontSize: 32)),
                   const SizedBox(height: 12),
                   Text(
-                    'Learn with AI',
+                    'Ask AI anything',
                     style: Theme.of(context)
                         .textTheme
                         .headlineMedium
@@ -253,7 +266,7 @@ class _AskAiCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Ask any question or start a guided lesson.',
+                    'Get instant answers from your textbooks.',
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
@@ -291,6 +304,98 @@ class _AskAiCard extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Secondary AI row on Home: the upcoming AI Tutor (a labelled preview).
+class _TutorCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _TutorCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? cs.surface : Colors.white,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          border: Border.all(color: cs.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: cs.primary.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cs.tertiaryContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(Icons.school_rounded, color: cs.tertiary, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'AI Tutor',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cs.tertiary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Preview',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: cs.tertiary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Step-by-step guided lessons for each subject',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, color: AppColors.textMuted),
           ],
         ),
       ),

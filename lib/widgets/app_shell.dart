@@ -9,9 +9,9 @@ class AppShell extends StatelessWidget {
 
   static const _tabs = [
     ('/', Icons.home_rounded, 'Home'),
-    ('/learn-ai', Icons.auto_awesome, 'Learn AI'),
     ('/explore', Icons.explore_rounded, 'Explore'),
     ('/library', Icons.menu_book_rounded, 'Library'),
+    ('/profile', Icons.person_rounded, 'Profile'),
   ];
 
   int _currentIndex(BuildContext context) {

@@ -8,8 +8,10 @@ import '../screens/my_books/my_books_screen.dart';
 import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/profile/settings_screen.dart';
 import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/profile/about_screen.dart';
+import '../screens/progress/progress_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
@@ -18,7 +20,6 @@ import '../screens/timetable/timetable_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
 import '../widgets/app_shell.dart';
 import '../screens/explore/explore_screen.dart';
-import '../screens/learn_ai/learn_ai_hub_screen.dart';
 import '../screens/learn_ai/tutor_mock_screen.dart';
 import '../screens/learn/learn_ai_screen.dart';
 import '../screens/learn/math_formulas_screen.dart';
@@ -63,11 +64,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
-            path: '/learn-ai',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: LearnAiHubScreen()),
-          ),
-          GoRoute(
             path: '/explore',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: ExploreScreen()),
@@ -77,17 +73,27 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: MyBooksScreen()),
           ),
+          GoRoute(
+            path: '/profile',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: ProfileScreen()),
+          ),
         ],
       ),
-      // Redirects for routes renamed in the AI-first refactor, so old/deep
-      // links don't break: Learn → Explore, My Books → Library, Progress → Me.
+      // Redirects for renamed routes, so old/deep links don't break:
+      // Learn → Explore, My Books → Library, the old Learn AI hub → Q&A.
       GoRoute(path: '/learn', redirect: (_, _) => '/explore'),
       GoRoute(path: '/my-books', redirect: (_, _) => '/library'),
-      GoRoute(path: '/progress', redirect: (_, _) => '/profile'),
+      GoRoute(path: '/learn-ai', redirect: (_, _) => '/learn/ai'),
       GoRoute(
-        path: '/profile',
+        path: '/settings',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ProfileScreen(),
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/progress',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProgressScreen(),
       ),
       GoRoute(
         path: '/privacy-policy',

@@ -8,9 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../providers/user_selection_provider.dart';
-import 'widgets/learning_summary.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -46,7 +44,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedClasses = ref.watch(userSelectionProvider);
     final authState = ref.watch(authStateProvider);
     final accountState = ref.watch(backendAccountCacheProvider);
     final isSignedIn = authState.maybeWhen(
@@ -60,7 +57,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isProfileLoading = accountState.profile is AsyncLoading;
     _applyCachedProfile(cachedProfile);
     final cs = Theme.of(context).colorScheme;
-    final themeMode = ref.watch(themeModeProvider);
     final mutedColor =
         Theme.of(context).textTheme.bodySmall?.color ??
         cs.onSurface.withValues(alpha: 0.5);
@@ -71,10 +67,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           'Profile',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            tooltip: 'Settings',
+            onPressed: () => context.push('/settings'),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
@@ -178,90 +178,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SizedBox(height: 28),
 
-            // ── My Learning (merged from the old Progress screen) ──
-            const LearningSummary(),
-
-            const SizedBox(height: 28),
-
-            // ── Settings ──────────────────────────────────────────
-            Text('Settings', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-
-            // Theme selector (System, Light, Dark)
-            _ThemeSelector(
-              currentMode: themeMode,
-              onChanged: (mode) {
-                ref.read(themeModeProvider.notifier).setThemeMode(mode);
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            // Manage classes — nav row
+            // ── My Learning → standalone Progress page ─────────────
             _SettingsNavRow(
-              icon: Icons.school_rounded,
-              title: 'Your Classes',
-              subtitle: selectedClasses.isEmpty
-                  ? 'No class selected'
-                  : selectedClasses.map((c) => 'Class $c').join(', '),
-              onTap: () => context.push('/class-selector'),
+              icon: Icons.bar_chart_rounded,
+              title: 'My Learning',
+              subtitle: 'Streak, AI sessions, tools & reading progress',
+              onTap: () => context.push('/progress'),
             ),
 
-            const SizedBox(height: 10),
-
-            // Downloads — nav row
-            _SettingsNavRow(
-              icon: Icons.download_done_rounded,
-              title: 'Manage Downloads',
-              subtitle: 'Download or delete offline books',
-              onTap: () => context.push('/manage-downloads'),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Privacy Policy — nav row
-            _SettingsNavRow(
-              icon: Icons.privacy_tip_rounded,
-              title: 'Privacy Policy',
-              subtitle: 'Read our data and privacy commitments',
-              onTap: () => context.push('/privacy-policy'),
-            ),
-
-            const SizedBox(height: 10),
-
-            // About App — nav row
-            _SettingsNavRow(
-              icon: Icons.info_outline_rounded,
-              title: 'About Vidyālaya',
-              subtitle: 'Learn more about the app and its features',
-              onTap: () => context.push('/about'),
-            ),
-
-            const SizedBox(height: 28),
-
-            // ── App Info ───────────────────────────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: cs.outline),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Vidyālaya',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Version 1.0.0',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 24),
           ],
         ),
@@ -758,107 +682,6 @@ class _SettingsNavRow extends StatelessWidget {
               color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Theme Selector ─────────────────────────────────────────────────────────
-
-class _ThemeSelector extends StatelessWidget {
-  final ThemeMode currentMode;
-  final ValueChanged<ThemeMode> onChanged;
-
-  const _ThemeSelector({required this.currentMode, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outline),
-      ),
-      child: Row(
-        children: [
-          _ThemeOption(
-            label: 'System',
-            icon: Icons.settings_suggest_rounded,
-            isSelected: currentMode == ThemeMode.system,
-            onTap: () => onChanged(ThemeMode.system),
-          ),
-          _ThemeOption(
-            label: 'Light',
-            icon: Icons.light_mode_rounded,
-            isSelected: currentMode == ThemeMode.light,
-            onTap: () => onChanged(ThemeMode.light),
-          ),
-          _ThemeOption(
-            label: 'Dark',
-            icon: Icons.dark_mode_rounded,
-            isSelected: currentMode == ThemeMode.dark,
-            onTap: () => onChanged(ThemeMode.dark),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ThemeOption extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _ThemeOption({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? cs.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 20,
-                color: isSelected
-                    ? cs.onPrimary
-                    : cs.onSurface.withValues(alpha: 0.6),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? cs.onPrimary
-                      : cs.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
