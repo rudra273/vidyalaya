@@ -8,18 +8,18 @@ class AppColors {
   AppColors._();
 
   // ─── LIGHT ────────────────────────────────────────────────────────────
-  static const Color paper = Color(0xFFF4F3EC);
-  static const Color paper2 = Color(0xFFEDEBE1);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surface2 = Color(0xFFFAF9F3);
-  static const Color surface3 = Color(0xFFF1EFE6);
+  static const Color paper = Color(0xFFECF1EC);
+  static const Color paper2 = Color(0xFFE3EAE3);
+  static const Color surface = Color(0xFFFBFCFA);
+  static const Color surface2 = Color(0xFFF2F6F1);
+  static const Color surface3 = Color(0xFFE7EEE7);
 
   static const Color ink = Color(0xFF16201B);
   static const Color ink2 = Color(0xFF4C564F);
   static const Color ink3 = Color(0xFF8A938C);
 
-  static const Color hairline = Color(0xFFE5E3D7);
-  static const Color hairline2 = Color(0xFFEEEBE0);
+  static const Color hairline = Color(0xFFDCE6DC);
+  static const Color hairline2 = Color(0xFFE6EDE5);
 
   // Dark hero card (light theme)
   static const Color hero = Color(0xFF0F2A1F);
