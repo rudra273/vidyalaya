@@ -11,7 +11,9 @@ import '../../providers/auth_provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
+import '../../providers/clay_provider.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/clay_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -87,7 +89,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Center(
                 child: Column(
                   children: [
-                    _BigAvatar(letter: avatarLetter),
+                    _BigAvatar(
+                      letter: avatarLetter,
+                      clay: ref.watch(clayEnabledProvider),
+                    ),
                     const SizedBox(height: 12),
                     Text(displayName,
                         style:
@@ -325,8 +330,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 class _BigAvatar extends StatelessWidget {
   final String letter;
+  final bool clay;
 
-  const _BigAvatar({required this.letter});
+  const _BigAvatar({required this.letter, this.clay = true});
 
   @override
   Widget build(BuildContext context) {
@@ -344,6 +350,25 @@ class _BigAvatar extends StatelessWidget {
         border: Border.all(
           color: isDark ? AppColors.green100Dark : AppColors.green100,
         ),
+        boxShadow: clay
+            ? [
+                BoxShadow(
+                  color:
+                      (isDark ? AppColors.clayShadowDark : AppColors.clayShadow)
+                          .withValues(alpha: isDark ? 0.55 : 0.7),
+                  blurRadius: 16,
+                  offset: const Offset(5, 5),
+                ),
+                BoxShadow(
+                  color: (isDark
+                          ? AppColors.clayHighlightDark
+                          : AppColors.clayHighlight)
+                      .withValues(alpha: isDark ? 0.30 : 0.9),
+                  blurRadius: 16,
+                  offset: const Offset(-5, -5),
+                ),
+              ]
+            : null,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -372,15 +397,8 @@ class _StatsStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPad),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
+    return ClayCard(
       child: Row(
         children: [
           Expanded(

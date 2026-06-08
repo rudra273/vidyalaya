@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../providers/clay_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
 
@@ -15,6 +16,7 @@ class SettingsScreen extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
+    final clayOn = ref.watch(clayEnabledProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -41,6 +43,36 @@ class SettingsScreen extends ConsumerWidget {
                 current: themeMode,
                 onChanged: (m) =>
                     ref.read(themeModeProvider.notifier).setThemeMode(m),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  border: Border.all(color: cs.outline),
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                ),
+                child: SwitchListTile(
+                  value: clayOn,
+                  onChanged: (v) =>
+                      ref.read(clayEnabledProvider.notifier).set(v),
+                  activeThumbColor: cs.primary,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.cardPad, vertical: 2),
+                  title: Text(
+                    'Soft 3D look',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Text(
+                    'Adds gentle depth to cards. Turn off for a flat, plain look.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               ),
             ),
 

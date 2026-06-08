@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/clay_card.dart';
 import '../../data/models/book.dart';
 
 /// AI-first Home — "Calm Scholar" layout.
@@ -752,16 +753,12 @@ class _MiniTool extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: ClayCard(
         padding: const EdgeInsets.all(AppSpacing.tilePad),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
+        blur: 13,
+        distance: 4,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
