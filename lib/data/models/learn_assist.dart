@@ -8,8 +8,28 @@ class LearnAssistChannel {
   static const tutor = 'tutor';
 }
 
+/// MIME types the backend accepts for [LearnAssistRequest.imageMediaType].
+class LearnAssistImageType {
+  const LearnAssistImageType._();
+
+  static const jpeg = 'image/jpeg';
+  static const png = 'image/png';
+  static const webp = 'image/webp';
+
+  static const all = {jpeg, png, webp};
+}
+
 class LearnAssistRequest {
-  final String message;
+  /// The student's question or note. Optional when [imageBase64] is provided;
+  /// the backend requires at least one of [message] or [imageBase64].
+  final String? message;
+
+  /// Optional base64-encoded image (photo of notes, an assignment, or a
+  /// textbook page). Max ~10 MB encoded. When set, [imageMediaType] must be one
+  /// of [LearnAssistImageType.all].
+  final String? imageBase64;
+  final String? imageMediaType;
+
   final String board;
   final int classNo;
 
@@ -22,7 +42,9 @@ class LearnAssistRequest {
   final bool debug;
 
   const LearnAssistRequest({
-    required this.message,
+    this.message,
+    this.imageBase64,
+    this.imageMediaType,
     required this.board,
     required this.classNo,
     this.channel = LearnAssistChannel.learnAssist,
@@ -32,7 +54,10 @@ class LearnAssistRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'message': message,
+    if (message != null) 'message': message,
+    if (imageBase64 != null) 'image_base64': imageBase64,
+    if (imageBase64 != null)
+      'image_media_type': imageMediaType ?? LearnAssistImageType.jpeg,
     'board': board,
     'class_no': classNo,
     'channel': channel,
