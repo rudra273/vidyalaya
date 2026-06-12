@@ -24,6 +24,7 @@ dependencies:
   webview_flutter: ^4.13.1
   flutter_markdown: ^0.7.7+1
   image_picker: ^1.1.2
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +37,7 @@ flutter:
   assets:
     - assets/icon/
     - assets/diagrams/
+    - assets/avatars/
 
 flutter_launcher_icons:
   android: "ic_launcher"

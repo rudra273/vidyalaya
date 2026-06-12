@@ -17,6 +17,7 @@ class UserPrefsRepository {
   static const _readerFilterKey = 'reader_filter';
   static const _timetableKey = 'timetable_data';
   static const _onboardingKey = 'has_completed_onboarding';
+  static const _avatarIdKey = 'avatar_id';
 
   final SharedPreferences _prefs;
 
@@ -30,6 +31,23 @@ class UserPrefsRepository {
 
   Future<void> setHasCompletedOnboarding(bool value) async {
     await _prefs.setBool(_onboardingKey, value);
+  }
+
+  // ─── Avatar ─────────────────────────────────────────────────────────────
+  //
+  // Students pick from bundled illustrations instead of uploading a photo
+  // (under-13 privacy). Stores the avatar id, or null for the letter default.
+
+  String? getAvatarId() {
+    return _prefs.getString(_avatarIdKey);
+  }
+
+  Future<void> setAvatarId(String? id) async {
+    if (id == null) {
+      await _prefs.remove(_avatarIdKey);
+    } else {
+      await _prefs.setString(_avatarIdKey, id);
+    }
   }
 
   // ─── Selected Classes ───────────────────────────────────────────────────

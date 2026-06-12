@@ -1,11 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../data/avatars.dart';
 import '../../providers/reading_provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../widgets/calm_widgets.dart';
@@ -68,6 +71,7 @@ class HomeScreen extends ConsumerWidget {
                     ],
                     _Avatar(
                       letter: avatarLetter,
+                      avatar: ref.watch(selectedAvatarProvider),
                       onTap: () => context.go('/profile'),
                     ),
                   ],
@@ -273,9 +277,10 @@ class _StreakChip extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String letter;
+  final StudentAvatar? avatar;
   final VoidCallback onTap;
 
-  const _Avatar({required this.letter, required this.onTap});
+  const _Avatar({required this.letter, this.avatar, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -297,15 +302,24 @@ class _Avatar extends StatelessWidget {
           ),
         ),
         alignment: Alignment.center,
-        child: Text(
-          letter,
-          style: TextStyle(
-            fontFamily: Theme.of(context).textTheme.displaySmall?.fontFamily,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: cs.primary,
-          ),
-        ),
+        child: avatar != null
+            ? ClipOval(
+                child: SvgPicture.asset(
+                  avatar!.assetPath,
+                  width: 38,
+                  height: 38,
+                ),
+              )
+            : Text(
+                letter,
+                style: TextStyle(
+                  fontFamily:
+                      Theme.of(context).textTheme.displaySmall?.fontFamily,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: cs.primary,
+                ),
+              ),
       ),
     );
   }

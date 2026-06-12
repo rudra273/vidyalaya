@@ -3,11 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../data/avatars.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/avatar_provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
@@ -100,7 +103,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     _BigAvatar(
                       letter: avatarLetter,
+                      avatar: ref.watch(selectedAvatarProvider),
                       clay: ref.watch(clayEnabledProvider),
+                      onTap: _showAvatarPicker,
                     ),
                     const SizedBox(height: 12),
                     Text(displayName,
@@ -265,6 +270,74 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   static String _languageLabel(String code) =>
       const {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'}[code] ?? 'English';
 
+  /// Avatar selection — preset illustrations only, no photo upload
+  /// (under-13 privacy). Tapping a choice saves it immediately.
+  void _showAvatarPicker() {
+    final letter = _nameController.text.trim().isNotEmpty
+        ? _nameController.text.trim()[0].toUpperCase()
+        : 'S';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Consumer(
+            builder: (ctx, ref, _) {
+              final currentId = ref.watch(avatarIdProvider);
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Choose your avatar',
+                      style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
+                            fontSize: 18,
+                          ),
+                    ),
+                    const SizedBox(height: 18),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 18,
+                      runSpacing: 16,
+                      children: [
+                        _AvatarChoice(
+                          letter: letter,
+                          selected: currentId == null,
+                          onTap: () {
+                            ref
+                                .read(avatarIdProvider.notifier)
+                                .setAvatarId(null);
+                            Navigator.of(ctx).pop();
+                          },
+                        ),
+                        for (final avatar in kStudentAvatars)
+                          _AvatarChoice(
+                            avatar: avatar,
+                            selected: currentId == avatar.id,
+                            onTap: () {
+                              ref
+                                  .read(avatarIdProvider.notifier)
+                                  .setAvatarId(avatar.id);
+                              Navigator.of(ctx).pop();
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _saveStudentProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -352,53 +425,176 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 class _BigAvatar extends StatelessWidget {
   final String letter;
+  final StudentAvatar? avatar;
   final bool clay;
+  final VoidCallback? onTap;
 
-  const _BigAvatar({required this.letter, this.clay = true});
+  const _BigAvatar({
+    required this.letter,
+    this.avatar,
+    this.clay = true,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: 88,
-      height: 88,
-      decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-          cs.surface,
-        ),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: isDark ? AppColors.green100Dark : AppColors.green100,
-        ),
-        boxShadow: clay
-            ? [
-                BoxShadow(
-                  color:
-                      (isDark ? AppColors.clayShadowDark : AppColors.clayShadow)
-                          .withValues(alpha: isDark ? 0.55 : 0.7),
-                  blurRadius: 16,
-                  offset: const Offset(5, 5),
-                ),
-                BoxShadow(
-                  color: (isDark
-                          ? AppColors.clayHighlightDark
-                          : AppColors.clayHighlight)
-                      .withValues(alpha: isDark ? 0.30 : 0.9),
-                  blurRadius: 16,
-                  offset: const Offset(-5, -5),
-                ),
-              ]
-            : null,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        letter,
-        style: Theme.of(context).textTheme.displayMedium?.copyWith(
-              fontSize: 38,
-              color: cs.primary,
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(
+                cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                cs.surface,
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isDark ? AppColors.green100Dark : AppColors.green100,
+              ),
+              boxShadow: clay
+                  ? [
+                      BoxShadow(
+                        color: (isDark
+                                ? AppColors.clayShadowDark
+                                : AppColors.clayShadow)
+                            .withValues(alpha: isDark ? 0.55 : 0.7),
+                        blurRadius: 16,
+                        offset: const Offset(5, 5),
+                      ),
+                      BoxShadow(
+                        color: (isDark
+                                ? AppColors.clayHighlightDark
+                                : AppColors.clayHighlight)
+                            .withValues(alpha: isDark ? 0.30 : 0.9),
+                        blurRadius: 16,
+                        offset: const Offset(-5, -5),
+                      ),
+                    ]
+                  : null,
             ),
+            alignment: Alignment.center,
+            child: avatar != null
+                ? ClipOval(
+                    child: SvgPicture.asset(
+                      avatar!.assetPath,
+                      width: 86,
+                      height: 86,
+                    ),
+                  )
+                : Text(
+                    letter,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          fontSize: 38,
+                          color: cs.primary,
+                        ),
+                  ),
+          ),
+          if (onTap != null)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.surface, width: 2.5),
+                ),
+                child: Icon(
+                  Icons.edit_rounded,
+                  size: 13,
+                  color: cs.onPrimary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Avatar choice (picker sheet item) ────────────────────────────────────
+
+class _AvatarChoice extends StatelessWidget {
+  final StudentAvatar? avatar;
+  final String letter;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AvatarChoice({
+    this.avatar,
+    this.letter = 'S',
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(
+                cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                cs.surface,
+              ),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected ? cs.primary : cs.outline,
+                width: selected ? 2.5 : 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: avatar != null
+                ? ClipOval(
+                    child: SvgPicture.asset(
+                      avatar!.assetPath,
+                      width: 51,
+                      height: 51,
+                    ),
+                  )
+                : Text(
+                    letter,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          fontSize: 24,
+                          color: cs.primary,
+                        ),
+                  ),
+          ),
+          if (selected)
+            Positioned(
+              right: -3,
+              top: -3,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: cs.surface, width: 2),
+                ),
+                child: Icon(
+                  Icons.check_rounded,
+                  size: 12,
+                  color: cs.onPrimary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
