@@ -15,6 +15,7 @@ import '../../providers/books_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/clay_provider.dart';
+import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
 
@@ -89,9 +90,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             PageTitle(
               title: 'Profile',
-              trailing: IconBox(
-                icon: Icons.settings_rounded,
-                onTap: () => context.push('/settings'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ThemeToggle(
+                    isDark:
+                        Theme.of(context).brightness == Brightness.dark,
+                    onTap: () =>
+                        ref.read(themeModeProvider.notifier).toggle(),
+                  ),
+                  const SizedBox(width: 10),
+                  IconBox(
+                    icon: Icons.settings_rounded,
+                    onTap: () => context.push('/settings'),
+                  ),
+                ],
               ),
             ),
 
@@ -411,6 +424,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _isAuthBusy = false);
       }
     }
+  }
+}
+
+// ─── Theme toggle (sun ↔ moon) ────────────────────────────────────────────
+//
+// A quick light/dark switch in the profile header. The icon cross-fades and
+// rotates between a warm sun and a cool crescent moon so the change feels
+// tactile, and the chip tints to match the active mode.
+
+class _ThemeToggle extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ThemeToggle({required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    // Warm amber for the sun, cool indigo for the moon.
+    final accent = isDark ? const Color(0xFF9DB2E8) : const Color(0xFFE0A23B);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 42,
+        height: 42,
+        margin: const EdgeInsets.only(top: 4),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
+          border: Border.all(color: accent.withValues(alpha: 0.32)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 320),
+          switchInCurve: Curves.easeOutBack,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) => RotationTransition(
+            turns: Tween<double>(begin: 0.6, end: 1).animate(animation),
+            child: ScaleTransition(scale: animation, child: child),
+          ),
+          child: Icon(
+            isDark
+                ? Icons.nightlight_round
+                : Icons.wb_sunny_rounded,
+            key: ValueKey(isDark),
+            size: 20,
+            color: accent,
+          ),
+        ),
+      ),
+    );
   }
 }
 

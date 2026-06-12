@@ -78,7 +78,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${_greeting()}, $firstName — let\'s keep learning.',
+                  _greetingLine(firstName),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
                     color: Theme.of(context).brightness == Brightness.dark
@@ -227,6 +227,16 @@ class HomeScreen extends ConsumerWidget {
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  /// Full greeting line, time-of-day aware. Late at night (and pre-dawn) we
+  /// nudge the student to rest instead of pushing them to keep studying.
+  static String _greetingLine(String firstName) {
+    final h = DateTime.now().hour;
+    if (h >= 22 || h < 5) {
+      return 'Good night, $firstName — time to rest, study fresh tomorrow.';
+    }
+    return '${_greeting()}, $firstName — let\'s keep learning.';
   }
 
   static bool _isDark(BuildContext c) =>
