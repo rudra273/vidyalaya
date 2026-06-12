@@ -142,7 +142,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // ── Learning summary stats ───────────────────────────
+            // ── My Learning (tappable summary → /progress) ───────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
@@ -150,6 +150,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 streak: progress.currentStreak,
                 aiSessions: progress.aiSessions,
                 books: books.length,
+                onTap: () => context.push('/progress'),
               ),
             ),
 
@@ -191,14 +192,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
             ),
 
-            const SizedBox(height: 18),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
-              child: _MyLearningRow(
-                onTap: () => context.push('/progress'),
-              ),
-            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -602,50 +595,105 @@ class _AvatarChoice extends StatelessWidget {
 
 // ─── Stats strip ──────────────────────────────────────────────────────────
 
-class _StatsStrip extends StatelessWidget {
+/// Tappable "My Learning" summary: a labeled card showing three headline stats
+/// that opens the full progress page. The eyebrow + "View details ›" make the
+/// card read as a doorway, not just decoration; tap-down dims it slightly so it
+/// physically responds.
+class _StatsStrip extends StatefulWidget {
   final int streak;
   final int aiSessions;
   final int books;
+  final VoidCallback onTap;
 
   const _StatsStrip({
     required this.streak,
     required this.aiSessions,
     required this.books,
+    required this.onTap,
   });
+
+  @override
+  State<_StatsStrip> createState() => _StatsStripState();
+}
+
+class _StatsStripState extends State<_StatsStrip> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ClayCard(
-      child: Row(
-        children: [
-          Expanded(
-            child: _Stat(
-              color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-              icon: Icons.local_fire_department_rounded,
-              value: '$streak',
-              label: 'Day streak',
-            ),
+    final cs = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 90),
+        opacity: _pressed ? 0.72 : 1,
+        child: ClayCard(
+          pressed: _pressed,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('MY LEARNING', style: kEyebrow(context)),
+                  Row(
+                    children: [
+                      Text(
+                        'View details',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: cs.primary,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Stat(
+                      color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+                      icon: Icons.local_fire_department_rounded,
+                      value: '${widget.streak}',
+                      label: 'Day streak',
+                    ),
+                  ),
+                  _Divider(),
+                  Expanded(
+                    child: _Stat(
+                      color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                      icon: Icons.auto_awesome_rounded,
+                      value: '${widget.aiSessions}',
+                      label: 'AI sessions',
+                    ),
+                  ),
+                  _Divider(),
+                  Expanded(
+                    child: _Stat(
+                      color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                      icon: Icons.menu_book_rounded,
+                      value: '${widget.books}',
+                      label: 'Books',
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          _Divider(),
-          Expanded(
-            child: _Stat(
-              color: isDark ? AppColors.cAiDark : AppColors.cAi,
-              icon: Icons.auto_awesome_rounded,
-              value: '$aiSessions',
-              label: 'AI sessions',
-            ),
-          ),
-          _Divider(),
-          Expanded(
-            child: _Stat(
-              color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-              icon: Icons.menu_book_rounded,
-              value: '$books',
-              label: 'Books',
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1213,33 +1261,6 @@ class _TextInput extends StatelessWidget {
           decoration: InputDecoration(hintText: hint),
         ),
       ],
-    );
-  }
-}
-
-class _MyLearningRow extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _MyLearningRow({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: ListRow(
-        color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-        icon: Icons.bar_chart_rounded,
-        title: 'My Learning',
-        sub: 'Streak, AI sessions, tools & reading progress',
-        onTap: onTap,
-        last: true,
-      ),
     );
   }
 }
