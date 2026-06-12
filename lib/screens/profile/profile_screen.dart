@@ -92,7 +92,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // ── Identity ─────────────────────────────────────────
+            // ── Identity (avatar, name, email, sign-out) ─────────
             Padding(
               padding: const EdgeInsets.fromLTRB(0, 14, 0, 6),
               child: Center(
@@ -109,22 +109,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   fontSize: 23,
                                 )),
                     const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.verified_user_outlined,
-                          size: 15,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.ink3Dark
-                              : AppColors.ink3,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'SCERT Odisha',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                    Text(
+                      isSignedIn
+                          ? email
+                          : 'Class $_selectedClass · ${_languageLabel(_preferredLanguage)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 14),
+                    authState.when(
+                      data: (u) => _AuthButton(
+                        isSignedIn: u != null,
+                        isBusy: _isAuthBusy,
+                        onTap: u != null ? _signOut : _signInWithGoogle,
+                        onLongPress: kDebugMode && u != null
+                            ? _copyFirebaseIdToken
+                            : null,
+                      ),
+                      loading: () => const _AuthButton.loading(),
+                      error: (_, _) => _AuthButton(
+                        isSignedIn: false,
+                        isBusy: _isAuthBusy,
+                        onTap: () => ref.invalidate(authStateProvider),
+                      ),
                     ),
                   ],
                 ),
@@ -134,7 +140,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── Learning summary stats ───────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 14, AppSpacing.screenPadding, 0),
+                  AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
               child: _StatsStrip(
                 streak: progress.currentStreak,
                 aiSessions: progress.aiSessions,
@@ -142,43 +148,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // ── Account row ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
-              child: const SectionHead(label: 'Account'),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
-              child: authState.when(
-                data: (u) => _AccountRow(
-                  letter: avatarLetter,
-                  name: displayName,
-                  email: u != null ? email : 'Sign in to sync your profile',
-                  isSignedIn: u != null,
-                  isBusy: _isAuthBusy,
-                  onCopyToken:
-                      kDebugMode && u != null ? _copyFirebaseIdToken : null,
-                  onAction: u != null ? _signOut : _signInWithGoogle,
-                ),
-                loading: () => _AccountRow.loading(letter: avatarLetter),
-                error: (e, _) => _AccountRow(
-                  letter: 'G',
-                  name: 'Account',
-                  email: e.toString(),
-                  isSignedIn: false,
-                  isBusy: _isAuthBusy,
-                  onAction: () => ref.invalidate(authStateProvider),
-                  errored: true,
-                ),
-              ),
-            ),
-
             // ── Student profile form ─────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
+                  AppSpacing.screenPadding, 22, AppSpacing.screenPadding, 0),
               child: const SectionHead(label: 'Student profile'),
             ),
             Padding(
@@ -534,170 +507,72 @@ class _Divider extends StatelessWidget {
   }
 }
 
-// ─── Account row ──────────────────────────────────────────────────────────
+// ─── Auth button (sign in / sign out) ─────────────────────────────────────
+//
+// A single understated pill under the identity block. Long-press signs out in
+// debug to copy the Firebase ID token (dev-only).
 
-class _AccountRow extends StatelessWidget {
-  final String letter;
-  final String name;
-  final String email;
+class _AuthButton extends StatelessWidget {
   final bool isSignedIn;
   final bool isBusy;
-  final bool errored;
-  final VoidCallback? onCopyToken;
-  final VoidCallback? onAction;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
-  const _AccountRow({
-    required this.letter,
-    required this.name,
-    required this.email,
+  const _AuthButton({
     required this.isSignedIn,
     required this.isBusy,
-    this.onCopyToken,
-    this.onAction,
-    this.errored = false,
+    this.onTap,
+    this.onLongPress,
   });
 
-  factory _AccountRow.loading({required String letter}) => _AccountRow(
-        letter: letter,
-        name: 'Account',
-        email: 'Loading…',
-        isSignedIn: false,
-        isBusy: true,
-      );
+  const _AuthButton.loading()
+      : isSignedIn = false,
+        isBusy = true,
+        onTap = null,
+        onLongPress = null;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dangerColor = isDark ? AppColors.cMathsDark : AppColors.cMaths;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPad),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Row(
-        children: [
-          _SmallAvatar(letter: isSignedIn ? letter : 'G'),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 15,
-                      ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: errored ? cs.error : null,
-                        fontSize: 12.5,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          if (isBusy)
-            const SizedBox.square(
-              dimension: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
-            )
-          else ...[
-            if (onCopyToken != null) ...[
-              _SquareIconButton(
-                icon: Icons.vpn_key_rounded,
-                tint: cs.onSurface.withValues(alpha: 0.6),
-                bg: isDark ? AppColors.surface3Dark : AppColors.surface3,
-                onTap: onCopyToken,
-              ),
-              const SizedBox(width: 8),
-            ],
-            _SquareIconButton(
-              icon: isSignedIn
-                  ? Icons.logout_rounded
-                  : Icons.login_rounded,
-              tint: isSignedIn ? dangerColor : cs.primary,
-              bg: isSignedIn
-                  ? Color.alphaBlend(
-                      dangerColor.withValues(alpha: 0.12), cs.surface)
-                  : Color.alphaBlend(
-                      cs.primary.withValues(alpha: 0.14), cs.surface),
-              onTap: onAction,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
+    final accent = isSignedIn ? dangerColor : cs.primary;
 
-class _SmallAvatar extends StatelessWidget {
-  final String letter;
+    if (isBusy) {
+      return const SizedBox.square(
+        dimension: 22,
+        child: CircularProgressIndicator(strokeWidth: 2.4),
+      );
+    }
 
-  const _SmallAvatar({required this.letter});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-          cs.surface,
-        ),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: isDark ? AppColors.green100Dark : AppColors.green100,
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        letter,
-        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontSize: 18,
-              color: cs.primary,
-            ),
-      ),
-    );
-  }
-}
-
-class _SquareIconButton extends StatelessWidget {
-  final IconData icon;
-  final Color tint;
-  final Color bg;
-  final VoidCallback? onTap;
-
-  const _SquareIconButton({
-    required this.icon,
-    required this.tint,
-    required this.bg,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Container(
-        width: 38,
-        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(10),
+          color: Color.alphaBlend(accent.withValues(alpha: 0.10), cs.surface),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: accent.withValues(alpha: 0.28)),
         ),
-        alignment: Alignment.center,
-        child: Icon(icon, size: 18, color: tint),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
+              size: 16,
+              color: accent,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              isSignedIn ? 'Sign out' : 'Sign in with Google',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
