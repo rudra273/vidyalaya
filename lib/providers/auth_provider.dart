@@ -129,6 +129,11 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<StudentProfile?>? _profileRequest;
   Future<LearnAssistUsage?>? _usageRequest;
   Future<ChatHistoryPage?>? _historyRequest;
+  // Which conversation [_historyRequest] is fetching. A single shared request
+  // slot is fine, but it must be keyed: otherwise a still-in-flight fetch for
+  // one subject gets reused for another (returning the wrong conversation), or
+  // a slow response clobbers a conversation the user already switched away from.
+  HistorySelector? _historyRequestSelector;
 
   @override
   BackendAccountState build() {
@@ -146,6 +151,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       _profileRequest = null;
       _usageRequest = null;
       _historyRequest = null;
+      _historyRequestSelector = null;
       return const BackendAccountState();
     }
 
@@ -157,6 +163,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       _profileRequest = null;
       _usageRequest = null;
       _historyRequest = null;
+      _historyRequestSelector = null;
       return BackendAccountState(uid: uid);
     }
 
@@ -236,7 +243,15 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     final cached = sameSelector ? _asyncData(state.history) : null;
     final hasCache = state.historyLoaded && cached != null;
 
-    if (_historyRequest == null && (forceRefresh || _shouldRevalidate())) {
+    // Only an in-flight request for *this* selector may be reused. A request
+    // for a different conversation must never be handed back here, or the
+    // caller would await another subject's history (the intermittent
+    // wrong-conversation bug when switching subjects quickly).
+    final inFlight = _historyRequestSelector == selector
+        ? _historyRequest
+        : null;
+
+    if (inFlight == null && (forceRefresh || _shouldRevalidate())) {
       if (!hasCache) {
         state = state.copyWith(
           uid: uid,
@@ -245,14 +260,18 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         );
       }
       _historyRequest = _loadHistory(uid, selector, cached);
+      _historyRequestSelector = selector;
     }
 
-    if (hasCache && forceRefresh && _historyRequest != null) {
-      return _historyRequest!;
+    final pending = _historyRequestSelector == selector
+        ? _historyRequest
+        : null;
+    if (hasCache && forceRefresh && pending != null) {
+      return pending;
     }
     return hasCache
         ? Future.value(cached)
-        : (_historyRequest ?? Future.value(null));
+        : (pending ?? Future.value(null));
   }
 
   Future<ChatHistoryPage?> loadOlderHistory() {
@@ -263,9 +282,12 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     if (before == null) return Future.value(current);
     final uid = _currentUid;
     if (uid == null) return Future.value(null);
-    if (_historyRequest != null) return _historyRequest!;
+    if (_historyRequest != null && _historyRequestSelector == selector) {
+      return _historyRequest!;
+    }
 
     _historyRequest = _loadHistory(uid, selector, current, before: before);
+    _historyRequestSelector = selector;
     return _historyRequest!;
   }
 
@@ -480,24 +502,30 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
               messages: [...previous.messages, ...page.messages],
               nextBefore: page.nextBefore,
             );
+      // Always cache the fetched page under its own key, but only push it into
+      // the visible state when this selector is still the active conversation.
+      // Otherwise a slow response for a subject the user has switched away from
+      // would clobber the conversation now on screen.
       if (_currentUid == uid) {
         await _cache.write<ChatHistoryPage>(
           _historyKey(uid, selector),
           mergedPage,
           (page) => page.toJson(),
         );
-        final changed = !_jsonEquals(previous?.toJson(), mergedPage.toJson());
-        state = changed
-            ? state.copyWith(
-                history: AsyncData(mergedPage),
-                historyLoaded: true,
-                historySelector: selector,
-              )
-            : state.copyWith(historyLoaded: true, historySelector: selector);
+        if (state.historySelector == selector) {
+          final changed = !_jsonEquals(previous?.toJson(), mergedPage.toJson());
+          state = changed
+              ? state.copyWith(
+                  history: AsyncData(mergedPage),
+                  historyLoaded: true,
+                  historySelector: selector,
+                )
+              : state.copyWith(historyLoaded: true, historySelector: selector);
+        }
       }
       return mergedPage;
     } catch (error, stackTrace) {
-      if (_currentUid == uid) {
+      if (_currentUid == uid && state.historySelector == selector) {
         state = previous == null
             ? state.copyWith(
                 history: AsyncError(error, stackTrace),
@@ -508,7 +536,12 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       return previous;
     } finally {
-      _historyRequest = null;
+      // Only release the shared slot if it is still ours; a newer fetch for a
+      // different selector may have replaced it while we awaited the network.
+      if (_historyRequestSelector == selector) {
+        _historyRequest = null;
+        _historyRequestSelector = null;
+      }
     }
   }
 

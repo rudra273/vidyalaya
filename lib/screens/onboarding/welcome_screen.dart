@@ -82,9 +82,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       items: const [
                         DropdownMenuItem(
                           value: 'scert_odisha',
-                          child: Text('scert_odisha'),
+                          child: Text('SCERT Odisha'),
                         ),
-                        DropdownMenuItem(value: 'ncert', child: Text('ncert')),
+                        DropdownMenuItem(value: 'ncert', child: Text('NCERT')),
                       ],
                       onChanged: (value) {
                         if (value != null) {

@@ -117,7 +117,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final channel =
               state.uri.queryParameters['channel'] ??
               LearnAssistChannel.learnAssist;
-          return LearnAiScreen(channel: channel);
+          final prefill = state.uri.queryParameters['prefill'];
+          return LearnAiScreen(channel: channel, initialPrompt: prefill);
         },
       ),
       GoRoute(

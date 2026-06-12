@@ -94,7 +94,12 @@ class HomeScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding),
-            child: _AskHero(onTap: () => context.push('/learn/ai')),
+            child: _AskHero(
+              onTap: () => context.push('/learn/ai'),
+              onAskPrefilled: (prompt) => context.push(
+                '/learn/ai?prefill=${Uri.encodeQueryComponent(prompt)}',
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.stackGap),
           Padding(
@@ -119,7 +124,12 @@ class HomeScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding),
-              child: _ContinueCard(book: lastReadBook),
+              child: _ContinueCard(
+                book: lastReadBook,
+                lastPage: ref
+                    .read(userPrefsRepositoryProvider)
+                    .getLastReadPage(lastReadBook.id),
+              ),
             ),
           ],
 
@@ -313,8 +323,9 @@ class _Avatar extends StatelessWidget {
 
 class _AskHero extends StatelessWidget {
   final VoidCallback onTap;
+  final ValueChanged<String> onAskPrefilled;
 
-  const _AskHero({required this.onTap});
+  const _AskHero({required this.onTap, required this.onAskPrefilled});
 
   @override
   Widget build(BuildContext context) {
@@ -398,7 +409,7 @@ class _AskHero extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        'Live',
+                        'New',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -417,7 +428,7 @@ class _AskHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  'Answers grounded in your SCERT books — with citations back to the page.',
+                  'Get clear, simple answers — type your question or snap a photo of it.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: inkMuted,
                       ),
@@ -458,35 +469,39 @@ class _AskHero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // suggestion chips
+                // suggestion chips — tap to open Q&A with the question prefilled
                 SizedBox(
                   height: 30,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: [
                       for (final c in const [
-                        'Explain photosynthesis',
-                        'Solve 2x + 3 = 7',
-                        'Summarise Chapter 4',
+                        'Explain Chapter 4 of my history book',
+                        'Why does the moon change shape?',
+                        'How do I find the area of a triangle?',
                       ])
                         Padding(
                           padding: const EdgeInsets.only(right: 7),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color:
-                                    Colors.white.withValues(alpha: 0.16),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => onAskPrefilled(c),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color:
+                                      Colors.white.withValues(alpha: 0.16),
+                                ),
+                                borderRadius: BorderRadius.circular(999),
                               ),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              c,
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w500,
-                                color: inkMuted,
+                              child: Text(
+                                c,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: inkMuted,
+                                ),
                               ),
                             ),
                           ),
@@ -618,7 +633,7 @@ class _FutureAgentsRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'More AI agents on the way',
+                  'More AI helpers coming soon',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -629,7 +644,7 @@ class _FutureAgentsRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Built to grow — new tutors & helpers over time',
+                  'New tutors and study helpers, added over time',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 12.5,
                       ),
@@ -651,7 +666,12 @@ class _FutureAgentsRow extends StatelessWidget {
 class _ContinueCard extends StatelessWidget {
   final Book book;
 
-  const _ContinueCard({required this.book});
+  /// Real last-read page (0-based) from prefs; -1/0 means not started yet. We
+  /// show only this — the book's total page count isn't known until the PDF
+  /// loads in the reader, so there's no honest percentage to display here.
+  final int lastPage;
+
+  const _ContinueCard({required this.book, required this.lastPage});
 
   @override
   Widget build(BuildContext context) {
@@ -696,24 +716,23 @@ class _ContinueCard extends StatelessWidget {
                         ),
                   ),
                   const SizedBox(height: 13),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      value: 0.42,
-                      minHeight: 5,
-                      backgroundColor: brightness == Brightness.dark
-                          ? AppColors.surface3Dark
-                          : AppColors.surface3,
-                      valueColor: AlwaysStoppedAnimation(subjectColor),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Page 38 of 92 · 42%',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  Row(
+                    children: [
+                      Icon(Icons.play_circle_outline_rounded,
+                          size: 15, color: subjectColor),
+                      const SizedBox(width: 5),
+                      Text(
+                        lastPage > 0
+                            ? 'Resume on page ${lastPage + 1}'
+                            : 'Start reading',
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: subjectColor,
+                                ),
+                      ),
+                    ],
                   ),
                 ],
               ),

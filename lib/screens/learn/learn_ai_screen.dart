@@ -18,9 +18,14 @@ import '../../providers/progress_provider.dart';
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
 
+  /// Text to seed the composer with on open (e.g. a tapped suggestion from
+  /// Home). The composer is focused so the student can edit or just hit send.
+  final String? initialPrompt;
+
   const LearnAiScreen({
     super.key,
     this.channel = LearnAssistChannel.learnAssist,
+    this.initialPrompt,
   });
 
   @override
@@ -30,6 +35,7 @@ class LearnAiScreen extends ConsumerStatefulWidget {
 class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _composerFocusNode = FocusNode();
   final List<_ChatMessage> _messages = [];
 
   late int _selectedClass;
@@ -63,6 +69,14 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void initState() {
     super.initState();
     _selectedClass = resolveLearnAssistClass(ref.read(userSelectionProvider));
+    final prefill = widget.initialPrompt?.trim() ?? '';
+    if (prefill.isNotEmpty) {
+      _messageController.text = prefill;
+      // Focus the composer so a tapped suggestion lands ready to send/edit.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _composerFocusNode.requestFocus();
+      });
+    }
     _ensureAccountSummary();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
   }
@@ -71,6 +85,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _composerFocusNode.dispose();
     super.dispose();
   }
 
@@ -469,6 +484,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             ),
             _Composer(
               controller: _messageController,
+              focusNode: _composerFocusNode,
               isSending: _isSending,
               pendingImage: _pendingImageBytes,
               onAttach: _showImageSourceSheet,
@@ -711,7 +727,7 @@ class _EmptyChat extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Answers can include textbook citations when the AI finds matching pages.',
+              'Type your question or share a photo — answers show you the right page in your book.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
@@ -838,10 +854,10 @@ class _MessageView extends StatelessWidget {
               ],
             ),
           ],
-          if (message.usage != null) ...[
+          if (_lowQuotaNote(message.usage) case final note?) ...[
             const SizedBox(height: 10),
             Text(
-              _formatUsage(message.usage!),
+              note,
               style: Theme.of(
                 context,
               ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
@@ -931,6 +947,7 @@ class _TypingIndicator extends StatelessWidget {
 
 class _Composer extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode focusNode;
   final bool isSending;
   final Uint8List? pendingImage;
   final VoidCallback onAttach;
@@ -939,6 +956,7 @@ class _Composer extends StatelessWidget {
 
   const _Composer({
     required this.controller,
+    required this.focusNode,
     required this.isSending,
     required this.pendingImage,
     required this.onAttach,
@@ -982,6 +1000,7 @@ class _Composer extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
+                  focusNode: focusNode,
                   minLines: 1,
                   maxLines: 4,
                   textInputAction: TextInputAction.send,
@@ -1140,9 +1159,17 @@ String _channelTitle(String channel) {
   };
 }
 
-String _formatUsage(LearnAssistUsage usage) {
-  if (usage.unlimited) return 'Unlimited plan';
-  return 'Daily usage: ${usage.used}/${usage.limit} used, ${usage.remaining} left';
+/// A gentle low-balance heads-up shown under an answer only when the student is
+/// nearly out of daily questions. The app-bar badge already shows the running
+/// count, so repeating it on every reply just makes the app feel metered.
+String? _lowQuotaNote(LearnAssistUsage? usage) {
+  if (usage == null || usage.unlimited) return null;
+  if (usage.remaining > 2) return null;
+  if (usage.remaining <= 0) {
+    return "That's all your free questions for today — they refresh tomorrow.";
+  }
+  final word = usage.remaining == 1 ? 'question' : 'questions';
+  return '${usage.remaining} $word left today.';
 }
 
 String _planLabel(String planKey) {
