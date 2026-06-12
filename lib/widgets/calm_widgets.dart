@@ -371,11 +371,16 @@ class IconBox extends StatelessWidget {
   final VoidCallback? onTap;
   final double size;
 
+  /// Nudges the box down to align with a top-anchored page title. Pass 0 when
+  /// the box is already vertically centered by its parent.
+  final double topMargin;
+
   const IconBox({
     super.key,
     required this.icon,
     this.onTap,
     this.size = 42,
+    this.topMargin = 4,
   });
 
   @override
@@ -386,7 +391,7 @@ class IconBox extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
-        margin: const EdgeInsets.only(top: 4),
+        margin: EdgeInsets.only(top: topMargin),
         decoration: BoxDecoration(
           color: cs.surface,
           border: Border.all(color: cs.outline),

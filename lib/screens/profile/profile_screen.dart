@@ -90,21 +90,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             PageTitle(
               title: 'Profile',
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ThemeToggle(
-                    isDark:
-                        Theme.of(context).brightness == Brightness.dark,
-                    onTap: () =>
-                        ref.read(themeModeProvider.notifier).toggle(),
-                  ),
-                  const SizedBox(width: 10),
-                  IconBox(
-                    icon: Icons.settings_rounded,
-                    onTap: () => context.push('/settings'),
-                  ),
-                ],
+              // Center the two action icons against the serif title's height so
+              // they read as sitting on the same line as "Profile".
+              trailing: SizedBox(
+                height: Theme.of(context).textTheme.displayMedium!.fontSize! *
+                    Theme.of(context).textTheme.displayMedium!.height!,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _ThemeToggle(
+                      isDark:
+                          Theme.of(context).brightness == Brightness.dark,
+                      onTap: () =>
+                          ref.read(themeModeProvider.notifier).toggle(),
+                    ),
+                    const SizedBox(width: 10),
+                    IconBox(
+                      icon: Icons.settings_rounded,
+                      topMargin: 0,
+                      onTap: () => context.push('/settings'),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -450,7 +458,6 @@ class _ThemeToggle extends StatelessWidget {
       child: Container(
         width: 42,
         height: 42,
-        margin: const EdgeInsets.only(top: 4),
         decoration: BoxDecoration(
           color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
           border: Border.all(color: accent.withValues(alpha: 0.32)),
