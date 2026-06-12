@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Reusable empty state widget with icon, title, subtitle, and optional CTA.
 class EmptyState extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String title;
   final String subtitle;
   final String? ctaLabel;
@@ -10,7 +10,7 @@ class EmptyState extends StatelessWidget {
 
   const EmptyState({
     super.key,
-    required this.emoji,
+    required this.icon,
     required this.title,
     required this.subtitle,
     this.ctaLabel,
@@ -19,14 +19,15 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 56)),
-            const SizedBox(height: 20),
+            Icon(icon, size: 30, color: cs.primary),
+            const SizedBox(height: 16),
             Text(
               title,
               style: Theme.of(context).textTheme.headlineMedium,
@@ -35,13 +36,11 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
             if (ctaLabel != null && onCtaTap != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 22),
               ElevatedButton(
                 onPressed: onCtaTap,
                 child: Text(ctaLabel!),

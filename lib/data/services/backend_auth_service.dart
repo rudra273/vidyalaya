@@ -69,6 +69,9 @@ class StudentProfile {
   final int classNo;
   final String preferredLanguage;
   final String? schoolName;
+
+  /// Student display name (custom if edited, else the Google account name).
+  final String? name;
   final bool onboardingCompleted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -78,6 +81,7 @@ class StudentProfile {
     required this.classNo,
     required this.preferredLanguage,
     this.schoolName,
+    this.name,
     this.onboardingCompleted = false,
     this.createdAt,
     this.updatedAt,
@@ -89,6 +93,7 @@ class StudentProfile {
       classNo: json['class_no'] as int? ?? 8,
       preferredLanguage: json['preferred_language'] as String? ?? 'en',
       schoolName: json['school_name'] as String?,
+      name: json['name'] as String?,
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
@@ -97,6 +102,7 @@ class StudentProfile {
 
   Map<String, dynamic> toJson() {
     final trimmedSchoolName = schoolName?.trim();
+    final trimmedName = name?.trim();
     return {
       'board': board,
       'class_no': classNo,
@@ -104,6 +110,8 @@ class StudentProfile {
       'school_name': trimmedSchoolName == null || trimmedSchoolName.isEmpty
           ? null
           : trimmedSchoolName,
+      // Omitted (null) means "leave the stored name unchanged" server-side.
+      'name': trimmedName == null || trimmedName.isEmpty ? null : trimmedName,
     };
   }
 
@@ -112,6 +120,7 @@ class StudentProfile {
     'class_no': classNo,
     'preferred_language': preferredLanguage,
     'school_name': schoolName,
+    'name': name,
     'onboarding_completed': onboardingCompleted,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),

@@ -10,17 +10,51 @@ import '../../widgets/calm_widgets.dart';
 import 'widgets/filter_chips_bar.dart';
 import 'widgets/book_grid_card.dart';
 
-class MyBooksScreen extends ConsumerWidget {
+class MyBooksScreen extends ConsumerStatefulWidget {
   const MyBooksScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyBooksScreen> createState() => _MyBooksScreenState();
+}
+
+class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
+  final _searchController = TextEditingController();
+  bool _searchActive = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _searchActive = !_searchActive;
+      if (!_searchActive) _searchController.clear();
+    });
+  }
+
+  /// Title/subject match against the typed query (case-insensitive).
+  List<Book> _applySearch(List<Book> books) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return books;
+    return books.where((book) {
+      final subjectLabel = subjectMeta(book.subject).label.toLowerCase();
+      return book.title.toLowerCase().contains(query) ||
+          book.subject.toLowerCase().contains(query) ||
+          subjectLabel.contains(query);
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
     final selectedBoard = ref.watch(userBoardProvider);
-    final filteredBooks = ref.watch(filteredBooksProvider);
+    final filteredBooks = _applySearch(ref.watch(filteredBooksProvider));
     final allSelectedBooks = ref.watch(selectedBooksProvider);
 
     final hasSelection = selectedClasses.isNotEmpty;
+    final isSearching = _searchController.text.trim().isNotEmpty;
 
     final booksByClass = <int, List<Book>>{};
     for (final book in filteredBooks) {
@@ -40,12 +74,39 @@ class MyBooksScreen extends ConsumerWidget {
             title: 'Library',
             sub: sub,
             trailing: IconBox(
-              icon: Icons.search_rounded,
-              onTap: () {},
+              icon: _searchActive ? Icons.close_rounded : Icons.search_rounded,
+              onTap: _toggleSearch,
             ),
           ),
 
-          if (hasSelection) ...[
+          if (_searchActive) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Search books or subjects…',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  isDense: true,
+                  suffixIcon: isSearching
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          onPressed: () =>
+                              setState(() => _searchController.clear()),
+                        )
+                      : null,
+                ),
+              ),
+            ),
+          ],
+
+          if (hasSelection && !_searchActive) ...[
             const SizedBox(height: 14),
             const FilterChipsBar(),
           ],
@@ -55,7 +116,7 @@ class MyBooksScreen extends ConsumerWidget {
           Expanded(
             child: !hasSelection
                 ? EmptyState(
-                    emoji: '📖',
+                    icon: Icons.menu_book_rounded,
                     title: 'No class selected',
                     subtitle:
                         'Select your class to get started with your textbooks.',
@@ -64,9 +125,11 @@ class MyBooksScreen extends ConsumerWidget {
                   )
                 : filteredBooks.isEmpty
                     ? EmptyState(
-                        emoji: '🔍',
+                        icon: Icons.search_off_rounded,
                         title: 'No books found',
-                        subtitle: 'Try a different subject filter.',
+                        subtitle: isSearching
+                            ? 'No matches for "${_searchController.text.trim()}". Try another word.'
+                            : 'Try a different subject filter.',
                       )
                     : CustomScrollView(
                         slivers: [
@@ -96,8 +159,8 @@ class MyBooksScreen extends ConsumerWidget {
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  mainAxisSpacing: AppSpacing.screenPadding,
-                                  crossAxisSpacing: AppSpacing.screenPadding,
+                                  mainAxisSpacing: 14,
+                                  crossAxisSpacing: 14,
                                   childAspectRatio: 0.62,
                                 ),
                                 delegate: SliverChildBuilderDelegate(
@@ -109,18 +172,19 @@ class MyBooksScreen extends ConsumerWidget {
                               ),
                             ),
                           ],
-                          SliverPadding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.screenPadding,
-                              vertical: 24,
-                            ),
-                            sliver: SliverToBoxAdapter(
-                              child: _AddClassBanner(
-                                onTap: () =>
-                                    context.push('/class-selector'),
+                          if (!isSearching)
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.screenPadding,
+                                vertical: 24,
+                              ),
+                              sliver: SliverToBoxAdapter(
+                                child: _AddClassBanner(
+                                  onTap: () =>
+                                      context.push('/class-selector'),
+                                ),
                               ),
                             ),
-                          ),
                         ],
                       ),
           ),

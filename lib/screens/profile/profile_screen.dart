@@ -24,10 +24,13 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _schoolController = TextEditingController();
+  final _nameController = TextEditingController();
   int _selectedClass = 8;
   String _preferredLanguage = 'en';
+  String _board = 'scert_odisha';
   bool _isAuthBusy = false;
   bool _isProfileSaving = false;
+  bool _isEditing = false;
   String? _appliedProfileKey;
 
   @override
@@ -37,11 +40,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (selectedClasses.isNotEmpty) {
       _selectedClass = selectedClasses.first;
     }
+    _board = ref.read(userBoardProvider);
   }
 
   @override
   void dispose() {
     _schoolController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -62,8 +67,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isProfileLoading = accountState.profile is AsyncLoading;
     _applyCachedProfile(cachedProfile);
 
-    final displayName =
-        (user?.displayName?.trim().isNotEmpty ?? false) ? user!.displayName! : 'Student';
+    // Prefer the backend name (student-editable) over the Google account name.
+    final backendName = cachedProfile?.name?.trim() ?? '';
+    final firebaseName = user?.displayName?.trim() ?? '';
+    final displayName = backendName.isNotEmpty
+        ? backendName
+        : (firebaseName.isNotEmpty ? firebaseName : 'Student');
     final email = user?.email ?? '—';
     final avatarLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S';
 
@@ -175,18 +184,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding),
-              child: _StudentForm(
-                isSignedIn: isSignedIn,
-                isLoading: isProfileLoading,
-                isSaving: _isProfileSaving,
-                selectedClass: _selectedClass,
-                preferredLanguage: _preferredLanguage,
-                schoolController: _schoolController,
-                onClassChanged: (v) => setState(() => _selectedClass = v),
-                onLanguageChanged: (v) =>
-                    setState(() => _preferredLanguage = v),
-                onSave: _saveStudentProfile,
-              ),
+              child: _isEditing
+                  ? _StudentForm(
+                      isSignedIn: isSignedIn,
+                      isLoading: isProfileLoading,
+                      isSaving: _isProfileSaving,
+                      selectedClass: _selectedClass,
+                      preferredLanguage: _preferredLanguage,
+                      board: _board,
+                      nameController: _nameController,
+                      schoolController: _schoolController,
+                      onClassChanged: (v) => setState(() => _selectedClass = v),
+                      onLanguageChanged: (v) =>
+                          setState(() => _preferredLanguage = v),
+                      onSave: _saveStudentProfile,
+                      onCancel: _cancelEditing,
+                    )
+                  : _ProfileSummary(
+                      isSignedIn: isSignedIn,
+                      isLoading: isProfileLoading,
+                      classNo: _selectedClass,
+                      board: _board,
+                      language: _languageLabel(_preferredLanguage),
+                      school: _schoolController.text.trim(),
+                      onEdit: isSignedIn
+                          ? () => setState(() => _isEditing = true)
+                          : null,
+                    ),
             ),
 
             const SizedBox(height: 18),
@@ -231,21 +255,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       profile.classNo,
       profile.preferredLanguage,
       profile.schoolName ?? '',
+      profile.name ?? '',
+      profile.board,
       profile.updatedAt?.toIso8601String() ?? '',
     ].join('|');
     if (_appliedProfileKey == key) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _appliedProfileKey == key || _isProfileSaving) return;
+      // Never clobber in-progress edits with a background refresh.
+      if (!mounted ||
+          _appliedProfileKey == key ||
+          _isProfileSaving ||
+          _isEditing) {
+        return;
+      }
       setState(() {
         _appliedProfileKey = key;
         _selectedClass = profile.classNo;
         _preferredLanguage = profile.preferredLanguage;
+        _board = profile.board;
         _schoolController.text = profile.schoolName ?? '';
+        _nameController.text = profile.name ?? '';
       });
-      _syncLocalProfile(profile.classNo);
+      _syncLocalProfile(profile.classNo, profile.board);
     });
   }
+
+  /// Leave edit mode, restoring the last saved values.
+  void _cancelEditing() {
+    setState(() {
+      _isEditing = false;
+      _appliedProfileKey = null; // re-apply the cached profile on next build
+    });
+  }
+
+  static String _languageLabel(String code) =>
+      const {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'}[code] ?? 'English';
 
   Future<void> _saveStudentProfile() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -262,19 +307,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           .read(backendAccountCacheProvider.notifier)
           .saveProfile(
             StudentProfile(
-              board: 'scert_odisha',
+              board: _board,
               classNo: _selectedClass,
               preferredLanguage: _preferredLanguage,
               schoolName: _schoolController.text,
+              name: _nameController.text,
             ),
           );
 
-      _syncLocalProfile(savedProfile.classNo);
+      _syncLocalProfile(savedProfile.classNo, savedProfile.board);
       if (!mounted) return;
       setState(() {
         _selectedClass = savedProfile.classNo;
         _preferredLanguage = savedProfile.preferredLanguage;
+        _board = savedProfile.board;
         _schoolController.text = savedProfile.schoolName ?? '';
+        _nameController.text = savedProfile.name ?? '';
+        _isEditing = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully.')),
@@ -290,8 +339,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _syncLocalProfile(int classNo) {
-    ref.read(userBoardProvider.notifier).setBoard('scert_odisha');
+  void _syncLocalProfile(int classNo, String board) {
+    ref.read(userBoardProvider.notifier).setBoard(board);
     ref.read(userSelectionProvider.notifier).setClasses({classNo});
   }
 
@@ -654,7 +703,150 @@ class _SquareIconButton extends StatelessWidget {
   }
 }
 
-// ─── Student form ─────────────────────────────────────────────────────────
+// ─── Profile summary (view mode) ─────────────────────────────────────────
+
+class _ProfileSummary extends StatelessWidget {
+  final bool isSignedIn;
+  final bool isLoading;
+  final int classNo;
+  final String board;
+  final String language;
+  final String school;
+  final VoidCallback? onEdit;
+
+  const _ProfileSummary({
+    required this.isSignedIn,
+    required this.isLoading,
+    required this.classNo,
+    required this.board,
+    required this.language,
+    required this.school,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.cardPad,
+        8,
+        AppSpacing.cardPad,
+        AppSpacing.cardPad - 4,
+      ),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SummaryRow(label: 'Class', value: 'Class $classNo'),
+          _SummaryRow(label: 'Board', value: _boardLabel(board)),
+          _SummaryRow(label: 'Language', value: language),
+          _SummaryRow(
+            label: 'School',
+            value: school.isEmpty ? 'Not set' : school,
+            muted: school.isEmpty,
+            last: true,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: isLoading ? null : onEdit,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: cs.primary,
+                side: BorderSide(color: cs.outline),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              icon: const Icon(Icons.edit_rounded, size: 16),
+              label: Text(
+                isSignedIn ? 'Edit profile' : 'Sign in to edit',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: isSignedIn
+                          ? cs.primary
+                          : cs.onSurface.withValues(alpha: 0.4),
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool muted;
+  final bool last;
+
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.muted = false,
+    this.last = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      decoration: last
+          ? null
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color:
+                      isDark ? AppColors.hairline2Dark : AppColors.hairline2,
+                ),
+              ),
+            ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 86,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: muted
+                        ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
+                        : cs.onSurface,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _boardLabel(String board) =>
+    board == 'scert_odisha' ? 'SCERT Odisha' : board;
+
+// ─── Student form (edit mode) ────────────────────────────────────────────
 
 class _StudentForm extends StatelessWidget {
   final bool isSignedIn;
@@ -662,10 +854,13 @@ class _StudentForm extends StatelessWidget {
   final bool isSaving;
   final int selectedClass;
   final String preferredLanguage;
+  final String board;
+  final TextEditingController nameController;
   final TextEditingController schoolController;
   final ValueChanged<int> onClassChanged;
   final ValueChanged<String> onLanguageChanged;
   final VoidCallback onSave;
+  final VoidCallback onCancel;
 
   const _StudentForm({
     required this.isSignedIn,
@@ -673,10 +868,13 @@ class _StudentForm extends StatelessWidget {
     required this.isSaving,
     required this.selectedClass,
     required this.preferredLanguage,
+    required this.board,
+    required this.nameController,
     required this.schoolController,
     required this.onClassChanged,
     required this.onLanguageChanged,
     required this.onSave,
+    required this.onCancel,
   });
 
   @override
@@ -700,12 +898,27 @@ class _StudentForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _TextInput(
+            label: 'Name',
+            hint: 'Your name',
+            controller: nameController,
+            enabled: !isBusy,
+          ),
+          const SizedBox(height: 12),
           _Field<int>(
             label: 'Class',
             value: 'Class $selectedClass',
             onTap: isBusy
                 ? null
                 : () => _showClassPicker(context, onClassChanged, selectedClass),
+          ),
+          const SizedBox(height: 12),
+          // Single supported board today; shown for transparency, picker
+          // activates once the backend accepts more boards.
+          _Field<String>(
+            label: 'Board',
+            value: _boardLabel(board),
+            onTap: null,
           ),
           const SizedBox(height: 12),
           _Field<String>(
@@ -717,22 +930,47 @@ class _StudentForm extends StatelessWidget {
                     context, onLanguageChanged, preferredLanguage),
           ),
           const SizedBox(height: 12),
-          _SchoolField(controller: schoolController, enabled: !isBusy),
+          _TextInput(
+            label: 'School name',
+            hint: 'e.g. SSVM',
+            controller: schoolController,
+            enabled: !isBusy,
+          ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: isSignedIn && !isBusy ? onSave : null,
-              icon: isSaving
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child:
-                          CircularProgressIndicator(strokeWidth: 2.2),
-                    )
-                  : const Icon(Icons.check_rounded, size: 18),
-              label:
-                  Text(isSignedIn ? 'Save profile' : 'Sign in to save'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: isBusy ? null : onCancel,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: cs.outline),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  child: Text(
+                    'Cancel',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  onPressed: isSignedIn && !isBusy ? onSave : null,
+                  icon: isSaving
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                      : const Icon(Icons.check_rounded, size: 18),
+                  label:
+                      Text(isSignedIn ? 'Save profile' : 'Sign in to save'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -869,11 +1107,18 @@ class _Field<T> extends StatelessWidget {
   }
 }
 
-class _SchoolField extends StatelessWidget {
+class _TextInput extends StatelessWidget {
+  final String label;
+  final String hint;
   final TextEditingController controller;
   final bool enabled;
 
-  const _SchoolField({required this.controller, required this.enabled});
+  const _TextInput({
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.enabled,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -882,7 +1127,7 @@ class _SchoolField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'School name',
+          label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -894,9 +1139,7 @@ class _SchoolField extends StatelessWidget {
           controller: controller,
           enabled: enabled,
           textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(
-            hintText: 'e.g. SSVM',
-          ),
+          decoration: InputDecoration(hintText: hint),
         ),
       ],
     );

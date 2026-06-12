@@ -71,9 +71,12 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   static const _staleChatThreshold = Duration(minutes: 30);
   bool _historyHidden = false;
 
+  /// Board from the saved profile (single-board today, multi-board ready).
+  String get _board => ref.read(userBoardProvider);
+
   HistorySelector get _selector => HistorySelector(
     channel: widget.channel,
-    board: 'scert_odisha',
+    board: _board,
     classNo: _selectedClass,
     subject: _selectedSubject,
   );
@@ -331,7 +334,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           message: query.isEmpty ? null : query,
           imageBase64: imageBase64,
           imageMediaType: imageMediaType,
-          board: 'scert_odisha',
+          board: _board,
           classNo: _selectedClass,
           channel: widget.channel,
           subject: _selectedSubject,
