@@ -118,7 +118,12 @@ final routerProvider = Provider<GoRouter>((ref) {
               state.uri.queryParameters['channel'] ??
               LearnAssistChannel.learnAssist;
           final prefill = state.uri.queryParameters['prefill'];
-          return LearnAiScreen(channel: channel, initialPrompt: prefill);
+          final autofocus = state.uri.queryParameters['focus'] == '1';
+          return LearnAiScreen(
+            channel: channel,
+            initialPrompt: prefill,
+            autofocus: autofocus,
+          );
         },
       ),
       GoRoute(

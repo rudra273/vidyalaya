@@ -24,10 +24,9 @@ class HomeScreen extends ConsumerWidget {
     final books = ref.watch(selectedBooksProvider);
     final booksEnabled = ref.watch(booksEnabledProvider);
     final streak = ref.watch(progressProvider).currentStreak;
-    final user = ref.watch(authStateProvider).maybeWhen(
-          data: (u) => u,
-          orElse: () => null,
-        );
+    final user = ref
+        .watch(authStateProvider)
+        .maybeWhen(data: (u) => u, orElse: () => null);
 
     final firstName = _firstName(user);
     final avatarLetter = (firstName.isNotEmpty ? firstName[0] : 'S')
@@ -61,8 +60,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                     if (streak > 0) ...[
-                      _StreakChip(streak: streak,
-                          onTap: () => context.push('/progress')),
+                      _StreakChip(
+                        streak: streak,
+                        onTap: () => context.push('/progress'),
+                      ),
                       const SizedBox(width: 12),
                     ],
                     _Avatar(
@@ -75,11 +76,11 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   '${_greeting()}, $firstName — let\'s keep learning.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.ink2Dark
-                            : AppColors.ink2,
-                      ),
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.ink2Dark
+                        : AppColors.ink2,
+                  ),
                 ),
               ],
             ),
@@ -93,9 +94,11 @@ class HomeScreen extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding),
+              horizontal: AppSpacing.screenPadding,
+            ),
             child: _AskHero(
               onTap: () => context.push('/learn/ai'),
+              onAsk: () => context.push('/learn/ai?focus=1'),
               onAskPrefilled: (prompt) => context.push(
                 '/learn/ai?prefill=${Uri.encodeQueryComponent(prompt)}',
               ),
@@ -104,7 +107,8 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.stackGap),
           Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding),
+              horizontal: AppSpacing.screenPadding,
+            ),
             child: _TutorRow(onTap: () => context.push('/learn-ai/tutor')),
           ),
           const SizedBox(height: AppSpacing.stackGap),
@@ -118,12 +122,14 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sectionGap),
             const Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(label: 'Jump back in'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: _ContinueCard(
                 book: lastReadBook,
                 lastPage: ref
@@ -141,14 +147,13 @@ class HomeScreen extends ConsumerWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding),
+              horizontal: AppSpacing.screenPadding,
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: _MiniTool(
-                    color: _isDark(context)
-                        ? AppColors.cAiDark
-                        : AppColors.cAi,
+                    color: _isDark(context) ? AppColors.cAiDark : AppColors.cAi,
                     icon: Icons.bookmark_rounded,
                     label: 'Bookmarks',
                     sub: 'Saved',
@@ -188,7 +193,8 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sectionGap),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(
                 label: 'Recently added',
                 action: 'See all',
@@ -200,7 +206,8 @@ class HomeScreen extends ConsumerWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenPadding),
+                  horizontal: AppSpacing.screenPadding,
+                ),
                 itemCount: books.length > 8 ? 8 : books.length,
                 separatorBuilder: (_, _) =>
                     const SizedBox(width: AppSpacing.stackGap),
@@ -258,8 +265,7 @@ class _StreakChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.local_fire_department_rounded,
-                size: 17, color: accent),
+            Icon(Icons.local_fire_department_rounded, size: 17, color: accent),
             const SizedBox(width: 5),
             Text(
               '$streak',
@@ -305,10 +311,7 @@ class _Avatar extends StatelessWidget {
         child: Text(
           letter,
           style: TextStyle(
-            fontFamily: Theme.of(context)
-                .textTheme
-                .displaySmall
-                ?.fontFamily,
+            fontFamily: Theme.of(context).textTheme.displaySmall?.fontFamily,
             fontSize: 17,
             fontWeight: FontWeight.w600,
             color: cs.primary,
@@ -323,17 +326,24 @@ class _Avatar extends StatelessWidget {
 
 class _AskHero extends StatelessWidget {
   final VoidCallback onTap;
+
+  /// Open Q&A with the composer focused (keyboard up) — used by the Ask bar so
+  /// tapping a thing that looks like an input lands ready to type.
+  final VoidCallback onAsk;
   final ValueChanged<String> onAskPrefilled;
 
-  const _AskHero({required this.onTap, required this.onAskPrefilled});
+  const _AskHero({
+    required this.onTap,
+    required this.onAsk,
+    required this.onAskPrefilled,
+  });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final heroColor = isDark ? AppColors.heroDark : AppColors.hero;
     final hero2 = isDark ? AppColors.hero2Dark : AppColors.hero2;
-    final accent =
-        isDark ? AppColors.green500Dark : AppColors.green500;
+    final accent = isDark ? AppColors.green500Dark : AppColors.green500;
     const inkLight = AppColors.heroInk;
     final inkMuted = AppColors.heroInk.withValues(alpha: 0.62);
 
@@ -348,9 +358,7 @@ class _AskHero extends StatelessWidget {
             colors: [hero2, heroColor],
           ),
           border: Border.all(
-            color: isDark
-                ? AppColors.heroLineDark
-                : AppColors.heroLine,
+            color: isDark ? AppColors.heroLineDark : AppColors.heroLine,
           ),
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           boxShadow: const [
@@ -387,8 +395,11 @@ class _AskHero extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(9),
                       ),
-                      child: Icon(Icons.auto_awesome_rounded,
-                          size: 18, color: accent),
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 18,
+                        color: accent,
+                      ),
                     ),
                     const SizedBox(width: 9),
                     Text(
@@ -403,7 +414,9 @@ class _AskHero extends StatelessWidget {
                     const SizedBox(width: 9),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: accent.withValues(alpha: 0.16),
                         borderRadius: BorderRadius.circular(999),
@@ -422,50 +435,57 @@ class _AskHero extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   'Ask anything from your textbooks.',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: inkLight,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.headlineLarge?.copyWith(color: inkLight),
                 ),
                 const SizedBox(height: 7),
                 Text(
                   'Get clear, simple answers — type your question or snap a photo of it.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: inkMuted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: inkMuted),
                 ),
                 const SizedBox(height: 16),
-                // faux input bar
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.14),
+                // faux input bar — taps open Q&A with the keyboard already up
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onAsk,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.14),
+                      ),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Ask a question…',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppColors.heroInk.withValues(alpha: 0.5),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Ask a question…',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.heroInk.withValues(alpha: 0.5),
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: AppColors.green600,
-                          borderRadius: BorderRadius.circular(11),
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: AppColors.green600,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 19,
+                            color: Colors.white,
+                          ),
                         ),
-                        child: const Icon(Icons.arrow_forward_rounded,
-                            size: 19, color: Colors.white),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -487,11 +507,12 @@ class _AskHero extends StatelessWidget {
                             onTap: () => onAskPrefilled(c),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color:
-                                      Colors.white.withValues(alpha: 0.16),
+                                  color: Colors.white.withValues(alpha: 0.16),
                                 ),
                                 borderRadius: BorderRadius.circular(999),
                               ),
@@ -541,7 +562,12 @@ class _TutorRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Tile(color: accent, icon: Icons.school_rounded, size: 48, radius: 14),
+            Tile(
+              color: accent,
+              icon: Icons.school_rounded,
+              size: 48,
+              radius: 14,
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -551,15 +577,16 @@ class _TutorRow extends StatelessWidget {
                     children: [
                       Text(
                         'AI Tutor',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontSize: 18,
-                                ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(fontSize: 18),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: Color.alphaBlend(
                             accent.withValues(alpha: 0.15),
@@ -582,16 +609,18 @@ class _TutorRow extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     'Step-by-step guided lessons, subject by subject',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 13.5,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 13.5),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                size: 19,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 19,
+              color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+            ),
           ],
         ),
       ),
@@ -611,7 +640,9 @@ class _FutureAgentsRow extends StatelessWidget {
     final accent = isDark ? AppColors.cScienceDark : AppColors.cScience;
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.cardPad, vertical: 13),
+        horizontal: AppSpacing.cardPad,
+        vertical: 13,
+      ),
       decoration: BoxDecoration(
         color: Color.alphaBlend(
           cs.onSurface.withValues(alpha: 0.025),
@@ -625,8 +656,12 @@ class _FutureAgentsRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Tile(color: accent, icon: Icons.dashboard_customize_rounded,
-              size: 40, radius: 11),
+          Tile(
+            color: accent,
+            icon: Icons.dashboard_customize_rounded,
+            size: 40,
+            radius: 11,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -635,26 +670,26 @@ class _FutureAgentsRow extends StatelessWidget {
                 Text(
                   'More AI helpers coming soon',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.ink2Dark
-                            : AppColors.ink2,
-                      ),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'New tutors and study helpers, added over time',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12.5,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
                 ),
               ],
             ),
           ),
-          Icon(Icons.lock_outline_rounded,
-              size: 17,
-              color: isDark ? AppColors.ink3Dark : AppColors.ink3),
+          Icon(
+            Icons.lock_outline_rounded,
+            size: 17,
+            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+          ),
         ],
       ),
     );
@@ -702,35 +737,38 @@ class _ContinueCard extends StatelessWidget {
                   Text(
                     book.title,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontSize: 21,
-                          height: 1.1,
-                        ),
+                      fontSize: 21,
+                      height: 1.1,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 3),
                   Text(
                     'Class ${book.classNumber} · ${_capitalize(book.subject)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 13,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 13),
                   ),
                   const SizedBox(height: 13),
                   Row(
                     children: [
-                      Icon(Icons.play_circle_outline_rounded,
-                          size: 15, color: subjectColor),
+                      Icon(
+                        Icons.play_circle_outline_rounded,
+                        size: 15,
+                        color: subjectColor,
+                      ),
                       const SizedBox(width: 5),
                       Text(
                         lastPage > 0
                             ? 'Resume on page ${lastPage + 1}'
                             : 'Start reading',
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: subjectColor,
-                                ),
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: subjectColor,
+                            ),
                       ),
                     ],
                   ),
@@ -786,16 +824,16 @@ class _MiniTool extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                  ),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 1),
             Text(
               sub,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11.5,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 11.5),
             ),
           ],
         ),
@@ -823,19 +861,18 @@ class _RecentBookCard extends StatelessWidget {
           children: [
             SizedBox(
               height: 154,
-              child:
-                  BookCover(subjectKey: book.subject, title: book.title),
+              child: BookCover(subjectKey: book.subject, title: book.title),
             ),
             const SizedBox(height: 7),
             Text(
               meta.label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.ink2Dark
-                        : AppColors.ink2,
-                  ),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.ink2Dark
+                    : AppColors.ink2,
+              ),
             ),
           ],
         ),

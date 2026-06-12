@@ -22,10 +22,16 @@ class LearnAiScreen extends ConsumerStatefulWidget {
   /// Home). The composer is focused so the student can edit or just hit send.
   final String? initialPrompt;
 
+  /// Open with the composer already focused (keyboard up), even with no seeded
+  /// text — e.g. when the student taps the Ask bar on Home. A non-empty
+  /// [initialPrompt] always focuses regardless of this flag.
+  final bool autofocus;
+
   const LearnAiScreen({
     super.key,
     this.channel = LearnAssistChannel.learnAssist,
     this.initialPrompt,
+    this.autofocus = false,
   });
 
   @override
@@ -72,7 +78,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final prefill = widget.initialPrompt?.trim() ?? '';
     if (prefill.isNotEmpty) {
       _messageController.text = prefill;
-      // Focus the composer so a tapped suggestion lands ready to send/edit.
+    }
+    // Focus the composer (keyboard up) when arriving from a tapped suggestion
+    // or the Home Ask bar, so the screen lands ready to type/send.
+    if (prefill.isNotEmpty || widget.autofocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _composerFocusNode.requestFocus();
       });
@@ -229,7 +238,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       if (!mounted) return;
       setState(() {
         _pendingImageBytes = bytes;
-        _pendingImageMediaType = _mediaTypeForPath(picked.name, picked.mimeType);
+        _pendingImageMediaType = _mediaTypeForPath(
+          picked.name,
+          picked.mimeType,
+        );
       });
     } catch (_) {
       if (!mounted) return;
@@ -257,7 +269,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _sendMessage() async {
