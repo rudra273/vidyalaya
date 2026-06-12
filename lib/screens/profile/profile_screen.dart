@@ -97,7 +97,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             // ── Identity (avatar, name, email, sign-out) ─────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(0, 14, 0, 6),
+              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
               child: Center(
                 child: Column(
                   children: [
@@ -107,20 +107,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       clay: ref.watch(clayEnabledProvider),
                       onTap: _showAvatarPicker,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Text(displayName,
                         style:
                             Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontSize: 23,
+                                  fontSize: 21,
                                 )),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       isSignedIn
                           ? email
                           : 'Class $_selectedClass · ${_languageLabel(_preferredLanguage)}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     authState.when(
                       data: (u) => _AuthButton(
                         isSignedIn: u != null,
@@ -145,7 +145,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── My Learning (tappable summary → /progress) ───────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 0),
+                  AppSpacing.screenPadding, 14, AppSpacing.screenPadding, 0),
               child: _StatsStrip(
                 streak: progress.currentStreak,
                 aiSessions: progress.aiSessions,
@@ -157,7 +157,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── Student profile form ─────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 22, AppSpacing.screenPadding, 0),
+                  AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 0),
               child: const SectionHead(label: 'Student profile'),
             ),
             Padding(
@@ -660,7 +660,7 @@ class _StatsStripState extends State<_StatsStrip> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -716,14 +716,19 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: color),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: 22,
-                height: 1,
-              ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontSize: 21,
+                    height: 1,
+                  ),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(
@@ -743,7 +748,7 @@ class _Divider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 1,
-      height: 56,
+      height: 30,
       color: Theme.of(context).brightness == Brightness.dark
           ? AppColors.hairline2Dark
           : AppColors.hairline2,
@@ -850,9 +855,9 @@ class _ProfileSummary extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.cardPad,
-        8,
+        4,
         AppSpacing.cardPad,
-        AppSpacing.cardPad - 4,
+        AppSpacing.cardPad - 6,
       ),
       decoration: BoxDecoration(
         color: cs.surface,
@@ -871,7 +876,7 @@ class _ProfileSummary extends StatelessWidget {
             muted: school.isEmpty,
             last: true,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -879,7 +884,7 @@ class _ProfileSummary extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: cs.primary,
                 side: BorderSide(color: cs.outline),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(999),
                 ),
@@ -920,7 +925,7 @@ class _SummaryRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 11),
+      padding: const EdgeInsets.symmetric(vertical: 9),
       decoration: last
           ? null
           : BoxDecoration(
