@@ -118,8 +118,8 @@ class BookCover extends StatelessWidget {
             bottom: big ? -16 : -12,
             child: Icon(
               meta.icon,
-              size: big ? 96 : 64,
-              color: col.withValues(alpha: 0.20),
+              size: big ? 80 : 52,
+              color: col.withValues(alpha: 0.13),
             ),
           ),
           // small motif chip top-left

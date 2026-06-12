@@ -257,6 +257,27 @@ class UserPrefsRepository {
     await _prefs.setString(_timetableKey, jsonEncode(map));
   }
 
+  // ─── Chat session recency ────────────────────────────────────────────────
+  //
+  // Tracks when the student last interacted with an AI chat (per channel).
+  // The chat screen uses this to start fresh — suggestions up front, previous
+  // conversation behind a "load" link — when they've been away a while.
+
+  static const _chatLastActivityPrefix = 'chat_last_activity_';
+
+  DateTime? getChatLastActivity(String channel) {
+    final millis = _prefs.getInt('$_chatLastActivityPrefix$channel');
+    if (millis == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(millis);
+  }
+
+  Future<void> recordChatActivity(String channel) async {
+    await _prefs.setInt(
+      '$_chatLastActivityPrefix$channel',
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
   // ─── Learning Analytics ──────────────────────────────────────────────────
   //
   // Tracks ALL learning activity, not just reading: pages read, AI sessions,
