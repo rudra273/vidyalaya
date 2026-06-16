@@ -12,7 +12,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Privacy Policy',
-          style: theme.textTheme.headlineMedium,
+          style: theme.textTheme.headlineSmall,
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

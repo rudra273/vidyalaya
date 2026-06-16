@@ -15,7 +15,7 @@ class ProgressScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'My Learning',
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
       body: SafeArea(

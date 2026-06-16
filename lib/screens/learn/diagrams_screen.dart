@@ -24,7 +24,6 @@ class DiagramsScreen extends ConsumerWidget {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
         actions: const [RegionalLanguageSwitch()],
       ),
       body: GridView.count(
@@ -132,7 +131,6 @@ class DiagramCategoryScreen extends ConsumerWidget {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
         actions: const [RegionalLanguageSwitch()],
       ),
       body: ListView(

@@ -131,7 +131,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Timetable', style: Theme.of(context).textTheme.headlineMedium),
+        title: Text('Timetable', style: Theme.of(context).textTheme.headlineSmall),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),

@@ -156,7 +156,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Manage Downloads', style: Theme.of(context).textTheme.headlineMedium),
+        title: Text('Manage Downloads', style: Theme.of(context).textTheme.headlineSmall),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),

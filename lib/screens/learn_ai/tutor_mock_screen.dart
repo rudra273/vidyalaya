@@ -59,7 +59,7 @@ class _TutorMockScreenState extends State<TutorMockScreen> {
       appBar: AppBar(
         title: Text(
           'AI Tutor',
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
       body: SafeArea(

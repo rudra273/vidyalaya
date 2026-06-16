@@ -473,7 +473,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       appBar: AppBar(
         title: Text(
           _channelTitle(widget.channel),
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
         actions: [
           _PlanUsageBadge(
