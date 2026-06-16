@@ -192,6 +192,7 @@ class _MockComposer extends StatelessWidget {
         border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(

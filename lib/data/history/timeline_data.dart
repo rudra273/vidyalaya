@@ -8,6 +8,13 @@ class HistoricalEvent {
   final String descriptionHindi;
   final String era;
 
+  /// Geographic scope of the event. One of:
+  /// - [kRegionWorld] for world history,
+  /// - [kRegionIndia] for pan-India events,
+  /// - an Indian state name (e.g. `'Odisha'`, see [indianStates]) for
+  ///   state-level events.
+  final String region;
+
   const HistoricalEvent({
     required this.year,
     required this.title,
@@ -17,8 +24,47 @@ class HistoricalEvent {
     required this.descriptionOdia,
     required this.descriptionHindi,
     required this.era,
+    required this.region,
   });
 }
+
+/// Region scope sentinels used by [HistoricalEvent.region].
+const String kRegionWorld = 'World';
+const String kRegionIndia = 'India';
+
+/// The 28 Indian states (excluding union territories), alphabetical, used to
+/// populate the state-picker in the timeline filter. Odisha is the default
+/// state for this app's primary audience.
+const List<String> indianStates = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+];
 
 const List<HistoricalEvent> timelineEvents = [
   // Ancient India
@@ -30,7 +76,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Flourishing of one of the world\'s oldest urban civilizations in the northwestern regions of South Asia.',
     descriptionOdia: 'ଦକ୍ଷିଣ ଏସିଆର ଉତ୍ତର-ପଶ୍ଚିମ ଅଞ୍ଚଳରେ ବିଶ୍ୱର ଅନ୍ୟତମ ପ୍ରାଚୀନ ସହରାଞ୍ଚଳ ସଭ୍ୟତାର ବିକାଶ।',
     descriptionHindi: 'दक्षिण एशिया के उत्तर-पश्चिमी क्षेत्रों में विश्व की सबसे प्राचीन नगरीय सभ्यताओं में से एक का विकास।',
-    era: 'Ancient India',
+    era: 'Ancient',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1500 BCE',
@@ -40,7 +87,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Composition of the Vedas and the beginning of the Vedic culture in the Indian subcontinent.',
     descriptionOdia: 'ବେଦର ରଚନା ଏବଂ ଭାରତୀୟ ଉପମହାଦେଶରେ ବୈଦିକ ସଂସ୍କୃତିର ଆରମ୍ଭ।',
     descriptionHindi: 'वेदों की रचना और भारतीय उपमहाद्वीप में वैदिक संस्कृति का आरंभ।',
-    era: 'Ancient India',
+    era: 'Ancient',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '563 BCE',
@@ -50,7 +98,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Siddhartha Gautama, the founder of Buddhism, was born in Lumbini.',
     descriptionOdia: 'ବୌଦ୍ଧ ଧର୍ମର ପ୍ରତିଷ୍ଠାତା ସିଦ୍ଧାର୍ଥ ଗୌତମଙ୍କର ଲୁମ୍ବିନୀଠାରେ ଜନ୍ମ।',
     descriptionHindi: 'बौद्ध धर्म के संस्थापक सिद्धार्थ गौतम का जन्म लुंबिनी में हुआ।',
-    era: 'Ancient India',
+    era: 'Ancient',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '322 BCE',
@@ -60,7 +109,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Chandragupta Maurya founds the Maurya Empire, the first pan-Indian empire.',
     descriptionOdia: 'ଚନ୍ଦ୍ରଗୁପ୍ତ ମୌର୍ଯ୍ୟଙ୍କ ଦ୍ୱାରା ପ୍ରଥମ ସର୍ବଭାରତୀୟ ସାମ୍ରାଜ୍ୟ - ମୌର୍ଯ୍ୟ ସାମ୍ରାଜ୍ୟ ପ୍ରତିଷ୍ଠା।',
     descriptionHindi: 'चंद्रगुप्त मौर्य ने प्रथम अखिल भारतीय साम्राज्य - मौर्य साम्राज्य की स्थापना की।',
-    era: 'Ancient India',
+    era: 'Ancient',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '261 BCE',
@@ -70,7 +120,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Emperor Ashoka invades Kalinga. The massive bloodshed prompts him to embrace Buddhism and non-violence.',
     descriptionOdia: 'ସମ୍ରାଟ ଅଶୋକ କଳିଙ୍ଗ ଆକ୍ରମଣ କରନ୍ତି। ବ୍ୟାପକ ରକ୍ତପାତ ତାଙ୍କୁ ବୌଦ୍ଧ ଧର୍ମ ଏବଂ ଅହିଂସା ଗ୍ରହଣ କରିବାକୁ ପ୍ରେରିତ କରିଥିଲା।',
     descriptionHindi: 'सम्राट अशोक ने कलिंग पर आक्रमण किया। भारी रक्तपात ने उन्हें बौद्ध धर्म और अहिंसा अपनाने के लिए प्रेरित किया।',
-    era: 'Odisha History',
+    era: 'Ancient',
+    region: 'Odisha',
   ),
   HistoricalEvent(
     year: '320 CE',
@@ -80,7 +131,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Chandragupta I establishes the Gupta Empire, marking the Golden Age of India.',
     descriptionOdia: 'ପ୍ରଥମ ଚନ୍ଦ୍ରଗୁପ୍ତଙ୍କ ଦ୍ୱାରା ଗୁପ୍ତ ସାମ୍ରାଜ୍ୟ ପ୍ରତିଷ୍ଠା, ଯାହା ଭାରତର ସୁବର୍ଣ୍ଣ ଯୁଗ ଭାବରେ ପରିଚିତ।',
     descriptionHindi: 'चंद्रगुप्त प्रथम ने गुप्त साम्राज्य की स्थापना की, जिसे भारत का स्वर्ण युग कहा जाता है।',
-    era: 'Ancient India',
+    era: 'Ancient',
+    region: kRegionIndia,
   ),
 
   // Medieval India
@@ -92,7 +144,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Muhammad Ghori defeats Prithviraj Chauhan, paving the way for Islamic rule in India.',
     descriptionOdia: 'ପୃଥ୍ୱୀରାଜ ଚୌହାନଙ୍କୁ ମହମ୍ମଦ ଘୋରୀ ପରାସ୍ତ କଲେ, ଯାହା ଭାରତରେ ଇସଲାମିକ୍ ଶାସନ ପାଇଁ ପଥ ପରିଷ୍କାର କଲା।',
     descriptionHindi: 'मुहम्मद ग़ोरी ने पृथ्वीराज चौहान को पराजित किया, जिसने भारत में इस्लामी शासन का मार्ग प्रशस्त किया।',
-    era: 'Medieval India',
+    era: 'Medieval',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1435 CE',
@@ -102,7 +155,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Kapilendra Deva establishes the powerful Gajapati dynasty in Odisha.',
     descriptionOdia: 'କପିଳେନ୍ଦ୍ର ଦେବଙ୍କ ଦ୍ୱାରା ଓଡ଼ିଶାରେ ଶକ୍ତିଶାଳୀ ଗଜପତି ରାଜବଂଶ ପ୍ରତିଷ୍ଠା।',
     descriptionHindi: 'कपिलेन्द्र देव ने ओडिशा में शक्तिशाली गजपति राजवंश की स्थापना की।',
-    era: 'Odisha History',
+    era: 'Medieval',
+    region: 'Odisha',
   ),
   HistoricalEvent(
     year: '1526 CE',
@@ -112,7 +166,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Babur defeats Ibrahim Lodi, marking the beginning of the Mughal Empire in India.',
     descriptionOdia: 'ବାବର ଇବ୍ରାହିମ ଲୋଦୀଙ୍କୁ ପରାସ୍ତ କଲେ, ଯାହା ଭାରତରେ ମୋଗଲ ସାମ୍ରାଜ୍ୟର ଆରମ୍ଭ ଥିଲା।',
     descriptionHindi: 'बाबर ने इब्राहिम लोदी को पराजित किया, जिससे भारत में मुगल साम्राज्य का आरंभ हुआ।',
-    era: 'Medieval India',
+    era: 'Medieval',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1568 CE',
@@ -122,7 +177,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Mukunda Deva is defeated, and Odisha loses its independence to the Bengal Sultanate.',
     descriptionOdia: 'ମୁକୁନ୍ଦ ଦେବଙ୍କ ପରାଜୟ, ଏବଂ ବଙ୍ଗଳା ସୁଲତାନଙ୍କ ଦ୍ୱାରା ଓଡ଼ିଶାର ସ୍ୱାଧୀନତା ଲୋପ।',
     descriptionHindi: 'मुकुंद देव की पराजय हुई और ओडिशा ने बंगाल सल्तनत के हाथों अपनी स्वतंत्रता खो दी।',
-    era: 'Odisha History',
+    era: 'Medieval',
+    region: 'Odisha',
   ),
 
   // Modern India
@@ -134,7 +190,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'British East India Company defeats the Nawab of Bengal, establishing British political power in India.',
     descriptionOdia: 'ବ୍ରିଟିଶ୍ ଇଷ୍ଟ୍ ଇଣ୍ଡିଆ କମ୍ପାନୀ ବଙ୍ଗଳାର ନବାବଙ୍କୁ ପରାସ୍ତ କରି ଭାରତରେ ରାଜନୈତିକ କ୍ଷମତା ସ୍ଥାପନ କଲା।',
     descriptionHindi: 'ब्रिटिश ईस्ट इंडिया कंपनी ने बंगाल के नवाब को पराजित कर भारत में अपनी राजनीतिक शक्ति स्थापित की।',
-    era: 'Modern India',
+    era: 'Modern',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1803 CE',
@@ -144,7 +201,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'The British East India Company captures Odisha from the Marathas.',
     descriptionOdia: 'ବ୍ରିଟିଶ୍ ଇଷ୍ଟ୍ ଇଣ୍ଡିଆ କମ୍ପାନୀ ମରାଠାମାନଙ୍କ ଠାରୁ ଓଡ଼ିଶା ଦଖଲ କଲା।',
     descriptionHindi: 'ब्रिटिश ईस्ट इंडिया कंपनी ने मराठों से ओडिशा पर अधिकार कर लिया।',
-    era: 'Odisha History',
+    era: 'Modern',
+    region: 'Odisha',
   ),
   HistoricalEvent(
     year: '1817 CE',
@@ -154,7 +212,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'An armed rebellion against the British East India Company\'s rule in Odisha, led by Bakshi Jagabandhu.',
     descriptionOdia: 'ବକ୍ସି ଜଗବନ୍ଧୁଙ୍କ ନେତୃତ୍ୱରେ ଓଡ଼ିଶାରେ ବ୍ରିଟିଶ୍ ଇଷ୍ଟ୍ ଇଣ୍ଡିଆ କମ୍ପାନୀ ବିରୋଧରେ ଏକ ସଶସ୍ତ୍ର ବିଦ୍ରୋହ।',
     descriptionHindi: 'बख्शी जगबंधु के नेतृत्व में ओडिशा में ब्रिटिश ईस्ट इंडिया कंपनी के शासन के विरुद्ध एक सशस्त्र विद्रोह।',
-    era: 'Odisha History',
+    era: 'Modern',
+    region: 'Odisha',
   ),
   HistoricalEvent(
     year: '1857 CE',
@@ -164,7 +223,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'The first major widespread uprising against the British East India Company (First War of Independence).',
     descriptionOdia: 'ବ୍ରିଟିଶ୍ ଇଷ୍ଟ୍ ଇଣ୍ଡିଆ କମ୍ପାନୀ ବିରୋଧରେ ପ୍ରଥମ ବ୍ୟାପକ ବିଦ୍ରୋହ (ପ୍ରଥମ ସ୍ୱାଧୀନତା ସଂଗ୍ରାମ)।',
     descriptionHindi: 'ब्रिटिश ईस्ट इंडिया कंपनी के विरुद्ध पहला बड़ा व्यापक विद्रोह (प्रथम स्वतंत्रता संग्राम)।',
-    era: 'Modern India',
+    era: 'Modern',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1885 CE',
@@ -174,7 +234,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'The INC is founded, which later becomes the principal leader of the Indian independence movement.',
     descriptionOdia: 'ଭାରତୀୟ ଜାତୀୟ କଂଗ୍ରେସର ପ୍ରତିଷ୍ଠା, ଯାହା ପରବର୍ତ୍ତୀ ସମୟରେ ଭାରତୀୟ ସ୍ୱାଧୀନତା ଆନ୍ଦୋଳନର ମୁଖ୍ୟ ନେତା ପାଲଟିଥିଲା।',
     descriptionHindi: 'भारतीय राष्ट्रीय कांग्रेस की स्थापना, जो बाद में भारतीय स्वतंत्रता आंदोलन की प्रमुख नेता बनी।',
-    era: 'Modern India',
+    era: 'Modern',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1936 CE',
@@ -184,7 +245,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'On April 1, Odisha becomes a separate province on linguistic grounds (celebrated as Utkala Dibasa).',
     descriptionOdia: 'ଏପ୍ରିଲ୍ ୧ ତାରିଖରେ ଭାଷା ଭିତ୍ତିରେ ଓଡ଼ିଶା ଏକ ସ୍ୱତନ୍ତ୍ର ପ୍ରଦେଶ ଭାବରେ ଗଠିତ ହେଲା (ଉତ୍କଳ ଦିବସ)।',
     descriptionHindi: '1 अप्रैल को भाषा के आधार पर ओडिशा एक पृथक प्रांत बना (उत्कल दिवस के रूप में मनाया जाता है)।',
-    era: 'Odisha History',
+    era: 'Modern',
+    region: 'Odisha',
   ),
   HistoricalEvent(
     year: '1942 CE',
@@ -194,7 +256,8 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'Mahatma Gandhi launches the Quit India Movement, demanding an end to British rule.',
     descriptionOdia: 'ବ୍ରିଟିଶ୍ ଶାସନର ଅନ୍ତ ଦାବି କରି ମହାତ୍ମା ଗାନ୍ଧୀଙ୍କ ଦ୍ୱାରା ଭାରତ ଛାଡ଼ ଆନ୍ଦୋଳନ ଆରମ୍ଭ।',
     descriptionHindi: 'ब्रिटिश शासन की समाप्ति की मांग करते हुए महात्मा गांधी ने भारत छोड़ो आंदोलन आरंभ किया।',
-    era: 'Modern India',
+    era: 'Modern',
+    region: kRegionIndia,
   ),
   HistoricalEvent(
     year: '1947 CE',
@@ -204,6 +267,103 @@ const List<HistoricalEvent> timelineEvents = [
     description: 'India gains independence from British rule on August 15, leading to the partition of the subcontinent.',
     descriptionOdia: 'ଅଗଷ୍ଟ ୧୫ରେ ଭାରତ ବ୍ରିଟିଶ୍ ଶାସନରୁ ସ୍ୱାଧୀନତା ଲାଭ କଲା।',
     descriptionHindi: '15 अगस्त को भारत ने ब्रिटिश शासन से स्वतंत्रता प्राप्त की, जिसके साथ उपमहाद्वीप का विभाजन हुआ।',
-    era: 'Modern India',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+
+  // ─── World History ──────────────────────────────────────────────────────
+  HistoricalEvent(
+    year: '776 BCE',
+    title: 'First Ancient Olympic Games',
+    titleOdia: 'ପ୍ରଥମ ପ୍ରାଚୀନ ଅଲିମ୍ପିକ୍ କ୍ରୀଡ଼ା',
+    titleHindi: 'प्रथम प्राचीन ओलंपिक खेल',
+    description: 'The first recorded Olympic Games are held at Olympia in ancient Greece.',
+    descriptionOdia: 'ପ୍ରାଚୀନ ଗ୍ରୀସର ଅଲିମ୍ପିଆଠାରେ ପ୍ରଥମ ଲିପିବଦ୍ଧ ଅଲିମ୍ପିକ୍ କ୍ରୀଡ଼ା ଅନୁଷ୍ଠିତ ହୁଏ।',
+    descriptionHindi: 'प्राचीन ग्रीस के ओलंपिया में पहले लिखित ओलंपिक खेलों का आयोजन हुआ।',
+    era: 'Ancient',
+    region: kRegionWorld,
+  ),
+  HistoricalEvent(
+    year: '1453 CE',
+    title: 'Fall of Constantinople',
+    titleOdia: 'କନଷ୍ଟାଣ୍ଟିନୋପଲର ପତନ',
+    titleHindi: 'कॉन्स्टेंटिनोपल का पतन',
+    description: 'The Ottoman Empire captures Constantinople, ending the Byzantine Empire.',
+    descriptionOdia: 'ଓଟୋମାନ୍ ସାମ୍ରାଜ୍ୟ କନଷ୍ଟାଣ୍ଟିନୋପଲ ଦଖଲ କରି ବାଇଜାଣ୍ଟାଇନ୍ ସାମ୍ରାଜ୍ୟର ଅନ୍ତ ଆଣେ।',
+    descriptionHindi: 'ओटोमन साम्राज्य ने कॉन्स्टेंटिनोपल पर अधिकार कर बीजान्टिन साम्राज्य का अंत किया।',
+    era: 'Medieval',
+    region: kRegionWorld,
+  ),
+  HistoricalEvent(
+    year: '1789 CE',
+    title: 'French Revolution Begins',
+    titleOdia: 'ଫରାସୀ ବିପ୍ଳବର ଆରମ୍ଭ',
+    titleHindi: 'फ्रांसीसी क्रांति का आरंभ',
+    description: 'The storming of the Bastille marks the start of the French Revolution.',
+    descriptionOdia: 'ବାଷ୍ଟିଲ୍ ଆକ୍ରମଣ ଫରାସୀ ବିପ୍ଳବର ଆରମ୍ଭ ସୂଚାଇଥାଏ।',
+    descriptionHindi: 'बास्तील पर हमला फ्रांसीसी क्रांति की शुरुआत का प्रतीक है।',
+    era: 'Modern',
+    region: kRegionWorld,
+  ),
+  HistoricalEvent(
+    year: '1945 CE',
+    title: 'End of World War II',
+    titleOdia: 'ଦ୍ୱିତୀୟ ବିଶ୍ୱଯୁଦ୍ଧର ସମାପ୍ତି',
+    titleHindi: 'द्वितीय विश्व युद्ध की समाप्ति',
+    description: 'World War II ends, reshaping the global political order.',
+    descriptionOdia: 'ଦ୍ୱିତୀୟ ବିଶ୍ୱଯୁଦ୍ଧ ସମାପ୍ତ ହୁଏ, ବିଶ୍ୱ ରାଜନୈତିକ ବ୍ୟବସ୍ଥାକୁ ନୂତନ ରୂପ ଦିଏ।',
+    descriptionHindi: 'द्वितीय विश्व युद्ध समाप्त हुआ, जिसने वैश्विक राजनीतिक व्यवस्था को नया रूप दिया।',
+    era: 'Modern',
+    region: kRegionWorld,
+  ),
+
+  // ─── Tamil Nadu ─────────────────────────────────────────────────────────
+  HistoricalEvent(
+    year: '300 BCE',
+    title: 'Rise of the Sangam Age',
+    titleOdia: 'ସଙ୍ଗମ ଯୁଗର ଉତ୍ଥାନ',
+    titleHindi: 'संगम युग का उदय',
+    description: 'Flourishing of classical Tamil literature under the Chera, Chola and Pandya kingdoms.',
+    descriptionOdia: 'ଚେର, ଚୋଳ ଓ ପାଣ୍ଡ୍ୟ ରାଜ୍ୟ ଅଧୀନରେ ଶାସ୍ତ୍ରୀୟ ତାମିଲ ସାହିତ୍ୟର ବିକାଶ।',
+    descriptionHindi: 'चेर, चोल और पांड्य राज्यों के अधीन शास्त्रीय तमिल साहित्य का विकास।',
+    era: 'Ancient',
+    region: 'Tamil Nadu',
+  ),
+  HistoricalEvent(
+    year: '1010 CE',
+    title: 'Brihadeeswara Temple Built',
+    titleOdia: 'ବୃହଦୀଶ୍ୱର ମନ୍ଦିର ନିର୍ମାଣ',
+    titleHindi: 'बृहदेश्वर मंदिर का निर्माण',
+    description: 'Raja Raja Chola I completes the great Brihadeeswara Temple at Thanjavur.',
+    descriptionOdia: 'ରାଜା ରାଜା ଚୋଳ ପ୍ରଥମ ଥାଞ୍ଜାଭୁରଠାରେ ମହାନ ବୃହଦୀଶ୍ୱର ମନ୍ଦିର ସମ୍ପୂର୍ଣ୍ଣ କରନ୍ତି।',
+    descriptionHindi: 'राजा राजा चोल प्रथम ने तंजावुर में महान बृहदेश्वर मंदिर का निर्माण पूर्ण किया।',
+    era: 'Medieval',
+    region: 'Tamil Nadu',
+  ),
+
+  // ─── West Bengal ────────────────────────────────────────────────────────
+  HistoricalEvent(
+    year: '1690 CE',
+    title: 'Founding of Calcutta',
+    titleOdia: 'କଲିକତାର ପ୍ରତିଷ୍ଠା',
+    titleHindi: 'कलकत्ता की स्थापना',
+    description: 'Job Charnock establishes a British trading post that grows into Calcutta.',
+    descriptionOdia: 'ଜବ୍ ଚାର୍ନକ୍ ଏକ ବ୍ରିଟିଶ୍ ବାଣିଜ୍ୟ କେନ୍ଦ୍ର ପ୍ରତିଷ୍ଠା କରନ୍ତି ଯାହା କଲିକତାରେ ପରିଣତ ହୁଏ।',
+    descriptionHindi: 'जॉब चार्नक ने एक ब्रिटिश व्यापारिक चौकी स्थापित की जो आगे चलकर कलकत्ता बनी।',
+    era: 'Modern',
+    region: 'West Bengal',
+  ),
+
+  // ─── Maharashtra ────────────────────────────────────────────────────────
+  HistoricalEvent(
+    year: '1674 CE',
+    title: 'Coronation of Shivaji',
+    titleOdia: 'ଶିବାଜୀଙ୍କ ରାଜ୍ୟାଭିଷେକ',
+    titleHindi: 'शिवाजी का राज्याभिषेक',
+    description: 'Chhatrapati Shivaji is crowned, founding the Maratha Empire at Raigad.',
+    descriptionOdia: 'ଛତ୍ରପତି ଶିବାଜୀ ରାୟଗଡ଼ଠାରେ ମରାଠା ସାମ୍ରାଜ୍ୟ ପ୍ରତିଷ୍ଠା କରି ରାଜ୍ୟାଭିଷିକ୍ତ ହୁଅନ୍ତି।',
+    descriptionHindi: 'छत्रपति शिवाजी का राज्याभिषेक हुआ, जिन्होंने रायगढ़ में मराठा साम्राज्य की स्थापना की।',
+    era: 'Medieval',
+    region: 'Maharashtra',
   ),
 ];
