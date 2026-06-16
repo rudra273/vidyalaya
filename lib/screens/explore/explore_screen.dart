@@ -232,7 +232,7 @@ List<_Tool> _tools(bool isDark) => [
       ),
       _Tool(
         id: 'diagrams',
-        title: 'Science Diagrams',
+        title: 'Diagrams',
         sub: 'Interactive diagrams',
         icon: Icons.account_tree_rounded,
         color: isDark ? AppColors.cDiagramsDark : AppColors.cDiagrams,

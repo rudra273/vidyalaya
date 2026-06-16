@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/highlight.dart';
+import '../models/note.dart';
 import '../models/timetable_period.dart';
 import '../models/time_slot.dart';
 
@@ -18,6 +19,7 @@ class UserPrefsRepository {
   static const _timetableKey = 'timetable_data';
   static const _onboardingKey = 'has_completed_onboarding';
   static const _avatarIdKey = 'avatar_id';
+  static const _regionalLanguageKey = 'regional_language';
 
   final SharedPreferences _prefs;
 
@@ -48,6 +50,21 @@ class UserPrefsRepository {
     } else {
       await _prefs.setString(_avatarIdKey, id);
     }
+  }
+
+  // ─── Regional Language ──────────────────────────────────────────────────
+  //
+  // The second language shown alongside English in the Explore tools
+  // (diagrams, timeline, math formulas). Either 'or' (Odia) or 'hi' (Hindi).
+  // Null means "follow the profile's preferred language"; once the student
+  // switches it explicitly, the choice is remembered here.
+
+  String? getRegionalLanguage() {
+    return _prefs.getString(_regionalLanguageKey);
+  }
+
+  Future<void> setRegionalLanguage(String code) async {
+    await _prefs.setString(_regionalLanguageKey, code);
   }
 
   // ─── Selected Classes ───────────────────────────────────────────────────
@@ -167,6 +184,55 @@ class UserPrefsRepository {
       highlights[index] = highlights[index].copyWith(note: note);
       await _saveHighlights(bookId, highlights);
     }
+  }
+
+  // ─── Standalone Notes ───────────────────────────────────────────────────
+  //
+  // Free-form notes the student types directly (not tied to a book/highlight).
+  // Stored as a single JSON list under [_notesKey]. Local-only for now; a
+  // backend sync may replace this later.
+
+  static const _notesKey = 'standalone_notes';
+
+  /// All standalone notes, most recently updated first.
+  List<Note> getNotes() {
+    final jsonStr = _prefs.getString(_notesKey);
+    if (jsonStr == null) return [];
+    final list = jsonDecode(jsonStr) as List;
+    final notes = list
+        .map((e) => Note.fromJson(e as Map<String, dynamic>))
+        .toList();
+    notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    return notes;
+  }
+
+  Note? getNote(String id) {
+    for (final n in getNotes()) {
+      if (n.id == id) return n;
+    }
+    return null;
+  }
+
+  Future<void> _saveNotes(List<Note> notes) async {
+    final json = notes.map((n) => n.toJson()).toList();
+    await _prefs.setString(_notesKey, jsonEncode(json));
+  }
+
+  /// Inserts a new note or replaces an existing one with the same id.
+  Future<void> upsertNote(Note note) async {
+    final notes = getNotes();
+    final index = notes.indexWhere((n) => n.id == note.id);
+    if (index != -1) {
+      notes[index] = note;
+    } else {
+      notes.add(note);
+    }
+    await _saveNotes(notes);
+  }
+
+  Future<void> deleteNote(String id) async {
+    final notes = getNotes()..removeWhere((n) => n.id == id);
+    await _saveNotes(notes);
   }
 
   // ─── Reader Preferences ─────────────────────────────────────────────────

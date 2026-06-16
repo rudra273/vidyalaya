@@ -11,9 +11,11 @@ import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/regional_language_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
 import '../../data/models/book.dart';
+import '../../data/seed/vocabulary_data.dart';
 
 /// AI-first Home — "Calm Scholar" layout.
 /// Wordmark → AI Learning (Ask hero + Tutor row + future agents teaser) →
@@ -111,6 +113,22 @@ class HomeScreen extends ConsumerWidget {
               horizontal: AppSpacing.screenPadding,
             ),
             child: _TutorRow(onTap: () => context.push('/learn-ai/tutor')),
+          ),
+
+          // ── Word of the day ──────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            child: SectionHead(label: 'Word of the day'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: _WordOfDayCard(
+              word: wordOfTheDay(),
+              regionalLang: ref.watch(regionalLanguageProvider),
+            ),
           ),
 
           // ── Jump back in (reading, demoted) ─────────────────────
@@ -524,6 +542,188 @@ class _TutorRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Word of the day card ───────────────────────────────────────────────
+
+class _WordOfDayCard extends StatelessWidget {
+  final VocabularyWord word;
+  final RegionalLanguage regionalLang;
+
+  const _WordOfDayCard({required this.word, required this.regionalLang});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.cEnglishDark : AppColors.cEnglish;
+    final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPad - 2),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Word + part of speech
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Tile(
+                color: accent,
+                icon: Icons.menu_book_rounded,
+                size: 38,
+                radius: 11,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      word.word,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontSize: 20, height: 1.05),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '/${word.pronunciation}/ · ${word.partOfSpeech}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: 12,
+                        color: muted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // English meaning
+          _MeaningRow(
+            label: 'Meaning',
+            text: word.meaningEn,
+            accent: accent,
+          ),
+          const SizedBox(height: 10),
+
+          // Regional-language meaning (student's default language)
+          _MeaningRow(
+            label: regionalLang.labelEn,
+            text: word.regionalMeaning(regionalLang),
+            accent: accent,
+          ),
+
+          const SizedBox(height: 14),
+          Divider(height: 1, color: cs.outline),
+          const SizedBox(height: 12),
+
+          // Example sentence with the word emphasised
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.format_quote_rounded, size: 16, color: accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ExampleSentence(
+                  sentence: word.sentence,
+                  word: word.word,
+                  accent: accent,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MeaningRow extends StatelessWidget {
+  final String label;
+  final String text;
+  final Color accent;
+
+  const _MeaningRow({
+    required this.label,
+    required this.text,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: accent,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          text,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+        ),
+      ],
+    );
+  }
+}
+
+/// The example sentence, with the day's word shown in bold + accent colour.
+class _ExampleSentence extends StatelessWidget {
+  final String sentence;
+  final String word;
+  final Color accent;
+
+  const _ExampleSentence({
+    required this.sentence,
+    required this.word,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context).textTheme.bodySmall?.copyWith(
+      fontSize: 13.5,
+      height: 1.45,
+      fontStyle: FontStyle.italic,
+    );
+    final lower = sentence.toLowerCase();
+    final idx = lower.indexOf(word.toLowerCase());
+
+    if (idx < 0) {
+      return Text(sentence, style: base);
+    }
+
+    return Text.rich(
+      TextSpan(
+        style: base,
+        children: [
+          TextSpan(text: sentence.substring(0, idx)),
+          TextSpan(
+            text: sentence.substring(idx, idx + word.length),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: accent,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          TextSpan(text: sentence.substring(idx + word.length)),
+        ],
       ),
     );
   }

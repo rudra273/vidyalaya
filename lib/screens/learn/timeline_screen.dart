@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../data/history/timeline_data.dart';
+import '../../providers/regional_language_provider.dart';
+import '../../widgets/regional_language_switch.dart';
 
-class TimelineScreen extends StatefulWidget {
+class TimelineScreen extends ConsumerStatefulWidget {
   const TimelineScreen({super.key});
 
   @override
-  State<TimelineScreen> createState() => _TimelineScreenState();
+  ConsumerState<TimelineScreen> createState() => _TimelineScreenState();
 }
 
-class _TimelineScreenState extends State<TimelineScreen> {
+class _TimelineScreenState extends ConsumerState<TimelineScreen> {
   String _selectedEra = 'All';
   List<HistoricalEvent> _filteredEvents = timelineEvents;
 
@@ -35,11 +38,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final lang = ref.watch(regionalLanguageProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Historical Timeline'),
+        actions: const [RegionalLanguageSwitch()],
       ),
       body: Column(
         children: [
@@ -147,7 +152,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.only(left: 8, bottom: 24),
-                                child: _EventCard(event: event),
+                                child: _EventCard(event: event, lang: lang),
                               ),
                             ),
                           ],
@@ -164,8 +169,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
 class _EventCard extends StatelessWidget {
   final HistoricalEvent event;
+  final RegionalLanguage lang;
 
-  const _EventCard({required this.event});
+  const _EventCard({required this.event, required this.lang});
 
   MaterialColor _getEraColor(String era) {
     switch (era) {
@@ -260,9 +266,9 @@ class _EventCard extends StatelessWidget {
             child: Divider(height: 1),
           ),
           
-          // Odia Title and Description
+          // Regional Title and Description (Odia or Hindi)
           Text(
-            event.titleOdia,
+            lang == RegionalLanguage.hindi ? event.titleHindi : event.titleOdia,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white70 : Colors.black87,
@@ -270,7 +276,9 @@ class _EventCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            event.descriptionOdia,
+            lang == RegionalLanguage.hindi
+                ? event.descriptionHindi
+                : event.descriptionOdia,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: cs.onSurface,
                   height: 1.5,

@@ -24,6 +24,33 @@ class AppShell extends StatelessWidget {
     return 0;
   }
 
+  /// Handles the Android system back gesture/button for the tab shell, in
+  /// priority order:
+  ///   1. A text field has focus → unfocus it (drop the cursor / dismiss the
+  ///      keyboard) and consume the event.
+  ///   2. A route is pushed on top of the tab → let GoRouter pop it normally.
+  ///   3. On a non-Home tab → go to the Home tab and consume the event.
+  ///   4. On the Home tab → let the system handle it (exit the app).
+  Future<bool> _onBack(BuildContext context) async {
+    // primaryFocus is never null (the root FocusScopeNode always holds focus),
+    // so check that an actual text input is focused before unfocusing.
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus != null && focus is! FocusScopeNode && focus.hasPrimaryFocus) {
+      focus.unfocus();
+      return true;
+    }
+
+    final router = GoRouter.of(context);
+    if (router.canPop()) return false;
+
+    if (_currentIndex(context) != 0) {
+      context.go('/');
+      return true;
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentIndex = _currentIndex(context);
@@ -31,32 +58,35 @@ class AppShell extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hair = isDark ? AppColors.hairline2Dark : AppColors.hairline2;
 
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border(top: BorderSide(color: hair, width: 1)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
-            child: Row(
-              children: List.generate(_tabs.length, (index) {
-                final isActive = index == currentIndex;
-                final tab = _tabs[index];
-                return Expanded(
-                  child: _NavBarItem(
-                    icon: tab.$2,
-                    label: tab.$3,
-                    isActive: isActive,
-                    onTap: () {
-                      if (index != currentIndex) context.go(tab.$1);
-                    },
-                  ),
-                );
-              }),
+    return BackButtonListener(
+      onBackButtonPressed: () => _onBack(context),
+      child: Scaffold(
+        body: child,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: Border(top: BorderSide(color: hair, width: 1)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+              child: Row(
+                children: List.generate(_tabs.length, (index) {
+                  final isActive = index == currentIndex;
+                  final tab = _tabs[index];
+                  return Expanded(
+                    child: _NavBarItem(
+                      icon: tab.$2,
+                      label: tab.$3,
+                      isActive: isActive,
+                      onTap: () {
+                        if (index != currentIndex) context.go(tab.$1);
+                      },
+                    ),
+                  );
+                }),
+              ),
             ),
           ),
         ),

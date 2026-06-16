@@ -14,6 +14,7 @@ import '../screens/profile/about_screen.dart';
 import '../screens/progress/progress_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
+import '../screens/notes/note_editor_screen.dart';
 import '../screens/bookmarks/bookmarks_screen.dart';
 import '../screens/downloads/manage_downloads_screen.dart';
 import '../screens/timetable/timetable_screen.dart';
@@ -137,6 +138,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MathFormulasScreen(),
       ),
       GoRoute(
+        path: '/learn/math-formulas/category/:name',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final name = state.pathParameters['name']!;
+          final category = formulaCategoryByName(name);
+          if (category == null) return const MathFormulasScreen();
+          return FormulaCategoryScreen(category: category);
+        },
+      ),
+      GoRoute(
         path: '/learn/periodic-table',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const PeriodicTableScreen(),
@@ -155,6 +166,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/learn/diagrams',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const DiagramsScreen(),
+      ),
+      GoRoute(
+        path: '/learn/diagrams/category/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final category = state.extra as DiagramCategory;
+          return DiagramCategoryScreen(category: category);
+        },
       ),
       GoRoute(
         path: '/learn/diagrams/:id',
@@ -188,6 +207,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/notes',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const NotesScreen(),
+      ),
+      GoRoute(
+        path: '/note/new',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NoteEditorScreen(),
+      ),
+      GoRoute(
+        path: '/note/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return NoteEditorScreen(noteId: id);
+        },
       ),
       GoRoute(
         path: '/notes/:subject',
