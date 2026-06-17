@@ -837,60 +837,68 @@ class _EmptyChat extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.screenPadding,
-      ),
-      child: Column(
-        children: [
-          if (showLoadPrevious)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: TextButton.icon(
-                onPressed: onLoadPrevious,
-                style: TextButton.styleFrom(
-                  foregroundColor: isDark ? AppColors.ink2Dark : AppColors.ink2,
-                  textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                icon: const Icon(Icons.history_rounded, size: 16),
-                label: const Text('Load previous chat'),
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
             ),
-          Expanded(
-            child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.auto_awesome_rounded, size: 26, color: cs.primary),
-                  const SizedBox(height: 14),
-                  Text(
-                    'What would you like to learn?',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Type a question or snap a photo of one.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 22),
-                  for (final suggestion in suggestions) ...[
-                    _SuggestionRow(
-                      text: suggestion,
-                      onTap: () => onSuggestionTap(suggestion),
+                  if (showLoadPrevious)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, bottom: 12),
+                      child: TextButton.icon(
+                        onPressed: onLoadPrevious,
+                        style: TextButton.styleFrom(
+                          foregroundColor: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                          textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        icon: const Icon(Icons.history_rounded, size: 16),
+                        label: const Text('Load previous chat'),
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                  ],
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, size: 26, color: cs.primary),
+                      const SizedBox(height: 14),
+                      Text(
+                        'What would you like to learn?',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Type a question or snap a photo of one.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 22),
+                      for (final suggestion in suggestions) ...[
+                        _SuggestionRow(
+                          text: suggestion,
+                          onTap: () => onSuggestionTap(suggestion),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

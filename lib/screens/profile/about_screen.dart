@@ -43,18 +43,35 @@ class AboutScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: 'What is Vidyālaya?',
-              content: 'Vidyālaya is a dedicated educational platform built specifically for school students. Our goal is to provide an enhanced and modern reading experience, allowing students to not only read their books but also discover and learn new things every day.\n\nMore than just a book reader, Vidyālaya helps you build positive routines. You can easily set your study timetable, track the progress of your learning habits, and efficiently manage your school assignments all in one place.',
+              content: 'Vidyālaya is a dedicated educational platform built specifically for Indian school students. It pairs a modern, distraction-free textbook reader with an AI study companion, so you can not only read your books but also ask questions and understand them more deeply.\n\nMore than just a book reader, Vidyālaya helps you build positive routines. You can set your study timetable, track your learning habits, take notes, and get instant help with tricky topics — all in one place.',
             ),
 
             _buildSection(
               theme,
-              title: 'Key Features & Reading Experience',
-              content: '• Clean UI/UX: A highly student-friendly, distraction-free interface designed to make learning intuitive.\n'
-                       '• Tailored Reading Modes: Enjoy customizable reading modes, including Sepia and Dark Mode, specifically tailored to reduce eye strain during night-time reading.\n'
-                       '• True Offline Access: Download your books once and read them anytime, anywhere—no active internet connection is required.\n'
+              title: 'AI-Powered Learning',
+              content: '• Learn Assist: Ask questions in your own words and get clear, syllabus-aware explanations tailored to your class, board, and subject.\n'
+                       '• Snap & Ask: Stuck on a problem? Attach a photo of your notes, an assignment, or a textbook page and let the AI help you work through it.\n'
+                       '• Saved Conversations: Your chats are saved to your account, so you can pick up right where you left off.\n'
+                       '• AI Tutor (coming soon): Step-by-step guided lessons that teach concepts one small step at a time.',
+            ),
+
+            _buildSection(
+              theme,
+              title: 'Reading & Study Experience',
+              content: '• Clean UI/UX: A student-friendly, distraction-free interface designed to make learning intuitive.\n'
+                       '• Tailored Reading Modes: Customizable reading including Sepia and Dark Mode to reduce eye strain during night-time reading.\n'
+                       '• True Offline Access: Download your books once and read them anytime, anywhere — no active internet connection required for reading.\n'
                        '• Interactive Learning: Explore math formulas, science diagrams, the periodic table, and historical timelines in the dedicated Learn module.\n'
-                       '• Progress Analytics: Monitor your daily study habits, build reading streaks, and view detailed analytics of your learning journey over time.\n'
-                       '• Study Management: Keep your education on track by setting daily timetables and organizing tasks.',
+                       '• Notes & Bookmarks: Capture your own notes by subject and bookmark important pages for quick revision.\n'
+                       '• Progress Analytics: Monitor your study habits, build streaks, and review your learning journey over time.\n'
+                       '• Study Management: Stay on track by setting daily timetables and organizing your schedule.',
+            ),
+
+            _buildSection(
+              theme,
+              title: 'Your Account & Privacy',
+              content: 'Reading and your offline study tools work without an account. To use AI features, you sign in securely with Google. Your student profile — name, class, board, language, and optional school — helps tailor content to your studies.\n\n'
+                       'We keep things minimal: profile photo uploads are not supported, and students are represented by friendly preset avatars instead. For full details on what we collect and why, see our Privacy Policy.',
             ),
 
             Container(
