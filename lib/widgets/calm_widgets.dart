@@ -344,7 +344,13 @@ class PageTitle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.displayMedium),
+                Text(
+                  title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .displayMedium
+                      ?.copyWith(fontSize: 24),
+                ),
                 if (sub != null) ...[
                   const SizedBox(height: 5),
                   Text(

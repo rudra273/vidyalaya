@@ -14,6 +14,7 @@ import '../../providers/progress_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
+import '../../widgets/pressable.dart';
 import '../../data/models/book.dart';
 import '../../data/seed/vocabulary_data.dart';
 
@@ -61,7 +62,10 @@ class HomeScreen extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         'Vidyālaya',
-                        style: Theme.of(context).textTheme.displaySmall,
+                        style: Theme.of(context)
+                            .textTheme
+                            .displaySmall
+                            ?.copyWith(fontSize: 23),
                       ),
                     ),
                     if (streak > 0) ...[
@@ -373,7 +377,7 @@ class _AskHero extends StatelessWidget {
     const inkLight = AppColors.heroInk;
     final inkMuted = AppColors.heroInk.withValues(alpha: 0.62);
 
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPad - 2),
@@ -481,7 +485,7 @@ class _TutorRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isDark ? AppColors.cTutorDark : AppColors.cTutor;
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -836,7 +840,7 @@ class _MiniTool extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: ClayCard(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),

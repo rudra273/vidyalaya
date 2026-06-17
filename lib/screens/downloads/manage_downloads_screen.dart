@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
+import '../../utils/haptics.dart';
 import '../../data/seed/seed_data.dart';
 import '../../data/models/book.dart';
 
@@ -121,6 +122,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
           _downloadingProgress.remove(book.id);
           _downloadedBookIds.add(book.id);
         });
+        Haptics.medium(ref);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('${book.title} downloaded successfully.'),
           duration: const Duration(seconds: 2),
@@ -131,9 +133,10 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
         setState(() {
           _downloadingProgress.remove(book.id);
         });
+        Haptics.error(ref);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error downloading ${book.title}.'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ));
       }
     }

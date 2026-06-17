@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
+import '../../utils/haptics.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -318,6 +319,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         : _languageMode;
     final service = ref.read(learnAssistServiceProvider);
 
+    Haptics.light(ref);
     setState(() {
       _messages.add(_ChatMessage.user(query, imageBytes: imageBytes));
       _isSending = true;
@@ -385,12 +387,14 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       });
     } on LearnAssistApiException catch (error) {
       if (!mounted) return;
+      Haptics.error(ref);
       setState(() {
         _messages.add(_ChatMessage.error(error.message));
         _isSending = false;
       });
     } catch (_) {
       if (!mounted) return;
+      Haptics.error(ref);
       setState(() {
         _messages.add(
           _ChatMessage.error('Something went wrong. Please try again.'),

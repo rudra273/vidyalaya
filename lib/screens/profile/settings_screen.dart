@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../providers/clay_provider.dart';
+import '../../providers/haptic_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 
 /// **App Settings** — appearance, data, about.
@@ -17,6 +19,7 @@ class SettingsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
     final clayOn = ref.watch(clayEnabledProvider);
+    final hapticsOn = ref.watch(hapticsEnabledProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -70,6 +73,39 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   subtitle: Text(
                     'Adds gentle depth to cards. Turn off for a flat, plain look.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  border: Border.all(color: cs.outline),
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                ),
+                child: SwitchListTile(
+                  value: hapticsOn,
+                  onChanged: (v) {
+                    ref.read(hapticsEnabledProvider.notifier).set(v);
+                    // Fire one buzz on enable so the change is felt immediately.
+                    if (v) Haptics.medium(ref);
+                  },
+                  activeThumbColor: cs.primary,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.cardPad, vertical: 2),
+                  title: Text(
+                    'Haptic feedback',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Text(
+                    'Subtle vibrations on taps and actions.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),

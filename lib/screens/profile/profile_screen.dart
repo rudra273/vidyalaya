@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -93,8 +94,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Center the two action icons against the serif title's height so
               // they read as sitting on the same line as "Profile".
               trailing: SizedBox(
-                height: Theme.of(context).textTheme.displayMedium!.fontSize! *
-                    Theme.of(context).textTheme.displayMedium!.height!,
+                // Match PageTitle's rendered title size (displayMedium @ 24).
+                height: 24 * Theme.of(context).textTheme.displayMedium!.height!,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -385,13 +386,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _nameController.text = savedProfile.name ?? '';
         _isEditing = false;
       });
+      Haptics.medium(ref);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully.')),
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+      Haptics.error(ref);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Couldn\'t save your profile. Please try again.')),
+      );
     } finally {
       if (mounted) {
         setState(() => _isProfileSaving = false);
@@ -425,13 +429,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await action();
     } catch (error) {
       if (!mounted) return;
+      // The user backing out of the Google sheet is not an error — stay quiet.
+      if (_isUserCancellation(error)) return;
+      Haptics.error(ref);
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.toString())));
+          .showSnackBar(SnackBar(content: Text(_friendlyAuthError(error))));
     } finally {
       if (mounted) {
         setState(() => _isAuthBusy = false);
       }
     }
+  }
+
+  /// True when [error] is the user dismissing the Google sign-in sheet, which
+  /// google_sign_in surfaces as a thrown "canceled" exception.
+  bool _isUserCancellation(Object error) {
+    final s = error.toString().toLowerCase();
+    return s.contains('cancel') || s.contains('aborted');
+  }
+
+  /// Turns a raw auth exception into a calm, student-friendly line instead of
+  /// dumping `[firebase_auth/...]` plugin text into the snackbar.
+  String _friendlyAuthError(Object error) {
+    final s = error.toString().toLowerCase();
+    if (s.contains('network') || s.contains('timeout')) {
+      return 'No internet connection. Please check your network and try again.';
+    }
+    if (s.contains('not supported')) {
+      return 'Google sign-in isn\'t available on this device.';
+    }
+    if (s.contains('sign in again') || s.contains('credential')) {
+      return 'Your session expired. Please sign in again.';
+    }
+    return 'Couldn\'t complete that. Please try again.';
   }
 }
 

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../app/theme.dart';
+import '../utils/haptics.dart';
+import 'pressable.dart';
 
 /// Shell wrapper that provides the Calm Scholar bottom navigation for tab
 /// routes — pill background on the active item, refined typography.
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   final Widget child;
 
   const AppShell({super.key, required this.child});
@@ -52,7 +55,7 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = _currentIndex(context);
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -81,7 +84,10 @@ class AppShell extends StatelessWidget {
                       label: tab.$3,
                       isActive: isActive,
                       onTap: () {
-                        if (index != currentIndex) context.go(tab.$1);
+                        if (index != currentIndex) {
+                          Haptics.selection(ref);
+                          context.go(tab.$1);
+                        }
                       },
                     ),
                   );
@@ -119,9 +125,9 @@ class _NavBarItem extends StatelessWidget {
       cs.surface,
     );
 
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
+      scale: 0.92,
       child: SizedBox(
         height: 56,
         child: Column(
