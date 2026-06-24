@@ -74,17 +74,6 @@ void main() {
             'chunk_ids': [],
           },
         ],
-        'retrieval': {
-          'query': 'Question',
-          'board': 'scert_odisha',
-          'class_no': 8,
-          'subject_filter': 'english',
-          'subjects_found': ['english'],
-          'pages_found': [62, 69],
-          'top_score': 0.75,
-          'context_block_count': 4,
-          'tool_used': true,
-        },
         'context_blocks': null,
       });
 
@@ -92,15 +81,12 @@ void main() {
       expect(response.citations[0].pageNumbers, [69]);
       expect(response.citations[1].pageNumbers, [10, 11]);
       expect(response.citations[2].pageNumbers, isEmpty);
-      expect(response.retrieval.subjectFilter, 'english');
-      expect(response.retrieval.toolUsed, isTrue);
     });
 
     test('parses empty citations', () {
       final response = LearnAssistResponse.fromJson({
         'answer': 'Answer',
         'citations': [],
-        'retrieval': {'class_no': 8},
       });
 
       expect(response.citations, isEmpty);
