@@ -12,7 +12,7 @@ class AboutScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'About Vidyālaya',
-          style: theme.textTheme.headlineMedium,
+          style: theme.textTheme.headlineSmall,
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -33,7 +33,7 @@ class AboutScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Version 1.0.0',
+              'Version 1.0.2',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurface.withValues(alpha: 0.6),
               ),
@@ -43,18 +43,49 @@ class AboutScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: 'What is Vidyālaya?',
-              content: 'Vidyālaya is a dedicated educational platform built specifically for school students. Our goal is to provide an enhanced and modern reading experience, allowing students to not only read their books but also discover and learn new things every day.\n\nMore than just a book reader, Vidyālaya helps you build positive routines. You can easily set your study timetable, track the progress of your learning habits, and efficiently manage your school assignments all in one place.',
+              content: 'Vidyālaya is an AI-powered learning assistant for Indian school students. At its heart is a smart study companion that answers your questions and explains concepts in a way that fits your class, board, and syllabus — so help is always one question away.\n\nAround that, Vidyālaya gives you a set of interactive tools to explore subjects hands-on, plus a built-in library of books for whenever you need them.',
             ),
 
             _buildSection(
               theme,
-              title: 'Key Features & Reading Experience',
-              content: '• Clean UI/UX: A highly student-friendly, distraction-free interface designed to make learning intuitive.\n'
-                       '• Tailored Reading Modes: Enjoy customizable reading modes, including Sepia and Dark Mode, specifically tailored to reduce eye strain during night-time reading.\n'
-                       '• True Offline Access: Download your books once and read them anytime, anywhere—no active internet connection is required.\n'
-                       '• Interactive Learning: Explore math formulas, science diagrams, the periodic table, and historical timelines in the dedicated Learn module.\n'
-                       '• Progress Analytics: Monitor your daily study habits, build reading streaks, and view detailed analytics of your learning journey over time.\n'
-                       '• Study Management: Keep your education on track by setting daily timetables and organizing tasks.',
+              title: 'Your AI Learning Assistant',
+              content: 'This is what Vidyālaya is built around.\n\n'
+                       '• Ask Anything: Type a question in your own words and get a clear, syllabus-aware explanation tailored to your class and subject.\n'
+                       '• Snap & Ask: Stuck on a problem? Attach a photo of your notes, an assignment, or a page from a book and let the assistant help you work through it.\n'
+                       '• Saved Conversations: Your chats are saved to your account, so you can return and pick up where you left off.\n'
+                       '• AI Tutor (coming soon): Guided, step-by-step lessons that teach a concept one small step at a time.',
+            ),
+
+            _buildSection(
+              theme,
+              title: 'Explore Tools',
+              content: 'In the Explore tab, learn Maths, Science, History and more through hands-on tools:\n\n'
+                       '• Formulas & Calculator — quick reference and on-the-spot calculations.\n'
+                       '• Periodic Table — explore every element interactively.\n'
+                       '• Diagrams — interactive science and concept diagrams.\n'
+                       '• Timeline — walk through major events in history.\n'
+                       '• Cosmulator — view the solar system in 3D.\n\n'
+                       'More is on the way, including Quizzes and a Virtual Science Lab.',
+            ),
+
+            _buildSection(
+              theme,
+              title: 'Library',
+              content: 'Vidyālaya also includes a library of books you can download and read offline, with comfortable reading modes (including Sepia and Dark Mode), bookmarks, highlights, and personal notes for quick revision — there whenever you need a reference.',
+            ),
+
+            _buildSection(
+              theme,
+              title: 'Stay On Track',
+              content: '• Progress Analytics: Build streaks and review your learning journey over time.\n'
+                       '• Timetable & Notes: Plan your study schedule and keep notes organized by subject.',
+            ),
+
+            _buildSection(
+              theme,
+              title: 'Your Account & Privacy',
+              content: 'You sign in securely with Google to use the AI assistant. Your student profile — name, class, board, language, and optional school — helps tailor answers to your studies.\n\n'
+                       'We keep things minimal: profile photo uploads are not supported, and students are represented by friendly preset avatars instead. For full details on what we collect and why, see our Privacy Policy.',
             ),
 
             Container(

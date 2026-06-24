@@ -118,8 +118,8 @@ class BookCover extends StatelessWidget {
             bottom: big ? -16 : -12,
             child: Icon(
               meta.icon,
-              size: big ? 96 : 64,
-              color: col.withValues(alpha: 0.20),
+              size: big ? 80 : 52,
+              color: col.withValues(alpha: 0.13),
             ),
           ),
           // small motif chip top-left
@@ -344,7 +344,13 @@ class PageTitle extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.displayMedium),
+                Text(
+                  title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .displayMedium
+                      ?.copyWith(fontSize: 24),
+                ),
                 if (sub != null) ...[
                   const SizedBox(height: 5),
                   Text(
@@ -371,11 +377,16 @@ class IconBox extends StatelessWidget {
   final VoidCallback? onTap;
   final double size;
 
+  /// Nudges the box down to align with a top-anchored page title. Pass 0 when
+  /// the box is already vertically centered by its parent.
+  final double topMargin;
+
   const IconBox({
     super.key,
     required this.icon,
     this.onTap,
     this.size = 42,
+    this.topMargin = 4,
   });
 
   @override
@@ -386,7 +397,7 @@ class IconBox extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
-        margin: const EdgeInsets.only(top: 4),
+        margin: EdgeInsets.only(top: topMargin),
         decoration: BoxDecoration(
           color: cs.surface,
           border: Border.all(color: cs.outline),

@@ -216,7 +216,7 @@ class _Tool {
 List<_Tool> _tools(bool isDark) => [
       _Tool(
         id: 'math-formulas',
-        title: 'Math Formulas',
+        title: 'Formulas',
         sub: 'Formulas & calculator',
         icon: Icons.functions_rounded,
         color: isDark ? AppColors.cFormulasDark : AppColors.cFormulas,
@@ -232,7 +232,7 @@ List<_Tool> _tools(bool isDark) => [
       ),
       _Tool(
         id: 'diagrams',
-        title: 'Science Diagrams',
+        title: 'Diagrams',
         sub: 'Interactive diagrams',
         icon: Icons.account_tree_rounded,
         color: isDark ? AppColors.cDiagramsDark : AppColors.cDiagrams,

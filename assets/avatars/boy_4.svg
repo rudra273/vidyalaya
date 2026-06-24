@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- Boy 4 (teen) · neat hair · glasses · blue collared shirt · sage background -->
+  <circle cx="60" cy="60" r="60" fill="#E3EDD9"/>
+  <ellipse cx="60" cy="50" rx="24" ry="26" fill="#1E1813"/>
+  <path d="M22 120 C22 97 39 87 60 87 C81 87 98 97 98 120 Z" fill="#2F6FB5"/>
+  <path d="M50 87 L60 96 L70 87" stroke="#D8E6F5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="54" y="70" width="12" height="18" rx="5" fill="#8F5C30"/>
+  <circle cx="38" cy="56" r="5" fill="#A9713F"/>
+  <circle cx="82" cy="56" r="5" fill="#A9713F"/>
+  <ellipse cx="60" cy="55" rx="22" ry="26" fill="#A9713F"/>
+  <path d="M40 44 C40 26 49 21 60 21 C71 21 80 26 80 44 C74 34 66 36 60 36 C54 36 46 34 40 44 Z" fill="#1E1813"/>
+  <path d="M46 47 Q51 45.5 56 47" stroke="#1E1813" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <path d="M64 47 Q69 45.5 74 47" stroke="#1E1813" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.75"/>
+  <circle cx="51" cy="56" r="2.8" fill="#211A14"/>
+  <circle cx="69" cy="56" r="2.8" fill="#211A14"/>
+  <circle cx="50" cy="55" r="0.9" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="68" cy="55" r="0.9" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="51" cy="56" r="6.5" stroke="#1E1813" stroke-width="2" fill="none"/>
+  <circle cx="69" cy="56" r="6.5" stroke="#1E1813" stroke-width="2" fill="none"/>
+  <line x1="57.5" y1="55" x2="62.5" y2="55" stroke="#1E1813" stroke-width="2" stroke-linecap="round"/>
+  <path d="M54 68 Q60 72 66 68" stroke="#211A14" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <circle cx="45" cy="64" r="3.5" fill="#7E4A20" opacity="0.35"/>
+  <circle cx="75" cy="64" r="3.5" fill="#7E4A20" opacity="0.35"/>
+</svg>

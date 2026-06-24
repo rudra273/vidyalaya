@@ -317,7 +317,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.displaySmall,
+        titleTextStyle: textTheme.headlineSmall,
         iconTheme: const IconThemeData(color: AppColors.ink),
       ),
       cardTheme: CardThemeData(
@@ -421,7 +421,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: textTheme.displaySmall,
+        titleTextStyle: textTheme.headlineSmall,
         iconTheme: const IconThemeData(color: AppColors.inkDark),
       ),
       cardTheme: CardThemeData(

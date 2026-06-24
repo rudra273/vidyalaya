@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import '../../app/theme.dart';
+import '../../utils/haptics.dart';
 import '../../data/models/book.dart';
 import '../../data/models/highlight.dart';
 import '../../providers/core_providers.dart';
@@ -113,6 +114,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   void _toggleBookmark() {
     final repo = ref.read(userPrefsRepositoryProvider);
     repo.toggleBookmark(widget.book.id, _currentPage);
+    Haptics.medium(ref);
     setState(() {
       _bookmarks = repo.getBookmarks(widget.book.id);
     });

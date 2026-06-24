@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- Boy 3 (teen) · side-swept hair · green hoodie · teal background -->
+  <circle cx="60" cy="60" r="60" fill="#D2EBE7"/>
+  <ellipse cx="60" cy="50" rx="24" ry="26" fill="#2F2620"/>
+  <path d="M22 120 C22 97 39 87 60 87 C81 87 98 97 98 120 Z" fill="#16855A"/>
+  <path d="M38 96 C42 89 50 86 60 86 C70 86 78 89 82 96" stroke="#0E6444" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <line x1="55" y1="93" x2="55" y2="104" stroke="#D9EDE0" stroke-width="2" stroke-linecap="round"/>
+  <line x1="65" y1="93" x2="65" y2="104" stroke="#D9EDE0" stroke-width="2" stroke-linecap="round"/>
+  <rect x="54" y="70" width="12" height="18" rx="5" fill="#E2A872"/>
+  <circle cx="38" cy="56" r="5" fill="#EFB98A"/>
+  <circle cx="82" cy="56" r="5" fill="#EFB98A"/>
+  <ellipse cx="60" cy="55" rx="22" ry="26" fill="#EFB98A"/>
+  <path d="M38 48 C37 27 48 21 61 21 C74 21 83 28 82 46 C76 35 64 39 52 40 C45 41 41 43 38 48 Z" fill="#2F2620"/>
+  <path d="M46 48 Q51 46.5 56 48" stroke="#2F2620" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M64 48 Q69 46.5 74 48" stroke="#2F2620" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <circle cx="51" cy="56" r="2.8" fill="#2B2420"/>
+  <circle cx="69" cy="56" r="2.8" fill="#2B2420"/>
+  <circle cx="50" cy="55" r="0.9" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="68" cy="55" r="0.9" fill="#FFFFFF" opacity="0.85"/>
+  <path d="M54 68 Q60 72 66 68" stroke="#2B2420" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <circle cx="45" cy="63" r="3.5" fill="#E08A5C" opacity="0.3"/>
+  <circle cx="75" cy="63" r="3.5" fill="#E08A5C" opacity="0.3"/>
+</svg>

@@ -54,6 +54,15 @@ const List<Book> allBooks = [
 Set<int> get availableClassNumbers =>
     allBooks.map((b) => b.classNumber).toSet();
 
+/// Classes that have books for a specific board.
+Set<int> availableClassNumbersForBoard(String boardId) => allBooks
+    .where((b) => b.boardId == boardId)
+    .map((b) => b.classNumber)
+    .toSet();
+
+/// Board ids that have at least one book in the database.
+Set<String> get availableBoardIds => allBooks.map((b) => b.boardId).toSet();
+
 /// Get books for a specific class number.
 List<Book> getBooksByClass(int classNumber) =>
     allBooks.where((b) => b.classNumber == classNumber).toList();

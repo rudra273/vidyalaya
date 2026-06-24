@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../providers/books_provider.dart';
+import '../../../utils/haptics.dart';
 
 class FilterChipsBar extends ConsumerWidget {
   const FilterChipsBar({super.key});
@@ -39,6 +40,7 @@ class FilterChipsBar extends ConsumerWidget {
 
           return GestureDetector(
             onTap: () {
+              if (!isSelected) Haptics.selection(ref);
               ref.read(subjectFilterProvider.notifier).setFilter(value);
             },
             child: AnimatedContainer(

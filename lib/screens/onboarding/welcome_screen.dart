@@ -45,7 +45,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       child: Builder(
         builder: (context) {
           final cs = Theme.of(context).colorScheme;
-          final isAvailable = availableClassNumbers.contains(_selectedClass);
+          final classesForBoard = availableClassNumbersForBoard(_selectedBoard);
+          final isAvailable = classesForBoard.contains(_selectedClass);
 
           return Scaffold(
             backgroundColor: AppColors.background,
@@ -55,12 +56,28 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   const SizedBox(height: 60),
 
                   // Header
-                  const Text('🎓', style: TextStyle(fontSize: 72)),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/icon/vicon.png',
+                      width: 88,
+                      height: 88,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   Text(
                     'Welcome to Vidyālaya',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Let's set up your learning space.",
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: AppColors.textMuted,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -79,12 +96,41 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         filled: true,
                         fillColor: cs.surface,
                       ),
-                      items: const [
-                        DropdownMenuItem(
+                      items: [
+                        const DropdownMenuItem(
                           value: 'scert_odisha',
                           child: Text('SCERT Odisha'),
                         ),
-                        DropdownMenuItem(value: 'ncert', child: Text('NCERT')),
+                        DropdownMenuItem(
+                          value: 'ncert',
+                          enabled: availableBoardIds.contains('ncert'),
+                          child: Row(
+                            children: [
+                              Text(
+                                'NCERT',
+                                style: TextStyle(
+                                  color: availableBoardIds.contains('ncert')
+                                      ? null
+                                      : AppColors.textMuted.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                ),
+                              ),
+                              if (!availableBoardIds.contains('ncert')) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  '(coming soon)',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -143,7 +189,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             builder: (context, index) {
                               final classNum = index + 1;
                               final isSelected = _selectedClass == classNum;
-                              final available = availableClassNumbers.contains(
+                              final available = classesForBoard.contains(
                                 classNum,
                               );
 

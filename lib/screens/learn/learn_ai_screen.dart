@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
+import '../../utils/haptics.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -64,9 +66,18 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   bool _isLoadingOlder = false;
   int? _historyNextBefore;
 
+  // After 30+ minutes away, the previous conversation stays tucked behind a
+  // "load previous chat" link so the student lands on a fresh start with
+  // suggestions, instead of scrolling old messages.
+  static const _staleChatThreshold = Duration(minutes: 30);
+  bool _historyHidden = false;
+
+  /// Board from the saved profile (single-board today, multi-board ready).
+  String get _board => ref.read(userBoardProvider);
+
   HistorySelector get _selector => HistorySelector(
     channel: widget.channel,
-    board: 'scert_odisha',
+    board: _board,
     classNo: _selectedClass,
     subject: _selectedSubject,
   );
@@ -86,8 +97,24 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         if (mounted) _composerFocusNode.requestFocus();
       });
     }
+    // Fresh-start rule: if the student last chatted more than 30 minutes ago,
+    // keep the previous conversation hidden behind a tap so the screen opens
+    // on suggestions. A brand-new user (no activity yet) has nothing to hide.
+    final lastActivity = ref
+        .read(userPrefsRepositoryProvider)
+        .getChatLastActivity(widget.channel);
+    _historyHidden =
+        lastActivity != null &&
+        DateTime.now().difference(lastActivity) > _staleChatThreshold;
     _ensureAccountSummary();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
+  }
+
+  /// Student tapped "Load previous chat": reveal and fetch the conversation.
+  void _revealHistory() {
+    setState(() => _historyHidden = false);
+    ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
+    _loadHistory();
   }
 
   @override
@@ -113,6 +140,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
   /// Load the first page of history for the current selector into the chat.
   Future<void> _loadHistory() async {
+    if (_historyHidden) return;
     final isSignedIn = ref.read(firebaseAuthProvider).currentUser != null;
     if (!isSignedIn) return;
 
@@ -291,6 +319,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         : _languageMode;
     final service = ref.read(learnAssistServiceProvider);
 
+    Haptics.light(ref);
     setState(() {
       _messages.add(_ChatMessage.user(query, imageBytes: imageBytes));
       _isSending = true;
@@ -298,6 +327,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       _pendingImageBytes = null;
       _pendingImageMediaType = null;
     });
+    ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
     _scrollToBottom();
 
     try {
@@ -306,7 +336,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           message: query.isEmpty ? null : query,
           imageBase64: imageBase64,
           imageMediaType: imageMediaType,
-          board: 'scert_odisha',
+          board: _board,
           classNo: _selectedClass,
           channel: widget.channel,
           subject: _selectedSubject,
@@ -357,12 +387,14 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       });
     } on LearnAssistApiException catch (error) {
       if (!mounted) return;
+      Haptics.error(ref);
       setState(() {
         _messages.add(_ChatMessage.error(error.message));
         _isSending = false;
       });
     } catch (_) {
       if (!mounted) return;
+      Haptics.error(ref);
       setState(() {
         _messages.add(
           _ChatMessage.error('Something went wrong. Please try again.'),
@@ -371,6 +403,16 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       });
     }
     _scrollToBottom();
+  }
+
+  /// Tapped suggestion: prefill the composer (don't auto-send) so the student
+  /// can tweak the question before sending.
+  void _applySuggestion(String text) {
+    _messageController.text = text;
+    _messageController.selection = TextSelection.collapsed(
+      offset: text.length,
+    );
+    _composerFocusNode.requestFocus();
   }
 
   void _scrollToBottom() {
@@ -435,7 +477,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       appBar: AppBar(
         title: Text(
           _channelTitle(widget.channel),
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
         actions: [
           _PlanUsageBadge(
@@ -466,8 +508,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             else if (_isRevalidating)
               const _HistoryUpdatingBar(),
             Expanded(
-              child: _messages.isEmpty && !_isLoadingHistory
-                  ? const _EmptyChat()
+              child: _messages.isEmpty && !_isLoadingHistory && !_isSending
+                  ? _EmptyChat(
+                      suggestions: _suggestionsFor(_selectedSubject),
+                      onSuggestionTap: _applySuggestion,
+                      showLoadPrevious: _historyHidden && isSignedIn,
+                      onLoadPrevious: _revealHistory,
+                    )
                   : ListView.separated(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(
@@ -605,51 +652,45 @@ class _ContextControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      width: double.infinity,
+    return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
-        8,
+        6,
         AppSpacing.screenPadding,
-        10,
+        8,
       ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(bottom: BorderSide(color: cs.outlineVariant)),
-      ),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 6,
+      child: Row(
         children: [
-          _DropdownPill<String>(
+          _MenuChip<String>(
+            icon: Icons.menu_book_rounded,
+            label: selectedSubject == null
+                ? 'All subjects'
+                : _formatSubject(selectedSubject!),
             value: selectedSubject ?? 'all',
-            items: [
-              const DropdownMenuItem<String>(
-                value: 'all',
-                child: Text('All subjects'),
-              ),
+            options: [
+              const ('all', 'All subjects'),
               for (final subject in subjectOptions)
-                DropdownMenuItem<String>(
-                  value: subject,
-                  child: Text(_formatSubject(subject)),
-                ),
+                (subject, _formatSubject(subject)),
             ],
-            onChanged: (value) {
+            onSelected: (value) {
               onSubjectChanged(value == 'all' ? null : value);
             },
           ),
-          _DropdownPill<String>(
-            value: languageMode,
-            items: const [
-              DropdownMenuItem(value: 'auto', child: Text('Auto')),
-              DropdownMenuItem(value: 'en', child: Text('English')),
-              DropdownMenuItem(value: 'or', child: Text('Odia')),
-            ],
-            onChanged: (value) {
-              if (value != null) onLanguageChanged(value);
+          const SizedBox(width: 8),
+          _MenuChip<String>(
+            icon: Icons.translate_rounded,
+            label: switch (languageMode) {
+              'en' => 'English',
+              'or' => 'Odia',
+              _ => 'Auto',
             },
+            value: languageMode,
+            options: const [
+              ('auto', 'Auto'),
+              ('en', 'English'),
+              ('or', 'Odia'),
+            ],
+            onSelected: onLanguageChanged,
           ),
         ],
       ),
@@ -657,37 +698,75 @@ class _ContextControls extends StatelessWidget {
   }
 }
 
-class _DropdownPill<T> extends StatelessWidget {
+/// A small pill that opens a popup menu — much lighter than a full dropdown.
+class _MenuChip<T> extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final T value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
+  final List<(T, String)> options;
+  final ValueChanged<T> onSelected;
 
-  const _DropdownPill({
+  const _MenuChip({
+    required this.icon,
+    required this.label,
     required this.value,
-    required this.items,
-    required this.onChanged,
+    required this.options,
+    required this.onSelected,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
 
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-        border: Border.all(color: cs.outline),
+    return PopupMenuButton<T>(
+      initialValue: value,
+      onSelected: onSelected,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: cs.outline),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          items: items,
-          onChanged: onChanged,
-          borderRadius: BorderRadius.circular(12),
-          style: Theme.of(context).textTheme.labelLarge,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+      color: cs.surface,
+      itemBuilder: (context) => [
+        for (final (optionValue, optionLabel) in options)
+          PopupMenuItem<T>(
+            value: optionValue,
+            height: 40,
+            child: Text(
+              optionLabel,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: optionValue == value
+                    ? FontWeight.w700
+                    : FontWeight.w400,
+                color: optionValue == value ? cs.primary : cs.onSurface,
+              ),
+            ),
+          ),
+      ],
+      child: Container(
+        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 11),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: muted),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.onSurface,
+              ),
+            ),
+            const SizedBox(width: 3),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: muted),
+          ],
         ),
       ),
     );
@@ -709,45 +788,165 @@ class _HistoryUpdatingBar extends StatelessWidget {
   }
 }
 
+// ─── Suggested questions ─────────────────────────────────────────────────
+// Subject-specific starters shown on the fresh chat screen. Subjects without
+// their own list fall back to the mixed set (one per covered subject).
+
+const Map<String, List<String>> _subjectSuggestions = {
+  'maths': [
+    'How do I find the area of a triangle?',
+    'Explain fractions with a simple example',
+    'What is the difference between LCM and HCF?',
+  ],
+  'science': [
+    'Why does the moon change shape?',
+    'How does the water cycle work?',
+    'What is photosynthesis in simple words?',
+  ],
+  'english': [
+    'What is the difference between a noun and a verb?',
+    'Help me write a paragraph about my school',
+    'When do I use "a", "an" and "the"?',
+  ],
+};
+
+const List<String> _mixedSuggestions = [
+  'How do I find the area of a triangle?',
+  'Why does the moon change shape?',
+  'Help me write a paragraph about my school',
+];
+
+List<String> _suggestionsFor(String? subject) {
+  if (subject == null) return _mixedSuggestions;
+  return _subjectSuggestions[subject.toLowerCase()] ?? _mixedSuggestions;
+}
+
+/// Fresh-start screen: a quiet heading, tappable starter questions, and (when
+/// an older conversation is tucked away) a link to bring it back.
 class _EmptyChat extends StatelessWidget {
-  const _EmptyChat();
+  final List<String> suggestions;
+  final ValueChanged<String> onSuggestionTap;
+  final bool showLoadPrevious;
+  final VoidCallback onLoadPrevious;
+
+  const _EmptyChat({
+    required this.suggestions,
+    required this.onSuggestionTap,
+    required this.showLoadPrevious,
+    required this.onLoadPrevious,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                shape: BoxShape.circle,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
               ),
-              child: Icon(Icons.auto_awesome, color: cs.primary, size: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (showLoadPrevious)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, bottom: 12),
+                      child: TextButton.icon(
+                        onPressed: onLoadPrevious,
+                        style: TextButton.styleFrom(
+                          foregroundColor: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                          textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        icon: const Icon(Icons.history_rounded, size: 16),
+                        label: const Text('Load previous chat'),
+                      ),
+                    ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, size: 26, color: cs.primary),
+                      const SizedBox(height: 14),
+                      Text(
+                        'What would you like to learn?',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Type a question or snap a photo of one.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 22),
+                      for (final suggestion in suggestions) ...[
+                        _SuggestionRow(
+                          text: suggestion,
+                          onTap: () => onSuggestionTap(suggestion),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 18),
-            Text(
-              'Ask anything from your textbooks',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Type your question or share a photo — answers show you the right page in your book.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SuggestionRow extends StatelessWidget {
+  final String text;
+  final VoidCallback onTap;
+
+  const _SuggestionRow({required this.text, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: cs.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+        side: BorderSide(color: cs.outline),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.3),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(
+                Icons.north_east_rounded,
+                size: 14,
+                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -779,12 +978,12 @@ class _MessageView extends StatelessWidget {
           maxWidth: MediaQuery.sizeOf(context).width * 0.82,
         ),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           decoration: BoxDecoration(
             color: cs.primary,
             borderRadius: BorderRadius.circular(
               16,
-            ).copyWith(bottomRight: const Radius.circular(4)),
+            ).copyWith(bottomRight: const Radius.circular(5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -826,6 +1025,15 @@ class _MessageView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Quiet marker so answers read as distinct blocks between user bubbles.
+          Padding(
+            padding: const EdgeInsets.only(bottom: 7),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 14,
+              color: cs.primary.withValues(alpha: 0.75),
+            ),
+          ),
           if (isError)
             Text(
               message.text,
@@ -923,37 +1131,99 @@ class _CitationChip extends StatelessWidget {
     final page = citation.pageLabel;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: cs.secondary,
-        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-        border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
-      ),
-      child: Text(
-        page.isEmpty
-            ? '${citation.label} $book'
-            : '${citation.label} $book · $page',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: cs.primary,
-          fontWeight: FontWeight.w600,
+        color: Color.alphaBlend(
+          cs.primary.withValues(alpha: 0.07),
+          cs.surface,
         ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.menu_book_rounded,
+            size: 11,
+            color: cs.primary.withValues(alpha: 0.8),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            page.isEmpty
+                ? '${citation.label} $book'
+                : '${citation.label} $book · $page',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _TypingIndicator extends StatelessWidget {
+/// Three softly pulsing dots while the answer is being prepared.
+class _TypingIndicator extends StatefulWidget {
   const _TypingIndicator();
 
   @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
+
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Text(
-        'Thinking...',
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < 3; i++) ...[
+                if (i > 0) const SizedBox(width: 5),
+                Opacity(
+                  // Stagger each dot a third of a cycle apart.
+                  opacity:
+                      0.25 +
+                      0.75 *
+                          (0.5 -
+                              0.5 *
+                                  math.cos(
+                                    (_controller.value - i / 3) * 2 * math.pi,
+                                  )),
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -1003,49 +1273,64 @@ class _Composer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          Row(
-            children: [
-              IconButton(
-                onPressed: isSending ? null : onAttach,
-                icon: const Icon(Icons.add_photo_alternate_outlined),
-                tooltip: 'Attach image',
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  focusNode: focusNode,
-                  minLines: 1,
-                  maxLines: 4,
-                  textInputAction: TextInputAction.send,
-                  enabled: !isSending,
-                  onSubmitted: (_) => onSubmitted(),
-                  decoration: InputDecoration(
-                    hintText: 'Ask a question',
-                    filled: true,
-                    fillColor: cs.surface,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: cs.outline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      borderSide: BorderSide(color: cs.outline),
+          // One rounded surface: attach + field + send, like a modern chat bar.
+          Container(
+            padding: const EdgeInsets.fromLTRB(4, 4, 5, 4),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: cs.outline),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: isSending ? null : onAttach,
+                  icon: const Icon(Icons.add_photo_alternate_outlined),
+                  iconSize: 21,
+                  visualDensity: VisualDensity.compact,
+                  color: cs.onSurface.withValues(alpha: 0.55),
+                  tooltip: 'Attach image',
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.send,
+                    enabled: !isSending,
+                    onSubmitted: (_) => onSubmitted(),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    decoration: const InputDecoration(
+                      hintText: 'Ask a question…',
+                      filled: false,
+                      isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 11,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              IconButton.filled(
-                onPressed: isSending ? null : onSubmitted,
-                icon: const Icon(Icons.send_rounded),
-                tooltip: 'Send',
-              ),
-            ],
+                const SizedBox(width: 6),
+                SizedBox(
+                  width: 38,
+                  height: 38,
+                  child: IconButton.filled(
+                    onPressed: isSending ? null : onSubmitted,
+                    icon: const Icon(Icons.arrow_upward_rounded),
+                    iconSize: 19,
+                    padding: EdgeInsets.zero,
+                    tooltip: 'Send',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

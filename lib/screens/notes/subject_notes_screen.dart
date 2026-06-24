@@ -39,7 +39,7 @@ class SubjectNotesScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           '${_formatSubject(subject)} Notes',
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),

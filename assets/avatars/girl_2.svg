@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- Girl 2 · long hair · purple dress · lavender background -->
+  <circle cx="60" cy="60" r="60" fill="#E8E1F5"/>
+  <path d="M31 50 C31 27 44 20 60 20 C76 20 89 27 89 50 L89 88 C89 95 84 99 77 99 L43 99 C36 99 31 95 31 88 Z" fill="#2E2233"/>
+  <path d="M22 120 C22 97 39 87 60 87 C81 87 98 97 98 120 Z" fill="#7C5CBF"/>
+  <rect x="53" y="68" width="14" height="18" rx="6" fill="#7E4F30"/>
+  <ellipse cx="60" cy="57" rx="24" ry="26" fill="#8D5A3B"/>
+  <path d="M36 50 C36 28 46 21 60 21 C74 21 84 28 84 50 C80 36 71 39 60 37 C49 39 40 36 36 50 Z" fill="#2E2233"/>
+  <circle cx="40" cy="29" r="3" fill="#7C5CBF"/>
+  <path d="M45 49 Q50 46 55 49" stroke="#2E2233" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M65 49 Q70 46 75 49" stroke="#2E2233" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <circle cx="50" cy="57" r="3.2" fill="#211A14"/>
+  <circle cx="70" cy="57" r="3.2" fill="#211A14"/>
+  <circle cx="49" cy="56" r="1" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="69" cy="56" r="1" fill="#FFFFFF" opacity="0.85"/>
+  <path d="M53 67 Q60 73 67 67" stroke="#211A14" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <circle cx="43" cy="64" r="4" fill="#6E3E20" opacity="0.55"/>
+  <circle cx="77" cy="64" r="4" fill="#6E3E20" opacity="0.55"/>
+</svg>

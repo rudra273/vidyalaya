@@ -59,7 +59,7 @@ class _TutorMockScreenState extends State<TutorMockScreen> {
       appBar: AppBar(
         title: Text(
           'AI Tutor',
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
       body: SafeArea(
@@ -192,6 +192,7 @@ class _MockComposer extends StatelessWidget {
         border: Border(top: BorderSide(color: cs.outlineVariant)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: TextField(

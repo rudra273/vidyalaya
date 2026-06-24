@@ -1,101 +1,146 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../data/history/timeline_data.dart';
+import '../../providers/regional_language_provider.dart';
+import '../../widgets/regional_language_switch.dart';
 
-class TimelineScreen extends StatefulWidget {
+class TimelineScreen extends ConsumerStatefulWidget {
   const TimelineScreen({super.key});
 
   @override
-  State<TimelineScreen> createState() => _TimelineScreenState();
+  ConsumerState<TimelineScreen> createState() => _TimelineScreenState();
 }
 
-class _TimelineScreenState extends State<TimelineScreen> {
-  String _selectedEra = 'All';
-  List<HistoricalEvent> _filteredEvents = timelineEvents;
+/// A geographic scope the student can toggle in the timeline filter. Multiple
+/// scopes can be active at once — events from any selected scope are shown.
+enum _RegionScope { world, india, state }
 
-  final List<String> _eras = [
-    'All',
-    'Ancient India',
-    'Medieval India',
-    'Modern India',
-    'Odisha History',
-  ];
+class _TimelineScreenState extends ConsumerState<TimelineScreen> {
+  // The set of active region scopes. Defaults to India alone. When
+  // [_RegionScope.state] is active, [_selectedState] names the chosen state.
+  final Set<_RegionScope> _scopes = {_RegionScope.india};
+  String _selectedState = 'Odisha';
 
-  void _onEraSelected(String era) {
+  /// Events whose region matches any of the active scopes.
+  List<HistoricalEvent> get _filteredEvents {
+    return timelineEvents.where((e) {
+      if (_scopes.contains(_RegionScope.world) && e.region == kRegionWorld) {
+        return true;
+      }
+      if (_scopes.contains(_RegionScope.india) && e.region == kRegionIndia) {
+        return true;
+      }
+      if (_scopes.contains(_RegionScope.state) && e.region == _selectedState) {
+        return true;
+      }
+      return false;
+    }).toList();
+  }
+
+  void _toggleScope(_RegionScope scope) {
     setState(() {
-      _selectedEra = era;
-      if (era == 'All') {
-        _filteredEvents = timelineEvents;
+      if (_scopes.contains(scope)) {
+        _scopes.remove(scope);
       } else {
-        _filteredEvents = timelineEvents.where((e) => e.era == era).toList();
+        _scopes.add(scope);
       }
     });
   }
 
+  Future<void> _pickState() async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _StatePickerSheet(selected: _selectedState),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedState = picked;
+        _scopes.add(_RegionScope.state);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final lang = ref.watch(regionalLanguageProvider);
+    final events = _filteredEvents;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Historical Timeline'),
+        actions: const [RegionalLanguageSwitch()],
       ),
       body: Column(
         children: [
-          // Filter Chips
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: SizedBox(
-              height: 40,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _eras.length,
-                itemBuilder: (context, index) {
-                  final era = _eras[index];
-                  final isSelected = era == _selectedEra;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(era),
-                      selected: isSelected,
-                      onSelected: (bool selected) {
-                        if (selected) _onEraSelected(era);
-                      },
-                      backgroundColor: cs.surface,
-                      selectedColor: Colors.amber.withValues(alpha: 0.2),
-                      checkmarkColor: Colors.amber.shade700,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.amber.shade800 : AppColors.textMuted,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: isSelected ? Colors.amber.shade700 : cs.outlineVariant,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+          // Region scope selector: World / India / State (multi-select).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                _RegionChip(
+                  label: 'World',
+                  icon: Icons.public_rounded,
+                  selected: _scopes.contains(_RegionScope.world),
+                  onTap: () => _toggleScope(_RegionScope.world),
+                ),
+                const SizedBox(width: 8),
+                _RegionChip(
+                  label: 'India',
+                  icon: Icons.flag_rounded,
+                  selected: _scopes.contains(_RegionScope.india),
+                  onTap: () => _toggleScope(_RegionScope.india),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _RegionChip(
+                    label: _selectedState,
+                    icon: Icons.location_on_rounded,
+                    selected: _scopes.contains(_RegionScope.state),
+                    // When the state scope is active, tap toggles it off; the
+                    // caret reopens the picker to change which state.
+                    trailing: Icons.arrow_drop_down_rounded,
+                    onTap: () {
+                      if (_scopes.contains(_RegionScope.state)) {
+                        _toggleScope(_RegionScope.state);
+                      } else {
+                        _pickState();
+                      }
+                    },
+                    onTrailingTap: _pickState,
+                  ),
+                ),
+              ],
             ),
           ),
-          
+
           const Divider(height: 1),
 
           // Timeline List
           Expanded(
-            child: _filteredEvents.isEmpty
-                ? const Center(child: Text('No events found.'))
+            child: events.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text(
+                        'No events for this region yet.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    itemCount: _filteredEvents.length,
+                    itemCount: events.length,
                     itemBuilder: (context, index) {
-                      final event = _filteredEvents[index];
+                      final event = events[index];
                       final isFirst = index == 0;
-                      final isLast = index == _filteredEvents.length - 1;
+                      final isLast = index == events.length - 1;
 
                       return IntrinsicHeight(
                         child: Row(
@@ -147,7 +192,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.only(left: 8, bottom: 24),
-                                child: _EventCard(event: event),
+                                child: _EventCard(event: event, lang: lang),
                               ),
                             ),
                           ],
@@ -162,21 +207,196 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 }
 
+/// A pill-shaped region scope selector used in the timeline filter row.
+class _RegionChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final IconData? trailing;
+  final VoidCallback onTap;
+
+  /// Tapped when the [trailing] icon is pressed. Falls back to [onTap] if null.
+  final VoidCallback? onTrailingTap;
+
+  const _RegionChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    this.trailing,
+    this.onTrailingTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: selected ? Colors.amber.withValues(alpha: 0.2) : cs.surface,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? Colors.amber.shade700 : cs.outlineVariant,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: selected ? Colors.amber.shade800 : AppColors.textMuted,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color:
+                        selected ? Colors.amber.shade800 : AppColors.textMuted,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (trailing != null)
+                GestureDetector(
+                  onTap: onTrailingTap ?? onTap,
+                  child: Icon(
+                    trailing,
+                    size: 18,
+                    color:
+                        selected ? Colors.amber.shade800 : AppColors.textMuted,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A searchable bottom sheet listing all 28 Indian states. The student can type
+/// to filter and tap to select. Returns the chosen state name via [Navigator.pop].
+class _StatePickerSheet extends StatefulWidget {
+  final String selected;
+
+  const _StatePickerSheet({required this.selected});
+
+  @override
+  State<_StatePickerSheet> createState() => _StatePickerSheetState();
+}
+
+class _StatePickerSheetState extends State<_StatePickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final matches = indianStates
+        .where((s) => s.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: cs.outlineVariant,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: TextField(
+                  autofocus: true,
+                  onChanged: (v) => setState(() => _query = v),
+                  decoration: InputDecoration(
+                    hintText: 'Search your state…',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    filled: true,
+                    fillColor: cs.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: cs.outlineVariant),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: cs.outlineVariant),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: matches.isEmpty
+                    ? const Center(child: Text('No matching state.'))
+                    : ListView.builder(
+                        itemCount: matches.length,
+                        itemBuilder: (context, index) {
+                          final state = matches[index];
+                          final isSelected = state == widget.selected;
+                          return ListTile(
+                            leading: Icon(
+                              Icons.location_on_rounded,
+                              color: isSelected
+                                  ? Colors.amber.shade700
+                                  : AppColors.textMuted,
+                            ),
+                            title: Text(
+                              state,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            trailing: isSelected
+                                ? Icon(Icons.check_rounded,
+                                    color: Colors.amber.shade700)
+                                : null,
+                            onTap: () => Navigator.of(context).pop(state),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EventCard extends StatelessWidget {
   final HistoricalEvent event;
+  final RegionalLanguage lang;
 
-  const _EventCard({required this.event});
+  const _EventCard({required this.event, required this.lang});
 
   MaterialColor _getEraColor(String era) {
     switch (era) {
-      case 'Ancient India':
+      case 'Ancient':
         return Colors.brown;
-      case 'Medieval India':
+      case 'Medieval':
         return Colors.indigo;
-      case 'Modern India':
+      case 'Modern':
         return Colors.blue;
-      case 'Odisha History':
-        return Colors.deepOrange;
       default:
         return Colors.grey;
     }
@@ -260,9 +480,9 @@ class _EventCard extends StatelessWidget {
             child: Divider(height: 1),
           ),
           
-          // Odia Title and Description
+          // Regional Title and Description (Odia or Hindi)
           Text(
-            event.titleOdia,
+            lang == RegionalLanguage.hindi ? event.titleHindi : event.titleOdia,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white70 : Colors.black87,
@@ -270,7 +490,9 @@ class _EventCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            event.descriptionOdia,
+            lang == RegionalLanguage.hindi
+                ? event.descriptionHindi
+                : event.descriptionOdia,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: cs.onSurface,
                   height: 1.5,

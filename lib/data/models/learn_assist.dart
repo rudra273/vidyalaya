@@ -70,25 +70,22 @@ class LearnAssistRequest {
 class LearnAssistResponse {
   final String answer;
   final List<LearnAssistCitation> citations;
-  final LearnAssistRetrieval retrieval;
   final LearnAssistUsage? usage;
 
   const LearnAssistResponse({
     required this.answer,
     required this.citations,
-    required this.retrieval,
     this.usage,
   });
 
   factory LearnAssistResponse.fromJson(Map<String, dynamic> json) {
+    // The server also returns `retrieval`/`tools_used` diagnostics, but those are
+    // developer-only signals — never surfaced to students — so they are ignored here.
     return LearnAssistResponse(
       answer: json['answer'] as String? ?? '',
       citations: _asMapList(
         json['citations'],
       ).map(LearnAssistCitation.fromJson).toList(),
-      retrieval: LearnAssistRetrieval.fromJson(
-        json['retrieval'] as Map<String, dynamic>? ?? const {},
-      ),
       usage: json['usage'] is Map<String, dynamic>
           ? LearnAssistUsage.fromJson(json['usage'] as Map<String, dynamic>)
           : null,
@@ -137,44 +134,6 @@ class LearnAssistCitation {
     if (pageNumbers.isEmpty) return '';
     if (pageNumbers.length == 1) return 'p. ${pageNumbers.first}';
     return 'pp. ${pageNumbers.join(', ')}';
-  }
-}
-
-class LearnAssistRetrieval {
-  final String query;
-  final String board;
-  final int classNo;
-  final String? subjectFilter;
-  final List<String> subjectsFound;
-  final List<int> pagesFound;
-  final double? topScore;
-  final int contextBlockCount;
-  final bool toolUsed;
-
-  const LearnAssistRetrieval({
-    required this.query,
-    required this.board,
-    required this.classNo,
-    this.subjectFilter,
-    this.subjectsFound = const [],
-    this.pagesFound = const [],
-    this.topScore,
-    this.contextBlockCount = 0,
-    this.toolUsed = false,
-  });
-
-  factory LearnAssistRetrieval.fromJson(Map<String, dynamic> json) {
-    return LearnAssistRetrieval(
-      query: json['query'] as String? ?? '',
-      board: json['board'] as String? ?? '',
-      classNo: json['class_no'] as int? ?? 0,
-      subjectFilter: json['subject_filter'] as String?,
-      subjectsFound: _asStringList(json['subjects_found']),
-      pagesFound: _asIntList(json['pages_found']),
-      topScore: _asDouble(json['top_score']),
-      contextBlockCount: json['context_block_count'] as int? ?? 0,
-      toolUsed: json['tool_used'] as bool? ?? false,
-    );
   }
 }
 
@@ -230,11 +189,6 @@ List<Map<String, dynamic>> _asMapList(Object? value) {
 List<String> _asStringList(Object? value) {
   if (value is! List) return const [];
   return value.whereType<String>().toList();
-}
-
-List<int> _asIntList(Object? value) {
-  if (value is! List) return const [];
-  return value.whereType<int>().toList();
 }
 
 double? _asDouble(Object? value) {
