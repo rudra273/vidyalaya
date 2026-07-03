@@ -203,7 +203,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     )
                   : _ProfileSummary(
                       isSignedIn: isSignedIn,
-                      isLoading: isProfileLoading,
                       classNo: _selectedClass,
                       board: _board,
                       language: _languageLabel(_preferredLanguage),
@@ -932,7 +931,6 @@ class _AuthButton extends StatelessWidget {
 
 class _ProfileSummary extends StatelessWidget {
   final bool isSignedIn;
-  final bool isLoading;
   final int classNo;
   final String board;
   final String language;
@@ -941,7 +939,6 @@ class _ProfileSummary extends StatelessWidget {
 
   const _ProfileSummary({
     required this.isSignedIn,
-    required this.isLoading,
     required this.classNo,
     required this.board,
     required this.language,
@@ -981,7 +978,7 @@ class _ProfileSummary extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: isLoading ? null : onEdit,
+              onPressed: onEdit,
               style: OutlinedButton.styleFrom(
                 foregroundColor: cs.primary,
                 side: BorderSide(color: cs.outline),

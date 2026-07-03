@@ -365,5 +365,190 @@ void main() {
         'Bearer fresh-token',
       ]);
     });
+
+    test('chatStream parses token and done frames in order', () async {
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+        client: MockClient(
+          (_) async => http.Response(
+            'event: token\n'
+            'data: {"text":"Hel"}\n'
+            '\n'
+            'event: token\n'
+            'data: {"text":"lo"}\n'
+            '\n'
+            'event: done\n'
+            'data: {"answer":"Hello","citations":[],"usage":{"date_ist":'
+            '"2026-05-31","used":1,"limit":10,"remaining":9,"unlimited":false}}\n'
+            '\n',
+            200,
+          ),
+        ),
+      );
+
+      final events = await service
+          .chatStream(
+            const LearnAssistRequest(
+              message: 'Question',
+              board: 'scert_odisha',
+              classNo: 8,
+            ),
+          )
+          .toList();
+
+      expect(events, [
+        isA<LearnAssistTokenEvent>().having((e) => e.text, 'text', 'Hel'),
+        isA<LearnAssistTokenEvent>().having((e) => e.text, 'text', 'lo'),
+        isA<LearnAssistDoneEvent>()
+            .having((e) => e.answer, 'answer', 'Hello')
+            .having((e) => e.citations, 'citations', isEmpty)
+            .having((e) => e.usage?.remaining, 'usage.remaining', 9),
+      ]);
+    });
+
+    test('chatStream carries the full answer in done when no tokens stream',
+        () async {
+      // Reproduces the OpenRouter (paid-plan) path: the server emits zero token
+      // frames and delivers the whole answer in the terminal done frame.
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+        client: MockClient(
+          (_) async => http.Response(
+            'event: done\n'
+            'data: {"answer":"Full answer with no token frames.",'
+            '"citations":[]}\n'
+            '\n',
+            200,
+          ),
+        ),
+      );
+
+      final events = await service
+          .chatStream(
+            const LearnAssistRequest(
+              message: 'Question',
+              board: 'scert_odisha',
+              classNo: 8,
+            ),
+          )
+          .toList();
+
+      expect(events, [
+        isA<LearnAssistDoneEvent>().having(
+          (e) => e.answer,
+          'answer',
+          'Full answer with no token frames.',
+        ),
+      ]);
+    });
+
+    test('chatStream yields an error event for a mid-stream failure', () async {
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+        client: MockClient(
+          (_) async => http.Response(
+            'event: token\n'
+            'data: {"text":"Hi"}\n'
+            '\n'
+            'event: error\n'
+            'data: {"code":"assistant_timeout","message":"Timed out."}\n'
+            '\n',
+            200,
+          ),
+        ),
+      );
+
+      final events = await service
+          .chatStream(
+            const LearnAssistRequest(
+              message: 'Question',
+              board: 'scert_odisha',
+              classNo: 8,
+            ),
+          )
+          .toList();
+
+      expect(events.last, isA<LearnAssistErrorEvent>());
+      expect((events.last as LearnAssistErrorEvent).code, 'assistant_timeout');
+    });
+
+    test('chatStream refreshes token once on a pre-flight 401', () async {
+      final forceRefreshValues = <bool>[];
+      var callCount = 0;
+
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async {
+          forceRefreshValues.add(forceRefresh);
+          return forceRefresh ? 'fresh-token' : 'stale-token';
+        },
+        client: MockClient((request) async {
+          callCount += 1;
+          if (callCount == 1) {
+            return http.Response(
+              jsonEncode({
+                'error': {
+                  'code': 'unauthorized',
+                  'message': 'Invalid or expired bearer token.',
+                },
+              }),
+              401,
+            );
+          }
+          return http.Response(
+            'event: done\ndata: {"citations":[]}\n\n',
+            200,
+          );
+        }),
+      );
+
+      final events = await service
+          .chatStream(
+            const LearnAssistRequest(
+              message: 'Question',
+              board: 'scert_odisha',
+              classNo: 8,
+            ),
+          )
+          .toList();
+
+      expect(events, [isA<LearnAssistDoneEvent>()]);
+      expect(forceRefreshValues, [false, true]);
+    });
+
+    test(
+      'chatStream throws for a pre-flight error that survives the retry',
+      () async {
+        final service = LearnAssistService(
+          idTokenProvider: ({required forceRefresh}) async => 'stale-token',
+          client: MockClient(
+            (_) async => http.Response(
+              jsonEncode({
+                'error': {'code': 'quota_exceeded', 'message': 'Out of quota.'},
+              }),
+              429,
+            ),
+          ),
+        );
+
+        expect(
+          service
+              .chatStream(
+                const LearnAssistRequest(
+                  message: 'Question',
+                  board: 'scert_odisha',
+                  classNo: 8,
+                ),
+              )
+              .toList(),
+          throwsA(
+            isA<LearnAssistApiException>().having(
+              (error) => error.code,
+              'code',
+              'quota_exceeded',
+            ),
+          ),
+        );
+      },
+    );
   });
 }

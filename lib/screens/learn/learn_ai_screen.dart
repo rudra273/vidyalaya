@@ -51,6 +51,12 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   String _languageMode = 'auto';
   bool _isSending = false;
 
+  /// Index into [_messages] of the in-progress streamed answer, or null before
+  /// the first token has arrived. Used to grow that one message in place
+  /// instead of appending a new one per token, and to suppress the typing-dots
+  /// slot once real text is on screen.
+  int? _streamingMessageIndex;
+
   // ~10 MB base64 ceiling enforced by the backend; reject before sending so the
   // student gets a clear message rather than a 422.
   static const _maxImageBase64Bytes = 10 * 1024 * 1024;
@@ -323,6 +329,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     setState(() {
       _messages.add(_ChatMessage.user(query, imageBytes: imageBytes));
       _isSending = true;
+      _streamingMessageIndex = null;
       _messageController.clear();
       _pendingImageBytes = null;
       _pendingImageMediaType = null;
@@ -330,8 +337,35 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
     _scrollToBottom();
 
+    final answerBuffer = StringBuffer();
+    var citations = const <LearnAssistCitation>[];
+    LearnAssistUsage? usage;
+    // The complete answer from the terminal 'done' frame. Used as a fallback
+    // when a provider streamed no token frames (paid plans route through
+    // OpenRouter, which doesn't emit incremental chunks) so the bubble is never
+    // left empty.
+    var doneAnswer = '';
+
+    void appendToken(String text) {
+      if (text.isEmpty) return;
+      answerBuffer.write(text);
+      setState(() {
+        final message = _ChatMessage.assistant(
+          answerBuffer.toString(),
+          isStreaming: true,
+        );
+        if (_streamingMessageIndex == null) {
+          _streamingMessageIndex = _messages.length;
+          _messages.add(message);
+        } else {
+          _messages[_streamingMessageIndex!] = message;
+        }
+      });
+      _scrollToBottom();
+    }
+
     try {
-      final response = await service.chat(
+      await for (final event in service.chatStream(
         LearnAssistRequest(
           message: query.isEmpty ? null : query,
           imageBase64: imageBase64,
@@ -343,13 +377,36 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           language: language,
           debug: false,
         ),
-      );
+      )) {
+        if (!mounted) return;
+        switch (event) {
+          case LearnAssistTokenEvent(:final text):
+            appendToken(text);
+            break;
+          case LearnAssistDoneEvent(
+            answer: final eventAnswer,
+            citations: final eventCitations,
+            usage: final eventUsage,
+          ):
+            doneAnswer = eventAnswer;
+            citations = eventCitations;
+            usage = eventUsage;
+            break;
+          case LearnAssistErrorEvent(:final code, :final message):
+            throw LearnAssistApiException(code, message);
+          case LearnAssistToolEvent():
+            break; // Progress-only signal; the growing answer already conveys activity.
+        }
+      }
 
       if (!mounted) return;
-      if (response.usage != null) {
-        ref
-            .read(backendAccountCacheProvider.notifier)
-            .updateUsage(response.usage!);
+      // Prefer the text streamed token-by-token; fall back to the complete
+      // answer from the 'done' frame when a provider emitted no token frames.
+      final streamed = answerBuffer.toString();
+      final answer = streamed.isNotEmpty ? streamed : doneAnswer;
+      final finalUsage = usage;
+      if (finalUsage != null) {
+        ref.read(backendAccountCacheProvider.notifier).updateUsage(finalUsage);
       }
       final now = DateTime.now();
       final localId = now.microsecondsSinceEpoch;
@@ -365,8 +422,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             ChatHistoryMessage(
               id: localId + 1,
               role: 'assistant',
-              content: response.answer,
-              citations: response.citations,
+              content: answer,
+              citations: citations,
               createdAt: now,
             ),
           ]);
@@ -376,29 +433,45 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       await ref.read(userPrefsRepositoryProvider).recordAiSession();
       ref.read(progressProvider.notifier).refresh();
       setState(() {
-        _messages.add(
-          _ChatMessage.assistant(
-            response.answer,
-            citations: response.citations,
-            usage: response.usage,
-          ),
+        final finalMessage = _ChatMessage.assistant(
+          answer.isEmpty ? '(no answer)' : answer,
+          citations: citations,
+          usage: usage,
         );
+        if (_streamingMessageIndex != null) {
+          _messages[_streamingMessageIndex!] = finalMessage;
+        } else {
+          _messages.add(finalMessage);
+        }
+        _streamingMessageIndex = null;
         _isSending = false;
       });
     } on LearnAssistApiException catch (error) {
       if (!mounted) return;
       Haptics.error(ref);
       setState(() {
-        _messages.add(_ChatMessage.error(error.message));
+        final errorMessage = _ChatMessage.error(error.message);
+        if (_streamingMessageIndex != null) {
+          _messages[_streamingMessageIndex!] = errorMessage;
+        } else {
+          _messages.add(errorMessage);
+        }
+        _streamingMessageIndex = null;
         _isSending = false;
       });
     } catch (_) {
       if (!mounted) return;
       Haptics.error(ref);
       setState(() {
-        _messages.add(
-          _ChatMessage.error('Something went wrong. Please try again.'),
+        final errorMessage = _ChatMessage.error(
+          'Something went wrong. Please try again.',
         );
+        if (_streamingMessageIndex != null) {
+          _messages[_streamingMessageIndex!] = errorMessage;
+        } else {
+          _messages.add(errorMessage);
+        }
+        _streamingMessageIndex = null;
         _isSending = false;
       });
     }
@@ -526,7 +599,12 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                       itemCount:
                           leadingCount +
                           _messages.length +
-                          (_isSending ? 1 : 0),
+                          // The dots-only placeholder only makes sense before the
+                          // first token lands — once streaming has a message of
+                          // its own in _messages, this extra slot would trail it.
+                          (_isSending && _streamingMessageIndex == null
+                              ? 1
+                              : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (hasOlder && index == 0) {
@@ -536,7 +614,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                           );
                         }
                         final messageIndex = index - leadingCount;
-                        if (_isSending && messageIndex == _messages.length) {
+                        if (_isSending &&
+                            _streamingMessageIndex == null &&
+                            messageIndex == _messages.length) {
                           return const _TypingIndicator();
                         }
                         return _MessageView(message: _messages[messageIndex]);
@@ -1043,7 +1123,7 @@ class _MessageView extends StatelessWidget {
             )
           else
             MarkdownBody(
-              data: message.text,
+              data: message.isStreaming ? '${message.text} ▌' : message.text,
               styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
                   .copyWith(
                     p: Theme.of(
@@ -1399,6 +1479,10 @@ class _ChatMessage {
   /// "load older" rebuild the leading history block without dropping live turns.
   final bool fromHistory;
 
+  /// True while this assistant message is still receiving SSE token frames —
+  /// shows a trailing cursor so the student can see it's still generating.
+  final bool isStreaming;
+
   const _ChatMessage({
     required this.role,
     required this.text,
@@ -1406,6 +1490,7 @@ class _ChatMessage {
     this.usage,
     this.imageBytes,
     this.fromHistory = false,
+    this.isStreaming = false,
   });
 
   factory _ChatMessage.user(String text, {Uint8List? imageBytes}) {
@@ -1420,12 +1505,14 @@ class _ChatMessage {
     String text, {
     List<LearnAssistCitation> citations = const [],
     LearnAssistUsage? usage,
+    bool isStreaming = false,
   }) {
     return _ChatMessage(
       role: _MessageRole.assistant,
       text: text,
       citations: citations,
       usage: usage,
+      isStreaming: isStreaming,
     );
   }
 

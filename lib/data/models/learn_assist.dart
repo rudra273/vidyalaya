@@ -171,6 +171,66 @@ class LearnAssistUsage {
   };
 }
 
+/// A single frame from [LearnAssistService.chatStream]'s SSE response. Mirrors
+/// the `event:` names the backend's `/learnassist/chat/stream` sends.
+sealed class LearnAssistStreamEvent {
+  const LearnAssistStreamEvent();
+}
+
+/// `event: tool` — the model decided to call [tool] (e.g. `search_textbook`).
+/// Fired once per tool, before it runs.
+class LearnAssistToolEvent extends LearnAssistStreamEvent {
+  final String tool;
+
+  const LearnAssistToolEvent(this.tool);
+}
+
+/// `event: token` — one piece of the answer, in order.
+class LearnAssistTokenEvent extends LearnAssistStreamEvent {
+  final String text;
+
+  const LearnAssistTokenEvent(this.text);
+}
+
+/// `event: done` — terminal frame with the final metadata (citations, usage)
+/// plus the complete [answer]. Providers that stream token-by-token (free plan /
+/// Gemini direct) let the client build the answer from [LearnAssistTokenEvent]
+/// frames; providers that don't emit incremental chunks (the OpenRouter path
+/// used by paid plans) send zero token frames, so [answer] is the fallback the
+/// client renders when nothing was streamed.
+class LearnAssistDoneEvent extends LearnAssistStreamEvent {
+  final String answer;
+  final List<LearnAssistCitation> citations;
+  final LearnAssistUsage? usage;
+
+  const LearnAssistDoneEvent({
+    required this.answer,
+    required this.citations,
+    this.usage,
+  });
+
+  factory LearnAssistDoneEvent.fromJson(Map<String, dynamic> json) {
+    return LearnAssistDoneEvent(
+      answer: json['answer'] as String? ?? '',
+      citations: _asMapList(
+        json['citations'],
+      ).map(LearnAssistCitation.fromJson).toList(),
+      usage: json['usage'] is Map<String, dynamic>
+          ? LearnAssistUsage.fromJson(json['usage'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+/// `event: error` — generation failed mid-stream (status is already 200 by
+/// this point, so the backend can't signal failure via HTTP status).
+class LearnAssistErrorEvent extends LearnAssistStreamEvent {
+  final String code;
+  final String message;
+
+  const LearnAssistErrorEvent(this.code, this.message);
+}
+
 class LearnAssistApiException implements Exception {
   final String code;
   final String message;
