@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../app/theme.dart';
+import '../providers/core_providers.dart';
 import '../utils/haptics.dart';
 import 'pressable.dart';
 
@@ -12,17 +13,24 @@ class AppShell extends ConsumerWidget {
 
   const AppShell({super.key, required this.child});
 
-  static const _tabs = [
-    ('/', Icons.home_rounded, 'Home'),
-    ('/explore', Icons.explore_rounded, 'Explore'),
-    ('/library', Icons.menu_book_rounded, 'Library'),
-    ('/profile', Icons.person_rounded, 'Profile'),
-  ];
+  static const _homeTab = ('/', Icons.home_rounded, 'Home');
+  static const _exploreTab = ('/explore', Icons.explore_rounded, 'Explore');
+  static const _libraryTab = ('/library', Icons.menu_book_rounded, 'Library');
+  static const _profileTab = ('/profile', Icons.person_rounded, 'Profile');
 
-  int _currentIndex(BuildContext context) {
+  /// The visible tabs, minus Library when the books feature is disabled — so
+  /// the flag hides the tab entirely rather than leaving a dead surface.
+  List<(String, IconData, String)> _tabsFor(bool booksEnabled) => [
+        _homeTab,
+        _exploreTab,
+        if (booksEnabled) _libraryTab,
+        _profileTab,
+      ];
+
+  int _currentIndex(BuildContext context, List<(String, IconData, String)> tabs) {
     final location = GoRouterState.of(context).uri.path;
-    for (int i = 0; i < _tabs.length; i++) {
-      if (location == _tabs[i].$1) return i;
+    for (int i = 0; i < tabs.length; i++) {
+      if (location == tabs[i].$1) return i;
     }
     return 0;
   }
@@ -34,7 +42,7 @@ class AppShell extends ConsumerWidget {
   ///   2. A route is pushed on top of the tab → let GoRouter pop it normally.
   ///   3. On a non-Home tab → go to the Home tab and consume the event.
   ///   4. On the Home tab → let the system handle it (exit the app).
-  Future<bool> _onBack(BuildContext context) async {
+  Future<bool> _onBack(BuildContext context, WidgetRef ref) async {
     // primaryFocus is never null (the root FocusScopeNode always holds focus),
     // so check that an actual text input is focused before unfocusing.
     final focus = FocusManager.instance.primaryFocus;
@@ -46,7 +54,8 @@ class AppShell extends ConsumerWidget {
     final router = GoRouter.of(context);
     if (router.canPop()) return false;
 
-    if (_currentIndex(context) != 0) {
+    final tabs = _tabsFor(ref.read(booksEnabledProvider));
+    if (_currentIndex(context, tabs) != 0) {
       context.go('/');
       return true;
     }
@@ -56,13 +65,14 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = _currentIndex(context);
+    final tabs = _tabsFor(ref.watch(booksEnabledProvider));
+    final currentIndex = _currentIndex(context, tabs);
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hair = isDark ? AppColors.hairline2Dark : AppColors.hairline2;
 
     return BackButtonListener(
-      onBackButtonPressed: () => _onBack(context),
+      onBackButtonPressed: () => _onBack(context, ref),
       child: Scaffold(
         body: child,
         bottomNavigationBar: Container(
@@ -75,9 +85,9 @@ class AppShell extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
               child: Row(
-                children: List.generate(_tabs.length, (index) {
+                children: List.generate(tabs.length, (index) {
                   final isActive = index == currentIndex;
-                  final tab = _tabs[index];
+                  final tab = tabs[index];
                   return Expanded(
                     child: _NavBarItem(
                       icon: tab.$2,

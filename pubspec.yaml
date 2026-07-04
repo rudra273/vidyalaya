@@ -1,7 +1,7 @@
 name: vidyalaya
 description: "Vidyālaya. A book reading app for Indian school students."
 publish_to: 'none'
-version: 1.0.2+3
+version: 1.1.0+4
 
 environment:
   sdk: ^3.11.5
@@ -31,6 +31,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true

@@ -39,8 +39,13 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 // ─── Router ─────────────────────────────────────────────────────────────────
 
+// Book surfaces gated behind booksEnabledProvider: when the flag is off these
+// paths redirect to Home so the feature is fully unreachable, not just hidden.
+const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
+
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.watch(userPrefsRepositoryProvider);
+  final booksEnabled = ref.watch(booksEnabledProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -51,6 +56,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!hasCompleted && !isWelcome) {
         return '/welcome';
+      }
+
+      if (!booksEnabled) {
+        final path = state.matchedLocation;
+        final isBookRoute =
+            _bookRoutePrefixes.any((p) => path == p || path.startsWith('$p/'));
+        if (isBookRoute) return '/';
       }
       return null;
     },

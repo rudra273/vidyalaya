@@ -70,6 +70,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       orElse: () => null,
     );
     final isProfileLoading = accountState.profile is AsyncLoading;
+    // A failed backend sync doesn't blank the screen (the form runs off local
+    // prefs), but it silently stops the profile from staying in sync — surface
+    // it so the student can retry rather than wonder why edits don't stick.
+    final profileSyncFailed = isSignedIn &&
+        accountState.profile is AsyncError &&
+        cachedProfile == null;
     _applyCachedProfile(cachedProfile);
 
     // Prefer the backend name (student-editable) over the Google account name.
@@ -182,6 +188,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 0),
               child: const SectionHead(label: 'Student profile'),
             ),
+            if (profileSyncFailed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
+                child: _ProfileSyncErrorBanner(
+                  onRetry: () => ref
+                      .read(backendAccountCacheProvider.notifier)
+                      .ensureProfile(forceRefresh: true),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding),
@@ -922,6 +938,51 @@ class _AuthButton extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Profile sync error ──────────────────────────────────────────────────
+
+class _ProfileSyncErrorBanner extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ProfileSyncErrorBanner({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: cs.errorContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.error.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 18, color: cs.onErrorContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Couldn't sync your profile.",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: cs.onErrorContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: const Size(0, 36),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
       ),
     );
   }

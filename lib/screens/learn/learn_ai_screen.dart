@@ -70,6 +70,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   bool _isLoadingHistory = false;
   bool _isRevalidating = false;
   bool _isLoadingOlder = false;
+  // Set when a history fetch failed and there was nothing cached to fall back
+  // on, so the chat shows a retry affordance instead of a silent blank.
+  bool _historyLoadFailed = false;
   int? _historyNextBefore;
 
   // After 30+ minutes away, the previous conversation stays tucked behind a
@@ -155,6 +158,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final cachedPage = cache.peekHistory(selector);
     if (cachedPage != null) {
       setState(() {
+        _historyLoadFailed = false;
         _historyNextBefore = cachedPage.nextBefore;
         _messages
           ..clear()
@@ -172,9 +176,15 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final page = await cache.ensureHistory(selector, forceRefresh: true);
 
     if (!mounted || selector != _selector) return;
+    // A null page with nothing cached means the fetch failed with no fallback.
+    // Distinguish that from a genuinely empty conversation by checking whether
+    // the account state parked an error for this selector.
+    final historyErrored = page == null &&
+        ref.read(backendAccountCacheProvider).history is AsyncError;
     setState(() {
       _isRevalidating = false;
       _isLoadingHistory = false;
+      _historyLoadFailed = historyErrored;
       _historyNextBefore = page?.nextBefore;
       // Insert history ahead of anything sent while it was loading (rare race),
       // so live turns are never lost and history always reads above them.
@@ -579,7 +589,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             if (_isLoadingHistory)
               const LinearProgressIndicator(minHeight: 2)
             else if (_isRevalidating)
-              const _HistoryUpdatingBar(),
+              const _HistoryUpdatingBar()
+            else if (_historyLoadFailed)
+              _HistoryErrorBar(onRetry: _loadHistory),
             Expanded(
               child: _messages.isEmpty && !_isLoadingHistory && !_isSending
                   ? _EmptyChat(
@@ -675,6 +687,9 @@ class _PlanUsageBadge extends StatelessWidget {
     final backendUser = user.maybeWhen(data: (v) => v, orElse: () => null);
     final currentUsage = usage.maybeWhen(data: (v) => v, orElse: () => null);
     final isLoading = user is AsyncLoading || usage is AsyncLoading;
+    // Only treat usage as errored when there's no cached value to show; a
+    // stale-but-present count is more useful than a warning glyph.
+    final usageErrored = usage is AsyncError && currentUsage == null;
 
     final planKey = backendUser?.planKey ?? 'free';
     final planLabel = _planLabel(planKey);
@@ -682,6 +697,8 @@ class _PlanUsageBadge extends StatelessWidget {
     String usageLabel;
     if (isLoading) {
       usageLabel = '...';
+    } else if (usageErrored) {
+      usageLabel = '$planLabel · —';
     } else if (currentUsage == null) {
       usageLabel = planLabel;
     } else if (currentUsage.unlimited) {
@@ -700,7 +717,13 @@ class _PlanUsageBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.workspace_premium_rounded, size: 14, color: cs.primary),
+          Icon(
+            usageErrored
+                ? Icons.sync_problem_rounded
+                : Icons.workspace_premium_rounded,
+            size: 14,
+            color: usageErrored ? cs.error : cs.primary,
+          ),
           const SizedBox(width: 5),
           Text(
             usageLabel,
@@ -864,6 +887,50 @@ class _HistoryUpdatingBar extends StatelessWidget {
       minHeight: 1,
       backgroundColor: Colors.transparent,
       color: cs.primary.withValues(alpha: 0.35),
+    );
+  }
+}
+
+/// Shown when the past-conversation fetch failed with nothing cached to fall
+/// back on, so the empty chat doesn't read as "no history."
+class _HistoryErrorBar extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _HistoryErrorBar({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screenPadding,
+        vertical: 8,
+      ),
+      color: cs.errorContainer.withValues(alpha: 0.4),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 16, color: cs.onErrorContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "Couldn't load your past chat.",
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: cs.onErrorContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
     );
   }
 }
