@@ -10,6 +10,14 @@ void main() {
     test('returns en for English text', () {
       expect(detectLearnAssistLanguage('Who was Major Somnath Sharma?'), 'en');
     });
+
+    test('returns hi for Hindi (Devanagari) text', () {
+      expect(detectLearnAssistLanguage('कोशिका की खोज किसने की?'), 'hi');
+    });
+
+    test('prefers or when Odia and Devanagari are mixed', () {
+      expect(detectLearnAssistLanguage('କୋଷ cell कोशिका'), 'or');
+    });
   });
 
   group('resolveLearnAssistClass', () {

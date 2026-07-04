@@ -866,6 +866,7 @@ class _ContextControls extends StatelessWidget {
             label: switch (languageMode) {
               'en' => 'English',
               'or' => 'Odia',
+              'hi' => 'Hindi',
               _ => 'Auto',
             },
             value: languageMode,
@@ -873,6 +874,7 @@ class _ContextControls extends StatelessWidget {
               ('auto', 'Auto'),
               ('en', 'English'),
               ('or', 'Odia'),
+              ('hi', 'Hindi'),
             ],
             onSelected: onLanguageChanged,
           ),

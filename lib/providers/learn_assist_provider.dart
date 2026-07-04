@@ -35,5 +35,7 @@ List<String> learnAssistSubjectsForClass(int classNo) {
 
 String detectLearnAssistLanguage(String text) {
   final hasOdia = RegExp(r'[\u0B00-\u0B7F]').hasMatch(text);
-  return hasOdia ? 'or' : 'en';
+  if (hasOdia) return 'or';
+  final hasDevanagari = RegExp(r'[\u0900-\u097F]').hasMatch(text);
+  return hasDevanagari ? 'hi' : 'en';
 }
