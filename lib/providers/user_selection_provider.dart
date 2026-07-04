@@ -44,8 +44,15 @@ class UserBoardNotifier extends Notifier<String> {
   }
 
   void setBoard(String board) {
-    state = board;
+    // Profile saves call this redundantly with the current board; only a real
+    // change should reset language state.
+    if (board == state) return;
     final repo = ref.read(userPrefsRepositoryProvider);
+    // An explicit language switch was made in the old board's context; clear
+    // it before updating state so the regional language re-resolves straight
+    // to the new board's default.
+    repo.clearRegionalLanguage();
+    state = board;
     repo.setSelectedBoard(board);
   }
 }

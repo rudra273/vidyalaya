@@ -96,41 +96,41 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         filled: true,
                         fillColor: cs.surface,
                       ),
+                      // Every seeded board is listed; ones without books yet
+                      // stay visible but disabled, so a new board only needs
+                      // its seed entry + books to become pickable.
                       items: [
-                        const DropdownMenuItem(
-                          value: 'scert_odisha',
-                          child: Text('SCERT Odisha'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'ncert',
-                          enabled: availableBoardIds.contains('ncert'),
-                          child: Row(
-                            children: [
-                              Text(
-                                'NCERT',
-                                style: TextStyle(
-                                  color: availableBoardIds.contains('ncert')
-                                      ? null
-                                      : AppColors.textMuted.withValues(
-                                          alpha: 0.5,
-                                        ),
-                                ),
-                              ),
-                              if (!availableBoardIds.contains('ncert')) ...[
-                                const SizedBox(width: 8),
+                        for (final board in boards)
+                          DropdownMenuItem(
+                            value: board.id,
+                            enabled: availableBoardIds.contains(board.id),
+                            child: Row(
+                              children: [
                                 Text(
-                                  '(coming soon)',
+                                  board.name,
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppColors.textMuted.withValues(
-                                      alpha: 0.5,
-                                    ),
+                                    color: availableBoardIds.contains(board.id)
+                                        ? null
+                                        : AppColors.textMuted.withValues(
+                                            alpha: 0.5,
+                                          ),
                                   ),
                                 ),
+                                if (!availableBoardIds.contains(board.id)) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '(coming soon)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textMuted.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {

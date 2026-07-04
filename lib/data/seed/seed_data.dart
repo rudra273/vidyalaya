@@ -15,11 +15,17 @@ import 'scert/scert_class_8.dart';
 
 const scertOdisha = Board(
   id: 'scert_odisha',
-  name: 'scert_odisha',
+  name: 'SCERT Odisha',
   state: 'Odisha',
+  defaultLanguageCode: 'or',
 );
 
-const ncert = Board(id: 'ncert', name: 'ncert', state: 'India');
+const ncert = Board(
+  id: 'ncert',
+  name: 'NCERT',
+  state: 'India',
+  defaultLanguageCode: 'hi',
+);
 
 const List<Board> boards = [scertOdisha, ncert];
 
@@ -79,6 +85,18 @@ Book? getBookById(String id) {
     return null;
   }
 }
+
+/// Look up a board by ID (null for unknown/future ids from newer clients).
+Board? getBoardById(String id) {
+  try {
+    return boards.firstWhere((b) => b.id == id);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Display label for a board id, falling back to the raw id.
+String boardLabel(String id) => getBoardById(id)?.name ?? id;
 
 /// All unique subjects across all books.
 List<String> get allSubjects =>

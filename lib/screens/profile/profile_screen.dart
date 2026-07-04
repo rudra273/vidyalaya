@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
+import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
@@ -1027,7 +1028,7 @@ class _ProfileSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SummaryRow(label: 'Class', value: 'Class $classNo'),
-          _SummaryRow(label: 'Board', value: _boardLabel(board)),
+          _SummaryRow(label: 'Board', value: boardLabel(board)),
           _SummaryRow(label: 'Language', value: language),
           _SummaryRow(
             label: 'School',
@@ -1126,9 +1127,6 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-String _boardLabel(String board) =>
-    board == 'scert_odisha' ? 'SCERT Odisha' : board;
-
 // ─── Student form (edit mode) ────────────────────────────────────────────
 
 class _StudentForm extends StatelessWidget {
@@ -1200,7 +1198,7 @@ class _StudentForm extends StatelessWidget {
           // activates once the backend accepts more boards.
           _Field<String>(
             label: 'Board',
-            value: _boardLabel(board),
+            value: boardLabel(board),
             onTap: null,
           ),
           const SizedBox(height: 12),

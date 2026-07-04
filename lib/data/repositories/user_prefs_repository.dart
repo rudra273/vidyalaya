@@ -56,8 +56,8 @@ class UserPrefsRepository {
   //
   // The second language shown alongside English in the Explore tools
   // (diagrams, timeline, math formulas). Either 'or' (Odia) or 'hi' (Hindi).
-  // Null means "follow the profile's preferred language"; once the student
-  // switches it explicitly, the choice is remembered here.
+  // Null means "follow the profile preference / board default"; once the
+  // student switches it explicitly, the choice is remembered here.
 
   String? getRegionalLanguage() {
     return _prefs.getString(_regionalLanguageKey);
@@ -65,6 +65,12 @@ class UserPrefsRepository {
 
   Future<void> setRegionalLanguage(String code) async {
     await _prefs.setString(_regionalLanguageKey, code);
+  }
+
+  /// Forget the explicit language switch (used when the board changes, so the
+  /// language follows the new board's default).
+  Future<void> clearRegionalLanguage() async {
+    await _prefs.remove(_regionalLanguageKey);
   }
 
   // ─── Selected Classes ───────────────────────────────────────────────────

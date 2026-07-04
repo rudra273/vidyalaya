@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/seed/seed_data.dart';
 import 'auth_provider.dart';
 import 'core_providers.dart';
+import 'user_selection_provider.dart';
 
 /// The second language shown alongside English in the Explore tools
 /// (diagrams, timeline, math formulas).
@@ -32,12 +34,19 @@ enum RegionalLanguage {
 ///
 /// Resolves to, in order: an explicit switch the student made (persisted in
 /// [UserPrefsRepository.getRegionalLanguage]); otherwise the profile's
-/// preferred language (`hi` → Hindi, anything else → Odia, since English is
-/// always shown anyway); otherwise Odia.
+/// preferred language when it names a regional language (`hi` → Hindi,
+/// `or` → Odia; `en` falls through since English is always shown anyway);
+/// otherwise the selected board's default language (SCERT Odisha → Odia,
+/// NCERT → Hindi); otherwise Odia.
 class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
   @override
   RegionalLanguage build() {
-    final override = ref.read(userPrefsRepositoryProvider).getRegionalLanguage();
+    // Watch the board unconditionally so a board change always re-resolves
+    // the language, even while an override is set (setBoard clears it).
+    final boardId = ref.watch(userBoardProvider);
+
+    final override =
+        ref.read(userPrefsRepositoryProvider).getRegionalLanguage();
     if (override != null) {
       return RegionalLanguage.fromCode(override);
     }
@@ -47,7 +56,12 @@ class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
         .profile
         .maybeWhen(data: (p) => p, orElse: () => null);
     if (profile?.preferredLanguage == 'hi') return RegionalLanguage.hindi;
-    return RegionalLanguage.odia;
+    if (profile?.preferredLanguage == 'or') return RegionalLanguage.odia;
+
+    // fromCode falls back to Odia for unknown/future board ids.
+    return RegionalLanguage.fromCode(
+      getBoardById(boardId)?.defaultLanguageCode,
+    );
   }
 
   /// Switches the regional language and remembers the choice across sessions.

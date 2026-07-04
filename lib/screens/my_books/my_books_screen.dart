@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../data/models/book.dart';
+import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../widgets/empty_state.dart';
 import '../../widgets/calm_widgets.dart';
 import 'widgets/filter_chips_bar.dart';
@@ -63,7 +64,7 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
     final sortedClasses = booksByClass.keys.toList()..sort();
 
     final sub = hasSelection
-        ? '${selectedClasses.map((c) => "Class $c").join(", ")} · ${_boardLabel(selectedBoard)} · ${allSelectedBooks.length} books'
+        ? '${selectedClasses.map((c) => "Class $c").join(", ")} · ${boardLabel(selectedBoard)} · ${allSelectedBooks.length} books'
         : 'No class selected';
 
     return SafeArea(
@@ -193,11 +194,6 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
     );
   }
 
-  static String _boardLabel(String? board) {
-    if (board == null) return '';
-    if (board == 'scert_odisha') return 'SCERT Odisha';
-    return board;
-  }
 }
 
 class _AddClassBanner extends StatelessWidget {
