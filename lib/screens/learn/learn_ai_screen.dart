@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -318,6 +318,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _copyMessage(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    Haptics.light(ref);
+    _showSnack('Copied to clipboard');
+  }
+
   Future<void> _sendMessage() async {
     final query = _messageController.text.trim();
     final imageBytes = _pendingImageBytes;
@@ -325,6 +332,52 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     if ((query.isEmpty && imageBytes == null) || _isSending) return;
 
     final imageMediaType = _pendingImageMediaType;
+    setState(() {
+      _messageController.clear();
+      _pendingImageBytes = null;
+      _pendingImageMediaType = null;
+    });
+    await _performSend(
+      query: query,
+      imageBytes: imageBytes,
+      imageMediaType: imageMediaType,
+      appendUserBubble: true,
+    );
+  }
+
+  /// Re-run the last user turn: drop the trailing assistant/error message and
+  /// resend the preceding user message (used by both Retry and Regenerate).
+  Future<void> _retryLastTurn() async {
+    if (_isSending || _messages.isEmpty) return;
+    // Find the last user message and everything after it (the failed/last
+    // assistant reply) so we can replace that reply in place.
+    final lastUserIndex =
+        _messages.lastIndexWhere((m) => m.role == _MessageRole.user);
+    if (lastUserIndex < 0) return;
+    final userTurn = _messages[lastUserIndex];
+    setState(() {
+      // Drop the user turn and any reply below it; _performSend re-adds the
+      // user bubble so the conversation order stays intact.
+      _messages.removeRange(lastUserIndex, _messages.length);
+    });
+    await _performSend(
+      query: userTurn.text == '[Image shared]' ? '' : userTurn.text,
+      imageBytes: userTurn.imageBytes,
+      imageMediaType: userTurn.imageBytes == null
+          ? null
+          : (userTurn.imageMediaType ?? LearnAssistImageType.jpeg),
+      appendUserBubble: true,
+    );
+  }
+
+  Future<void> _performSend({
+    required String query,
+    required Uint8List? imageBytes,
+    required String? imageMediaType,
+    required bool appendUserBubble,
+  }) async {
+    if (query.isEmpty && imageBytes == null) return;
+
     final imageBase64 = imageBytes == null ? null : base64Encode(imageBytes);
     // What we persist to history when the turn is image-only (the backend stores
     // the same placeholder server-side).
@@ -337,12 +390,15 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
     Haptics.light(ref);
     setState(() {
-      _messages.add(_ChatMessage.user(query, imageBytes: imageBytes));
+      if (appendUserBubble) {
+        _messages.add(_ChatMessage.user(
+          query,
+          imageBytes: imageBytes,
+          imageMediaType: imageMediaType,
+        ));
+      }
       _isSending = true;
       _streamingMessageIndex = null;
-      _messageController.clear();
-      _pendingImageBytes = null;
-      _pendingImageMediaType = null;
     });
     ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
     _scrollToBottom();
@@ -631,7 +687,32 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                             messageIndex == _messages.length) {
                           return const _TypingIndicator();
                         }
-                        return _MessageView(message: _messages[messageIndex]);
+                        final msg = _messages[messageIndex];
+                        // Action row shows only when not mid-send: copy on any
+                        // finished assistant answer; regenerate on the last one;
+                        // retry on an error bubble.
+                        final isLast = messageIndex == _messages.length - 1;
+                        final showActions = !_isSending &&
+                            !msg.isStreaming &&
+                            msg.role != _MessageRole.user;
+                        return _MessageView(
+                          message: msg,
+                          onCopy: showActions &&
+                                  msg.role == _MessageRole.assistant &&
+                                  msg.text.trim().isNotEmpty
+                              ? () => _copyMessage(msg.text)
+                              : null,
+                          onRegenerate: showActions &&
+                                  isLast &&
+                                  msg.role == _MessageRole.assistant
+                              ? _retryLastTurn
+                              : null,
+                          onRetry: showActions &&
+                                  isLast &&
+                                  msg.role == _MessageRole.error
+                              ? _retryLastTurn
+                              : null,
+                        );
                       },
                     ),
             ),
@@ -1106,7 +1187,21 @@ class _SuggestionRow extends StatelessWidget {
 class _MessageView extends StatelessWidget {
   final _ChatMessage message;
 
-  const _MessageView({required this.message});
+  /// Copy this answer to the clipboard; null hides the action.
+  final VoidCallback? onCopy;
+
+  /// Re-run the last turn to get a fresh answer; null hides the action.
+  final VoidCallback? onRegenerate;
+
+  /// Resend the last user turn after a failure; null hides the action.
+  final VoidCallback? onRetry;
+
+  const _MessageView({
+    required this.message,
+    this.onCopy,
+    this.onRegenerate,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1232,7 +1327,62 @@ class _MessageView extends StatelessWidget {
               ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
             ),
           ],
+          if (onCopy != null || onRegenerate != null || onRetry != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                if (onCopy != null)
+                  _MessageAction(
+                    icon: Icons.copy_rounded,
+                    label: 'Copy',
+                    onTap: onCopy!,
+                  ),
+                if (onRegenerate != null)
+                  _MessageAction(
+                    icon: Icons.refresh_rounded,
+                    label: 'Regenerate',
+                    onTap: onRegenerate!,
+                  ),
+                if (onRetry != null)
+                  _MessageAction(
+                    icon: Icons.refresh_rounded,
+                    label: 'Retry',
+                    onTap: onRetry!,
+                  ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// A quiet text-button action shown under an assistant/error message.
+class _MessageAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MessageAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppColors.textMuted;
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 15, color: color),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: Theme.of(context).textTheme.labelMedium,
       ),
     );
   }
@@ -1542,6 +1692,10 @@ class _ChatMessage {
   /// Null for history turns (the server returns only the text placeholder).
   final Uint8List? imageBytes;
 
+  /// MIME type of [imageBytes], retained so Regenerate/Retry can resend the
+  /// image with its original type rather than guessing.
+  final String? imageMediaType;
+
   /// True for messages loaded from saved history (vs. sent this session). Lets
   /// "load older" rebuild the leading history block without dropping live turns.
   final bool fromHistory;
@@ -1556,15 +1710,21 @@ class _ChatMessage {
     this.citations = const [],
     this.usage,
     this.imageBytes,
+    this.imageMediaType,
     this.fromHistory = false,
     this.isStreaming = false,
   });
 
-  factory _ChatMessage.user(String text, {Uint8List? imageBytes}) {
+  factory _ChatMessage.user(
+    String text, {
+    Uint8List? imageBytes,
+    String? imageMediaType,
+  }) {
     return _ChatMessage(
       role: _MessageRole.user,
       text: text,
       imageBytes: imageBytes,
+      imageMediaType: imageMediaType,
     );
   }
 

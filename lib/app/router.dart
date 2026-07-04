@@ -29,6 +29,7 @@ import '../screens/learn/timeline_screen.dart';
 import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
+import '../screens/learn/vocabulary_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../data/models/learn_assist.dart';
 
@@ -163,6 +164,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/learn/periodic-table',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const PeriodicTableScreen(),
+      ),
+      GoRoute(
+        path: '/learn/vocabulary',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const VocabularyScreen(),
       ),
       GoRoute(
         path: '/learn/timeline',

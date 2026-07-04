@@ -231,6 +231,14 @@ List<_Tool> _tools(bool isDark) => [
         route: '/learn/periodic-table',
       ),
       _Tool(
+        id: 'vocabulary',
+        title: 'Vocabulary',
+        sub: 'Build your word power',
+        icon: Icons.menu_book_outlined,
+        color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+        route: '/learn/vocabulary',
+      ),
+      _Tool(
         id: 'diagrams',
         title: 'Diagrams',
         sub: 'Interactive diagrams',
