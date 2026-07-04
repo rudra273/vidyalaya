@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
+import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/pressable.dart';
 
 /// The **Explore** tab — interactive learning tools, presented as a tasteful
 /// duotone grid (faint glyph backdrop, tinted tile, serif title) plus a
@@ -14,6 +16,7 @@ class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
   void _open(BuildContext context, WidgetRef ref, _Tool tool) {
+    Haptics.light(ref);
     ref.read(userPrefsRepositoryProvider).recordToolOpened(tool.id);
     ref.read(progressProvider.notifier).refresh();
     context.push(tool.route);
@@ -109,7 +112,7 @@ class _ToolCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GestureDetector(
+    return Pressable(
       onTap: soon ? null : onTap,
       child: Opacity(
         opacity: soon ? 0.72 : 1,

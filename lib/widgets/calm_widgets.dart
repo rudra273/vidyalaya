@@ -377,6 +377,9 @@ class IconBox extends StatelessWidget {
   final VoidCallback? onTap;
   final double size;
 
+  /// Accessibility/long-press label for the icon-only action.
+  final String? tooltip;
+
   /// Nudges the box down to align with a top-anchored page title. Pass 0 when
   /// the box is already vertically centered by its parent.
   final double topMargin;
@@ -386,13 +389,14 @@ class IconBox extends StatelessWidget {
     required this.icon,
     this.onTap,
     this.size = 42,
+    this.tooltip,
     this.topMargin = 4,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
+    final box = GestureDetector(
       onTap: onTap,
       child: Container(
         width: size,
@@ -406,5 +410,7 @@ class IconBox extends StatelessWidget {
         child: Icon(icon, size: 20, color: cs.onSurface.withValues(alpha: 0.75)),
       ),
     );
+    if (tooltip == null) return box;
+    return Tooltip(message: tooltip!, child: box);
   }
 }

@@ -76,6 +76,7 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
             sub: sub,
             trailing: IconBox(
               icon: _searchActive ? Icons.close_rounded : Icons.search_rounded,
+              tooltip: _searchActive ? 'Close search' : 'Search books',
               onTap: _toggleSearch,
             ),
           ),

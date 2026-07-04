@@ -203,7 +203,8 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100), // padding for FAB
+            padding: const EdgeInsets.fromLTRB(AppSpacing.screenPadding, 16,
+                AppSpacing.screenPadding, 100), // padding for FAB
             itemCount: rows.length,
             itemBuilder: (context, index) {
               final row = rows[index];

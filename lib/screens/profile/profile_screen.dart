@@ -116,6 +116,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(width: 10),
                     IconBox(
                       icon: Icons.settings_rounded,
+                      tooltip: 'Settings',
                       topMargin: 0,
                       onTap: () => context.push('/settings'),
                     ),

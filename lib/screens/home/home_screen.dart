@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/avatars.dart';
+import '../../utils/haptics.dart';
 import '../../providers/reading_provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -71,14 +72,20 @@ class HomeScreen extends ConsumerWidget {
                     if (streak > 0) ...[
                       _StreakChip(
                         streak: streak,
-                        onTap: () => context.push('/progress'),
+                        onTap: () {
+                          Haptics.light(ref);
+                          context.push('/progress');
+                        },
                       ),
                       const SizedBox(width: 12),
                     ],
                     _Avatar(
                       letter: avatarLetter,
                       avatar: ref.watch(selectedAvatarProvider),
-                      onTap: () => context.go('/profile'),
+                      onTap: () {
+                        Haptics.light(ref);
+                        context.go('/profile');
+                      },
                     ),
                   ],
                 ),
@@ -107,8 +114,14 @@ class HomeScreen extends ConsumerWidget {
               horizontal: AppSpacing.screenPadding,
             ),
             child: _AskHero(
-              onTap: () => context.push('/learn/ai'),
-              onAsk: () => context.push('/learn/ai?focus=1'),
+              onTap: () {
+                Haptics.light(ref);
+                context.push('/learn/ai');
+              },
+              onAsk: () {
+                Haptics.light(ref);
+                context.push('/learn/ai?focus=1');
+              },
             ),
           ),
           const SizedBox(height: AppSpacing.stackGap),
@@ -116,7 +129,12 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: _TutorRow(onTap: () => context.push('/learn-ai/tutor')),
+            child: _TutorRow(
+              onTap: () {
+                Haptics.light(ref);
+                context.push('/learn-ai/tutor');
+              },
+            ),
           ),
 
           // ── Word of the day ──────────────────────────────────────
@@ -174,7 +192,10 @@ class HomeScreen extends ConsumerWidget {
                     color: _isDark(context) ? AppColors.cAiDark : AppColors.cAi,
                     icon: Icons.bookmark_rounded,
                     label: 'Bookmarks',
-                    onTap: () => context.push('/bookmarks'),
+                    onTap: () {
+                      Haptics.light(ref);
+                      context.push('/bookmarks');
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -185,7 +206,10 @@ class HomeScreen extends ConsumerWidget {
                         : AppColors.cEnglish,
                     icon: Icons.calendar_month_rounded,
                     label: 'Timetable',
-                    onTap: () => context.push('/timetable'),
+                    onTap: () {
+                      Haptics.light(ref);
+                      context.push('/timetable');
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -196,7 +220,10 @@ class HomeScreen extends ConsumerWidget {
                         : AppColors.cSocial,
                     icon: Icons.edit_note_rounded,
                     label: 'Notes',
-                    onTap: () => context.push('/notes'),
+                    onTap: () {
+                      Haptics.light(ref);
+                      context.push('/notes');
+                    },
                   ),
                 ),
               ],
@@ -735,7 +762,7 @@ class _ExampleSentence extends StatelessWidget {
 
 // ─── Continue reading card ──────────────────────────────────────────────
 
-class _ContinueCard extends StatelessWidget {
+class _ContinueCard extends ConsumerWidget {
   final Book book;
 
   /// Real last-read page (0-based) from prefs; -1/0 means not started yet. We
@@ -746,13 +773,16 @@ class _ContinueCard extends StatelessWidget {
   const _ContinueCard({required this.book, required this.lastPage});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
     final subjectColor = AppColors.subjectColor(book.subject, brightness);
 
-    return GestureDetector(
-      onTap: () => context.push('/reader/${book.id}'),
+    return Pressable(
+      onTap: () {
+        Haptics.light(ref);
+        context.push('/reader/${book.id}');
+      },
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPad - 4),
         decoration: BoxDecoration(
@@ -875,16 +905,19 @@ class _MiniTool extends StatelessWidget {
 
 // ─── Recently added book card (horizontal scroller item) ───────────────
 
-class _RecentBookCard extends StatelessWidget {
+class _RecentBookCard extends ConsumerWidget {
   final Book book;
 
   const _RecentBookCard({required this.book});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final meta = subjectMeta(book.subject);
-    return GestureDetector(
-      onTap: () => context.push('/reader/${book.id}'),
+    return Pressable(
+      onTap: () {
+        Haptics.light(ref);
+        context.push('/reader/${book.id}');
+      },
       child: SizedBox(
         width: 106,
         child: Column(

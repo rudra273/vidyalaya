@@ -5,6 +5,7 @@ import '../../app/theme.dart';
 import '../../data/models/highlight.dart';
 import '../../data/seed/seed_data.dart';
 import '../../providers/core_providers.dart';
+import '../../widgets/empty_state.dart';
 
 /// Shows all highlights/notes for a specific subject, grouped by book.
 class SubjectNotesScreen extends ConsumerWidget {
@@ -35,7 +36,6 @@ class SubjectNotesScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           '${_formatSubject(subject)} Notes',
@@ -43,17 +43,16 @@ class SubjectNotesScreen extends ConsumerWidget {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: bookHighlights.isEmpty
-          ? Center(
-              child: Text(
-                'No highlights found',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-              ),
+          ? const EmptyState(
+              icon: Icons.highlight_alt_rounded,
+              title: 'No highlights found',
+              subtitle:
+                  'Open a book in this subject and use the highlighter to mark areas.',
             )
           : ListView.builder(
               padding: const EdgeInsets.fromLTRB(
@@ -145,9 +144,10 @@ class _HighlightTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border),
+            border:
+                Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,

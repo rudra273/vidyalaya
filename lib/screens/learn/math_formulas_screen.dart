@@ -661,7 +661,8 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 12),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -694,7 +695,8 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
       return const Center(child: Text('No formulas found.'));
     }
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
       itemCount: results.length,
       itemBuilder: (context, index) =>
           _FormulaCard(formulaData: results[index], lang: lang),
@@ -706,7 +708,8 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GridView.count(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
       crossAxisCount: 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
@@ -720,7 +723,7 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? cs.surface : Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
               border: Border.all(color: cs.outlineVariant),
               boxShadow: [
                 BoxShadow(
@@ -830,7 +833,8 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 12),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -851,7 +855,8 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
             child: formulas.isEmpty
                 ? const Center(child: Text('No formulas found.'))
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
                     itemCount: formulas.length + 1,
                     itemBuilder: (context, index) {
                       if (index == formulas.length) {

@@ -49,12 +49,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Vocabulary',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('Vocabulary'),
         actions: const [RegionalLanguageSwitch()],
       ),
       body: Column(

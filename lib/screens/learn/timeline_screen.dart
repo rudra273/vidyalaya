@@ -94,7 +94,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
         children: [
           // Region scope selector: World / India / State (multi-select).
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 12),
             child: Row(
               children: [
                 _RegionChip(
@@ -148,7 +149,8 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.screenPadding, vertical: 16),
                     itemCount: events.length,
                     itemBuilder: (context, index) {
                       final event = events[index];
@@ -425,7 +427,7 @@ class _EventCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? cs.surface : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
         boxShadow: [
           BoxShadow(
