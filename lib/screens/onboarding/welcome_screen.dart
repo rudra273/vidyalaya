@@ -62,7 +62,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
-                      'assets/icon/vicon.png',
+                      'assets/icon/vmark.png',
                       width: 88,
                       height: 88,
                       fit: BoxFit.cover,

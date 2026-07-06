@@ -44,17 +44,19 @@ flutter:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/icon/vicon.png"
+  image_path: "assets/icon/vidyalaya.png"
   remove_alpha_ios: true
   min_sdk_android: 21
 
 flutter_native_splash:
-  # White background behind the logo on every platform.
+  # White background matching the logo's white backdrop.
   color: "#FFFFFF"
-  image: assets/icon/vision_mark.png
+  image: assets/icon/splash_mark.png
   android_12:
-    # Android 12+ shows this icon inside the system's circular holder.
-    image: assets/icon/vision_mark.png
+    # Android 12+ shows this icon inside the system's circular holder,
+    # with the wordmark branding strip pinned at the bottom of the screen.
+    image: assets/icon/splash_mark.png
+    branding: assets/icon/branding.png
     color: "#FFFFFF"
     icon_background_color: "#FFFFFF"
   android: true
