@@ -6,7 +6,7 @@ const List<Book> scertClass5Books = [
     title: 'ଭାଷା ମହକ',
     subject: 'language',
     classNumber: 5,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1yCtIKH9SWUXWpxZqyiQ9yn441DgBONhG',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-V/Bhasa_Mahak-5_FINAL_Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass5Books = [
     title: 'Pallavi',
     subject: 'english',
     classNumber: 5,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1DpOInJLN858FByPlf0TgGTij0mrqFHNa',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-V/Eng-V_Pallavi-P_1-200_Web.pdf',
     coverEmoji: '🌸',
   ),
   Book(
@@ -22,7 +22,7 @@ const List<Book> scertClass5Books = [
     title: 'ଗଣିତ ମେଳା',
     subject: 'maths',
     classNumber: 5,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1l3Tspd2SF5xw7vq25UStfjD8bywjSezp',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-V/Math_Class_5-Final_Web.pdf',
     coverEmoji: '🔢',
   ),
   Book(
@@ -30,7 +30,7 @@ const List<Book> scertClass5Books = [
     title: 'ଆମ ବିଚିତ୍ର ବିଶ୍ୱ',
     subject: 'evs',
     classNumber: 5,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=12L-C9Vt729xIH3EHN5VEkoNzjPtPuf3G',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-V/Ama_Bichitra_Biswo_Final_Web.pdf',
     coverEmoji: '🌍',
   ),
   Book(
@@ -38,7 +38,7 @@ const List<Book> scertClass5Books = [
     title: 'ନବରସ (କଳାଶିକ୍ଷା)',
     subject: 'art',
     classNumber: 5,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1-HQqSJNpYxL8tCr6TEO1VGbAQVT-rBKA',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-V/Nabarasa_5_Final_Web.pdf',
     coverEmoji: '🎨',
   ),
   Book(
@@ -46,7 +46,7 @@ const List<Book> scertClass5Books = [
     title: 'ଖେଳ ଓ ଯୋଗ',
     subject: 'yoga',
     classNumber: 5,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1VoF9_akPmSfpknoTFUNn3mVr2t2kH1ar',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-V/Khela_Yoga_V-P_1-208_Web.pdf',
     coverEmoji: '🧘',
   ),
 ];

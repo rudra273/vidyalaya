@@ -6,7 +6,7 @@ const List<Book> scertClass2Books = [
     title: 'ଝୁଲଣା - ୨',
     subject: 'language',
     classNumber: 2,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1F2EHbYJTkr-7W0YFTFfuTahLs2ikxk3w',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-II/Jhulana_C-2_FINAL-2_Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass2Books = [
     title: 'ମଜା ମଜା ରେ ଗଣିତ',
     subject: 'maths',
     classNumber: 2,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1MOUQiU9SGQJLwhz8bCYtMjFn4uUg7yxg',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-II/Math_Cl-II-P_1-152_Web.pdf',
     coverEmoji: '🔢',
   ),
 ];

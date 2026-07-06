@@ -6,7 +6,7 @@ const List<Book> scertClass3Books = [
     title: 'ଭାଷା ମହକ',
     subject: 'language',
     classNumber: 3,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1w4Q72YAvIcpZcozf1mifObQEVyL6CI7X',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-III/Bhasa_Mahaka_144_pages_Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass3Books = [
     title: 'Pallavi',
     subject: 'english',
     classNumber: 3,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1XgK_ZLWlZyTvYh7FlHmMtzIUi4IPYASc',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-III/Pallavi-III_Eng-Final_168_Web.pdf',
     coverEmoji: '🌸',
   ),
   Book(
@@ -22,7 +22,7 @@ const List<Book> scertClass3Books = [
     title: 'ଗଣିତ ମେଳା',
     subject: 'maths',
     classNumber: 3,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1pO-e5rCaRnN2xhTfIUdb5Y07bOUayCQJ',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-III/Ganita_Mela-3-Inner-Final-216_Web.pdf',
     coverEmoji: '🔢',
   ),
   Book(
@@ -30,7 +30,7 @@ const List<Book> scertClass3Books = [
     title: 'ବିଚିତ୍ର ଆମ ପୃଥିବୀ',
     subject: 'evs',
     classNumber: 3,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1XroDRGbV30ELQMcb-hizMNZRxn_0nvy2',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-III/Bichitra_Pruthibi-III-P_1-176_Web.pdf',
     coverEmoji: '🌍',
   ),
   Book(
@@ -38,7 +38,7 @@ const List<Book> scertClass3Books = [
     title: 'ଇନ୍ଦ୍ରଧନୁ (କଳା ଶିକ୍ଷା)',
     subject: 'art',
     classNumber: 3,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1EGZSGs1JgiMSxAIxPFdzNrn-I2AXRxgV',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-III/Indradhanu_inner-160_Web.pdf',
     coverEmoji: '🎨',
   ),
   Book(
@@ -46,7 +46,7 @@ const List<Book> scertClass3Books = [
     title: 'ଖେଳ ଓ ଯୋଗ',
     subject: 'yoga',
     classNumber: 3,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1km73rhVNP337DTTx6mGOoXtWuWFlp7j1',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-III/Khel_Yogo-III_Inn-P_1-144_Web.pdf',
     coverEmoji: '🧘',
   ),
 ];

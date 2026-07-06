@@ -10,6 +10,8 @@ import 'scert/scert_class_5.dart';
 import 'scert/scert_class_6.dart';
 import 'scert/scert_class_7.dart';
 import 'scert/scert_class_8.dart';
+import 'scert/scert_class_9.dart';
+import 'scert/scert_class_10.dart';
 
 // ─── Boards ─────────────────────────────────────────────────────────────────
 
@@ -52,6 +54,8 @@ const List<Book> allBooks = [
   ...scertClass6Books,
   ...scertClass7Books,
   ...scertClass8Books,
+  ...scertClass9Books,
+  ...scertClass10Books,
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ const List<Book> scertClass8Books = [
     title: 'ସାହିତ୍ୟସୁରଭି',
     subject: 'odia',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1QKBOWJMg0yPJ3nIvuXS4NPiZMIprzaGg',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Sahitya_Suravi-192_Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass8Books = [
     title: 'Jasmine',
     subject: 'english',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1CRDfeSBGSNOkRdf_tNqoWJXP8U3bkc4t',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Eng-VIII_Jasmine_Final-P_1-264_Web.pdf',
     coverEmoji: '🌸',
   ),
   Book(
@@ -22,7 +22,7 @@ const List<Book> scertClass8Books = [
     title: 'ଗଣିତ ପ୍ରକାଶ',
     subject: 'maths',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1rPDcJkzfUmxM9U45P5dtt0o45byMpTGE',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Math_VIII-P_1-192_Web.pdf',
     coverEmoji: '🔢',
   ),
   Book(
@@ -30,7 +30,7 @@ const List<Book> scertClass8Books = [
     title: 'हिंदी कलिका',
     subject: 'hindi',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1Q8f90Bd1kevXlIm5jcc5VDKL6FFeY9KJ',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Hindi_Kalika_Final_2025_Web.pdf',
     coverEmoji: '🪷',
   ),
   Book(
@@ -38,7 +38,7 @@ const List<Book> scertClass8Books = [
     title: 'संस्कृतकलिका',
     subject: 'sanskrit',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1pobhcsgK4rO3L-wH4caitIY4zDUOg9FE',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Sanskrit_Class_8_Final_Web.pdf',
     coverEmoji: '🕉️',
   ),
   Book(
@@ -46,7 +46,7 @@ const List<Book> scertClass8Books = [
     title: 'ଜିଜ୍ଞାସା',
     subject: 'science',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1izSmwE6fVOX_He4JQv4TT6Cxt6IggaaI',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Jigyansya_Class-8_248_Web.pdf',
     coverEmoji: '🔬',
   ),
   Book(
@@ -54,7 +54,7 @@ const List<Book> scertClass8Books = [
     title: 'କୌଶଳ ବୋଧ',
     subject: 'skill',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1n2LveK_j608tuOTfVny_Y--Y_ntzB9Ma',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Koshal_Bodh_VIII_Web.pdf',
     coverEmoji: '🛠️',
   ),
   Book(
@@ -62,7 +62,7 @@ const List<Book> scertClass8Books = [
     title: 'ସାମାଜିକ ବିଜ୍ଞାନ ଅଧ୍ୟୟନ : ଭାରତ ଓ ଆମ ପୃଥିବୀ',
     subject: 'social_science',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=17dx5DY74ZxepKiox7oSqhq_Y6HPkC124',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Social_Science-8-208_Web.pdf',
     coverEmoji: '🌍',
   ),
   Book(
@@ -70,7 +70,7 @@ const List<Book> scertClass8Books = [
     title: 'କୃତି (କଳାଶିକ୍ଷା)',
     subject: 'art',
     classNumber: 8,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1ZDqQAOKUs1csY_PNqNRUPOnpSY-XlkA2',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VIII/Kruti_Class_8_Final_Web.pdf',
     coverEmoji: '🎨',
   ),
 ];

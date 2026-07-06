@@ -6,7 +6,7 @@ const List<Book> scertClass6Books = [
     title: 'ସାହିତ୍ୟସୁଧା',
     subject: 'odia',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1CgE7j_0wQ1KcCQ-bdsoQFPtfKcrQpV3z',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Sahitya_Sudha_Final_176_Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass6Books = [
     title: 'JASMINE',
     subject: 'english',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1H4-b1tJeTHuU5rONJWAc25QGEN0ssZep',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/English_Jashmine-6_Web.pdf',
     coverEmoji: '🌸',
   ),
   Book(
@@ -22,7 +22,7 @@ const List<Book> scertClass6Books = [
     title: 'हिंदी कलिका',
     subject: 'hindi',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1d_ZV0keZUNx9A82BJn8n-sflCt4ic2BB',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Hindi_Kalika_C-6_FINAL_Web.pdf',
     coverEmoji: '🪷',
   ),
   Book(
@@ -30,7 +30,7 @@ const List<Book> scertClass6Books = [
     title: 'संस्कृतकलिका',
     subject: 'sanskrit',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=17h2JTtYL0s0pQLfIY40DXEp8Ra1wvk6c',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Sanskrit_Kalika_Cl-6_Web.pdf',
     coverEmoji: '🕉️',
   ),
   Book(
@@ -38,7 +38,7 @@ const List<Book> scertClass6Books = [
     title: 'ଗଣିତ ପ୍ରକାଶ',
     subject: 'maths',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1k0bipAuWOO_vmPXLMDQ1l9A7idMc5j5U',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Math_Class_6_Final_18_Web.pdf',
     coverEmoji: '🔢',
   ),
   Book(
@@ -46,7 +46,7 @@ const List<Book> scertClass6Books = [
     title: 'ଜିଜ୍ଞାସା',
     subject: 'science',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1PAhCqkTBgAfV3XMhbXX1Ss5PMiEiZ1yP',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Science-VI-P_1-264-18_Web.pdf',
     coverEmoji: '🔬',
   ),
   Book(
@@ -54,7 +54,7 @@ const List<Book> scertClass6Books = [
     title: 'ସାମାଜିକ ବିଜ୍ଞାନ ଅଧ୍ୟୟନ : ଭାରତ ଓ ଆମ ପୃଥିବୀ',
     subject: 'social_science',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1tln_D6qk-hS_yYQhRkF0qI34QNTZNoiG',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Social_Science-6-Final_232_Web.pdf',
     coverEmoji: '🌍',
   ),
   Book(
@@ -62,7 +62,7 @@ const List<Book> scertClass6Books = [
     title: 'କଳାକୁଞ୍ଜ',
     subject: 'art',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1fjkJVlPLf7Bz98dW0hY5wv-xKhrp0X4T',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Kalakunja_6th_Final_Web.pdf',
     coverEmoji: '🎨',
   ),
   Book(
@@ -70,7 +70,7 @@ const List<Book> scertClass6Books = [
     title: 'ଖେଳ ଶିକ୍ଷା',
     subject: 'pe',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1lK8qg8mDPELke5-C9QMxQEoXQoyMpz8h',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Khela_Sikshya-VI-P_1-208_Web.pdf',
     coverEmoji: '⚽',
   ),
   Book(
@@ -78,7 +78,7 @@ const List<Book> scertClass6Books = [
     title: 'କୌଶଳ ବୋଧ',
     subject: 'skill',
     classNumber: 6,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1mB_z8dZ4vEh0ajPQ1UYitniRCIDUjdgm',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-VI/Koshal_Bodh-VI_Final_176_Web.pdf',
     coverEmoji: '🛠️',
   ),
 ];

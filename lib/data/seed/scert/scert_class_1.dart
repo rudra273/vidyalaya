@@ -6,7 +6,7 @@ const List<Book> scertClass1Books = [
     title: 'ଝୁଲଣା - ୧',
     subject: 'language',
     classNumber: 1,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1Pb32wySbIsMzWWzH51ZXSVAQnxYxIdCO',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-I/Jhulana_Odia_Cl-I-P_1-184-Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass1Books = [
     title: 'ଗଣିତ ଖେଳ',
     subject: 'maths',
     classNumber: 1,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1bTAYTZM2r12_tvsQHMboEIzEJ27yMaiI',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-I/Math_Class_I_Final-Web.pdf',
     coverEmoji: '🔢',
   ),
 ];
