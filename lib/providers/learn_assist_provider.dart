@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
-import '../data/seed/seed_data.dart';
+import '../data/models/ingested_books.dart';
 import '../data/services/learn_assist_service.dart';
 import 'auth_provider.dart';
 
@@ -17,19 +17,35 @@ final learnAssistServiceProvider = Provider<LearnAssistService>((ref) {
   );
 });
 
+/// LearnAssist serves classes 6-12; younger classes will get a separate
+/// generic agent and must never drive this channel's class/subject selection.
+const int learnAssistMinClass = 6;
+
 int resolveLearnAssistClass(Set<int> selectedClasses) {
-  if (selectedClasses.isEmpty) return 8;
-  final sorted = selectedClasses.toList()..sort();
-  return sorted.first;
+  final options = learnAssistClassOptions(selectedClasses);
+  return options.first;
 }
 
 List<int> learnAssistClassOptions(Set<int> selectedClasses) {
-  if (selectedClasses.isEmpty) return const [8];
-  return selectedClasses.toList()..sort();
+  final supported = selectedClasses
+      .where((classNo) => classNo >= learnAssistMinClass)
+      .toList()
+    ..sort();
+  if (supported.isEmpty) return const [8];
+  return supported;
 }
 
-List<String> learnAssistSubjectsForClass(int classNo) {
-  return getBooksByClass(classNo).map((book) => book.subject).toSet().toList()
+/// Subjects the AI can retrieve textbook content for, per board + class.
+/// Strictly reflects the ingested vector DB — empty when nothing is ingested.
+List<String> learnAssistSubjects(
+  IngestedBooks ingestedBooks,
+  String board,
+  int classNo,
+) {
+  return ingestedBooks
+      .subjectsFor(board, classNo)
+      .map((subject) => subject.subject)
+      .toList()
     ..sort();
 }
 

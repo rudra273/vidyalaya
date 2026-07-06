@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
 import 'app/router.dart';
 import 'data/cache/cache_store.dart';
+import 'data/models/ingested_books.dart';
 import 'providers/core_providers.dart';
+import 'providers/ingested_books_provider.dart';
 import 'providers/theme_provider.dart';
 
 void main() async {
@@ -27,12 +31,17 @@ void main() async {
   await Hive.initFlutter();
   final cacheBox = await Hive.openBox<String>(CacheStore.boxName);
   final cacheStore = CacheStore(cacheBox);
+  final ingestedBooks = IngestedBooks.fromJson(
+    jsonDecode(await rootBundle.loadString('assets/data/ingested_books.json'))
+        as Map<String, dynamic>,
+  );
 
   runApp(
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         cacheStoreProvider.overrideWithValue(cacheStore),
+        ingestedBooksProvider.overrideWithValue(ingestedBooks),
       ],
       child: const VidyalayaApp(),
     ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/seed/seed_data.dart';
+import '../../providers/ingested_books_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
 
@@ -45,7 +46,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       child: Builder(
         builder: (context) {
           final cs = Theme.of(context).colorScheme;
-          final classesForBoard = availableClassNumbersForBoard(_selectedBoard);
+          // Classes with seeded books or AI-ingested content for this board.
+          final classesForBoard = availableClassNumbersForBoard(_selectedBoard)
+              .union(ref.watch(ingestedBooksProvider).classesFor(_selectedBoard));
           final isAvailable = classesForBoard.contains(_selectedClass);
 
           return Scaffold(

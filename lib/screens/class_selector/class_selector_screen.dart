@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../data/seed/seed_data.dart';
+import '../../providers/ingested_books_provider.dart';
 import '../../providers/user_selection_provider.dart';
 
 class ClassSelectorScreen extends ConsumerWidget {
@@ -10,7 +11,10 @@ class ClassSelectorScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedClasses = ref.watch(userSelectionProvider);
-    final available = availableClassNumbers;
+    final board = ref.watch(userBoardProvider);
+    // A class is selectable when it has seeded books or AI-ingested content.
+    final available = availableClassNumbers
+        .union(ref.watch(ingestedBooksProvider).classesFor(board));
 
     return Scaffold(
       appBar: AppBar(

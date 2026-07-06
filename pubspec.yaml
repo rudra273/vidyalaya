@@ -39,6 +39,7 @@ flutter:
     - assets/icon/
     - assets/diagrams/
     - assets/avatars/
+    - assets/data/
 
 flutter_launcher_icons:
   android: "ic_launcher"

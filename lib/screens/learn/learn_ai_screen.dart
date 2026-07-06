@@ -12,6 +12,7 @@ import '../../utils/haptics.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/ingested_books_provider.dart';
 import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
@@ -602,7 +603,11 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         });
       });
     }
-    final subjectOptions = learnAssistSubjectsForClass(_selectedClass);
+    final subjectOptions = learnAssistSubjects(
+      ref.watch(ingestedBooksProvider),
+      _board,
+      _selectedClass,
+    );
     if (_selectedSubject != null &&
         !subjectOptions.contains(_selectedSubject)) {
       _selectedSubject = null;
