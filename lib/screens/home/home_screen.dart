@@ -13,7 +13,6 @@ import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/regional_language_provider.dart';
-import '../../providers/share_banner_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
@@ -263,16 +262,14 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
 
-          // ── Share & feedback ─────────────────────────────────────
-          if (!ref.watch(shareBannerDismissedProvider)) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: ShareFeedbackBanner(),
+          // ── Share & rate ─────────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
             ),
-          ],
+            child: ShareFeedbackBanner(),
+          ),
         ],
       ),
     );

@@ -174,11 +174,21 @@ class SettingsScreen extends ConsumerWidget {
                       color:
                           isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
                       icon: Icons.star_outline_rounded,
-                      title: 'Rate & feedback',
+                      title: 'Rate Vidyālaya',
                       sub: 'Rate us on the Play Store',
                       onTap: () {
                         Haptics.light(ref);
                         AppShare.openPlayStore();
+                      },
+                    ),
+                    ListRow(
+                      color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                      icon: Icons.chat_bubble_outline_rounded,
+                      title: 'Send feedback',
+                      sub: 'Report bugs or request features',
+                      onTap: () {
+                        Haptics.light(ref);
+                        context.push('/feedback');
                       },
                       last: true,
                     ),
