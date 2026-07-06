@@ -20,6 +20,7 @@ class UserPrefsRepository {
   static const _onboardingKey = 'has_completed_onboarding';
   static const _avatarIdKey = 'avatar_id';
   static const _regionalLanguageKey = 'regional_language';
+  static const _preferredLanguageKey = 'preferred_language';
 
   final SharedPreferences _prefs;
 
@@ -71,6 +72,20 @@ class UserPrefsRepository {
   /// language follows the new board's default).
   Future<void> clearRegionalLanguage() async {
     await _prefs.remove(_regionalLanguageKey);
+  }
+
+  // ─── Preferred Language ─────────────────────────────────────────────────
+  //
+  // The profile's preferred language ('en', 'or' or 'hi'). Local mirror of
+  // the backend profile field so signed-out students can pick a language and
+  // keep it across restarts; it also seeds the first profile save on sign-in.
+
+  String? getPreferredLanguage() {
+    return _prefs.getString(_preferredLanguageKey);
+  }
+
+  Future<void> setPreferredLanguage(String code) async {
+    await _prefs.setString(_preferredLanguageKey, code);
   }
 
   // ─── Selected Classes ───────────────────────────────────────────────────

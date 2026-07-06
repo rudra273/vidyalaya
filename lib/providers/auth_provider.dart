@@ -386,7 +386,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           user,
           (user) => user.toJson(),
         );
-        final changed = !_jsonEquals(previous?.toJson(), user.toJson());
+        final changed = state.user is! AsyncData ||
+            !_jsonEquals(previous?.toJson(), user.toJson());
         state = changed
             ? state.copyWith(user: AsyncData(user), userLoaded: true)
             : state.copyWith(userLoaded: true);
@@ -423,10 +424,14 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
             (profile) => profile.toCacheJson(),
           );
         }
-        final changed = !_jsonEquals(
-          previous?.toCacheJson(),
-          profile?.toCacheJson(),
-        );
+        // "Unchanged" may only skip the state write when the state already
+        // holds data — a first fetch that returns null matches a null
+        // `previous`, and skipping would leave AsyncLoading in place forever.
+        final changed = state.profile is! AsyncData ||
+            !_jsonEquals(
+              previous?.toCacheJson(),
+              profile?.toCacheJson(),
+            );
         state = changed
             ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
             : state.copyWith(profileLoaded: true);
@@ -459,7 +464,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           usage,
           (usage) => usage.toJson(),
         );
-        final changed = !_jsonEquals(previous?.toJson(), usage.toJson());
+        final changed = state.usage is! AsyncData ||
+            !_jsonEquals(previous?.toJson(), usage.toJson());
         state = changed
             ? state.copyWith(usage: AsyncData(usage), usageLoaded: true)
             : state.copyWith(usageLoaded: true);

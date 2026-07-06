@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
@@ -331,6 +332,19 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final imageBytes = _pendingImageBytes;
     // Need at least text or an image, and not already in-flight.
     if ((query.isEmpty && imageBytes == null) || _isSending) return;
+
+    // The AI tutor needs an account. Take the student straight to the profile
+    // page (where the sign-in button lives) instead of letting the send fail
+    // with an error bubble.
+    if (ref.read(firebaseAuthProvider).currentUser == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Sign in to use the AI tutor.')),
+        );
+      context.go('/profile');
+      return;
+    }
 
     final imageMediaType = _pendingImageMediaType;
     setState(() {
@@ -754,19 +768,24 @@ class _PlanUsageBadge extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     if (!isSignedIn) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lock_outline_rounded, size: 16, color: cs.primary),
-          const SizedBox(width: 4),
-          Text(
-            'Sign in',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: cs.primary,
-              fontWeight: FontWeight.w700,
+      // Tapping the badge jumps to the profile tab, where sign-in lives.
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.go('/profile'),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 16, color: cs.primary),
+            const SizedBox(width: 4),
+            Text(
+              'Sign in',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: cs.primary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
