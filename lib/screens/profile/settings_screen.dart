@@ -253,7 +253,7 @@ class SettingsScreen extends ConsumerWidget {
                               )),
                   const SizedBox(height: 3),
                   Text(
-                    'Version 1.0.2',
+                    'Version 1.0.3',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 12.5,
                         ),

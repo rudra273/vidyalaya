@@ -1,7 +1,7 @@
 name: vidyalaya
 description: "Vidyālaya. A book reading app for Indian school students."
 publish_to: 'none'
-version: 1.1.0+4
+version: 1.0.3+4
 
 environment:
   sdk: ^3.11.5
