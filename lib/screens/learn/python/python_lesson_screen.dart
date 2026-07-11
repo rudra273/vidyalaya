@@ -93,7 +93,15 @@ class _PythonLessonScreenState extends ConsumerState<PythonLessonScreen> {
     await ref.read(pythonProgressProvider.notifier).completeLesson(lesson.id);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('🎉 Lesson complete: ${lesson.title}')),
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text('Lesson complete: ${lesson.title}')),
+          ],
+        ),
+      ),
     );
     context.pop();
   }
@@ -190,6 +198,7 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
   bool _running = false;
   bool _matched = false;
   bool _showHint = false;
+  PyCancelToken? _cancelToken;
 
   @override
   void initState() {
@@ -206,11 +215,16 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
   Future<void> _run() async {
     Haptics.light(ref);
     FocusScope.of(context).unfocus();
-    setState(() => _running = true);
+    final token = PyCancelToken();
+    setState(() {
+      _running = true;
+      _cancelToken = token;
+    });
     final result = await runPython(
       context,
       _controller.text,
       presetInputs: widget.block.presetInputs,
+      cancelToken: token,
     );
     if (!mounted) return;
     final matched = widget.block.expectedOutput != null &&
@@ -221,7 +235,13 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
       _result = result;
       _running = false;
       _matched = matched;
+      _cancelToken = null;
     });
+  }
+
+  void _stop() {
+    Haptics.light(ref);
+    _cancelToken?.cancel();
   }
 
   @override
@@ -243,7 +263,10 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('🎯 ', style: TextStyle(fontSize: 18)),
+              Padding(
+                padding: const EdgeInsets.only(top: 2, right: 8),
+                child: Icon(Icons.flag_rounded, size: 18, color: accent),
+              ),
               Expanded(
                 child: Text(
                   widget.block.prompt,
@@ -261,17 +284,20 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
         const SizedBox(height: 12),
         Row(
           children: [
-            FilledButton.icon(
-              onPressed: _running ? null : _run,
-              icon: _running
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.play_arrow_rounded, size: 20),
-              label: Text(_running ? 'Running…' : 'Run'),
-            ),
+            _running
+                ? FilledButton.icon(
+                    onPressed: _stop,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFE86A5E),
+                    ),
+                    icon: const Icon(Icons.stop_rounded, size: 20),
+                    label: const Text('Stop'),
+                  )
+                : FilledButton.icon(
+                    onPressed: _run,
+                    icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                    label: const Text('Run'),
+                  ),
             const SizedBox(width: 10),
             TextButton.icon(
               onPressed: () => setState(() => _showHint = !_showHint),
@@ -290,7 +316,9 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
             ),
             child: Row(
               children: [
-                const Text('💡 '),
+                Icon(Icons.lightbulb_outline_rounded,
+                    size: 18, color: AppColors.textMuted),
+                const SizedBox(width: 8),
                 Expanded(child: Text(widget.block.hint)),
               ],
             ),
@@ -302,7 +330,11 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
         ],
         if (_result != null) ...[
           const SizedBox(height: 12),
-          PyConsole(output: _result!.output, error: _result!.error),
+          PyConsole(
+            output: _result!.output,
+            error: _result!.error,
+            stopped: _result!.stopped,
+          ),
         ],
       ],
     );
@@ -330,7 +362,8 @@ class _MatchBanner extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Text('✅ ', style: TextStyle(fontSize: 18)),
+            Icon(Icons.check_circle_rounded, size: 20, color: accent),
+            const SizedBox(width: 8),
             Text(
               'Output matches — well done!',
               style: TextStyle(fontWeight: FontWeight.w700, color: accent),

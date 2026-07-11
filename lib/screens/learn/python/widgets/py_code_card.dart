@@ -29,20 +29,32 @@ class PyCodeCard extends ConsumerStatefulWidget {
 class _PyCodeCardState extends ConsumerState<PyCodeCard> {
   PyRunResult? _result;
   bool _running = false;
+  PyCancelToken? _cancelToken;
 
   Future<void> _run() async {
     Haptics.light(ref);
-    setState(() => _running = true);
+    final token = PyCancelToken();
+    setState(() {
+      _running = true;
+      _cancelToken = token;
+    });
     final result = await runPython(
       context,
       widget.code,
       presetInputs: widget.presetInputs,
+      cancelToken: token,
     );
     if (!mounted) return;
     setState(() {
       _result = result;
       _running = false;
+      _cancelToken = null;
     });
+  }
+
+  void _stop() {
+    Haptics.light(ref);
+    _cancelToken?.cancel();
   }
 
   @override
@@ -72,21 +84,28 @@ class _PyCodeCardState extends ConsumerState<PyCodeCard> {
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: _running ? null : _run,
-            icon: _running
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.play_arrow_rounded, size: 20),
-            label: Text(_running ? 'Running…' : 'Run'),
-          ),
+          child: _running
+              ? FilledButton.icon(
+                  onPressed: _stop,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFE86A5E),
+                  ),
+                  icon: const Icon(Icons.stop_rounded, size: 20),
+                  label: const Text('Stop'),
+                )
+              : FilledButton.icon(
+                  onPressed: _run,
+                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                  label: const Text('Run'),
+                ),
         ),
         if (_result != null) ...[
           const SizedBox(height: 12),
-          PyConsole(output: _result!.output, error: _result!.error),
+          PyConsole(
+            output: _result!.output,
+            error: _result!.error,
+            stopped: _result!.stopped,
+          ),
         ],
       ],
     );

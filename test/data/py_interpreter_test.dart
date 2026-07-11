@@ -534,7 +534,41 @@ print(len(nums))
     test('infinite loop is stopped', () async {
       final r = await PyRunner.run('while True:\n    x = 1');
       expect(r.error, isNotNull);
-      expect(r.error!.message.toLowerCase(), contains('too long'));
+      // The per-loop iteration cap trips before the global step cap.
+      expect(r.error!.message.toLowerCase(), contains('repeated more than'));
+    });
+    test('while loop past the iteration cap is stopped', () async {
+      // Counts up forever — the loop cap must catch it.
+      final r = await PyRunner.run('n = 0\nwhile n < 999999:\n    n += 1');
+      expect(r.error, isNotNull);
+      expect(r.error!.message.toLowerCase(), contains('repeated'));
+    });
+    test('for loop over a huge range is stopped', () async {
+      // A giant range() is caught building the list; either way it stops safely.
+      final r = await PyRunner.run('for i in range(999999):\n    x = i');
+      expect(r.error, isNotNull);
+    });
+    test('loop cap is per-loop, not cumulative', () async {
+      // Several separate loops, each safely under the cap, all run fine.
+      const src = '''
+c = 0
+for i in range(50):
+    c += 1
+for j in range(50):
+    c += 1
+for k in range(50):
+    c += 1
+print(c)
+''';
+      expect(await run(src), '150\n');
+    });
+    test('a custom lower loop cap can be set', () async {
+      final r = await PyRunner.run(
+        'for i in range(500):\n    x = i',
+        limits: const PyLimits(maxLoopIterations: 100),
+      );
+      expect(r.error, isNotNull);
+      expect(r.error!.message, contains('100'));
     });
     test('infinite printing is stopped cleanly', () async {
       final r = await PyRunner.run("while True:\n    print('x')");
@@ -562,6 +596,44 @@ for i in range(100):
 print(total)
 ''';
       expect(await run(src), '4950\n');
+    });
+  });
+
+  group('stop button (cancel token)', () {
+    test('a running loop can be interrupted', () async {
+      final token = PyCancelToken();
+      // Fire the cancel once the run has started; it lands during the loop's
+      // first event-loop yield (guaranteed by iteration 2000), well before the
+      // 9999-iteration natural end or the 10k loop cap.
+      Future<void>.delayed(Duration.zero, token.cancel);
+      final r = await PyRunner.run(
+        'n = 0\nwhile n < 9999:\n    n = n + 1',
+        cancelToken: token,
+      );
+      expect(r.stopped, isTrue);
+      expect(r.error, isNull);
+      expect(r.ok, isTrue);
+    });
+
+    test('a program that finishes first is not marked stopped', () async {
+      final token = PyCancelToken();
+      final r = await PyRunner.run(
+        "print('done')",
+        cancelToken: token,
+      );
+      expect(r.stopped, isFalse);
+      expect(r.output, 'done\n');
+    });
+
+    test('already-cancelled token stops immediately', () async {
+      final token = PyCancelToken()..cancel();
+      final r = await PyRunner.run(
+        "print('hi')\nprint('bye')",
+        cancelToken: token,
+      );
+      expect(r.stopped, isTrue);
+      // Cancelled before the first statement ran, so nothing printed.
+      expect(r.output, isEmpty);
     });
   });
 }

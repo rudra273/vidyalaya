@@ -13,10 +13,12 @@ Future<PyRunResult> runPython(
   BuildContext context,
   String source, {
   List<String> presetInputs = const [],
+  PyCancelToken? cancelToken,
 }) {
   return PyRunner.run(
     source,
     presetInputs: presetInputs,
+    cancelToken: cancelToken,
     onInput: (prompt) => _askInput(context, prompt),
   );
 }
@@ -46,7 +48,8 @@ Future<String> _askInput(BuildContext context, String prompt) async {
           children: [
             Row(
               children: [
-                const Text('💬 ', style: TextStyle(fontSize: 18)),
+                Icon(Icons.chat_bubble_outline_rounded, size: 18, color: cs.primary),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     prompt.trim().isEmpty ? 'The program needs your input' : prompt,

@@ -14,7 +14,7 @@ import 'widgets/py_run_host.dart';
 // Free-form editor + Run + console. The last code is saved so a student's
 // experiments survive an app restart. A menu offers a few fun starter examples.
 
-const _defaultCode = '''# Welcome to the Playground! 🧪
+const _defaultCode = '''# Welcome to the Playground!
 # Type any Python and press Run.
 
 for i in range(1, 6):
@@ -57,6 +57,7 @@ class _PythonPlaygroundScreenState
   late final TextEditingController _controller;
   PyRunResult? _result;
   bool _running = false;
+  PyCancelToken? _cancelToken;
 
   @override
   void initState() {
@@ -74,18 +75,29 @@ class _PythonPlaygroundScreenState
   Future<void> _run() async {
     Haptics.light(ref);
     FocusScope.of(context).unfocus();
-    setState(() => _running = true);
+    final token = PyCancelToken();
+    setState(() {
+      _running = true;
+      _cancelToken = token;
+    });
     // Save first (fire-and-forget) so the input dialog isn't gated on it, then
     // run — runPython uses `context` synchronously to open the input sheet.
     unawaited(ref
         .read(userPrefsRepositoryProvider)
         .setPythonPlaygroundCode(_controller.text));
-    final result = await runPython(context, _controller.text);
+    final result =
+        await runPython(context, _controller.text, cancelToken: token);
     if (!mounted) return;
     setState(() {
       _result = result;
       _running = false;
+      _cancelToken = null;
     });
+  }
+
+  void _stop() {
+    Haptics.light(ref);
+    _cancelToken?.cancel();
   }
 
   void _loadExample() async {
@@ -128,7 +140,7 @@ class _PythonPlaygroundScreenState
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Playground 🧪'),
+        title: const Text('Playground'),
         actions: [
           IconButton(
             tooltip: 'Load example',
@@ -150,22 +162,26 @@ class _PythonPlaygroundScreenState
         children: [
           PyEditor(controller: _controller, minLines: 8),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _running ? null : _run,
-            icon: _running
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.play_arrow_rounded),
-            label: Text(_running ? 'Running…' : 'Run'),
-          ),
+          _running
+              ? FilledButton.icon(
+                  onPressed: _stop,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFE86A5E),
+                  ),
+                  icon: const Icon(Icons.stop_rounded),
+                  label: const Text('Stop'),
+                )
+              : FilledButton.icon(
+                  onPressed: _run,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Run'),
+                ),
           const SizedBox(height: 16),
           PyConsole(
             output: _result?.output ?? '',
             error: _result?.error,
             idle: _result == null,
+            stopped: _result?.stopped ?? false,
           ),
         ],
       ),

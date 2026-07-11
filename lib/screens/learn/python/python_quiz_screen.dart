@@ -123,8 +123,14 @@ class _PythonQuizScreenState extends ConsumerState<PythonQuizScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_selected == q.correctIndex ? '✅ ' : '❌ ',
-                    style: const TextStyle(fontSize: 16)),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1, right: 8),
+                  child: _selected == q.correctIndex
+                      ? const Icon(Icons.check_circle_rounded,
+                          size: 18, color: Color(0xFF3E8E5A))
+                      : const Icon(Icons.cancel_rounded,
+                          size: 18, color: Color(0xFFE86A5E)),
+                ),
                 Expanded(
                   child: Text(q.explanation,
                       style: const TextStyle(height: 1.4)),
@@ -284,13 +290,14 @@ class _ScorePage extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            Icon(
               _stars == 3
-                  ? '🏆'
+                  ? Icons.emoji_events_rounded
                   : _stars >= 1
-                      ? '🎉'
-                      : '💪',
-              style: const TextStyle(fontSize: 64),
+                      ? Icons.celebration_rounded
+                      : Icons.fitness_center_rounded,
+              size: 64,
+              color: accent,
             ),
             const SizedBox(height: 12),
             Text(

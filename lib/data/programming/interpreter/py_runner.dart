@@ -18,6 +18,7 @@ class PyLimits {
   final int maxStringLength; // guards `'x' * 1000000`
   final int maxListLength; // guards runaway list growth
   final int maxCallDepth; // guards runaway recursion
+  final int maxLoopIterations; // times any single for/while loop may repeat
 
   const PyLimits({
     this.maxSteps = 200000,
@@ -25,15 +26,29 @@ class PyLimits {
     this.maxStringLength = 10000,
     this.maxListLength = 5000,
     this.maxCallDepth = 50,
+    this.maxLoopIterations = 10000,
   });
 }
 
 class PyRunResult {
   final String output;
   final PyError? error;
-  const PyRunResult(this.output, {this.error});
+
+  /// True when the run was interrupted by the user's Stop button (Ctrl+C).
+  final bool stopped;
+
+  const PyRunResult(this.output, {this.error, this.stopped = false});
 
   bool get ok => error == null;
+}
+
+/// A one-shot cancel flag the caller flips to interrupt a run, like Ctrl+C.
+/// The interpreter periodically checks it (and yields to the event loop so the
+/// flag can actually change mid-run) and stops cleanly when it's set.
+class PyCancelToken {
+  bool _cancelled = false;
+  bool get isCancelled => _cancelled;
+  void cancel() => _cancelled = true;
 }
 
 class PyRunner {
@@ -42,6 +57,7 @@ class PyRunner {
     PyInputProvider? onInput,
     List<String> presetInputs = const [],
     PyLimits limits = const PyLimits(),
+    PyCancelToken? cancelToken,
   }) async {
     final out = StringBuffer();
     try {
@@ -52,6 +68,7 @@ class PyRunner {
         onInput: onInput,
         presetInputs: List.of(presetInputs),
         limits: limits,
+        cancelToken: cancelToken,
       );
       await interp.runProgram(program);
       return PyRunResult(out.toString());
@@ -59,6 +76,8 @@ class PyRunner {
       return PyRunResult(out.toString(), error: e);
     } on _StopOutput {
       return PyRunResult(out.toString());
+    } on _Cancelled {
+      return PyRunResult(out.toString(), stopped: true);
     }
   }
 }
@@ -83,6 +102,11 @@ class _StopOutput implements Exception {
   const _StopOutput();
 }
 
+/// Raised when the user's Stop button (cancel token) interrupts the run.
+class _Cancelled implements Exception {
+  const _Cancelled();
+}
+
 // ─── User-defined function ─────────────────────────────────────────────────────
 
 class _PyFunction {
@@ -99,6 +123,12 @@ class _Interpreter {
   final PyInputProvider? onInput;
   final List<String> presetInputs;
   final PyLimits limits;
+  final PyCancelToken? cancelToken;
+
+  // Tracks wall-clock time so loops can hand the UI thread back roughly every
+  // frame — that's what keeps the Stop button painted and tappable mid-run.
+  final Stopwatch _clock = Stopwatch()..start();
+  int _lastYieldMs = 0;
 
   int _steps = 0;
   int _depth = 0;
@@ -112,6 +142,7 @@ class _Interpreter {
     required this.onInput,
     required this.presetInputs,
     required this.limits,
+    required this.cancelToken,
   });
 
   Map<String, Object?> get _globals => _scopes.first;
@@ -198,8 +229,11 @@ class _Interpreter {
   }
 
   Future<void> _execWhile(WhileStmt s) async {
+    var iterations = 0;
     while (_truthy(await _eval(s.condition))) {
       _tick(s.line);
+      _guardLoop(++iterations, s.line);
+      await _pump(iterations);
       try {
         await _execBlock(s.body);
       } on _BreakSignal {
@@ -213,8 +247,11 @@ class _Interpreter {
   Future<void> _execFor(ForStmt s) async {
     final iterable = await _eval(s.iterable);
     final items = _iterate(iterable, s.line);
+    var iterations = 0;
     for (final item in items) {
       _tick(s.line);
+      _guardLoop(++iterations, s.line);
+      await _pump(iterations);
       _current[s.varName] = item;
       try {
         await _execBlock(s.body);
@@ -223,6 +260,25 @@ class _Interpreter {
       } on _ContinueSignal {
         continue;
       }
+    }
+  }
+
+  // Called once per loop iteration. Throws [_Cancelled] the moment the user
+  // hits Stop, and hands the UI thread back roughly once per frame (~16ms) so a
+  // Stop tap can actually be delivered mid-loop — otherwise a tight loop hogs
+  // the thread, the button never even paints, and the flag can never flip.
+  // Time-based (not iteration-based) so it stays responsive whether each
+  // iteration is trivial or heavy.
+  Future<void> _pump(int iterations) async {
+    if (cancelToken?.isCancelled ?? false) throw const _Cancelled();
+    // Yield when ~a frame has elapsed, with an iteration-count fallback so a
+    // yield point is guaranteed even if the clock barely moves (keeps this
+    // deterministically testable without depending on wall-clock timing).
+    final now = _clock.elapsedMilliseconds;
+    if (now - _lastYieldMs >= 16 || iterations % 2000 == 0) {
+      _lastYieldMs = now;
+      await Future<void>.delayed(Duration.zero);
+      if (cancelToken?.isCancelled ?? false) throw const _Cancelled();
     }
   }
 
@@ -384,7 +440,7 @@ class _Interpreter {
     if (_depth > limits.maxCallDepth) {
       _depth--;
       throw PyError(
-        "This function is calling itself too many times and I had to stop. 🌀",
+        "This function is calling itself too many times and I had to stop.",
         line: line,
         hint: "Make sure a recursive function has a stopping point.",
       );
@@ -709,7 +765,7 @@ class _Interpreter {
       throw PyError("`/` only works between two numbers.", line: line);
     }
     if (b == 0) {
-      throw PyError("Dividing by zero breaks mathematics — and my brain! 🤯",
+      throw PyError("Dividing by zero breaks mathematics — and my brain!",
           line: line);
     }
     return a / b;
@@ -743,7 +799,7 @@ class _Interpreter {
       throw PyError("`**` only works between two numbers.", line: line);
     }
     if (b is int && b > 200) {
-      throw PyError("That power is too big for me to work out. 💥", line: line);
+      throw PyError("That power is too big for me to work out.", line: line);
     }
     final r = _pow(a, b);
     return (a is int && b is int && b >= 0) ? r.toInt() : r;
@@ -893,12 +949,27 @@ class _Interpreter {
   // ── limits ─────────────────────────────────────────────────────────────────
 
   void _tick(int line) {
+    if (cancelToken?.isCancelled ?? false) throw const _Cancelled();
     if (++_steps > limits.maxSteps) {
       throw PyError(
-        "Your program ran for too long, so I stopped it. 🛑",
+        "Your program ran for too long, so I stopped it.",
         line: line,
         hint: "Maybe a loop never ends? Check your `while` condition or "
             "make sure a counter changes.",
+      );
+    }
+  }
+
+  // Stops any single loop that spins past the allowed number of repeats — the
+  // friendly guard against `while True:` and other never-ending loops.
+  void _guardLoop(int iterations, int line) {
+    if (iterations > limits.maxLoopIterations) {
+      throw PyError(
+        "This loop repeated more than ${limits.maxLoopIterations} times, "
+        "so I stopped it.",
+        line: line,
+        hint: "Does the loop have a way to stop? Check your `while` condition "
+            "or that a counter is changing (like `n = n - 1`).",
       );
     }
   }
@@ -914,7 +985,7 @@ class _Interpreter {
   void _guardStringLength(int len, int line) {
     if (len > limits.maxStringLength) {
       throw PyError(
-        "That piece of text is too long for me to make. ✂️",
+        "That piece of text is too long for me to make.",
         line: line,
       );
     }
@@ -923,7 +994,7 @@ class _Interpreter {
   void _guardListLength(int len, int line) {
     if (len > limits.maxListLength) {
       throw PyError(
-        "That list is getting too big for me to hold. 📦",
+        "That list is getting too big for me to hold.",
         line: line,
       );
     }

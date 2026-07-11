@@ -9,19 +9,40 @@ import '../../../../data/programming/interpreter/py_error.dart';
 // card when something went wrong. Dark in both app themes so it reads as a
 // "screen".
 
-class PyConsole extends StatelessWidget {
+class PyConsole extends StatefulWidget {
   final String output;
   final PyError? error;
 
   /// Shown before the first run.
   final bool idle;
 
+  /// The run was interrupted by the Stop button (Ctrl+C).
+  final bool stopped;
+
+  /// Tallest the scrolling output area may grow before it scrolls internally.
+  final double maxHeight;
+
   const PyConsole({
     super.key,
     required this.output,
     this.error,
     this.idle = false,
+    this.stopped = false,
+    this.maxHeight = 260,
   });
+
+  @override
+  State<PyConsole> createState() => _PyConsoleState();
+}
+
+class _PyConsoleState extends State<PyConsole> {
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,17 +83,75 @@ class PyConsole extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          if (idle)
-            Text('▸ Tap Run to see what happens',
-                style: mono.copyWith(color: const Color(0xFF6D7E75)))
-          else ...[
-            if (output.isNotEmpty)
-              SelectableText(output.trimRight(), style: mono),
-            if (error != null) _ErrorView(error: error!, mono: mono),
-            if (output.isEmpty && error == null)
-              Text('(no output)',
-                  style: mono.copyWith(color: const Color(0xFF6D7E75))),
-          ],
+          if (widget.idle)
+            Row(
+              children: [
+                const Icon(Icons.play_arrow_rounded,
+                    size: 16, color: Color(0xFF6D7E75)),
+                const SizedBox(width: 6),
+                Text('Tap Run to see what happens',
+                    style: mono.copyWith(color: const Color(0xFF6D7E75))),
+              ],
+            )
+          else
+            // Cap the height so long output scrolls inside its own window with a
+            // visible scrollbar, instead of pushing the page endlessly long.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: widget.maxHeight),
+              child: ScrollbarTheme(
+                data: ScrollbarThemeData(
+                  thumbColor:
+                      WidgetStateProperty.all(const Color(0xFF4A5A51)),
+                  thickness: WidgetStateProperty.all(8),
+                  radius: const Radius.circular(4),
+                  minThumbLength: 32,
+                ),
+                child: Scrollbar(
+                  controller: _scroll,
+                  thumbVisibility: true,
+                  // Let the student grab the thumb and drag it to scrub straight
+                  // to the bottom, not just swipe the content line by line.
+                  interactive: true,
+                  child: SingleChildScrollView(
+                    controller: _scroll,
+                    primary: false,
+                    padding: const EdgeInsets.only(right: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.output.isNotEmpty)
+                          SelectableText(widget.output.trimRight(),
+                              style: mono),
+                        if (widget.error != null)
+                          _ErrorView(error: widget.error!, mono: mono),
+                        if (widget.output.isEmpty &&
+                            widget.error == null &&
+                            !widget.stopped)
+                          Text('(no output)',
+                              style: mono.copyWith(
+                                  color: const Color(0xFF6D7E75))),
+                        if (widget.stopped) ...[
+                          if (widget.output.isNotEmpty)
+                            const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.stop_circle_rounded,
+                                  size: 16, color: Color(0xFFE6B95A)),
+                              const SizedBox(width: 6),
+                              Text('Stopped',
+                                  style: mono.copyWith(
+                                    color: const Color(0xFFE6B95A),
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -99,7 +178,9 @@ class _ErrorView extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text('🐛 ', style: TextStyle(fontSize: 14)),
+              const Icon(Icons.error_outline_rounded,
+                  size: 15, color: Color(0xFFF0A79D)),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   error.line != null ? 'Line ${error.line}' : 'Oops!',
@@ -117,9 +198,19 @@ class _ErrorView extends StatelessWidget {
               style: mono.copyWith(color: const Color(0xFFF3D8D3))),
           if (error.hint != null) ...[
             const SizedBox(height: 6),
-            Text('💡 ${error.hint}',
-                style: mono.copyWith(
-                    color: const Color(0xFFCBB98A), fontSize: 12)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lightbulb_outline_rounded,
+                    size: 14, color: Color(0xFFCBB98A)),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(error.hint!,
+                      style: mono.copyWith(
+                          color: const Color(0xFFCBB98A), fontSize: 12)),
+                ),
+              ],
+            ),
           ],
         ],
       ),

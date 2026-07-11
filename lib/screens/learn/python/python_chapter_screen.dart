@@ -29,7 +29,7 @@ class PythonChapterScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text('${chapter.emoji} ${chapter.title}')),
+      appBar: AppBar(title: Text(chapter.title)),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.screenPadding),
         children: [
@@ -172,7 +172,7 @@ class _QuizRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Text('🧠', style: TextStyle(fontSize: 22)),
+              Icon(Icons.psychology_rounded, size: 24, color: accent),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
