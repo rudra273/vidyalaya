@@ -6,6 +6,8 @@ import '../../data/models/highlight.dart';
 import '../../data/models/note.dart';
 import '../../data/seed/seed_data.dart';
 import '../../providers/core_providers.dart';
+import '../../widgets/empty_state.dart';
+import '../../widgets/pressable.dart';
 
 /// Main Notes screen — shows the student's own typed notes plus subjects that
 /// have book highlights. Tapping a subject opens all notes for that subject;
@@ -46,7 +48,6 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     final isEmpty = notes.isEmpty && bySubject.isEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openEditor('/note/new'),
         tooltip: 'New note',
@@ -172,33 +173,13 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('📝', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 20),
-            Text('No notes yet',
-                style: Theme.of(context).textTheme.displaySmall),
-            const SizedBox(height: 8),
-            Text(
-              'Tap the pencil to jot down a quick note, or open a book and use the highlighter to mark areas.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textMuted,
-                  ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: () => _openEditor('/note/new'),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('New note'),
-            ),
-          ],
-        ),
-      ),
+    return EmptyState(
+      icon: Icons.edit_note_rounded,
+      title: 'No notes yet',
+      subtitle:
+          'Jot down a quick note, or open a book and use the highlighter to mark areas.',
+      ctaLabel: 'New note',
+      onCtaTap: () => _openEditor('/note/new'),
     );
   }
 }
@@ -251,14 +232,15 @@ class _NoteCard extends StatelessWidget {
         ? title
         : (body.isNotEmpty ? body.split('\n').first : 'Untitled note');
 
+    final cs = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cs.surface,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: cs.outlineVariant),
         ),
         child: Row(
           children: [
@@ -266,7 +248,7 @@ class _NoteCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppColors.surface2,
+                color: cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
@@ -303,7 +285,7 @@ class _NoteCard extends StatelessWidget {
   }
 }
 
-class _SubjectCard extends StatefulWidget {
+class _SubjectCard extends StatelessWidget {
   final String subject;
   final int highlightCount;
   final String bookNames;
@@ -322,13 +304,6 @@ class _SubjectCard extends StatefulWidget {
     required this.onTap,
   });
 
-  @override
-  State<_SubjectCard> createState() => _SubjectCardState();
-}
-
-class _SubjectCardState extends State<_SubjectCard> {
-  bool _pressed = false;
-
   String _formatSubject(String s) {
     return s.replaceAll('_', ' ').split(' ').map((w) {
       if (w.isEmpty) return w;
@@ -338,74 +313,69 @@ class _SubjectCardState extends State<_SubjectCard> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: widget.bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(widget.emoji, style: const TextStyle(fontSize: 24)),
-                ),
+    final cs = Theme.of(context).colorScheme;
+    return Pressable(
+      onTap: onTap,
+      scale: 0.97,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _formatSubject(widget.subject),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: widget.textColor,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.bookNames,
-                      style: Theme.of(context).textTheme.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+              child: Center(
+                child: Text(emoji, style: const TextStyle(fontSize: 24)),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: widget.bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${widget.highlightCount}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: widget.textColor,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _formatSubject(subject),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: textColor,
+                        ),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    bookNames,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$highlightCount',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
                 ),
               ),
-              const SizedBox(width: 4),
-              Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
-            ],
-          ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
+          ],
         ),
       ),
     );

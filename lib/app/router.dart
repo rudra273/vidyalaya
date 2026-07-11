@@ -11,6 +11,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
 import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/profile/about_screen.dart';
+import '../screens/profile/feedback_screen.dart';
 import '../screens/progress/progress_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
@@ -29,6 +30,12 @@ import '../screens/learn/timeline_screen.dart';
 import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
+import '../screens/learn/vocabulary_screen.dart';
+import '../screens/learn/python/python_home_screen.dart';
+import '../screens/learn/python/python_chapter_screen.dart';
+import '../screens/learn/python/python_lesson_screen.dart';
+import '../screens/learn/python/python_quiz_screen.dart';
+import '../screens/learn/python/python_playground_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../data/models/learn_assist.dart';
 
@@ -39,8 +46,13 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 // ─── Router ─────────────────────────────────────────────────────────────────
 
+// Book surfaces gated behind booksEnabledProvider: when the flag is off these
+// paths redirect to Home so the feature is fully unreachable, not just hidden.
+const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
+
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.watch(userPrefsRepositoryProvider);
+  final booksEnabled = ref.watch(booksEnabledProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -51,6 +63,13 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!hasCompleted && !isWelcome) {
         return '/welcome';
+      }
+
+      if (!booksEnabled) {
+        final path = state.matchedLocation;
+        final isBookRoute =
+            _bookRoutePrefixes.any((p) => path == p || path.startsWith('$p/'));
+        if (isBookRoute) return '/';
       }
       return null;
     },
@@ -107,6 +126,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AboutScreen(),
       ),
       GoRoute(
+        path: '/feedback',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FeedbackScreen(),
+      ),
+      GoRoute(
         path: '/welcome',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const WelcomeScreen(),
@@ -153,6 +177,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PeriodicTableScreen(),
       ),
       GoRoute(
+        path: '/learn/vocabulary',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const VocabularyScreen(),
+      ),
+      GoRoute(
         path: '/learn/timeline',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const TimelineScreen(),
@@ -182,6 +211,35 @@ final routerProvider = Provider<GoRouter>((ref) {
           final diagram = state.extra as Diagram;
           return DiagramViewerScreen(diagram: diagram);
         },
+      ),
+      // ── Python programming course ──
+      GoRoute(
+        path: '/learn/python',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PythonHomeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/python/playground',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PythonPlaygroundScreen(),
+      ),
+      GoRoute(
+        path: '/learn/python/chapter/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PythonChapterScreen(chapterId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/learn/python/lesson/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PythonLessonScreen(lessonId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/learn/python/quiz/:chapterId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PythonQuizScreen(chapterId: state.pathParameters['chapterId']!),
       ),
       GoRoute(
         path: '/class-selector',

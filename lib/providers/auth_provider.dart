@@ -11,6 +11,7 @@ import '../data/models/learn_assist.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/services/backend_auth_service.dart';
 import 'core_providers.dart';
+import 'user_selection_provider.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
@@ -306,6 +307,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           (profile) => profile.toCacheJson(),
         );
         state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
+        _mirrorProfileToPrefs(saved);
       }
       return saved;
     } catch (error, stackTrace) {
@@ -386,7 +388,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           user,
           (user) => user.toJson(),
         );
-        final changed = !_jsonEquals(previous?.toJson(), user.toJson());
+        final changed = state.user is! AsyncData ||
+            !_jsonEquals(previous?.toJson(), user.toJson());
         state = changed
             ? state.copyWith(user: AsyncData(user), userLoaded: true)
             : state.copyWith(userLoaded: true);
@@ -423,13 +426,20 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
             (profile) => profile.toCacheJson(),
           );
         }
-        final changed = !_jsonEquals(
-          previous?.toCacheJson(),
-          profile?.toCacheJson(),
-        );
+        // "Unchanged" may only skip the state write when the state already
+        // holds data — a first fetch that returns null matches a null
+        // `previous`, and skipping would leave AsyncLoading in place forever.
+        final changed = state.profile is! AsyncData ||
+            !_jsonEquals(
+              previous?.toCacheJson(),
+              profile?.toCacheJson(),
+            );
         state = changed
             ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
             : state.copyWith(profileLoaded: true);
+        // Keep local prefs in sync on every load (incl. background revalidation
+        // and cross-device edits), not just when ProfileScreen is open.
+        _mirrorProfileToPrefs(profile);
       }
       return profile;
     } catch (error, stackTrace) {
@@ -459,7 +469,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           usage,
           (usage) => usage.toJson(),
         );
-        final changed = !_jsonEquals(previous?.toJson(), usage.toJson());
+        final changed = state.usage is! AsyncData ||
+            !_jsonEquals(previous?.toJson(), usage.toJson());
         state = changed
             ? state.copyWith(usage: AsyncData(usage), usageLoaded: true)
             : state.copyWith(usageLoaded: true);
@@ -638,6 +649,20 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     final uid = _currentUid;
     if (uid == null) throw StateError('Please sign in again.');
     return uid;
+  }
+
+  /// Mirror the backend profile's class/board/language into local prefs so the
+  /// rest of the app (Home rows, Explore tools, regional language) stays in
+  /// sync no matter which screen triggered the load/save. Previously this ran
+  /// only inside ProfileScreen, so a cross-device edit landing while the
+  /// student was elsewhere drifted until they reopened Profile.
+  void _mirrorProfileToPrefs(StudentProfile? profile) {
+    if (profile == null) return;
+    ref.read(userBoardProvider.notifier).setBoard(profile.board);
+    ref.read(userSelectionProvider.notifier).setClasses({profile.classNo});
+    ref
+        .read(userPrefsRepositoryProvider)
+        .setPreferredLanguage(profile.preferredLanguage);
   }
 }
 

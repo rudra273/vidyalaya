@@ -6,7 +6,7 @@ const List<Book> scertClass4Books = [
     title: 'ଭାଷା ମହକ',
     subject: 'language',
     classNumber: 4,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1wVb_6kqdL8yC4JOLQ4OU8b5dDTUhUm4Z',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-IV/Bhasa_Mahak-4_FINAL_Web.pdf',
     coverEmoji: '📖',
   ),
   Book(
@@ -14,7 +14,7 @@ const List<Book> scertClass4Books = [
     title: 'PALLAVI',
     subject: 'english',
     classNumber: 4,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1C73PqRsta-s0-bmSvTN-AShMFhmrgYDR',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-IV/Pallavi_class-4_Web.pdf',
     coverEmoji: '🌸',
   ),
   Book(
@@ -22,7 +22,7 @@ const List<Book> scertClass4Books = [
     title: 'ଗଣିତ ମେଳା',
     subject: 'maths',
     classNumber: 4,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1MT9DJCMA2aHQDd_lrJ1lRHvGIKOqHHkp',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-IV/Mathe_Mela-4-Final-240_Web.pdf',
     coverEmoji: '🔢',
   ),
   Book(
@@ -30,7 +30,7 @@ const List<Book> scertClass4Books = [
     title: 'ଆମ ବିଚିତ୍ର ବିଶ୍ୱ',
     subject: 'evs',
     classNumber: 4,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1FkslAKY3l_KW0_MV29Ji19pxruDqfuKs',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-IV/Our_Wondrous-IV-P_1-176_Web.pdf',
     coverEmoji: '🌍',
   ),
   Book(
@@ -38,7 +38,7 @@ const List<Book> scertClass4Books = [
     title: 'ଇନ୍ଦ୍ରଧନୁ (କଳା ଶିକ୍ଷା)',
     subject: 'art',
     classNumber: 4,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1TYZx_gaV8LSWAULB6MMNhepodJl4S-oW',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-IV/Indradhanu_Inner_216_Web.pdf',
     coverEmoji: '🎨',
   ),
   Book(
@@ -46,7 +46,7 @@ const List<Book> scertClass4Books = [
     title: 'କ୍ରୀଡ଼ା ଓ ଯୋଗ',
     subject: 'yoga',
     classNumber: 4,
-    pdfUrl: 'https://drive.google.com/uc?export=download&id=1O5AuVSo0EReOfzOwrhyk4SiWCbpXxKcZ',
+    pdfUrl: 'https://osepa.odisha.gov.in/upload/ebooks/CLASS-IV/Physcial_Class_Final_Web.pdf',
     coverEmoji: '🧘',
   ),
 ];

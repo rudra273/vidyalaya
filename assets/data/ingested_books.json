@@ -1,0 +1,164 @@
+{
+  "boards": [
+    {
+      "board": "scert_odisha",
+      "classes": [
+        {
+          "class": 7,
+          "subjects": [
+            {
+              "subject": "english",
+              "book_name": "Jasmine",
+              "language": "en"
+            },
+            {
+              "subject": "hindi",
+              "book_name": "Hindi_kalika",
+              "language": "hi"
+            },
+            {
+              "subject": "maths",
+              "book_name": "Ganita_Prakash",
+              "language": "or"
+            },
+            {
+              "subject": "odia",
+              "book_name": "SahityaSuman",
+              "language": "or"
+            },
+            {
+              "subject": "sanskrit",
+              "book_name": "Sanskruta_Kalika",
+              "language": "hi"
+            },
+            {
+              "subject": "science",
+              "book_name": "Jigyansa",
+              "language": "or"
+            },
+            {
+              "subject": "social_science",
+              "book_name": "Samajika_Bigyana",
+              "language": "or"
+            }
+          ]
+        },
+        {
+          "class": 8,
+          "subjects": [
+            {
+              "subject": "english",
+              "book_name": "Jasmine",
+              "language": "en"
+            },
+            {
+              "subject": "hindi",
+              "book_name": "hindi_kalika",
+              "language": "hi"
+            },
+            {
+              "subject": "maths",
+              "book_name": "ganita_prakash",
+              "language": "or"
+            },
+            {
+              "subject": "odia",
+              "book_name": "sahitya_surabhi",
+              "language": "or"
+            },
+            {
+              "subject": "sanskrit",
+              "book_name": "sanskrit_kalika",
+              "language": "sa"
+            },
+            {
+              "subject": "science",
+              "book_name": "jigyasa",
+              "language": "or"
+            },
+            {
+              "subject": "social_science",
+              "book_name": "samajika_bigyana",
+              "language": "or"
+            }
+          ]
+        },
+        {
+          "class": 9,
+          "subjects": [
+            {
+              "subject": "english",
+              "book_name": "English",
+              "language": "en"
+            },
+            {
+              "subject": "english_grammar",
+              "book_name": "English_Grammar",
+              "language": "en"
+            },
+            {
+              "subject": "geography",
+              "book_name": "Geography_Economics",
+              "language": "or"
+            },
+            {
+              "subject": "hindi",
+              "book_name": "Hindi",
+              "language": "hi"
+            },
+            {
+              "subject": "hindi_grammar",
+              "book_name": "Hindi_Grammar",
+              "language": "hi"
+            },
+            {
+              "subject": "history",
+              "book_name": "History_Civics",
+              "language": "or"
+            },
+            {
+              "subject": "life_science",
+              "book_name": "Life_Science",
+              "language": "or"
+            },
+            {
+              "subject": "math_algebra",
+              "book_name": "Math_Algebra",
+              "language": "or"
+            },
+            {
+              "subject": "math_geometry",
+              "book_name": "Math_Geometry",
+              "language": "or"
+            },
+            {
+              "subject": "odia",
+              "book_name": "Sahitya_Dhara",
+              "language": "or"
+            },
+            {
+              "subject": "odia_grammar",
+              "book_name": "Odia_Grammar",
+              "language": "or"
+            },
+            {
+              "subject": "physical_science",
+              "book_name": "Physical_Science",
+              "language": "or"
+            },
+            {
+              "subject": "sanskrit",
+              "book_name": "Sanskrit",
+              "language": "or"
+            },
+            {
+              "subject": "sanskrit_grammar",
+              "book_name": "Sanskrit_Grammar",
+              "language": "or"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

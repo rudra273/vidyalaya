@@ -1,7 +1,7 @@
 name: vidyalaya
 description: "Vidyālaya. A book reading app for Indian school students."
 publish_to: 'none'
-version: 1.0.2+3
+version: 1.0.3+4
 
 environment:
   sdk: ^3.11.5
@@ -25,34 +25,41 @@ dependencies:
   flutter_markdown: ^0.7.7+1
   image_picker: ^1.1.2
   flutter_svg: ^2.3.0
+  share_plus: ^12.0.1
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
 
 flutter:
   uses-material-design: true
   assets:
     - assets/icon/
+    - assets/icons/
     - assets/diagrams/
     - assets/avatars/
+    - assets/data/
 
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/icon/vicon.png"
+  image_path: "assets/icon/vidyalaya.png"
   remove_alpha_ios: true
   min_sdk_android: 21
 
 flutter_native_splash:
-  # White background behind the logo on every platform.
+  # White background matching the logo's white backdrop.
   color: "#FFFFFF"
-  image: assets/icon/vision_mark.png
+  image: assets/icon/splash_mark.png
   android_12:
-    # Android 12+ shows this icon inside the system's circular holder.
-    image: assets/icon/vision_mark.png
+    # Android 12+ shows this icon inside the system's circular holder,
+    # with the wordmark branding strip pinned at the bottom of the screen.
+    image: assets/icon/splash_mark.png
+    branding: assets/icon/branding.png
     color: "#FFFFFF"
     icon_background_color: "#FFFFFF"
   android: true

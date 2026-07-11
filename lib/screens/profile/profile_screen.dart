@@ -9,9 +9,11 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
+import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
+import '../../providers/core_providers.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
@@ -19,6 +21,7 @@ import '../../providers/clay_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
+import '../../widgets/support_section.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -46,6 +49,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _selectedClass = selectedClasses.first;
     }
     _board = ref.read(userBoardProvider);
+    _preferredLanguage =
+        ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
   }
 
   @override
@@ -70,6 +75,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       orElse: () => null,
     );
     final isProfileLoading = accountState.profile is AsyncLoading;
+    // A failed backend sync doesn't blank the screen (the form runs off local
+    // prefs), but it silently stops the profile from staying in sync — surface
+    // it so the student can retry rather than wonder why edits don't stick.
+    final profileSyncFailed = isSignedIn &&
+        accountState.profile is AsyncError &&
+        cachedProfile == null;
     _applyCachedProfile(cachedProfile);
 
     // Prefer the backend name (student-editable) over the Google account name.
@@ -109,6 +120,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(width: 10),
                     IconBox(
                       icon: Icons.settings_rounded,
+                      tooltip: 'Settings',
                       topMargin: 0,
                       onTap: () => context.push('/settings'),
                     ),
@@ -182,6 +194,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 0),
               child: const SectionHead(label: 'Student profile'),
             ),
+            if (profileSyncFailed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
+                child: _ProfileSyncErrorBanner(
+                  onRetry: () => ref
+                      .read(backendAccountCacheProvider.notifier)
+                      .ensureProfile(forceRefresh: true),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding),
@@ -202,16 +224,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onCancel: _cancelEditing,
                     )
                   : _ProfileSummary(
-                      isSignedIn: isSignedIn,
-                      isLoading: isProfileLoading,
                       classNo: _selectedClass,
                       board: _board,
                       language: _languageLabel(_preferredLanguage),
                       school: _schoolController.text.trim(),
-                      onEdit: isSignedIn
-                          ? () => setState(() => _isEditing = true)
-                          : null,
+                      onEdit: () => setState(() => _isEditing = true),
                     ),
+            ),
+
+            const SupportSection(
+              headingPadding: EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
             ),
 
             const SizedBox(height: 16),
@@ -235,7 +258,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _ensureCachedProfile(User? user) {
-    if (user == null || _isProfileSaving) return;
+    // Skip the background revalidation while editing: for an account with no
+    // saved profile (no cache), ensureProfile flips `profile` to AsyncLoading,
+    // which drives the form's `isBusy` true and greys out the fields the
+    // student is typing into. Their edits aren't lost when we resume — the
+    // cached profile only re-applies when not editing.
+    if (user == null || _isProfileSaving || _isEditing) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(backendAccountCacheProvider.notifier).ensureProfile();
@@ -270,7 +298,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _schoolController.text = profile.schoolName ?? '';
         _nameController.text = profile.name ?? '';
       });
-      _syncLocalProfile(profile.classNo, profile.board);
+      _syncLocalProfile(
+          profile.classNo, profile.board, profile.preferredLanguage);
     });
   }
 
@@ -279,6 +308,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     setState(() {
       _isEditing = false;
       _appliedProfileKey = null; // re-apply the cached profile on next build
+      // Signed out there is no cached profile to re-apply, so restore the
+      // local prefs values directly.
+      final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
+      if (selectedClasses.isNotEmpty) {
+        _selectedClass = selectedClasses.first;
+      }
+      _board = ref.read(userBoardProvider);
+      _preferredLanguage =
+          ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
     });
   }
 
@@ -356,8 +394,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _saveStudentProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
+      // Class, board and language are local prefs, so a signed-out student
+      // can still change them — only name/school need the backend.
+      _syncLocalProfile(_selectedClass, _board, _preferredLanguage);
+      setState(() => _isEditing = false);
+      Haptics.medium(ref);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please sign in to save your profile.')),
+        const SnackBar(content: Text('Profile updated.')),
       );
       return;
     }
@@ -376,7 +419,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           );
 
-      _syncLocalProfile(savedProfile.classNo, savedProfile.board);
+      _syncLocalProfile(savedProfile.classNo, savedProfile.board,
+          savedProfile.preferredLanguage);
       if (!mounted) return;
       setState(() {
         _selectedClass = savedProfile.classNo;
@@ -403,9 +447,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _syncLocalProfile(int classNo, String board) {
+  void _syncLocalProfile(int classNo, String board, String language) {
     ref.read(userBoardProvider.notifier).setBoard(board);
     ref.read(userSelectionProvider.notifier).setClasses({classNo});
+    ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
   }
 
   Future<void> _copyFirebaseIdToken() async {
@@ -928,20 +973,61 @@ class _AuthButton extends StatelessWidget {
   }
 }
 
+// ─── Profile sync error ──────────────────────────────────────────────────
+
+class _ProfileSyncErrorBanner extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _ProfileSyncErrorBanner({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      decoration: BoxDecoration(
+        color: cs.errorContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.error.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 18, color: cs.onErrorContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Couldn't sync your profile.",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: cs.onErrorContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              minimumSize: const Size(0, 36),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Profile summary (view mode) ─────────────────────────────────────────
 
 class _ProfileSummary extends StatelessWidget {
-  final bool isSignedIn;
-  final bool isLoading;
   final int classNo;
   final String board;
   final String language;
   final String school;
-  final VoidCallback? onEdit;
+  final VoidCallback onEdit;
 
   const _ProfileSummary({
-    required this.isSignedIn,
-    required this.isLoading,
     required this.classNo,
     required this.board,
     required this.language,
@@ -969,7 +1055,7 @@ class _ProfileSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SummaryRow(label: 'Class', value: 'Class $classNo'),
-          _SummaryRow(label: 'Board', value: _boardLabel(board)),
+          _SummaryRow(label: 'Board', value: boardLabel(board)),
           _SummaryRow(label: 'Language', value: language),
           _SummaryRow(
             label: 'School',
@@ -981,7 +1067,7 @@ class _ProfileSummary extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: isLoading ? null : onEdit,
+              onPressed: onEdit,
               style: OutlinedButton.styleFrom(
                 foregroundColor: cs.primary,
                 side: BorderSide(color: cs.outline),
@@ -992,11 +1078,9 @@ class _ProfileSummary extends StatelessWidget {
               ),
               icon: const Icon(Icons.edit_rounded, size: 16),
               label: Text(
-                isSignedIn ? 'Edit profile' : 'Sign in to edit',
+                'Edit profile',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: isSignedIn
-                          ? cs.primary
-                          : cs.onSurface.withValues(alpha: 0.4),
+                      color: cs.primary,
                     ),
               ),
             ),
@@ -1068,9 +1152,6 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-String _boardLabel(String board) =>
-    board == 'scert_odisha' ? 'SCERT Odisha' : board;
-
 // ─── Student form (edit mode) ────────────────────────────────────────────
 
 class _StudentForm extends StatelessWidget {
@@ -1127,7 +1208,8 @@ class _StudentForm extends StatelessWidget {
             label: 'Name',
             hint: 'Your name',
             controller: nameController,
-            enabled: !isBusy,
+            enabled: isSignedIn && !isBusy,
+            onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
           ),
           const SizedBox(height: 12),
           _Field<int>(
@@ -1142,7 +1224,7 @@ class _StudentForm extends StatelessWidget {
           // activates once the backend accepts more boards.
           _Field<String>(
             label: 'Board',
-            value: _boardLabel(board),
+            value: boardLabel(board),
             onTap: null,
           ),
           const SizedBox(height: 12),
@@ -1159,8 +1241,16 @@ class _StudentForm extends StatelessWidget {
             label: 'School name',
             hint: 'e.g. SSVM',
             controller: schoolController,
-            enabled: !isBusy,
+            enabled: isSignedIn && !isBusy,
+            onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
           ),
+          if (!isSignedIn) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Sign in to change your name and school.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
@@ -1184,15 +1274,14 @@ class _StudentForm extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: ElevatedButton.icon(
-                  onPressed: isSignedIn && !isBusy ? onSave : null,
+                  onPressed: isBusy ? null : onSave,
                   icon: isSaving
                       ? const SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2.2),
                         )
                       : const Icon(Icons.check_rounded, size: 18),
-                  label:
-                      Text(isSignedIn ? 'Save profile' : 'Sign in to save'),
+                  label: Text(isSignedIn ? 'Save profile' : 'Save'),
                 ),
               ),
             ],
@@ -1200,6 +1289,15 @@ class _StudentForm extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showSignInNudge(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+            content: Text('Sign in to edit your name and school.')),
+      );
   }
 
   void _showClassPicker(BuildContext context,
@@ -1338,11 +1436,16 @@ class _TextInput extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
 
+  /// Called when the field is tapped while disabled (a disabled TextField
+  /// ignores pointers, so the tap falls through to a wrapping detector).
+  final VoidCallback? onDisabledTap;
+
   const _TextInput({
     required this.label,
     required this.hint,
     required this.controller,
     required this.enabled,
+    this.onDisabledTap,
   });
 
   @override
@@ -1360,11 +1463,15 @@ class _TextInput extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 7),
-        TextField(
-          controller: controller,
-          enabled: enabled,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(hintText: hint),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: enabled ? null : onDisabledTap,
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(hintText: hint),
+          ),
         ),
       ],
     );

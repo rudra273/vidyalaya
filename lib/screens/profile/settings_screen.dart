@@ -8,6 +8,7 @@ import '../../providers/haptic_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/support_section.dart';
 
 /// **App Settings** — appearance, data, about.
 class SettingsScreen extends ConsumerWidget {
@@ -142,6 +143,10 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 20),
 
+            const SupportSection(),
+
+            const SizedBox(height: 20),
+
             // ── About ─────────────────────────────────────────────
             const Padding(
               padding: EdgeInsets.symmetric(
@@ -196,7 +201,7 @@ class SettingsScreen extends ConsumerWidget {
                               )),
                   const SizedBox(height: 3),
                   Text(
-                    'Version 1.0.2',
+                    'Version 1.0.3',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 12.5,
                         ),

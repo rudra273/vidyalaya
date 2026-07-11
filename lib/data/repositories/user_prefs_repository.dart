@@ -20,6 +20,10 @@ class UserPrefsRepository {
   static const _onboardingKey = 'has_completed_onboarding';
   static const _avatarIdKey = 'avatar_id';
   static const _regionalLanguageKey = 'regional_language';
+  static const _preferredLanguageKey = 'preferred_language';
+  static const _pythonCompletedLessonsKey = 'python_completed_lessons';
+  static const _pythonQuizScoresKey = 'python_quiz_scores';
+  static const _pythonPlaygroundCodeKey = 'python_playground_code';
 
   final SharedPreferences _prefs;
 
@@ -56,8 +60,8 @@ class UserPrefsRepository {
   //
   // The second language shown alongside English in the Explore tools
   // (diagrams, timeline, math formulas). Either 'or' (Odia) or 'hi' (Hindi).
-  // Null means "follow the profile's preferred language"; once the student
-  // switches it explicitly, the choice is remembered here.
+  // Null means "follow the profile preference / board default"; once the
+  // student switches it explicitly, the choice is remembered here.
 
   String? getRegionalLanguage() {
     return _prefs.getString(_regionalLanguageKey);
@@ -65,6 +69,26 @@ class UserPrefsRepository {
 
   Future<void> setRegionalLanguage(String code) async {
     await _prefs.setString(_regionalLanguageKey, code);
+  }
+
+  /// Forget the explicit language switch (used when the board changes, so the
+  /// language follows the new board's default).
+  Future<void> clearRegionalLanguage() async {
+    await _prefs.remove(_regionalLanguageKey);
+  }
+
+  // ─── Preferred Language ─────────────────────────────────────────────────
+  //
+  // The profile's preferred language ('en', 'or' or 'hi'). Local mirror of
+  // the backend profile field so signed-out students can pick a language and
+  // keep it across restarts; it also seeds the first profile save on sign-in.
+
+  String? getPreferredLanguage() {
+    return _prefs.getString(_preferredLanguageKey);
+  }
+
+  Future<void> setPreferredLanguage(String code) async {
+    await _prefs.setString(_preferredLanguageKey, code);
   }
 
   // ─── Selected Classes ───────────────────────────────────────────────────
@@ -431,6 +455,55 @@ class UserPrefsRepository {
   int getCurrentStreak() {
     _recordActivityToday();
     return _prefs.getInt(_currentStreakKey) ?? 0;
+  }
+
+  // ─── Python course ───────────────────────────────────────────────────────
+  //
+  // Lesson completion (a set of lesson ids) and best quiz score per chapter.
+  // Both follow the bookmarks/notes JSON-list precedent. Finishing a lesson or
+  // taking a quiz counts as learning, so it keeps the streak alive.
+
+  Set<String> getPythonCompletedLessons() {
+    final jsonStr = _prefs.getString(_pythonCompletedLessonsKey);
+    if (jsonStr == null) return {};
+    final list = jsonDecode(jsonStr) as List;
+    return list.map((e) => e as String).toSet();
+  }
+
+  Future<void> markPythonLessonCompleted(String lessonId) async {
+    final done = getPythonCompletedLessons();
+    if (done.add(lessonId)) {
+      await _prefs.setString(
+          _pythonCompletedLessonsKey, jsonEncode(done.toList()));
+    }
+    await _recordActivityToday();
+  }
+
+  /// chapterId → best number of correct answers.
+  Map<String, int> getPythonQuizScores() {
+    final jsonStr = _prefs.getString(_pythonQuizScoresKey);
+    if (jsonStr == null) return {};
+    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+    return map.map((k, v) => MapEntry(k, v as int));
+  }
+
+  /// Records a quiz attempt, keeping only the best score for the chapter.
+  Future<void> recordPythonQuizScore(String chapterId, int correct) async {
+    final scores = getPythonQuizScores();
+    final best = scores[chapterId] ?? 0;
+    if (correct > best) {
+      scores[chapterId] = correct;
+      await _prefs.setString(_pythonQuizScoresKey, jsonEncode(scores));
+    }
+    await _recordActivityToday();
+  }
+
+  String? getPythonPlaygroundCode() {
+    return _prefs.getString(_pythonPlaygroundCodeKey);
+  }
+
+  Future<void> setPythonPlaygroundCode(String code) async {
+    await _prefs.setString(_pythonPlaygroundCodeKey, code);
   }
 
   /// Rolls over the day and advances the learning streak. Idempotent within a

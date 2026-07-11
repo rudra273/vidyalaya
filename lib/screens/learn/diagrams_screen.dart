@@ -18,12 +18,7 @@ class DiagramsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Diagrams',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: const Text('Diagrams'),
         actions: const [RegionalLanguageSwitch()],
       ),
       body: GridView.count(
@@ -41,7 +36,7 @@ class DiagramsScreen extends ConsumerWidget {
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: isDark ? cs.surface : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(color: cs.outlineVariant),
                 boxShadow: [
                   BoxShadow(
@@ -127,10 +122,7 @@ class DiagramCategoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           '${category.titleEn} / ${isHi ? category.titleHi : category.titleOr}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         actions: const [RegionalLanguageSwitch()],
       ),
       body: ListView(
@@ -146,7 +138,7 @@ class DiagramCategoryScreen extends ConsumerWidget {
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: isDark ? cs.surface : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                   border: Border.all(color: cs.outlineVariant),
                   boxShadow: [
                     BoxShadow(

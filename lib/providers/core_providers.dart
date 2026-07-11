@@ -23,8 +23,10 @@ final userPrefsRepositoryProvider = Provider<UserPrefsRepository>((ref) {
 
 /// Whether the reading/books feature ("Library") is enabled.
 ///
-/// Books are now the app's tertiary feature and carry copyright risk, so every
-/// book surface (the Library tab, the Home "recently added" row, continue-
-/// reading) reads this flag and hides cleanly when it is false — leaving AI and
-/// the tools fully functional with no dead links. Defaults to true for now.
+/// Books are the app's tertiary feature and carry copyright risk, so every book
+/// surface hides cleanly when this is false, leaving AI and the tools fully
+/// functional with no dead links. When disabled it hides: the Home
+/// recently-added + continue-reading rows, the Library bottom-nav tab
+/// (app_shell.dart), and it redirects the /library, /my-books, /reader and
+/// /bookmarks routes to Home (router.dart). Defaults to true for now.
 final booksEnabledProvider = Provider<bool>((ref) => true);

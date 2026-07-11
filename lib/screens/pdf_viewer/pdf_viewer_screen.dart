@@ -429,22 +429,50 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         return;
       }
 
-      final request = http.Request('GET', Uri.parse(widget.book.pdfUrl));
-      final response = await http.Client().send(request);
-      if (response.statusCode != 200) {
-        throw Exception('Failed to download: HTTP ${response.statusCode}');
-      }
+      // Stream to a temp file and rename on success, so an interrupted
+      // download never leaves a half-written .pdf that later reads as valid.
+      final tmpFile = File('$filePath.part');
+      final client = http.Client();
+      try {
+        final request = http.Request('GET', Uri.parse(widget.book.pdfUrl));
+        final response = await client.send(request);
+        if (response.statusCode != 200) {
+          throw Exception('Failed to download: HTTP ${response.statusCode}');
+        }
 
-      final contentLength = response.contentLength ?? 0;
-      final bytes = <int>[];
-      await for (final chunk in response.stream) {
-        bytes.addAll(chunk);
-        if (contentLength > 0 && mounted) {
-          setState(() => _downloadProgress = bytes.length / contentLength);
+        final contentLength = response.contentLength ?? 0;
+        final sink = tmpFile.openWrite();
+        var received = 0;
+        // Throttle progress rebuilds: only setState when the whole-percent
+        // ticks up, not on every network chunk.
+        var lastPercent = -1;
+        try {
+          await for (final chunk in response.stream) {
+            sink.add(chunk);
+            received += chunk.length;
+            if (contentLength > 0 && mounted) {
+              final percent = (received * 100) ~/ contentLength;
+              if (percent != lastPercent) {
+                lastPercent = percent;
+                setState(() => _downloadProgress = percent / 100);
+              }
+            }
+          }
+          await sink.flush();
+        } finally {
+          await sink.close();
+        }
+
+        await tmpFile.rename(filePath);
+      } finally {
+        client.close();
+        if (tmpFile.existsSync()) {
+          try {
+            tmpFile.deleteSync();
+          } catch (_) {}
         }
       }
 
-      await file.writeAsBytes(bytes);
       if (mounted) setState(() { _localPath = filePath; _isLoading = false; });
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _isLoading = false; });

@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/avatars.dart';
+import '../../utils/haptics.dart';
 import '../../providers/reading_provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -15,8 +16,25 @@ import '../../providers/regional_language_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/share_feedback_banner.dart';
 import '../../data/models/book.dart';
 import '../../data/seed/vocabulary_data.dart';
+
+/// Haptic tap → navigate, the pattern every Home tile shares. Uses `push` by
+/// default; pass [replace] for tabs that should swap the current route.
+void _navTap(
+  WidgetRef ref,
+  BuildContext context,
+  String path, {
+  bool replace = false,
+}) {
+  Haptics.light(ref);
+  if (replace) {
+    context.go(path);
+  } else {
+    context.push(path);
+  }
+}
 
 /// AI-first Home — "Calm Scholar" layout.
 /// Wordmark → AI Learning (Ask hero + Tutor row + future agents teaser) →
@@ -71,14 +89,15 @@ class HomeScreen extends ConsumerWidget {
                     if (streak > 0) ...[
                       _StreakChip(
                         streak: streak,
-                        onTap: () => context.push('/progress'),
+                        onTap: () => _navTap(ref, context, '/progress'),
                       ),
                       const SizedBox(width: 12),
                     ],
                     _Avatar(
                       letter: avatarLetter,
                       avatar: ref.watch(selectedAvatarProvider),
-                      onTap: () => context.go('/profile'),
+                      onTap: () => _navTap(ref, context, '/profile',
+                          replace: true),
                     ),
                   ],
                 ),
@@ -107,8 +126,8 @@ class HomeScreen extends ConsumerWidget {
               horizontal: AppSpacing.screenPadding,
             ),
             child: _AskHero(
-              onTap: () => context.push('/learn/ai'),
-              onAsk: () => context.push('/learn/ai?focus=1'),
+              onTap: () => _navTap(ref, context, '/learn/ai'),
+              onAsk: () => _navTap(ref, context, '/learn/ai?focus=1'),
             ),
           ),
           const SizedBox(height: AppSpacing.stackGap),
@@ -116,7 +135,9 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: _TutorRow(onTap: () => context.push('/learn-ai/tutor')),
+            child: _TutorRow(
+              onTap: () => _navTap(ref, context, '/learn-ai/tutor'),
+            ),
           ),
 
           // ── Word of the day ──────────────────────────────────────
@@ -174,7 +195,7 @@ class HomeScreen extends ConsumerWidget {
                     color: _isDark(context) ? AppColors.cAiDark : AppColors.cAi,
                     icon: Icons.bookmark_rounded,
                     label: 'Bookmarks',
-                    onTap: () => context.push('/bookmarks'),
+                    onTap: () => _navTap(ref, context, '/bookmarks'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -185,7 +206,7 @@ class HomeScreen extends ConsumerWidget {
                         : AppColors.cEnglish,
                     icon: Icons.calendar_month_rounded,
                     label: 'Timetable',
-                    onTap: () => context.push('/timetable'),
+                    onTap: () => _navTap(ref, context, '/timetable'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -196,7 +217,7 @@ class HomeScreen extends ConsumerWidget {
                         : AppColors.cSocial,
                     icon: Icons.edit_note_rounded,
                     label: 'Notes',
-                    onTap: () => context.push('/notes'),
+                    onTap: () => _navTap(ref, context, '/notes'),
                   ),
                 ),
               ],
@@ -233,6 +254,15 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ],
+
+          // ── Share & rate ─────────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: ShareFeedbackBanner(),
+          ),
         ],
       ),
     );
@@ -735,7 +765,7 @@ class _ExampleSentence extends StatelessWidget {
 
 // ─── Continue reading card ──────────────────────────────────────────────
 
-class _ContinueCard extends StatelessWidget {
+class _ContinueCard extends ConsumerWidget {
   final Book book;
 
   /// Real last-read page (0-based) from prefs; -1/0 means not started yet. We
@@ -746,13 +776,13 @@ class _ContinueCard extends StatelessWidget {
   const _ContinueCard({required this.book, required this.lastPage});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
     final subjectColor = AppColors.subjectColor(book.subject, brightness);
 
-    return GestureDetector(
-      onTap: () => context.push('/reader/${book.id}'),
+    return Pressable(
+      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPad - 4),
         decoration: BoxDecoration(
@@ -875,16 +905,16 @@ class _MiniTool extends StatelessWidget {
 
 // ─── Recently added book card (horizontal scroller item) ───────────────
 
-class _RecentBookCard extends StatelessWidget {
+class _RecentBookCard extends ConsumerWidget {
   final Book book;
 
   const _RecentBookCard({required this.book});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final meta = subjectMeta(book.subject);
-    return GestureDetector(
-      onTap: () => context.push('/reader/${book.id}'),
+    return Pressable(
+      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
       child: SizedBox(
         width: 106,
         child: Column(

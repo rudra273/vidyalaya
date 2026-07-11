@@ -1,17 +1,21 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
+import '../../data/models/ingested_books.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/ingested_books_provider.dart';
 import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
@@ -51,6 +55,36 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   String _languageMode = 'auto';
   bool _isSending = false;
 
+  /// Index into [_messages] of the in-progress streamed answer, or null before
+  /// the first token has arrived. Used to grow that one message in place
+  /// instead of appending a new one per token, and to suppress the typing-dots
+  /// slot once real text is on screen.
+  int? _streamingMessageIndex;
+
+  /// True while a post-frame scroll-to-bottom is already queued, so per-token
+  /// streaming doesn't stack a fresh `animateTo` on every SSE frame.
+  bool _scrollScheduled = false;
+
+  // Memoized subject list: `learnAssistSubjects` maps + sorts, and build() runs
+  // on every streamed token, so recompute only when the inputs change.
+  IngestedBooks? _subjectsMemoBooks;
+  String? _subjectsMemoBoard;
+  int? _subjectsMemoClass;
+  List<String> _subjectsMemo = const [];
+
+  List<String> _subjectsFor(IngestedBooks books, String board, int classNo) {
+    if (identical(books, _subjectsMemoBooks) &&
+        board == _subjectsMemoBoard &&
+        classNo == _subjectsMemoClass) {
+      return _subjectsMemo;
+    }
+    _subjectsMemoBooks = books;
+    _subjectsMemoBoard = board;
+    _subjectsMemoClass = classNo;
+    _subjectsMemo = learnAssistSubjects(books, board, classNo);
+    return _subjectsMemo;
+  }
+
   // ~10 MB base64 ceiling enforced by the backend; reject before sending so the
   // student gets a clear message rather than a 422.
   static const _maxImageBase64Bytes = 10 * 1024 * 1024;
@@ -64,6 +98,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   bool _isLoadingHistory = false;
   bool _isRevalidating = false;
   bool _isLoadingOlder = false;
+  // Set when a history fetch failed and there was nothing cached to fall back
+  // on, so the chat shows a retry affordance instead of a silent blank.
+  bool _historyLoadFailed = false;
   int? _historyNextBefore;
 
   // After 30+ minutes away, the previous conversation stays tucked behind a
@@ -132,6 +169,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     setState(() {
       applySelection();
       _messages.clear();
+      // Drop the streaming slot: any in-flight [appendToken]/finalize would
+      // otherwise index into the cleared list and crash (RangeError) or write
+      // into the wrong bubble.
+      _streamingMessageIndex = null;
       _historyNextBefore = null;
       _isRevalidating = false;
     });
@@ -149,10 +190,12 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final cachedPage = cache.peekHistory(selector);
     if (cachedPage != null) {
       setState(() {
+        _historyLoadFailed = false;
         _historyNextBefore = cachedPage.nextBefore;
         _messages
           ..clear()
           ..addAll(_historyToMessages(cachedPage));
+        _streamingMessageIndex = null;
         _isLoadingHistory = false;
         _isRevalidating = true;
       });
@@ -166,9 +209,15 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final page = await cache.ensureHistory(selector, forceRefresh: true);
 
     if (!mounted || selector != _selector) return;
+    // A null page with nothing cached means the fetch failed with no fallback.
+    // Distinguish that from a genuinely empty conversation by checking whether
+    // the account state parked an error for this selector.
+    final historyErrored = page == null &&
+        ref.read(backendAccountCacheProvider).history is AsyncError;
     setState(() {
       _isRevalidating = false;
       _isLoadingHistory = false;
+      _historyLoadFailed = historyErrored;
       _historyNextBefore = page?.nextBefore;
       // Insert history ahead of anything sent while it was loading (rare race),
       // so live turns are never lost and history always reads above them.
@@ -179,6 +228,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         ..clear()
         ..addAll(_historyToMessages(page))
         ..addAll(live);
+      // The streaming bubble (if any) sits inside `live`; re-point its index to
+      // its new position after the history block so finalize/append still land
+      // on it rather than a stale slot.
+      if (_streamingMessageIndex != null) {
+        final streamingAt = _messages.lastIndexWhere((m) => m.isStreaming);
+        _streamingMessageIndex = streamingAt < 0 ? null : streamingAt;
+      }
     });
     _scrollToBottom();
   }
@@ -302,13 +358,88 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _copyMessage(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    Haptics.light(ref);
+    _showSnack('Copied to clipboard');
+  }
+
   Future<void> _sendMessage() async {
     final query = _messageController.text.trim();
     final imageBytes = _pendingImageBytes;
     // Need at least text or an image, and not already in-flight.
     if ((query.isEmpty && imageBytes == null) || _isSending) return;
 
+    // The AI tutor needs an account. Take the student straight to the profile
+    // page (where the sign-in button lives) instead of letting the send fail
+    // with an error bubble.
+    if (ref.read(firebaseAuthProvider).currentUser == null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Sign in to use the AI tutor.')),
+        );
+      context.go('/profile');
+      return;
+    }
+
     final imageMediaType = _pendingImageMediaType;
+    setState(() {
+      _messageController.clear();
+      _pendingImageBytes = null;
+      _pendingImageMediaType = null;
+    });
+    await _performSend(
+      query: query,
+      imageBytes: imageBytes,
+      imageMediaType: imageMediaType,
+      appendUserBubble: true,
+    );
+  }
+
+  /// Re-run the last user turn: drop the trailing assistant/error message and
+  /// resend the preceding user message (used by both Retry and Regenerate).
+  Future<void> _retryLastTurn() async {
+    if (_isSending || _messages.isEmpty) return;
+    // Find the last user message and everything after it (the failed/last
+    // assistant reply) so we can replace that reply in place.
+    final lastUserIndex =
+        _messages.lastIndexWhere((m) => m.role == _MessageRole.user);
+    if (lastUserIndex < 0) return;
+    final userTurn = _messages[lastUserIndex];
+    // A history image-only turn keeps the '[Image shared]' placeholder but no
+    // bytes (the server returns text only), so there's nothing to resend.
+    // Retrying it would map to an empty query + null image and silently
+    // early-return in _performSend — tell the student instead of doing nothing.
+    final isImagePlaceholder = userTurn.text == '[Image shared]';
+    if (isImagePlaceholder && userTurn.imageBytes == null) {
+      _showSnack('Please send the image again to ask about it.');
+      return;
+    }
+    setState(() {
+      // Drop the user turn and any reply below it; _performSend re-adds the
+      // user bubble so the conversation order stays intact.
+      _messages.removeRange(lastUserIndex, _messages.length);
+    });
+    await _performSend(
+      query: isImagePlaceholder ? '' : userTurn.text,
+      imageBytes: userTurn.imageBytes,
+      imageMediaType: userTurn.imageBytes == null
+          ? null
+          : (userTurn.imageMediaType ?? LearnAssistImageType.jpeg),
+      appendUserBubble: true,
+    );
+  }
+
+  Future<void> _performSend({
+    required String query,
+    required Uint8List? imageBytes,
+    required String? imageMediaType,
+    required bool appendUserBubble,
+  }) async {
+    if (query.isEmpty && imageBytes == null) return;
+
     final imageBase64 = imageBytes == null ? null : base64Encode(imageBytes);
     // What we persist to history when the turn is image-only (the backend stores
     // the same placeholder server-side).
@@ -321,17 +452,67 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
     Haptics.light(ref);
     setState(() {
-      _messages.add(_ChatMessage.user(query, imageBytes: imageBytes));
+      if (appendUserBubble) {
+        _messages.add(_ChatMessage.user(
+          query,
+          imageBytes: imageBytes,
+          imageMediaType: imageMediaType,
+        ));
+      }
       _isSending = true;
-      _messageController.clear();
-      _pendingImageBytes = null;
-      _pendingImageMediaType = null;
+      _streamingMessageIndex = null;
     });
     ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
     _scrollToBottom();
 
+    final answerBuffer = StringBuffer();
+    var citations = const <LearnAssistCitation>[];
+    LearnAssistUsage? usage;
+    // The complete answer from the terminal 'done' frame. Used as a fallback
+    // when a provider streamed no token frames (paid plans route through
+    // OpenRouter, which doesn't emit incremental chunks) so the bubble is never
+    // left empty.
+    var doneAnswer = '';
+
+    // Coalesce token frames: a full-list rebuild + scroll on every SSE token
+    // janks low-end devices, so we buffer and flush the bubble at most once per
+    // window instead of per token.
+    Timer? flushTimer;
+    var pendingFlush = false;
+
+    void flushTokens() {
+      pendingFlush = false;
+      if (!mounted) return;
+      setState(() {
+        final message = _ChatMessage.assistant(
+          answerBuffer.toString(),
+          isStreaming: true,
+        );
+        final index = _streamingMessageIndex;
+        if (index == null || index >= _messages.length) {
+          // No slot yet, or the list was rebuilt out from under us (subject
+          // switch mid-stream) — start a fresh streaming bubble.
+          _streamingMessageIndex = _messages.length;
+          _messages.add(message);
+        } else {
+          _messages[index] = message;
+        }
+      });
+      _scrollToBottom();
+    }
+
+    void appendToken(String text) {
+      if (text.isEmpty) return;
+      answerBuffer.write(text);
+      // Throttle: one rebuild per window, coalescing all tokens that arrive
+      // in between.
+      if (pendingFlush) return;
+      pendingFlush = true;
+      flushTimer = Timer(const Duration(milliseconds: 60), flushTokens);
+    }
+
     try {
-      final response = await service.chat(
+      await for (final event in service.chatStream(
         LearnAssistRequest(
           message: query.isEmpty ? null : query,
           imageBase64: imageBase64,
@@ -343,13 +524,36 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           language: language,
           debug: false,
         ),
-      );
+      )) {
+        if (!mounted) return;
+        switch (event) {
+          case LearnAssistTokenEvent(:final text):
+            appendToken(text);
+            break;
+          case LearnAssistDoneEvent(
+            answer: final eventAnswer,
+            citations: final eventCitations,
+            usage: final eventUsage,
+          ):
+            doneAnswer = eventAnswer;
+            citations = eventCitations;
+            usage = eventUsage;
+            break;
+          case LearnAssistErrorEvent(:final code, :final message):
+            throw LearnAssistApiException(code, message);
+          case LearnAssistToolEvent():
+            break; // Progress-only signal; the growing answer already conveys activity.
+        }
+      }
 
       if (!mounted) return;
-      if (response.usage != null) {
-        ref
-            .read(backendAccountCacheProvider.notifier)
-            .updateUsage(response.usage!);
+      // Prefer the text streamed token-by-token; fall back to the complete
+      // answer from the 'done' frame when a provider emitted no token frames.
+      final streamed = answerBuffer.toString();
+      final answer = streamed.isNotEmpty ? streamed : doneAnswer;
+      final finalUsage = usage;
+      if (finalUsage != null) {
+        ref.read(backendAccountCacheProvider.notifier).updateUsage(finalUsage);
       }
       final now = DateTime.now();
       final localId = now.microsecondsSinceEpoch;
@@ -365,8 +569,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             ChatHistoryMessage(
               id: localId + 1,
               role: 'assistant',
-              content: response.answer,
-              citations: response.citations,
+              content: answer,
+              citations: citations,
               createdAt: now,
             ),
           ]);
@@ -376,31 +580,33 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       await ref.read(userPrefsRepositoryProvider).recordAiSession();
       ref.read(progressProvider.notifier).refresh();
       setState(() {
-        _messages.add(
-          _ChatMessage.assistant(
-            response.answer,
-            citations: response.citations,
-            usage: response.usage,
-          ),
-        );
+        _finalizeStreamingMessage(_ChatMessage.assistant(
+          answer.isEmpty ? '(no answer)' : answer,
+          citations: citations,
+          usage: usage,
+        ));
         _isSending = false;
       });
     } on LearnAssistApiException catch (error) {
       if (!mounted) return;
       Haptics.error(ref);
       setState(() {
-        _messages.add(_ChatMessage.error(error.message));
+        _finalizeStreamingMessage(_ChatMessage.error(error.message));
         _isSending = false;
       });
     } catch (_) {
       if (!mounted) return;
       Haptics.error(ref);
       setState(() {
-        _messages.add(
+        _finalizeStreamingMessage(
           _ChatMessage.error('Something went wrong. Please try again.'),
         );
         _isSending = false;
       });
+    } finally {
+      // A queued flush would otherwise fire after finalize and resurrect a
+      // stray streaming bubble.
+      flushTimer?.cancel();
     }
     _scrollToBottom();
   }
@@ -415,8 +621,25 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     _composerFocusNode.requestFocus();
   }
 
+  /// Land the final assistant/error message into the streaming slot (replacing
+  /// the growing bubble) or append it if streaming never started, then clear the
+  /// slot. Bounds-checked so a list rebuilt mid-stream can't crash. Call inside
+  /// an existing `setState`.
+  void _finalizeStreamingMessage(_ChatMessage message) {
+    final index = _streamingMessageIndex;
+    if (index != null && index < _messages.length) {
+      _messages[index] = message;
+    } else {
+      _messages.add(message);
+    }
+    _streamingMessageIndex = null;
+  }
+
   void _scrollToBottom() {
+    if (_scrollScheduled) return;
+    _scrollScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollScheduled = false;
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
@@ -463,7 +686,11 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         });
       });
     }
-    final subjectOptions = learnAssistSubjectsForClass(_selectedClass);
+    final subjectOptions = _subjectsFor(
+      ref.watch(ingestedBooksProvider),
+      _board,
+      _selectedClass,
+    );
     if (_selectedSubject != null &&
         !subjectOptions.contains(_selectedSubject)) {
       _selectedSubject = null;
@@ -506,7 +733,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             if (_isLoadingHistory)
               const LinearProgressIndicator(minHeight: 2)
             else if (_isRevalidating)
-              const _HistoryUpdatingBar(),
+              const _HistoryUpdatingBar()
+            else if (_historyLoadFailed)
+              _HistoryErrorBar(onRetry: _loadHistory),
             Expanded(
               child: _messages.isEmpty && !_isLoadingHistory && !_isSending
                   ? _EmptyChat(
@@ -526,7 +755,12 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                       itemCount:
                           leadingCount +
                           _messages.length +
-                          (_isSending ? 1 : 0),
+                          // The dots-only placeholder only makes sense before the
+                          // first token lands — once streaming has a message of
+                          // its own in _messages, this extra slot would trail it.
+                          (_isSending && _streamingMessageIndex == null
+                              ? 1
+                              : 0),
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (hasOlder && index == 0) {
@@ -536,10 +770,37 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                           );
                         }
                         final messageIndex = index - leadingCount;
-                        if (_isSending && messageIndex == _messages.length) {
+                        if (_isSending &&
+                            _streamingMessageIndex == null &&
+                            messageIndex == _messages.length) {
                           return const _TypingIndicator();
                         }
-                        return _MessageView(message: _messages[messageIndex]);
+                        final msg = _messages[messageIndex];
+                        // Action row shows only when not mid-send: copy on any
+                        // finished assistant answer; regenerate on the last one;
+                        // retry on an error bubble.
+                        final isLast = messageIndex == _messages.length - 1;
+                        final showActions = !_isSending &&
+                            !msg.isStreaming &&
+                            msg.role != _MessageRole.user;
+                        return _MessageView(
+                          message: msg,
+                          onCopy: showActions &&
+                                  msg.role == _MessageRole.assistant &&
+                                  msg.text.trim().isNotEmpty
+                              ? () => _copyMessage(msg.text)
+                              : null,
+                          onRegenerate: showActions &&
+                                  isLast &&
+                                  msg.role == _MessageRole.assistant
+                              ? _retryLastTurn
+                              : null,
+                          onRetry: showActions &&
+                                  isLast &&
+                                  msg.role == _MessageRole.error
+                              ? _retryLastTurn
+                              : null,
+                        );
                       },
                     ),
             ),
@@ -576,25 +837,33 @@ class _PlanUsageBadge extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     if (!isSignedIn) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.lock_outline_rounded, size: 16, color: cs.primary),
-          const SizedBox(width: 4),
-          Text(
-            'Sign in',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: cs.primary,
-              fontWeight: FontWeight.w700,
+      // Tapping the badge jumps to the profile tab, where sign-in lives.
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => context.go('/profile'),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline_rounded, size: 16, color: cs.primary),
+            const SizedBox(width: 4),
+            Text(
+              'Sign in',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: cs.primary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
 
     final backendUser = user.maybeWhen(data: (v) => v, orElse: () => null);
     final currentUsage = usage.maybeWhen(data: (v) => v, orElse: () => null);
     final isLoading = user is AsyncLoading || usage is AsyncLoading;
+    // Only treat usage as errored when there's no cached value to show; a
+    // stale-but-present count is more useful than a warning glyph.
+    final usageErrored = usage is AsyncError && currentUsage == null;
 
     final planKey = backendUser?.planKey ?? 'free';
     final planLabel = _planLabel(planKey);
@@ -602,6 +871,8 @@ class _PlanUsageBadge extends StatelessWidget {
     String usageLabel;
     if (isLoading) {
       usageLabel = '...';
+    } else if (usageErrored) {
+      usageLabel = '$planLabel · —';
     } else if (currentUsage == null) {
       usageLabel = planLabel;
     } else if (currentUsage.unlimited) {
@@ -620,7 +891,13 @@ class _PlanUsageBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.workspace_premium_rounded, size: 14, color: cs.primary),
+          Icon(
+            usageErrored
+                ? Icons.sync_problem_rounded
+                : Icons.workspace_premium_rounded,
+            size: 14,
+            color: usageErrored ? cs.error : cs.primary,
+          ),
           const SizedBox(width: 5),
           Text(
             usageLabel,
@@ -682,6 +959,7 @@ class _ContextControls extends StatelessWidget {
             label: switch (languageMode) {
               'en' => 'English',
               'or' => 'Odia',
+              'hi' => 'Hindi',
               _ => 'Auto',
             },
             value: languageMode,
@@ -689,6 +967,7 @@ class _ContextControls extends StatelessWidget {
               ('auto', 'Auto'),
               ('en', 'English'),
               ('or', 'Odia'),
+              ('hi', 'Hindi'),
             ],
             onSelected: onLanguageChanged,
           ),
@@ -784,6 +1063,50 @@ class _HistoryUpdatingBar extends StatelessWidget {
       minHeight: 1,
       backgroundColor: Colors.transparent,
       color: cs.primary.withValues(alpha: 0.35),
+    );
+  }
+}
+
+/// Shown when the past-conversation fetch failed with nothing cached to fall
+/// back on, so the empty chat doesn't read as "no history."
+class _HistoryErrorBar extends StatelessWidget {
+  final VoidCallback onRetry;
+
+  const _HistoryErrorBar({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.screenPadding,
+        vertical: 8,
+      ),
+      color: cs.errorContainer.withValues(alpha: 0.4),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_rounded, size: 16, color: cs.onErrorContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "Couldn't load your past chat.",
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: cs.onErrorContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -959,7 +1282,21 @@ class _SuggestionRow extends StatelessWidget {
 class _MessageView extends StatelessWidget {
   final _ChatMessage message;
 
-  const _MessageView({required this.message});
+  /// Copy this answer to the clipboard; null hides the action.
+  final VoidCallback? onCopy;
+
+  /// Re-run the last turn to get a fresh answer; null hides the action.
+  final VoidCallback? onRegenerate;
+
+  /// Resend the last user turn after a failure; null hides the action.
+  final VoidCallback? onRetry;
+
+  const _MessageView({
+    required this.message,
+    this.onCopy,
+    this.onRegenerate,
+    this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1043,7 +1380,7 @@ class _MessageView extends StatelessWidget {
             )
           else
             MarkdownBody(
-              data: message.text,
+              data: message.isStreaming ? '${message.text} ▌' : message.text,
               styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
                   .copyWith(
                     p: Theme.of(
@@ -1085,7 +1422,62 @@ class _MessageView extends StatelessWidget {
               ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
             ),
           ],
+          if (onCopy != null || onRegenerate != null || onRetry != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                if (onCopy != null)
+                  _MessageAction(
+                    icon: Icons.copy_rounded,
+                    label: 'Copy',
+                    onTap: onCopy!,
+                  ),
+                if (onRegenerate != null)
+                  _MessageAction(
+                    icon: Icons.refresh_rounded,
+                    label: 'Regenerate',
+                    onTap: onRegenerate!,
+                  ),
+                if (onRetry != null)
+                  _MessageAction(
+                    icon: Icons.refresh_rounded,
+                    label: 'Retry',
+                    onTap: onRetry!,
+                  ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+/// A quiet text-button action shown under an assistant/error message.
+class _MessageAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MessageAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppColors.textMuted;
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 15, color: color),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: Theme.of(context).textTheme.labelMedium,
       ),
     );
   }
@@ -1395,9 +1787,17 @@ class _ChatMessage {
   /// Null for history turns (the server returns only the text placeholder).
   final Uint8List? imageBytes;
 
+  /// MIME type of [imageBytes], retained so Regenerate/Retry can resend the
+  /// image with its original type rather than guessing.
+  final String? imageMediaType;
+
   /// True for messages loaded from saved history (vs. sent this session). Lets
   /// "load older" rebuild the leading history block without dropping live turns.
   final bool fromHistory;
+
+  /// True while this assistant message is still receiving SSE token frames —
+  /// shows a trailing cursor so the student can see it's still generating.
+  final bool isStreaming;
 
   const _ChatMessage({
     required this.role,
@@ -1405,14 +1805,21 @@ class _ChatMessage {
     this.citations = const [],
     this.usage,
     this.imageBytes,
+    this.imageMediaType,
     this.fromHistory = false,
+    this.isStreaming = false,
   });
 
-  factory _ChatMessage.user(String text, {Uint8List? imageBytes}) {
+  factory _ChatMessage.user(
+    String text, {
+    Uint8List? imageBytes,
+    String? imageMediaType,
+  }) {
     return _ChatMessage(
       role: _MessageRole.user,
       text: text,
       imageBytes: imageBytes,
+      imageMediaType: imageMediaType,
     );
   }
 
@@ -1420,12 +1827,14 @@ class _ChatMessage {
     String text, {
     List<LearnAssistCitation> citations = const [],
     LearnAssistUsage? usage,
+    bool isStreaming = false,
   }) {
     return _ChatMessage(
       role: _MessageRole.assistant,
       text: text,
       citations: citations,
       usage: usage,
+      isStreaming: isStreaming,
     );
   }
 

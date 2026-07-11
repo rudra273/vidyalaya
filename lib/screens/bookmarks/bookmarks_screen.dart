@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/seed/seed_data.dart';
 import '../../providers/core_providers.dart';
+import '../../widgets/empty_state.dart';
 
 /// Bookmarks screen — shows all bookmarked pages grouped by subject.
 class BookmarksScreen extends ConsumerWidget {
@@ -34,12 +35,12 @@ class BookmarksScreen extends ConsumerWidget {
     final subjects = bySubject.keys.toList()..sort();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Bookmarks',
             style: Theme.of(context).textTheme.headlineSmall),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -134,17 +135,23 @@ class BookmarksScreen extends ConsumerWidget {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 14, vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
                                         borderRadius:
                                             BorderRadius.circular(10),
-                                        border:
-                                            Border.all(color: AppColors.border),
+                                        border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .outlineVariant),
                                       ),
                                       child: Row(
                                         children: [
                                           Icon(Icons.bookmark,
                                               size: 18,
-                                              color: AppColors.teal),
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary),
                                           const SizedBox(width: 10),
                                           Expanded(
                                             child: Text(
@@ -174,28 +181,11 @@ class BookmarksScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🔖', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 20),
-            Text('No bookmarks yet',
-                style: Theme.of(context).textTheme.displaySmall),
-            const SizedBox(height: 8),
-            Text(
-              'Open a book and tap the bookmark icon to save pages for quick access.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.textMuted),
-            ),
-          ],
-        ),
-      ),
+    return const EmptyState(
+      icon: Icons.bookmark_outline_rounded,
+      title: 'No bookmarks yet',
+      subtitle:
+          'Open a book and tap the bookmark icon to save pages for quick access.',
     );
   }
 
