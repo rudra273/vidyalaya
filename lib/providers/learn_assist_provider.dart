@@ -21,6 +21,10 @@ final learnAssistServiceProvider = Provider<LearnAssistService>((ref) {
 /// generic agent and must never drive this channel's class/subject selection.
 const int learnAssistMinClass = 6;
 
+/// Default class used when the student has no LearnAssist-eligible class
+/// selected, so the channel still has a sensible conversation to open.
+const int learnAssistDefaultClass = 8;
+
 int resolveLearnAssistClass(Set<int> selectedClasses) {
   final options = learnAssistClassOptions(selectedClasses);
   return options.first;
@@ -31,7 +35,7 @@ List<int> learnAssistClassOptions(Set<int> selectedClasses) {
       .where((classNo) => classNo >= learnAssistMinClass)
       .toList()
     ..sort();
-  if (supported.isEmpty) return const [8];
+  if (supported.isEmpty) return const [learnAssistDefaultClass];
   return supported;
 }
 

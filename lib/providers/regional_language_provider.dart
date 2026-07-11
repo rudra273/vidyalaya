@@ -36,8 +36,10 @@ enum RegionalLanguage {
 /// [UserPrefsRepository.getRegionalLanguage]); otherwise the profile's
 /// preferred language when it names a regional language (`hi` → Hindi,
 /// `or` → Odia; `en` falls through since English is always shown anyway);
-/// otherwise the selected board's default language (SCERT Odisha → Odia,
-/// NCERT → Hindi); otherwise Odia.
+/// otherwise the locally-picked preferred language (signed-out students save
+/// their Profile choice into `preferred_language`); otherwise the selected
+/// board's default language (SCERT Odisha → Odia, NCERT → Hindi); otherwise
+/// Odia.
 class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
   @override
   RegionalLanguage build() {
@@ -45,8 +47,9 @@ class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
     // the language, even while an override is set (setBoard clears it).
     final boardId = ref.watch(userBoardProvider);
 
-    final override =
-        ref.read(userPrefsRepositoryProvider).getRegionalLanguage();
+    final prefs = ref.read(userPrefsRepositoryProvider);
+
+    final override = prefs.getRegionalLanguage();
     if (override != null) {
       return RegionalLanguage.fromCode(override);
     }
@@ -57,6 +60,12 @@ class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
         .maybeWhen(data: (p) => p, orElse: () => null);
     if (profile?.preferredLanguage == 'hi') return RegionalLanguage.hindi;
     if (profile?.preferredLanguage == 'or') return RegionalLanguage.odia;
+
+    // Locally-picked preferred language (signed-out students). `en` falls
+    // through since English is always shown alongside the regional language.
+    final local = prefs.getPreferredLanguage();
+    if (local == 'hi') return RegionalLanguage.hindi;
+    if (local == 'or') return RegionalLanguage.odia;
 
     // fromCode falls back to Odia for unknown/future board ids.
     return RegionalLanguage.fromCode(

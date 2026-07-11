@@ -31,6 +31,11 @@ import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
 import '../screens/learn/vocabulary_screen.dart';
+import '../screens/learn/python/python_home_screen.dart';
+import '../screens/learn/python/python_chapter_screen.dart';
+import '../screens/learn/python/python_lesson_screen.dart';
+import '../screens/learn/python/python_quiz_screen.dart';
+import '../screens/learn/python/python_playground_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../data/models/learn_assist.dart';
 
@@ -206,6 +211,35 @@ final routerProvider = Provider<GoRouter>((ref) {
           final diagram = state.extra as Diagram;
           return DiagramViewerScreen(diagram: diagram);
         },
+      ),
+      // ── Python programming course ──
+      GoRoute(
+        path: '/learn/python',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PythonHomeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/python/playground',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PythonPlaygroundScreen(),
+      ),
+      GoRoute(
+        path: '/learn/python/chapter/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PythonChapterScreen(chapterId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/learn/python/lesson/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PythonLessonScreen(lessonId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/learn/python/quiz/:chapterId',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            PythonQuizScreen(chapterId: state.pathParameters['chapterId']!),
       ),
       GoRoute(
         path: '/class-selector',

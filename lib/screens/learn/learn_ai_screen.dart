@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -10,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
+import '../../data/models/ingested_books.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -58,6 +60,30 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   /// instead of appending a new one per token, and to suppress the typing-dots
   /// slot once real text is on screen.
   int? _streamingMessageIndex;
+
+  /// True while a post-frame scroll-to-bottom is already queued, so per-token
+  /// streaming doesn't stack a fresh `animateTo` on every SSE frame.
+  bool _scrollScheduled = false;
+
+  // Memoized subject list: `learnAssistSubjects` maps + sorts, and build() runs
+  // on every streamed token, so recompute only when the inputs change.
+  IngestedBooks? _subjectsMemoBooks;
+  String? _subjectsMemoBoard;
+  int? _subjectsMemoClass;
+  List<String> _subjectsMemo = const [];
+
+  List<String> _subjectsFor(IngestedBooks books, String board, int classNo) {
+    if (identical(books, _subjectsMemoBooks) &&
+        board == _subjectsMemoBoard &&
+        classNo == _subjectsMemoClass) {
+      return _subjectsMemo;
+    }
+    _subjectsMemoBooks = books;
+    _subjectsMemoBoard = board;
+    _subjectsMemoClass = classNo;
+    _subjectsMemo = learnAssistSubjects(books, board, classNo);
+    return _subjectsMemo;
+  }
 
   // ~10 MB base64 ceiling enforced by the backend; reject before sending so the
   // student gets a clear message rather than a 422.
@@ -143,6 +169,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     setState(() {
       applySelection();
       _messages.clear();
+      // Drop the streaming slot: any in-flight [appendToken]/finalize would
+      // otherwise index into the cleared list and crash (RangeError) or write
+      // into the wrong bubble.
+      _streamingMessageIndex = null;
       _historyNextBefore = null;
       _isRevalidating = false;
     });
@@ -165,6 +195,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _messages
           ..clear()
           ..addAll(_historyToMessages(cachedPage));
+        _streamingMessageIndex = null;
         _isLoadingHistory = false;
         _isRevalidating = true;
       });
@@ -197,6 +228,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         ..clear()
         ..addAll(_historyToMessages(page))
         ..addAll(live);
+      // The streaming bubble (if any) sits inside `live`; re-point its index to
+      // its new position after the history block so finalize/append still land
+      // on it rather than a stale slot.
+      if (_streamingMessageIndex != null) {
+        final streamingAt = _messages.lastIndexWhere((m) => m.isStreaming);
+        _streamingMessageIndex = streamingAt < 0 ? null : streamingAt;
+      }
     });
     _scrollToBottom();
   }
@@ -370,13 +408,22 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _messages.lastIndexWhere((m) => m.role == _MessageRole.user);
     if (lastUserIndex < 0) return;
     final userTurn = _messages[lastUserIndex];
+    // A history image-only turn keeps the '[Image shared]' placeholder but no
+    // bytes (the server returns text only), so there's nothing to resend.
+    // Retrying it would map to an empty query + null image and silently
+    // early-return in _performSend — tell the student instead of doing nothing.
+    final isImagePlaceholder = userTurn.text == '[Image shared]';
+    if (isImagePlaceholder && userTurn.imageBytes == null) {
+      _showSnack('Please send the image again to ask about it.');
+      return;
+    }
     setState(() {
       // Drop the user turn and any reply below it; _performSend re-adds the
       // user bubble so the conversation order stays intact.
       _messages.removeRange(lastUserIndex, _messages.length);
     });
     await _performSend(
-      query: userTurn.text == '[Image shared]' ? '' : userTurn.text,
+      query: isImagePlaceholder ? '' : userTurn.text,
       imageBytes: userTurn.imageBytes,
       imageMediaType: userTurn.imageBytes == null
           ? null
@@ -427,22 +474,41 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // left empty.
     var doneAnswer = '';
 
-    void appendToken(String text) {
-      if (text.isEmpty) return;
-      answerBuffer.write(text);
+    // Coalesce token frames: a full-list rebuild + scroll on every SSE token
+    // janks low-end devices, so we buffer and flush the bubble at most once per
+    // window instead of per token.
+    Timer? flushTimer;
+    var pendingFlush = false;
+
+    void flushTokens() {
+      pendingFlush = false;
+      if (!mounted) return;
       setState(() {
         final message = _ChatMessage.assistant(
           answerBuffer.toString(),
           isStreaming: true,
         );
-        if (_streamingMessageIndex == null) {
+        final index = _streamingMessageIndex;
+        if (index == null || index >= _messages.length) {
+          // No slot yet, or the list was rebuilt out from under us (subject
+          // switch mid-stream) — start a fresh streaming bubble.
           _streamingMessageIndex = _messages.length;
           _messages.add(message);
         } else {
-          _messages[_streamingMessageIndex!] = message;
+          _messages[index] = message;
         }
       });
       _scrollToBottom();
+    }
+
+    void appendToken(String text) {
+      if (text.isEmpty) return;
+      answerBuffer.write(text);
+      // Throttle: one rebuild per window, coalescing all tokens that arrive
+      // in between.
+      if (pendingFlush) return;
+      pendingFlush = true;
+      flushTimer = Timer(const Duration(milliseconds: 60), flushTokens);
     }
 
     try {
@@ -514,47 +580,33 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       await ref.read(userPrefsRepositoryProvider).recordAiSession();
       ref.read(progressProvider.notifier).refresh();
       setState(() {
-        final finalMessage = _ChatMessage.assistant(
+        _finalizeStreamingMessage(_ChatMessage.assistant(
           answer.isEmpty ? '(no answer)' : answer,
           citations: citations,
           usage: usage,
-        );
-        if (_streamingMessageIndex != null) {
-          _messages[_streamingMessageIndex!] = finalMessage;
-        } else {
-          _messages.add(finalMessage);
-        }
-        _streamingMessageIndex = null;
+        ));
         _isSending = false;
       });
     } on LearnAssistApiException catch (error) {
       if (!mounted) return;
       Haptics.error(ref);
       setState(() {
-        final errorMessage = _ChatMessage.error(error.message);
-        if (_streamingMessageIndex != null) {
-          _messages[_streamingMessageIndex!] = errorMessage;
-        } else {
-          _messages.add(errorMessage);
-        }
-        _streamingMessageIndex = null;
+        _finalizeStreamingMessage(_ChatMessage.error(error.message));
         _isSending = false;
       });
     } catch (_) {
       if (!mounted) return;
       Haptics.error(ref);
       setState(() {
-        final errorMessage = _ChatMessage.error(
-          'Something went wrong. Please try again.',
+        _finalizeStreamingMessage(
+          _ChatMessage.error('Something went wrong. Please try again.'),
         );
-        if (_streamingMessageIndex != null) {
-          _messages[_streamingMessageIndex!] = errorMessage;
-        } else {
-          _messages.add(errorMessage);
-        }
-        _streamingMessageIndex = null;
         _isSending = false;
       });
+    } finally {
+      // A queued flush would otherwise fire after finalize and resurrect a
+      // stray streaming bubble.
+      flushTimer?.cancel();
     }
     _scrollToBottom();
   }
@@ -569,8 +621,25 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     _composerFocusNode.requestFocus();
   }
 
+  /// Land the final assistant/error message into the streaming slot (replacing
+  /// the growing bubble) or append it if streaming never started, then clear the
+  /// slot. Bounds-checked so a list rebuilt mid-stream can't crash. Call inside
+  /// an existing `setState`.
+  void _finalizeStreamingMessage(_ChatMessage message) {
+    final index = _streamingMessageIndex;
+    if (index != null && index < _messages.length) {
+      _messages[index] = message;
+    } else {
+      _messages.add(message);
+    }
+    _streamingMessageIndex = null;
+  }
+
   void _scrollToBottom() {
+    if (_scrollScheduled) return;
+    _scrollScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollScheduled = false;
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
@@ -617,7 +686,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         });
       });
     }
-    final subjectOptions = learnAssistSubjects(
+    final subjectOptions = _subjectsFor(
       ref.watch(ingestedBooksProvider),
       _board,
       _selectedClass,

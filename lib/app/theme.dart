@@ -54,6 +54,7 @@ class AppColors {
   static const Color cDiagrams = Color(0xFF138B82);
   static const Color cTimeline = Color(0xFFB5862B);
   static const Color cCosmos = Color(0xFF3A66C9);
+  static const Color cPython = Color(0xFF3E8E5A);
 
   // ─── DARK ─────────────────────────────────────────────────────────────
   static const Color paperDark = Color(0xFF0D1411);
@@ -99,6 +100,7 @@ class AppColors {
   static const Color cDiagramsDark = Color(0xFF3DB6AC);
   static const Color cTimelineDark = Color(0xFFD9B05B);
   static const Color cCosmosDark = Color(0xFF6E92E8);
+  static const Color cPythonDark = Color(0xFF74C293);
 
   // ─── Subject color mapping ───────────────────────────────────────────
   static Color subjectColor(String subject, Brightness brightness) {

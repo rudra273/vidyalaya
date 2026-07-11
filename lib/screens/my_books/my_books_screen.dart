@@ -194,7 +194,6 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
       ),
     );
   }
-
 }
 
 class _AddClassBanner extends StatelessWidget {

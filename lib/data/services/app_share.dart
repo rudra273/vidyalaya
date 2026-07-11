@@ -1,8 +1,8 @@
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// ─── App sharing & Play Store links ─────────────────────────────
-///
+// ─── App sharing & Play Store links ─────────────────────────────
+
 /// Small static helper for "share the app" and "rate / feedback"
 /// actions. No state — safe to call from anywhere.
 class AppShare {

@@ -112,6 +112,62 @@ void main() {
         RegionalLanguage.hindi,
       );
     });
+
+    test('locally-picked preferred language beats the board default', () async {
+      // Signed-out student who picked Hindi in Profile (saved to
+      // preferred_language) on an Odia-default board.
+      final container = await _container(
+        prefs: {
+          'selected_board': 'scert_odisha',
+          'preferred_language': 'hi',
+        },
+      );
+      expect(
+        container.read(regionalLanguageProvider),
+        RegionalLanguage.hindi,
+      );
+    });
+
+    test("locally-picked 'en' falls through to the board default", () async {
+      final container = await _container(
+        prefs: {
+          'selected_board': 'scert_odisha',
+          'preferred_language': 'en',
+        },
+      );
+      expect(
+        container.read(regionalLanguageProvider),
+        RegionalLanguage.odia,
+      );
+    });
+
+    test('profile preferred language beats the local pref', () async {
+      final container = await _container(
+        prefs: {
+          'selected_board': 'ncert',
+          'preferred_language': 'hi',
+        },
+        profile: _profile('or'),
+      );
+      expect(
+        container.read(regionalLanguageProvider),
+        RegionalLanguage.odia,
+      );
+    });
+
+    test('manual override beats the local pref', () async {
+      final container = await _container(
+        prefs: {
+          'selected_board': 'scert_odisha',
+          'preferred_language': 'hi',
+          'regional_language': 'or',
+        },
+      );
+      expect(
+        container.read(regionalLanguageProvider),
+        RegionalLanguage.odia,
+      );
+    });
   });
 
   group('board changes', () {

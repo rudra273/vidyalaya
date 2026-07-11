@@ -50,7 +50,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               theme,
               title: '2. What You Can Use Without an Account',
               content: 'Core reading and study features work without signing in. When you use Vidyālaya without an account:\n\n'
-                       '• Local Storage Only: Your class selection, board, theme (light/sepia/dark), bookmarks, highlights, notes, timetable, and reading progress are stored entirely on your device.\n'
+                       '• Local Storage Only: Your class selection, board, preferred language, chosen avatar, theme (light/sepia/dark), bookmarks, highlights, notes, timetable, and reading progress are stored entirely on your device.\n'
                        '• Downloaded Books: The textbooks and study materials you download are saved directly to your device for offline viewing.\n'
                        '• No Sign-In Required for Reading: You are not required to provide any identifying information to read books, take notes, or use the offline Learn modules.',
             ),
@@ -70,7 +70,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               content: 'When you are signed in, you can create a student profile so we can tailor content to your studies. This profile is stored on our servers and may include:\n\n'
                        '• Your name (you can edit this; it does not have to be your real or full name).\n'
                        '• Your class / grade and education board.\n'
-                       '• Your preferred language.\n'
+                       '• Your preferred language (a copy is also kept on your device so the app works offline and before you sign in).\n'
                        '• Your school name (optional — you may leave this blank).\n\n'
                        'You can view and edit this information at any time from the Profile screen. Providing a school name is entirely optional.',
             ),

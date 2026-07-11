@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 
-/// ─── Feedback → Google Form ─────────────────────────────────────
-///
+// ─── Feedback → Google Form ─────────────────────────────────────
+
 /// Submits in-app feedback straight to the linked Google Form
 /// (responses land in its Google Sheet). Name/email are attached
 /// silently from the signed-in user when available.

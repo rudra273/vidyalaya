@@ -10,6 +10,7 @@ class ProgressStats {
   final int pagesReadToday;
   final int aiSessions;
   final int toolsOpened;
+  final int pythonLessonsCompleted;
   final Map<String, int> subjectPages;
 
   const ProgressStats({
@@ -19,6 +20,7 @@ class ProgressStats {
     required this.pagesReadToday,
     required this.aiSessions,
     required this.toolsOpened,
+    required this.pythonLessonsCompleted,
     required this.subjectPages,
   });
 }
@@ -38,6 +40,7 @@ class ProgressNotifier extends Notifier<ProgressStats> {
     final pagesReadToday = repo.getPagesReadToday();
     final aiSessions = repo.getAiSessions();
     final toolsOpened = repo.getToolsOpened();
+    final pythonLessonsCompleted = repo.getPythonCompletedLessons().length;
 
     // Standard subjects
     final subjects = ['Mathematics', 'Science', 'Odia', 'English', 'History', 'Geography'];
@@ -57,6 +60,7 @@ class ProgressNotifier extends Notifier<ProgressStats> {
       pagesReadToday: pagesReadToday,
       aiSessions: aiSessions,
       toolsOpened: toolsOpened,
+      pythonLessonsCompleted: pythonLessonsCompleted,
       subjectPages: subjectPages,
     );
   }

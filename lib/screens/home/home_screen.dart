@@ -20,6 +20,22 @@ import '../../widgets/share_feedback_banner.dart';
 import '../../data/models/book.dart';
 import '../../data/seed/vocabulary_data.dart';
 
+/// Haptic tap → navigate, the pattern every Home tile shares. Uses `push` by
+/// default; pass [replace] for tabs that should swap the current route.
+void _navTap(
+  WidgetRef ref,
+  BuildContext context,
+  String path, {
+  bool replace = false,
+}) {
+  Haptics.light(ref);
+  if (replace) {
+    context.go(path);
+  } else {
+    context.push(path);
+  }
+}
+
 /// AI-first Home — "Calm Scholar" layout.
 /// Wordmark → AI Learning (Ask hero + Tutor row + future agents teaser) →
 /// Jump back in → Study tools → Recently added.
@@ -73,20 +89,15 @@ class HomeScreen extends ConsumerWidget {
                     if (streak > 0) ...[
                       _StreakChip(
                         streak: streak,
-                        onTap: () {
-                          Haptics.light(ref);
-                          context.push('/progress');
-                        },
+                        onTap: () => _navTap(ref, context, '/progress'),
                       ),
                       const SizedBox(width: 12),
                     ],
                     _Avatar(
                       letter: avatarLetter,
                       avatar: ref.watch(selectedAvatarProvider),
-                      onTap: () {
-                        Haptics.light(ref);
-                        context.go('/profile');
-                      },
+                      onTap: () => _navTap(ref, context, '/profile',
+                          replace: true),
                     ),
                   ],
                 ),
@@ -115,14 +126,8 @@ class HomeScreen extends ConsumerWidget {
               horizontal: AppSpacing.screenPadding,
             ),
             child: _AskHero(
-              onTap: () {
-                Haptics.light(ref);
-                context.push('/learn/ai');
-              },
-              onAsk: () {
-                Haptics.light(ref);
-                context.push('/learn/ai?focus=1');
-              },
+              onTap: () => _navTap(ref, context, '/learn/ai'),
+              onAsk: () => _navTap(ref, context, '/learn/ai?focus=1'),
             ),
           ),
           const SizedBox(height: AppSpacing.stackGap),
@@ -131,10 +136,7 @@ class HomeScreen extends ConsumerWidget {
               horizontal: AppSpacing.screenPadding,
             ),
             child: _TutorRow(
-              onTap: () {
-                Haptics.light(ref);
-                context.push('/learn-ai/tutor');
-              },
+              onTap: () => _navTap(ref, context, '/learn-ai/tutor'),
             ),
           ),
 
@@ -193,10 +195,7 @@ class HomeScreen extends ConsumerWidget {
                     color: _isDark(context) ? AppColors.cAiDark : AppColors.cAi,
                     icon: Icons.bookmark_rounded,
                     label: 'Bookmarks',
-                    onTap: () {
-                      Haptics.light(ref);
-                      context.push('/bookmarks');
-                    },
+                    onTap: () => _navTap(ref, context, '/bookmarks'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -207,10 +206,7 @@ class HomeScreen extends ConsumerWidget {
                         : AppColors.cEnglish,
                     icon: Icons.calendar_month_rounded,
                     label: 'Timetable',
-                    onTap: () {
-                      Haptics.light(ref);
-                      context.push('/timetable');
-                    },
+                    onTap: () => _navTap(ref, context, '/timetable'),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -221,10 +217,7 @@ class HomeScreen extends ConsumerWidget {
                         : AppColors.cSocial,
                     icon: Icons.edit_note_rounded,
                     label: 'Notes',
-                    onTap: () {
-                      Haptics.light(ref);
-                      context.push('/notes');
-                    },
+                    onTap: () => _navTap(ref, context, '/notes'),
                   ),
                 ),
               ],
@@ -789,10 +782,7 @@ class _ContinueCard extends ConsumerWidget {
     final subjectColor = AppColors.subjectColor(book.subject, brightness);
 
     return Pressable(
-      onTap: () {
-        Haptics.light(ref);
-        context.push('/reader/${book.id}');
-      },
+      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.cardPad - 4),
         decoration: BoxDecoration(
@@ -924,10 +914,7 @@ class _RecentBookCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final meta = subjectMeta(book.subject);
     return Pressable(
-      onTap: () {
-        Haptics.light(ref);
-        context.push('/reader/${book.id}');
-      },
+      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
       child: SizedBox(
         width: 106,
         child: Column(

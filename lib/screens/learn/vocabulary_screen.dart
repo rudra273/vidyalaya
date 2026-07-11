@@ -21,20 +21,23 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   final _searchController = TextEditingController();
   String _query = '';
 
+  /// The full word list alphabetised once — the ~200-word sort is stable across
+  /// keystrokes, so we sort at init and only filter per query in [_filtered].
+  late final List<VocabularyWord> _sortedWords = [...vocabularyWords]
+    ..sort((a, b) => a.word.toLowerCase().compareTo(b.word.toLowerCase()));
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  /// Words matching the search query (by word text or English meaning),
-  /// alphabetised so the list reads like a dictionary.
+  /// Words matching the search query (by word text or English meaning), over
+  /// the pre-sorted list so the result reads like a dictionary.
   List<VocabularyWord> get _filtered {
     final q = _query.trim().toLowerCase();
-    final words = [...vocabularyWords]
-      ..sort((a, b) => a.word.toLowerCase().compareTo(b.word.toLowerCase()));
-    if (q.isEmpty) return words;
-    return words
+    if (q.isEmpty) return _sortedWords;
+    return _sortedWords
         .where((w) =>
             w.word.toLowerCase().contains(q) ||
             w.meaningEn.toLowerCase().contains(q))

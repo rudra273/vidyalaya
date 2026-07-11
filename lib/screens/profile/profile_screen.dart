@@ -10,7 +10,6 @@ import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
 import '../../data/seed/seed_data.dart' show boardLabel;
-import '../../data/services/app_share.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
@@ -22,6 +21,7 @@ import '../../providers/clay_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
+import '../../widgets/support_section.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -94,8 +94,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final progress = ref.watch(progressProvider);
     final books = ref.watch(selectedBooksProvider);
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
@@ -234,58 +232,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
             ),
 
-            // ── Support ──────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
+            const SupportSection(
+              headingPadding: EdgeInsets.fromLTRB(
                   AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
-              child: const SectionHead(label: 'Support'),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  border: Border.all(color: cs.outline),
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                ),
-                child: Column(
-                  children: [
-                    ListRow(
-                      color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-                      icon: Icons.share_outlined,
-                      title: 'Share Vidyālaya',
-                      sub: 'Tell your friends about the app',
-                      onTap: () {
-                        Haptics.light(ref);
-                        AppShare.shareApp();
-                      },
-                    ),
-                    ListRow(
-                      color:
-                          isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                      icon: Icons.star_outline_rounded,
-                      title: 'Rate Vidyālaya',
-                      sub: 'Rate us on the Play Store',
-                      onTap: () {
-                        Haptics.light(ref);
-                        AppShare.openPlayStore();
-                      },
-                    ),
-                    ListRow(
-                      color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                      icon: Icons.chat_bubble_outline_rounded,
-                      title: 'Send feedback',
-                      sub: 'Report bugs or request features',
-                      onTap: () {
-                        Haptics.light(ref);
-                        context.push('/feedback');
-                      },
-                      last: true,
-                    ),
-                  ],
-                ),
-              ),
             ),
 
             const SizedBox(height: 16),
@@ -309,7 +258,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   void _ensureCachedProfile(User? user) {
-    if (user == null || _isProfileSaving) return;
+    // Skip the background revalidation while editing: for an account with no
+    // saved profile (no cache), ensureProfile flips `profile` to AsyncLoading,
+    // which drives the form's `isBusy` true and greys out the fields the
+    // student is typing into. Their edits aren't lost when we resume — the
+    // cached profile only re-applies when not editing.
+    if (user == null || _isProfileSaving || _isEditing) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       ref.read(backendAccountCacheProvider.notifier).ensureProfile();
