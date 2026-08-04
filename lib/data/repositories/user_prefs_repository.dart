@@ -506,6 +506,32 @@ class UserPrefsRepository {
     await _prefs.setString(_pythonPlaygroundCodeKey, code);
   }
 
+  // ─── Math tools ──────────────────────────────────────────────────────────
+  //
+  // Best score per math tool id, following the Python quiz precedent. Practice
+  // is learning, so recording a score keeps the streak alive.
+
+  static const _mathBestScoresKey = 'math_best_scores';
+
+  /// toolId → best score achieved.
+  Map<String, int> getMathBestScores() {
+    final jsonStr = _prefs.getString(_mathBestScoresKey);
+    if (jsonStr == null) return {};
+    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+    return map.map((k, v) => MapEntry(k, v as int));
+  }
+
+  /// Records a finished round, keeping only the best score for [toolId].
+  Future<void> recordMathScore(String toolId, int score) async {
+    final scores = getMathBestScores();
+    final best = scores[toolId] ?? 0;
+    if (score > best) {
+      scores[toolId] = score;
+      await _prefs.setString(_mathBestScoresKey, jsonEncode(scores));
+    }
+    await _recordActivityToday();
+  }
+
   /// Rolls over the day and advances the learning streak. Idempotent within a
   /// day. Called by every learning action (reading, AI, tools) so the streak
   /// reflects all learning — not reading alone.

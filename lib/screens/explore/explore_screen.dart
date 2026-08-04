@@ -217,6 +217,15 @@ class _Tool {
 }
 
 List<_Tool> _tools(bool isDark) => [
+      // Math is a hub: tables, drills, quizzes and Formulas all live inside it.
+      _Tool(
+        id: 'math',
+        title: 'Math',
+        sub: 'Tables, drills & quizzes',
+        icon: Icons.calculate_rounded,
+        color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
+        route: '/learn/math',
+      ),
       _Tool(
         id: 'python',
         title: 'Python',
@@ -224,14 +233,6 @@ List<_Tool> _tools(bool isDark) => [
         icon: Icons.code_rounded,
         color: isDark ? AppColors.cPythonDark : AppColors.cPython,
         route: '/learn/python',
-      ),
-      _Tool(
-        id: 'math-formulas',
-        title: 'Formulas',
-        sub: 'Formulas & calculator',
-        icon: Icons.functions_rounded,
-        color: isDark ? AppColors.cFormulasDark : AppColors.cFormulas,
-        route: '/learn/math-formulas',
       ),
       _Tool(
         id: 'periodic-table',

@@ -36,6 +36,13 @@ import '../screens/learn/python/python_chapter_screen.dart';
 import '../screens/learn/python/python_lesson_screen.dart';
 import '../screens/learn/python/python_quiz_screen.dart';
 import '../screens/learn/python/python_playground_screen.dart';
+import '../screens/learn/math/math_home_screen.dart';
+import '../screens/learn/math/math_tables_screen.dart';
+import '../screens/learn/math/math_flash_screen.dart';
+import '../screens/learn/math/math_quiz_screen.dart';
+import '../screens/learn/math/math_drills_screen.dart';
+import '../screens/learn/math/math_number_sense_screen.dart';
+import '../screens/learn/math/math_fractions_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../data/models/learn_assist.dart';
 
@@ -240,6 +247,44 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             PythonQuizScreen(chapterId: state.pathParameters['chapterId']!),
+      ),
+      // ── Math hub ──
+      // Note: Formulas keeps its original /learn/math-formulas path (above) and
+      // is reached from the hub, so existing deep links keep working.
+      GoRoute(
+        path: '/learn/math',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathHomeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/tables',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathTablesScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/flash',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathFlashScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/quiz',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathQuizScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/drills',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathDrillsScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/number-sense',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathNumberSenseScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/fractions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathFractionsScreen(),
       ),
       GoRoute(
         path: '/class-selector',
