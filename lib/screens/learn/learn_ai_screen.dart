@@ -179,6 +179,70 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     _loadHistory();
   }
 
+  /// Student tapped "Start fresh": confirm, then clear the agent's working
+  /// memory for the current thread (board/class/subject) on the backend and wipe
+  /// the on-screen conversation. The permanent chat history is untouched, so the
+  /// student can still reveal past turns via "Load previous chat".
+  Future<void> _resetMemory() async {
+    if (_isSending) return;
+    if (ref.read(firebaseAuthProvider).currentUser == null) {
+      _showSnack('Sign in to use the AI tutor.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Start fresh?'),
+        content: const Text(
+          "The AI will forget this conversation and start over. Your chat "
+          "history is kept — you can still view it.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Start fresh'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final service = ref.read(learnAssistServiceProvider);
+    try {
+      await service.resetMemory(
+        MemoryResetRequest(
+          board: _board,
+          classNo: _selectedClass,
+          channel: widget.channel,
+          subject: _selectedSubject,
+        ),
+      );
+    } on LearnAssistApiException catch (e) {
+      if (!mounted) return;
+      Haptics.error(ref);
+      _showSnack(e.message);
+      return;
+    }
+
+    if (!mounted) return;
+    Haptics.light(ref);
+    setState(() {
+      _messages.clear();
+      _streamingMessageIndex = null;
+      _historyNextBefore = null;
+      _isRevalidating = false;
+      // Land on the fresh-start empty state (suggestions) rather than reloading
+      // the preserved history the student just chose to move past.
+      _historyHidden = true;
+    });
+    _showSnack('Started a fresh conversation.');
+  }
+
   /// Load the first page of history for the current selector into the chat.
   Future<void> _loadHistory() async {
     if (_historyHidden) return;
@@ -711,6 +775,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             isSignedIn: isSignedIn,
             user: accountState.user,
             usage: accountState.usage,
+          ),
+          IconButton(
+            icon: const Icon(Icons.restart_alt_rounded),
+            tooltip: 'Start fresh',
+            // Disabled mid-turn: resetting memory while a response streams would
+            // desync the on-screen bubble from the (now-cleared) thread.
+            onPressed: _isSending ? null : _resetMemory,
           ),
           const SizedBox(width: 8),
         ],
