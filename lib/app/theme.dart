@@ -321,6 +321,9 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        // Leading slot is already 56px wide; the default 16px on top of that
+        // leaves a wide gap between the back arrow and the title.
+        titleSpacing: 0,
         titleTextStyle: textTheme.headlineSmall,
         iconTheme: const IconThemeData(color: AppColors.ink),
       ),
@@ -425,6 +428,9 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
+        // Leading slot is already 56px wide; the default 16px on top of that
+        // leaves a wide gap between the back arrow and the title.
+        titleSpacing: 0,
         titleTextStyle: textTheme.headlineSmall,
         iconTheme: const IconThemeData(color: AppColors.inkDark),
       ),

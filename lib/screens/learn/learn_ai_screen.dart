@@ -10,8 +10,10 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
+import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
 import '../../data/models/ingested_books.dart';
+import '../../data/seed/ai_suggestions.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -33,11 +35,23 @@ class LearnAiScreen extends ConsumerStatefulWidget {
   /// [initialPrompt] always focuses regardless of this flag.
   final bool autofocus;
 
+  /// Conversation to open on, e.g. a subject chip tapped on the AI hub.
+  /// Ignored when the subject isn't one of the ingested subjects for the
+  /// student's board/class, so a stale deep link falls back to all-subjects.
+  final String? initialSubject;
+
+  /// Open the camera/gallery sheet on arrival — the "snap a photo" shortcut.
+  /// Takes precedence over [autofocus]: raising the keyboard behind a modal
+  /// sheet would leave it up once the picker closes.
+  final bool openCamera;
+
   const LearnAiScreen({
     super.key,
     this.channel = LearnAssistChannel.learnAssist,
     this.initialPrompt,
     this.autofocus = false,
+    this.initialSubject,
+    this.openCamera = false,
   });
 
   @override
@@ -123,13 +137,23 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void initState() {
     super.initState();
     _selectedClass = resolveLearnAssistClass(ref.read(userSelectionProvider));
+    // A subject from the route (AI hub chip). build() drops it again if it
+    // isn't one of the ingested subjects for this board/class.
+    final subject = widget.initialSubject?.trim();
+    _selectedSubject = (subject != null && subject.isNotEmpty) ? subject : null;
     final prefill = widget.initialPrompt?.trim() ?? '';
     if (prefill.isNotEmpty) {
       _messageController.text = prefill;
     }
-    // Focus the composer (keyboard up) when arriving from a tapped suggestion
-    // or the Home Ask bar, so the screen lands ready to type/send.
-    if (prefill.isNotEmpty || widget.autofocus) {
+    if (widget.openCamera) {
+      // "Snap a photo" shortcut: land straight on the picker instead of the
+      // keyboard, so the student never has to find the attach button.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showImageSourceSheet();
+      });
+    } else if (prefill.isNotEmpty || widget.autofocus) {
+      // Focus the composer (keyboard up) when arriving from a tapped suggestion
+      // or the Home Ask bar, so the screen lands ready to type/send.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _composerFocusNode.requestFocus();
       });
@@ -810,7 +834,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             Expanded(
               child: _messages.isEmpty && !_isLoadingHistory && !_isSending
                   ? _EmptyChat(
-                      suggestions: _suggestionsFor(_selectedSubject),
+                      suggestions: aiSuggestionsFor(_selectedSubject),
                       onSuggestionTap: _applySuggestion,
                       showLoadPrevious: _historyHidden && isSignedIn,
                       onLoadPrevious: _revealHistory,
@@ -937,19 +961,19 @@ class _PlanUsageBadge extends StatelessWidget {
     final usageErrored = usage is AsyncError && currentUsage == null;
 
     final planKey = backendUser?.planKey ?? 'free';
-    final planLabel = _planLabel(planKey);
+    final plan = planLabel(planKey);
 
     String usageLabel;
     if (isLoading) {
       usageLabel = '...';
     } else if (usageErrored) {
-      usageLabel = '$planLabel · —';
+      usageLabel = '$plan · —';
     } else if (currentUsage == null) {
-      usageLabel = planLabel;
+      usageLabel = plan;
     } else if (currentUsage.unlimited) {
-      usageLabel = '$planLabel · ∞';
+      usageLabel = '$plan · ∞';
     } else {
-      usageLabel = '$planLabel · ${currentUsage.remaining} left';
+      usageLabel = '$plan · ${currentUsage.remaining} left';
     }
 
     return Container(
@@ -1013,12 +1037,12 @@ class _ContextControls extends StatelessWidget {
             icon: Icons.menu_book_rounded,
             label: selectedSubject == null
                 ? 'All subjects'
-                : _formatSubject(selectedSubject!),
+                : formatSubject(selectedSubject!),
             value: selectedSubject ?? 'all',
             options: [
               const ('all', 'All subjects'),
               for (final subject in subjectOptions)
-                (subject, _formatSubject(subject)),
+                (subject, formatSubject(subject)),
             ],
             onSelected: (value) {
               onSubjectChanged(value == 'all' ? null : value);
@@ -1183,37 +1207,8 @@ class _HistoryErrorBar extends StatelessWidget {
 }
 
 // ─── Suggested questions ─────────────────────────────────────────────────
-// Subject-specific starters shown on the fresh chat screen. Subjects without
-// their own list fall back to the mixed set (one per covered subject).
-
-const Map<String, List<String>> _subjectSuggestions = {
-  'maths': [
-    'How do I find the area of a triangle?',
-    'Explain fractions with a simple example',
-    'What is the difference between LCM and HCF?',
-  ],
-  'science': [
-    'Why does the moon change shape?',
-    'How does the water cycle work?',
-    'What is photosynthesis in simple words?',
-  ],
-  'english': [
-    'What is the difference between a noun and a verb?',
-    'Help me write a paragraph about my school',
-    'When do I use "a", "an" and "the"?',
-  ],
-};
-
-const List<String> _mixedSuggestions = [
-  'How do I find the area of a triangle?',
-  'Why does the moon change shape?',
-  'Help me write a paragraph about my school',
-];
-
-List<String> _suggestionsFor(String? subject) {
-  if (subject == null) return _mixedSuggestions;
-  return _subjectSuggestions[subject.toLowerCase()] ?? _mixedSuggestions;
-}
+// Starter data lives in data/seed/ai_suggestions.dart so the AI hub and this
+// screen offer the same questions — see [aiSuggestionsFor].
 
 /// Fresh-start screen: a quiet heading, tappable starter questions, and (when
 /// an older conversation is tucked away) a link to bring it back.
@@ -1951,21 +1946,4 @@ String? _lowQuotaNote(LearnAssistUsage? usage) {
   return '${usage.remaining} $word left today.';
 }
 
-String _planLabel(String planKey) {
-  return switch (planKey) {
-    'plus' => 'Plus',
-    'pro' => 'Pro',
-    _ => 'Free',
-  };
-}
-
-String _formatSubject(String subject) {
-  return subject
-      .split('_')
-      .map(
-        (part) => part.isEmpty
-            ? part
-            : '${part[0].toUpperCase()}${part.substring(1)}',
-      )
-      .join(' ');
-}
+// Plan + subject labels live in utils/ai_labels.dart, shared with the AI hub.

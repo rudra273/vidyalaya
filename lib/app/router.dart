@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
 import '../data/seed/seed_data.dart';
+import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
 import '../screens/class_selector/class_selector_screen.dart';
@@ -91,14 +92,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
+            path: '/ai',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AiHubScreen()),
+          ),
+          GoRoute(
             path: '/explore',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: ExploreScreen()),
-          ),
-          GoRoute(
-            path: '/library',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: MyBooksScreen()),
           ),
           GoRoute(
             path: '/profile',
@@ -112,6 +113,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/learn', redirect: (_, _) => '/explore'),
       GoRoute(path: '/my-books', redirect: (_, _) => '/library'),
       GoRoute(path: '/learn-ai', redirect: (_, _) => '/learn/ai'),
+      // Library lost its tab to AI: it now pushes full-screen from Home.
+      GoRoute(
+        path: '/library',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MyBooksScreen(),
+      ),
       GoRoute(
         path: '/settings',
         parentNavigatorKey: _rootNavigatorKey,
@@ -151,10 +158,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               LearnAssistChannel.learnAssist;
           final prefill = state.uri.queryParameters['prefill'];
           final autofocus = state.uri.queryParameters['focus'] == '1';
+          final subject = state.uri.queryParameters['subject'];
+          final openCamera = state.uri.queryParameters['camera'] == '1';
           return LearnAiScreen(
             channel: channel,
             initialPrompt: prefill,
             autofocus: autofocus,
+            initialSubject: subject,
+            openCamera: openCamera,
           );
         },
       ),
