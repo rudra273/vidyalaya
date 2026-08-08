@@ -1,16 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../data/seed/vocabulary_data.dart';
 import '../../providers/regional_language_provider.dart';
+import '../../providers/vocabulary_provider.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/regional_language_switch.dart';
 
 /// Browsable, searchable view over the full [vocabularyWords] list. The Home
 /// "Word of the day" card samples one entry from the same data; this surfaces
 /// the whole set as an Explore tool.
+///
+/// The list is split into one sliver section per letter so the A-Z slider can
+/// jump to a measured offset rather than an estimated one — see [_jumpToLetter].
 class VocabularyScreen extends ConsumerStatefulWidget {
   const VocabularyScreen({super.key});
 
@@ -23,82 +29,254 @@ const _kAlphabet = [
   'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 ];
 
+/// Height of a sticky letter header. Mirrored by `_kLetterHeaderExtent` in
+/// [vocabularyIndexProvider], which uses it to estimate section offsets.
+const _kLetterHeaderExtent = 40.0;
+
+/// Extra pre-built area above and below the viewport. The default (250) is
+/// barely one card tall, so fast scrolls build cards just-in-time.
+const _kCacheExtent = 600.0;
+
+/// How many re-aim passes a jump may take before giving up.
+///
+/// A hit lands in one or two passes. A miss bisects the scroll range, which
+/// needs about log2(extent / section height) passes — ~24 for this list — so
+/// the cap is set above that with headroom, and only bounds a pathological
+/// case that would otherwise loop.
+const _kMaxJumpCorrections = 32;
+
+/// Offset changes below this are treated as arrived, so correcting stops
+/// instead of oscillating on sub-pixel differences.
+const _kJumpEpsilon = 0.5;
+
 class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
+
+  /// Letter currently highlighted on the slider. Held as a notifier so
+  /// dragging repaints only the slider and the badge — not the whole list.
+  final _activeLetter = ValueNotifier<String?>(null);
+
+  /// Anchors used to measure each section's true scroll offset.
+  final _sectionKeys = <String, GlobalKey>{};
+
+  /// Letter the in-flight jump is converging on. Outlives the slider touch,
+  /// so corrections keep running after the finger lifts.
+  String? _pendingJump;
+
+  /// Scroll range still under consideration by the in-flight jump's bisection.
+  double? _jumpLow;
+  double? _jumpHigh;
+
   String _query = '';
-  String? _jumpLetter;
 
-  /// The full word list alphabetised once — the sort is stable across
-  /// keystrokes, so we sort at init and only filter per query in [_filtered].
-  late final List<VocabularyWord> _sortedWords = [...vocabularyWords]
-    ..sort((a, b) => a.word.toLowerCase().compareTo(b.word.toLowerCase()));
+  /// Current search results. Recomputed only when the query changes, so
+  /// unrelated rebuilds (slider drags, theme changes) don't re-scan the list.
+  List<IndexedWord> _results = const [];
 
-  /// Index of the first word for each letter, computed once over the sorted
-  /// list, so the A-Z slider can jump straight to a card without scanning.
-  late final Map<String, int> _letterOffsets = _buildLetterOffsets();
-
-  /// Card height estimate used to convert a list index into a scroll offset.
-  /// Cards vary slightly with content length, so this is an approximation —
-  /// good enough for a fast jump, and normal scrolling still works exactly.
-  static const _estimatedCardExtent = 190.0;
-
-  Map<String, int> _buildLetterOffsets() {
-    final offsets = <String, int>{};
-    for (var i = 0; i < _sortedWords.length; i++) {
-      final letter = _sortedWords[i].word[0].toUpperCase();
-      offsets.putIfAbsent(letter, () => i);
-    }
-    return offsets;
-  }
-
-  /// Letters that have at least one word, so the slider can grey out the rest.
-  late final Set<String> _availableLetters = _letterOffsets.keys.toSet();
+  /// Last normalised query. The leading space is a sentinel — `trim()` means a
+  /// real query can never equal it, so the first search always runs.
+  String _lastQuery = ' ';
 
   @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _activeLetter.dispose();
     super.dispose();
   }
 
-  /// Words matching the search query (by word text or English meaning), over
-  /// the pre-sorted list so the result reads like a dictionary.
-  List<VocabularyWord> get _filtered {
-    final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return _sortedWords;
-    return _sortedWords
-        .where((w) =>
-            w.word.toLowerCase().contains(q) ||
-            w.meaningEn.toLowerCase().contains(q))
-        .toList();
+  // ─── Search ───
+
+  void _onQueryChanged(String value, VocabularyIndex index) {
+    final q = value.trim().toLowerCase();
+    if (q == _lastQuery) {
+      // Whitespace-only edits ("cat" -> "cat ") can't change the result set.
+      if (_query != value) setState(() => _query = value);
+      return;
+    }
+
+    // Matches shrink monotonically as the query grows, so extending a query
+    // only needs to re-filter the previous results. Ranks may change, but a
+    // word that failed to match a shorter query can't match a longer one.
+    final base = (_lastQuery.isNotEmpty && q.startsWith(_lastQuery))
+        ? _results
+        : index.words;
+    _lastQuery = q;
+
+    setState(() {
+      _query = value;
+      _results = q.isEmpty ? index.words : _rankedMatches(base, q);
+    });
   }
 
-  void _jumpTo(String letter) {
+  /// Words matching [query], best matches first.
+  ///
+  /// Bucketing rather than sorting: [base] is already alphabetical, so
+  /// appending in order keeps each tier alphabetical. `List.sort` is not
+  /// stable in Dart, so sorting by rank alone would scramble ties.
+  List<IndexedWord> _rankedMatches(List<IndexedWord> base, String query) {
+    final startsWith = <IndexedWord>[];
+    final inWord = <IndexedWord>[];
+    final inMeaning = <IndexedWord>[];
+
+    for (final w in base) {
+      switch (w.rank(query)) {
+        case 0:
+          startsWith.add(w);
+        case 1:
+          inWord.add(w);
+        case 2:
+          inMeaning.add(w);
+      }
+    }
+
+    return [...startsWith, ...inWord, ...inMeaning];
+  }
+
+  void _clearQuery(VocabularyIndex index) {
+    _searchController.clear();
+    _lastQuery = '';
+    setState(() {
+      _query = '';
+      _results = index.words;
+    });
+  }
+
+  // ─── A-Z jumping ───
+
+  /// Jumps to [letter] by hopping to an estimate, then converging on the
+  /// section's real offset.
+  ///
+  /// Every hop is an un-animated [ScrollController.jumpTo]. Animating instead
+  /// would drag the scroll position through every intermediate offset, and a
+  /// sliver list can only build children in order — so a jump across the
+  /// alphabet would build hundreds of cards along the way, which is what made
+  /// the slider feel like it hung. A jump lands in one frame and builds only
+  /// what is visible.
+  ///
+  /// A single hop isn't enough on its own: card heights vary with how the
+  /// meanings wrap, and a lazy list's `maxScrollExtent` is itself an estimate
+  /// that sharpens only as content is laid out. So the first hop just gets
+  /// close, and [_convergeOn] then walks in until the section is built — at
+  /// which point it can be measured exactly.
+  void _jumpToLetter(String letter, VocabularyIndex index) {
     if (_query.isNotEmpty) return;
-    final index = _letterOffsets[letter];
-    if (index == null || !_scrollController.hasClients) return;
-    final target = index * _estimatedCardExtent;
-    final max = _scrollController.position.maxScrollExtent;
-    _scrollController.animateTo(
-      target.clamp(0, max),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
+    if (_sectionKeys[letter] == null || !_scrollController.hasClients) return;
+
     HapticFeedback.selectionClick();
-    setState(() => _jumpLetter = letter);
+    _activeLetter.value = letter;
+    _pendingJump = letter;
+    _jumpLow = null;
+    _jumpHigh = null;
+
+    _scrollController.jumpTo(
+      (index.sectionOffsetEstimate[letter] ?? 0.0)
+          .clamp(0.0, _scrollController.position.maxScrollExtent),
+    );
+    _convergeOn(letter, index, remaining: _kMaxJumpCorrections);
   }
 
-  void _clearJumpLetter() {
-    if (_jumpLetter == null) return;
-    setState(() => _jumpLetter = null);
+  /// Steps toward [letter]'s section each frame until it has been built, then
+  /// measures it exactly and stops. [remaining] bounds the walk so a target
+  /// that never materialises can't loop forever.
+  void _convergeOn(String letter, VocabularyIndex index, {required int remaining}) {
+    if (remaining <= 0) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      // Bail out if a newer jump has superseded this one, so two quick taps
+      // don't leave stale corrections fighting over the position. Tracked
+      // separately from the badge, which is cleared as soon as the touch ends.
+      if (_pendingJump != letter) return;
+
+      final position = _scrollController.position;
+      final box = _sectionKeys[letter]?.currentContext?.findRenderObject();
+
+      if (box != null) {
+        // The target is laid out, so this measurement is exact — take it and
+        // stop. Re-measuring afterwards would chase the extent estimate as it
+        // keeps settling, which oscillates between neighbouring sections
+        // instead of converging.
+        final exact =
+            (RenderAbstractViewport.of(box).getOffsetToReveal(box, 0).offset -
+                    _kLetterHeaderExtent)
+                .clamp(0.0, position.maxScrollExtent);
+        _pendingJump = null;
+        if ((exact - position.pixels).abs() < _kJumpEpsilon) return;
+        _scrollController.jumpTo(exact);
+        return;
+      }
+
+      // Still off-screen — step toward it and look again.
+      final next = _retargetFromVisible(letter, index, position);
+      if (next == null) return;
+      if ((next - position.pixels).abs() < _kJumpEpsilon) return;
+      _scrollController.jumpTo(next);
+      _convergeOn(letter, index, remaining: remaining - 1);
+    });
   }
+
+  /// Re-aims when [letter]'s section is still off-screen.
+  ///
+  /// Sections are in alphabetical order, so whichever one is currently on
+  /// screen says which side of the target we are on. That turns the search into
+  /// a bisection over the scroll range: each pass halves the interval, so it
+  /// converges in a bounded number of frames no matter how wrong the initial
+  /// height estimate was. Scaling by an estimate ratio was tried first and
+  /// diverged — a lazy list's extent is itself an estimate, so the ratio can
+  /// point the wrong way.
+  double? _retargetFromVisible(
+    String letter,
+    VocabularyIndex index,
+    ScrollPosition position,
+  ) {
+    final targetRank = index.letters.indexOf(letter);
+    if (targetRank < 0) return null;
+
+    // The closest laid-out section tells us which direction to move.
+    int? visibleRank;
+    for (final entry in _sectionKeys.entries) {
+      if (entry.value.currentContext?.findRenderObject() == null) continue;
+      final rank = index.letters.indexOf(entry.key);
+      if (rank < 0) continue;
+      if (visibleRank == null || (rank - targetRank).abs() < (visibleRank - targetRank).abs()) {
+        visibleRank = rank;
+      }
+    }
+    if (visibleRank == null) return null;
+    if (visibleRank == targetRank) return null; // already there
+
+    final pixels = position.pixels;
+    if (visibleRank < targetRank) {
+      // We're above the target: search the range below us.
+      _jumpLow = pixels;
+      final high = _jumpHigh ?? position.maxScrollExtent;
+      _jumpHigh = high;
+      return (pixels + high) / 2;
+    }
+    // We're below the target: search the range above us.
+    _jumpHigh = pixels;
+    final low = _jumpLow ?? 0.0;
+    return (low + pixels) / 2;
+  }
+
+  void _clearActiveLetter() => _activeLetter.value = null;
 
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(regionalLanguageProvider);
-    final words = _filtered;
-    final showSlider = _query.isEmpty;
+    final index = ref.watch(vocabularyIndexProvider);
+
+    // First build: show everything.
+    if (_lastQuery == ' ') {
+      _lastQuery = '';
+      _results = index.words;
+    }
+
+    final searching = _query.trim().isNotEmpty;
+    final showSlider = !searching;
+    final styles = _WordCardStyles.of(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -117,56 +295,50 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
             ),
             child: _SearchField(
               controller: _searchController,
-              onChanged: (v) => setState(() => _query = v),
-              onClear: () {
-                _searchController.clear();
-                setState(() => _query = '');
-              },
+              onChanged: (v) => _onQueryChanged(v, index),
+              onClear: () => _clearQuery(index),
             ),
           ),
           Expanded(
             child: Stack(
               children: [
-                words.isEmpty
-                    ? EmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'No words found',
-                        subtitle: 'Try a different word or meaning.',
-                      )
-                    : ListView.separated(
-                        controller: _scrollController,
-                        padding: EdgeInsets.fromLTRB(
-                          AppSpacing.screenPadding,
-                          0,
-                          showSlider ? 40 : AppSpacing.screenPadding,
-                          24,
-                        ),
-                        itemCount: words.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) =>
-                            _WordCard(word: words[index], lang: lang),
-                      ),
-                if (showSlider && words.isNotEmpty)
+                if (_results.isEmpty)
+                  const EmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'No words found',
+                    subtitle: 'Try a different word or meaning.',
+                  )
+                else
+                  CustomScrollView(
+                    controller: _scrollController,
+                    cacheExtent: _kCacheExtent,
+                    slivers: searching
+                        ? _buildFlatSlivers(_results, lang, styles)
+                        : _buildSectionedSlivers(index, lang, styles),
+                  ),
+                if (showSlider && _results.isNotEmpty)
                   Positioned(
                     right: 0,
                     top: 0,
                     bottom: 0,
                     child: _AlphabetSlider(
                       letters: _kAlphabet,
-                      available: _availableLetters,
-                      activeLetter: _jumpLetter,
-                      onLetterChanged: _jumpTo,
-                      onLetterEnd: _clearJumpLetter,
+                      available: index.byLetter.keys.toSet(),
+                      activeLetter: _activeLetter,
+                      onLetterChanged: (l) => _jumpToLetter(l, index),
+                      onLetterEnd: _clearActiveLetter,
                     ),
                   ),
-                if (_jumpLetter != null)
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Center(
-                        child: _JumpLetterBadge(letter: _jumpLetter!),
-                      ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ValueListenableBuilder<String?>(
+                      valueListenable: _activeLetter,
+                      builder: (context, letter, _) => letter == null
+                          ? const SizedBox.shrink()
+                          : Center(child: _JumpLetterBadge(letter: letter)),
                     ),
                   ),
+                ),
               ],
             ),
           ),
@@ -174,6 +346,153 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
       ),
     );
   }
+
+  EdgeInsets _listPadding({required bool reserveSlider}) => EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        0,
+        reserveSlider ? 40 : AppSpacing.screenPadding,
+        0,
+      );
+
+  /// Flat result list, used while searching (results span many letters, so
+  /// section headers would be noise).
+  List<Widget> _buildFlatSlivers(
+    List<IndexedWord> words,
+    RegionalLanguage lang,
+    _WordCardStyles styles,
+  ) {
+    return [
+      SliverPadding(
+        padding: _listPadding(reserveSlider: false).copyWith(bottom: 24),
+        sliver: SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, i) => Padding(
+              padding: EdgeInsets.only(bottom: i < words.length - 1 ? 12 : 0),
+              child: _WordCard(
+                word: words[i].word,
+                lang: lang,
+                styles: styles,
+              ),
+            ),
+            childCount: words.length,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  /// One sticky header + one sliver per letter. The per-section [GlobalKey] is
+  /// what lets [_jumpToLetter] measure a real offset instead of guessing.
+  List<Widget> _buildSectionedSlivers(
+    VocabularyIndex index,
+    RegionalLanguage lang,
+    _WordCardStyles styles,
+  ) {
+    final slivers = <Widget>[];
+    for (final letter in index.letters) {
+      final words = index.byLetter[letter]!;
+      final key = _sectionKeys.putIfAbsent(letter, GlobalKey.new);
+
+      // Grouping the header with its own section scopes the pinning to that
+      // section. Pinned headers that are direct children of the scroll view
+      // all stick at once, stacking into a wall that hides the list.
+      slivers.add(
+        SliverMainAxisGroup(
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate:
+                  _LetterHeaderDelegate(letter: letter, count: words.length),
+            ),
+            SliverPadding(
+              padding: _listPadding(reserveSlider: true).copyWith(
+                top: 4,
+                bottom: letter == index.letters.last ? 24 : 16,
+              ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) => Padding(
+                    // The anchor is the section's first card. A pinned header
+                    // reports its stuck-to-the-top position and a padded sliver
+                    // reports the edge above it, so neither measures where the
+                    // words actually begin.
+                    key: i == 0 ? key : null,
+                    padding:
+                        EdgeInsets.only(bottom: i < words.length - 1 ? 12 : 0),
+                    child: _WordCard(
+                      word: words[i].word,
+                      lang: lang,
+                      styles: styles,
+                    ),
+                  ),
+                  childCount: words.length,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return slivers;
+  }
+}
+
+/// Pinned letter divider between sections, so the current letter stays visible
+/// while scrolling through a long one like S.
+class _LetterHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String letter;
+  final int count;
+
+  const _LetterHeaderDelegate({required this.letter, required this.count});
+
+  @override
+  double get minExtent => _kLetterHeaderExtent;
+
+  @override
+  double get maxExtent => _kLetterHeaderExtent;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppColors.cEnglishDark : AppColors.cEnglish;
+
+    return Container(
+      height: _kLetterHeaderExtent,
+      color: theme.scaffoldBackgroundColor,
+      padding: const EdgeInsets.fromLTRB(AppSpacing.screenPadding, 0, 40, 0),
+      alignment: Alignment.centerLeft,
+      child: Row(
+        children: [
+          Text(
+            letter,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '$count',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Divider(
+              color: theme.colorScheme.outlineVariant,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_LetterHeaderDelegate old) =>
+      old.letter != letter || old.count != count;
 }
 
 /// A fast-scroll index down the right edge of the list, like the Contacts app.
@@ -181,7 +500,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
 class _AlphabetSlider extends StatefulWidget {
   final List<String> letters;
   final Set<String> available;
-  final String? activeLetter;
+  final ValueListenable<String?> activeLetter;
   final ValueChanged<String> onLetterChanged;
   final VoidCallback onLetterEnd;
 
@@ -235,25 +554,29 @@ class _AlphabetSliderState extends State<_AlphabetSlider> {
           child: Container(
             width: 22,
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: widget.letters.map((letter) {
-                final isAvailable = widget.available.contains(letter);
-                final isActive = widget.activeLetter == letter;
-                return Text(
-                  letter,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-                    color: !isAvailable
-                        ? AppColors.textMuted.withValues(alpha: 0.35)
-                        : isActive
-                            ? cs.primary
-                            : AppColors.textMuted,
-                  ),
-                );
-              }).toList(),
+            // Only the letters repaint as the drag moves; the list is untouched.
+            child: ValueListenableBuilder<String?>(
+              valueListenable: widget.activeLetter,
+              builder: (context, active, _) => Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: widget.letters.map((letter) {
+                  final isAvailable = widget.available.contains(letter);
+                  final isActive = active == letter;
+                  return Text(
+                    letter,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                      color: !isAvailable
+                          ? AppColors.textMuted.withValues(alpha: 0.35)
+                          : isActive
+                              ? cs.primary
+                              : AppColors.textMuted,
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
         );
@@ -313,12 +636,17 @@ class _SearchField extends StatelessWidget {
       decoration: InputDecoration(
         hintText: 'Search words',
         prefixIcon: const Icon(Icons.search_rounded, size: 20),
-        suffixIcon: controller.text.isEmpty
-            ? null
-            : IconButton(
-                icon: const Icon(Icons.close_rounded, size: 18),
-                onPressed: onClear,
-              ),
+        // Listens to the controller directly so the clear button appears
+        // without the field itself being rebuilt by its parent.
+        suffixIcon: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) => value.text.isEmpty
+              ? const SizedBox.shrink()
+              : IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: onClear,
+                ),
+        ),
         filled: true,
         fillColor: cs.surfaceContainerHighest,
         contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
@@ -331,24 +659,89 @@ class _SearchField extends StatelessWidget {
   }
 }
 
+/// Text styles for [_WordCard], resolved once per screen build.
+///
+/// The card is on the hot scroll path and its styles depend only on the theme,
+/// so resolving them per card meant re-allocating the same `TextStyle`s for
+/// every row that scrolled past.
+class _WordCardStyles {
+  final Color accent;
+  final Color surface;
+  final Color border;
+  final Color quoteBackground;
+  final TextStyle? word;
+  final TextStyle? partOfSpeech;
+  final TextStyle? pronunciation;
+  final TextStyle? meaningEn;
+  final TextStyle? meaningRegional;
+  final TextStyle? sentence;
+
+  const _WordCardStyles({
+    required this.accent,
+    required this.surface,
+    required this.border,
+    required this.quoteBackground,
+    required this.word,
+    required this.partOfSpeech,
+    required this.pronunciation,
+    required this.meaningEn,
+    required this.meaningRegional,
+    required this.sentence,
+  });
+
+  factory _WordCardStyles.of(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final tt = theme.textTheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? AppColors.cEnglishDark : AppColors.cEnglish;
+
+    return _WordCardStyles(
+      accent: accent,
+      surface: isDark ? cs.surface : Colors.white,
+      border: cs.outlineVariant,
+      quoteBackground: accent.withValues(alpha: isDark ? 0.12 : 0.07),
+      word: tt.headlineMedium?.copyWith(
+        color: accent,
+        fontWeight: FontWeight.w700,
+      ),
+      partOfSpeech: tt.labelSmall?.copyWith(
+        color: AppColors.textMuted,
+        fontStyle: FontStyle.italic,
+      ),
+      pronunciation: tt.bodySmall?.copyWith(color: AppColors.textMuted),
+      meaningEn: tt.bodyMedium?.copyWith(height: 1.4),
+      meaningRegional: tt.bodyMedium?.copyWith(
+        height: 1.5,
+        color: cs.onSurface.withValues(alpha: 0.85),
+      ),
+      sentence: tt.bodySmall?.copyWith(
+        height: 1.4,
+        fontStyle: FontStyle.italic,
+      ),
+    );
+  }
+}
+
 class _WordCard extends StatelessWidget {
   final VocabularyWord word;
   final RegionalLanguage lang;
+  final _WordCardStyles styles;
 
-  const _WordCard({required this.word, required this.lang});
+  const _WordCard({
+    required this.word,
+    required this.lang,
+    required this.styles,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark ? AppColors.cEnglishDark : AppColors.cEnglish;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? cs.surface : Colors.white,
+        color: styles.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant),
+        border: Border.all(color: styles.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,67 +751,32 @@ class _WordCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Flexible(
-                child: Text(
-                  word.word,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
+                child: Text(word.word, style: styles.word),
               ),
               const SizedBox(width: 10),
-              Text(
-                word.partOfSpeech,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.textMuted,
-                      fontStyle: FontStyle.italic,
-                    ),
-              ),
+              Text(word.partOfSpeech, style: styles.partOfSpeech),
             ],
           ),
           const SizedBox(height: 2),
-          Text(
-            '/${word.pronunciation}/',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted,
-                ),
-          ),
+          Text('/${word.pronunciation}/', style: styles.pronunciation),
           const SizedBox(height: 10),
-          Text(
-            word.meaningEn,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(height: 1.4),
-          ),
+          Text(word.meaningEn, style: styles.meaningEn),
           const SizedBox(height: 6),
-          Text(
-            word.regionalMeaning(lang),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.5,
-                  color: cs.onSurface.withValues(alpha: 0.85),
-                ),
-          ),
+          Text(word.regionalMeaning(lang), style: styles.meaningRegional),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: isDark ? 0.12 : 0.07),
+              color: styles.quoteBackground,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.format_quote_rounded, size: 15, color: accent),
+                Icon(Icons.format_quote_rounded, size: 15, color: styles.accent),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    word.sentence,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          height: 1.4,
-                          fontStyle: FontStyle.italic,
-                        ),
-                  ),
+                  child: Text(word.sentence, style: styles.sentence),
                 ),
               ],
             ),
