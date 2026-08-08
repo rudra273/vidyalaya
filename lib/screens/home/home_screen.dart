@@ -13,7 +13,6 @@ import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/regional_language_provider.dart';
-import '../../providers/user_selection_provider.dart';
 import '../../widgets/ask_card.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
@@ -39,8 +38,8 @@ void _navTap(
 }
 
 /// AI-first Home — "Calm Scholar" layout.
-/// Wordmark → AI Learning (Ask card, with the AI tab one tap away) → Your
-/// books (Library, continue reading, recently added) → Word of the day →
+/// Wordmark → AI Learning (Ask card, with the AI tab one tap away) → Word of
+/// the day → Your books (Library, continue reading, recently added) →
 /// Study tools.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -142,27 +141,36 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Your books ───────────────────────────────────────────
-          if (booksEnabled) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(label: 'Your books'),
+          // ── Word of the day ──────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            child: SectionHead(label: 'Word of the day'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
             ),
+            child: _WordOfDayCard(
+              word: wordOfTheDay(),
+              regionalLang: ref.watch(regionalLanguageProvider),
+            ),
+          ),
+
+          // ── Your books ───────────────────────────────────────────
+          if (booksEnabled && (showContinueReading || showRecentlyAdded)) ...[
+            const SizedBox(height: AppSpacing.sectionGap),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
-              child: _LibraryRow(
-                bookCount: books.length,
-                classes: ref.watch(userSelectionProvider),
-                onTap: () => _navTap(ref, context, '/library'),
+              child: SectionHead(
+                label: 'Your books',
+                action: 'See all',
+                onAction: () => _navTap(ref, context, '/library'),
               ),
             ),
             if (showContinueReading) ...[
-              const SizedBox(height: AppSpacing.stackGap),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.screenPadding,
@@ -174,19 +182,10 @@ class HomeScreen extends ConsumerWidget {
                       .getLastReadPage(lastReadBook.id),
                 ),
               ),
+              if (showRecentlyAdded)
+                const SizedBox(height: AppSpacing.stackGap),
             ],
-            if (showRecentlyAdded) ...[
-              const SizedBox(height: AppSpacing.sectionGap - 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                ),
-                child: SectionHead(
-                  label: 'Recently added',
-                  action: 'See all',
-                  onAction: () => _navTap(ref, context, '/library'),
-                ),
-              ),
+            if (showRecentlyAdded)
               SizedBox(
                 height: 168,
                 child: ListView.separated(
@@ -203,24 +202,7 @@ class HomeScreen extends ConsumerWidget {
                   },
                 ),
               ),
-            ],
           ],
-
-          // ── Word of the day ──────────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'Word of the day'),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: _WordOfDayCard(
-              word: wordOfTheDay(),
-              regionalLang: ref.watch(regionalLanguageProvider),
-            ),
-          ),
 
           // ── Study tools ──────────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
@@ -395,87 +377,6 @@ class _Avatar extends StatelessWidget {
                   color: cs.primary,
                 ),
               ),
-      ),
-    );
-  }
-}
-
-// ─── Library row ─────────────────────────────────────────────────────────
-// Library lost its bottom-nav tab to AI, so this row is now its front door.
-
-class _LibraryRow extends StatelessWidget {
-  final int bookCount;
-  final Set<int> classes;
-  final VoidCallback onTap;
-
-  const _LibraryRow({
-    required this.bookCount,
-    required this.classes,
-    required this.onTap,
-  });
-
-  String get _sub {
-    if (classes.isEmpty) return 'Pick your class to see books';
-    final sorted = classes.toList()..sort();
-    final label = sorted.map((c) => 'Class $c').join(', ');
-    return '$bookCount book${bookCount == 1 ? '' : 's'} · $label';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark ? AppColors.cOdiaDark : AppColors.cOdia;
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.cardPad - 4,
-          vertical: 12,
-        ),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
-        child: Row(
-          children: [
-            Tile(
-              color: accent,
-              icon: Icons.menu_book_rounded,
-              size: 38,
-              radius: 11,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Library',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontSize: 15),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _sub,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-            ),
-          ],
-        ),
       ),
     );
   }
