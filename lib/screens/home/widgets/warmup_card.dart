@@ -112,7 +112,7 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
           // Subject eyebrow + answered badge
           Row(
             children: [
-              Icon(meta.icon, size: 14, color: accent),
+              SubjectGlyph(meta: meta, size: 14, color: accent),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(

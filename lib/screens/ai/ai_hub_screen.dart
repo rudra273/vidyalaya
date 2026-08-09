@@ -119,9 +119,9 @@ class AiHubScreen extends ConsumerWidget {
               ),
             ),
             SizedBox(
-              // Fits the eyebrow, three wrapped lines of question and the
+              // Fits the eyebrow, two wrapped lines of question and the
               // timestamp without the text spilling over the row below.
-              height: 122,
+              height: 98,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(
@@ -324,7 +324,7 @@ class _RecentQuestionCard extends StatelessWidget {
       scale: 0.97,
       child: Container(
         width: 208,
-        padding: const EdgeInsets.all(13),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
         decoration: BoxDecoration(
           color: cs.surface,
           border: Border.all(color: cs.outline),
@@ -343,11 +343,11 @@ class _RecentQuestionCard extends StatelessWidget {
                 color: accent,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Expanded(
               child: Text(
                 question.text,
-                maxLines: 3,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontSize: 12.5,
@@ -356,7 +356,7 @@ class _RecentQuestionCard extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
               _ago(question.askedAt),
               style: TextStyle(
@@ -472,7 +472,13 @@ class _SubjectTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Tile(color: color, icon: meta.icon, size: 34, radius: 10),
+            Tile(
+              color: color,
+              icon: meta.icon,
+              meta: meta,
+              size: 34,
+              radius: 10,
+            ),
             const SizedBox(height: 7),
             FittedBox(
               fit: BoxFit.scaleDown,

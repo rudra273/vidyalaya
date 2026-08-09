@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -571,7 +572,13 @@ class _DottedArcPainter extends CustomPainter {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// The primary call to action — a solid, obviously-tappable button.
-class _AskButton extends StatelessWidget {
+///
+/// A mint glow pulses out from under the button once when the card appears and
+/// again every 15s after, so the CTA periodically catches the eye. Nothing
+/// moves: the fill, label and icon stay put and only the shadow animates. The
+/// glow uses the bright accent (not the button's own dark green) because the
+/// button sits on the dark hero, where a dark-green halo is invisible.
+class _AskButton extends StatefulWidget {
   final String label;
   final double height;
   final VoidCallback onTap;
@@ -583,38 +590,106 @@ class _AskButton extends StatelessWidget {
   });
 
   @override
+  State<_AskButton> createState() => _AskButtonState();
+}
+
+class _AskButtonState extends State<_AskButton>
+    with SingleTickerProviderStateMixin {
+  /// How long one pulse takes to swell and fade.
+  static const Duration _pulse = Duration(milliseconds: 1100);
+
+  /// Quiet time between pulses.
+  static const Duration _gap = Duration(seconds: 15);
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: _pulse,
+  );
+
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pulse once shortly after the card appears, then on a 15s cadence.
+    _timer = Timer(const Duration(milliseconds: 450), () {
+      _fire();
+      _timer = Timer.periodic(_gap, (_) => _fire());
+    });
+  }
+
+  void _fire() {
+    if (!mounted) return;
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onGreen = isDark ? AppColors.onGreenDark : Colors.white;
+    final green = isDark ? AppColors.green500Dark : AppColors.green600;
+
+    // The bright accent, not the button's own fill — the button sits on the
+    // dark hero, where a dark-green halo would not read at all.
+    const glow = AppColors.green500Dark;
 
     return Pressable(
-      onTap: onTap,
+      onTap: widget.onTap,
       scale: 0.97,
-      child: Container(
-        height: height,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.green500Dark : AppColors.green600,
-          borderRadius: BorderRadius.circular(13),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
-                  color: onGreen,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          // Swell in fast, fade out slow: sin(pi * t) peaks at the midpoint.
+          final v = _controller.value;
+          final t = v == 0 ? 0.0 : math.sin(math.pi * v);
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(13),
+              boxShadow: [
+                if (t > 0.01)
+                  BoxShadow(
+                    color: glow.withValues(alpha: 0.55 * t),
+                    blurRadius: 16 + 14 * t,
+                    spreadRadius: 1 + 4 * t,
+                  ),
+              ],
+            ),
+            child: child,
+          );
+        },
+        child: Container(
+          height: widget.height,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: green,
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: onGreen,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 7),
-            Icon(Icons.arrow_forward_rounded, size: 17, color: onGreen),
-          ],
+              const SizedBox(width: 7),
+              Icon(Icons.arrow_forward_rounded, size: 17, color: onGreen),
+            ],
+          ),
         ),
       ),
     );

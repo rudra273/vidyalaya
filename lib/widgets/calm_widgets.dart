@@ -9,17 +9,22 @@ class SubjectMeta {
   final IconData icon;
   final String? native;
 
-  const SubjectMeta(this.label, this.icon, [this.native]);
+  /// Script character standing in for [icon] on language subjects, so Odia,
+  /// English, Hindi and Sanskrit don't all read as the same generic book.
+  /// Null for non-language subjects, which keep their Material icon.
+  final String? glyph;
+
+  const SubjectMeta(this.label, this.icon, [this.native, this.glyph]);
 }
 
 const Map<String, SubjectMeta> kSubjects = {
-  'odia': SubjectMeta('Odia', Icons.menu_book_rounded, 'ସାହିତ୍ୟସୁରଭି'),
-  'english': SubjectMeta('English', Icons.menu_book_rounded, 'Jasmine'),
+  'odia': SubjectMeta('Odia', Icons.menu_book_rounded, 'ସାହିତ୍ୟସୁରଭି', 'ଓ'),
+  'english': SubjectMeta('English', Icons.menu_book_rounded, 'Jasmine', 'A'),
   'maths': SubjectMeta('Maths', Icons.functions_rounded, 'ଗଣିତ ପ୍ରକାଶ'),
   'math': SubjectMeta('Maths', Icons.functions_rounded),
-  'hindi': SubjectMeta('Hindi', Icons.menu_book_rounded, 'हिंदी कलिका'),
+  'hindi': SubjectMeta('Hindi', Icons.menu_book_rounded, 'हिंदी कलिका', 'अ'),
   'sanskrit':
-      SubjectMeta('Sanskrit', Icons.menu_book_rounded, 'संस्कृतकलिका'),
+      SubjectMeta('Sanskrit', Icons.menu_book_rounded, 'संस्कृतकलिका', 'ॐ'),
   'science': SubjectMeta('Science', Icons.science_rounded, 'ଜିଜ୍ଞାସା'),
   'social': SubjectMeta('Social', Icons.public_rounded, 'ସମାଜ ବିଜ୍ଞାନ'),
   'social_science':
@@ -31,6 +36,73 @@ const Map<String, SubjectMeta> kSubjects = {
 SubjectMeta subjectMeta(String key) =>
     kSubjects[key.toLowerCase()] ?? const SubjectMeta('Subject', Icons.book_rounded);
 
+// ─── SubjectGlyph: script char, or the Material icon as fallback ──────────
+
+/// Drop-in replacement for `Icon(meta.icon, ...)` at subject call sites.
+/// Renders [SubjectMeta.glyph] as text when the subject has one, matching the
+/// optical weight of the icon it replaces; otherwise falls back to the icon.
+class SubjectGlyph extends StatelessWidget {
+  final SubjectMeta meta;
+  final double size;
+  final Color? color;
+
+  const SubjectGlyph({
+    super.key,
+    required this.meta,
+    required this.size,
+    this.color,
+  });
+
+  /// The app's body font (Hanken Grotesk) is Latin-only, so Devanagari and
+  /// Odia glyphs would render as tofu without an explicit fallback chain.
+  /// These families ship with Android/iOS; the platform picks the first hit.
+  static const List<String> _devanagariFallback = [
+    'Noto Sans Devanagari',
+    'Noto Serif Devanagari',
+    'Devanagari Sangam MN', // iOS
+  ];
+  static const List<String> _odiaFallback = [
+    'Noto Sans Oriya',
+    'Noto Serif Oriya',
+    'Oriya Sangam MN', // iOS
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final glyph = meta.glyph;
+    if (glyph == null) {
+      return Icon(meta.icon, size: size, color: color);
+    }
+    final fallback = switch (glyph) {
+      'ଓ' => _odiaFallback,
+      'A' => const <String>[],
+      _ => _devanagariFallback,
+    };
+    // Box the text to the same footprint the icon would occupy, so swapping
+    // one for the other never shifts surrounding layout.
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Center(
+        child: Text(
+          glyph,
+          textAlign: TextAlign.center,
+          softWrap: false,
+          overflow: TextOverflow.visible,
+          style: TextStyle(
+            // Devanagari/Odia need more of the box than Latin to read clearly.
+            fontSize: size * (glyph == 'A' ? 0.82 : 0.92),
+            fontWeight: FontWeight.w700,
+            height: 1,
+            color: color,
+            fontFamilyFallback: fallback,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Tile: a tinted square icon chip ─────────────────────────────────────
 
 class Tile extends StatelessWidget {
@@ -40,6 +112,10 @@ class Tile extends StatelessWidget {
   final double? iconSize;
   final double radius;
 
+  /// When set, the tile renders this subject's script glyph instead of [icon]
+  /// (falling back to [icon] for subjects that have none).
+  final SubjectMeta? meta;
+
   const Tile({
     super.key,
     required this.color,
@@ -47,6 +123,7 @@ class Tile extends StatelessWidget {
     this.size = 46,
     this.iconSize,
     this.radius = 13,
+    this.meta,
   });
 
   @override
@@ -61,7 +138,13 @@ class Tile extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
       ),
       alignment: Alignment.center,
-      child: Icon(icon, color: color, size: iconSize ?? size * 0.5),
+      child: meta != null
+          ? SubjectGlyph(
+              meta: meta!,
+              size: iconSize ?? size * 0.5,
+              color: color,
+            )
+          : Icon(icon, color: color, size: iconSize ?? size * 0.5),
     );
   }
 }
@@ -116,8 +199,8 @@ class BookCover extends StatelessWidget {
           Positioned(
             right: big ? -14 : -10,
             bottom: big ? -16 : -12,
-            child: Icon(
-              meta.icon,
+            child: SubjectGlyph(
+              meta: meta,
               size: big ? 80 : 52,
               color: col.withValues(alpha: 0.13),
             ),
@@ -137,7 +220,7 @@ class BookCover extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               alignment: Alignment.center,
-              child: Icon(meta.icon, size: big ? 17 : 14, color: col),
+              child: SubjectGlyph(meta: meta, size: big ? 17 : 14, color: col),
             ),
           ),
           // title
