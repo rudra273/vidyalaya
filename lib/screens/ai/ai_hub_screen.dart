@@ -161,19 +161,6 @@ class AiHubScreen extends ConsumerWidget {
             ),
           ],
 
-          // ── Snap a page ──────────────────────────────────────────────
-          // The camera used to be a 46px square on the hero that students
-          // never noticed; as its own card it reads as a feature.
-          const SizedBox(height: AppSpacing.sectionGap),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: _SnapCard(
-              onTap: () => _navTap(ref, context, '/learn/ai?camera=1'),
-            ),
-          ),
-
           // ── Ask about a subject ──────────────────────────────────────
           if (subjects.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sectionGap),
@@ -376,73 +363,6 @@ class _RecentQuestionCard extends StatelessWidget {
                 fontSize: 10.5,
                 fontWeight: FontWeight.w500,
                 color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Snap a page card ───────────────────────────────────────────────────
-
-class _SnapCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _SnapCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(
-            cs.primary.withValues(alpha: isDark ? 0.10 : 0.07),
-            cs.surface,
-          ),
-          border: Border.all(color: cs.primary.withValues(alpha: 0.38)),
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: cs.primary,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.photo_camera_rounded,
-                size: 21,
-                color: isDark ? AppColors.onGreenDark : Colors.white,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Stuck on a printed sum?',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontSize: 15),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "Point your camera at the page — we'll read it and solve it.",
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
-                  ),
-                ],
               ),
             ),
           ],
