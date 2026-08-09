@@ -130,11 +130,13 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
               context,
             ).textTheme.headlineSmall?.copyWith(fontSize: 17, height: 1.28),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
+          // Chips stay visually lighter than the question — the answers are
+          // the response, not the headline.
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 6,
+            runSpacing: 6,
             children: [
               for (var i = 0; i < question.options.length; i++)
                 _OptionChip(
@@ -263,7 +265,7 @@ class _OptionChip extends StatelessWidget {
       onTap: onTap,
       scale: 0.96,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
         decoration: BoxDecoration(
           color: background,
           border: Border.all(color: border),
@@ -273,13 +275,13 @@ class _OptionChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 15, color: ink),
-              const SizedBox(width: 6),
+              Icon(icon, size: 14, color: ink),
+              const SizedBox(width: 5),
             ],
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
                 color: ink,
               ),

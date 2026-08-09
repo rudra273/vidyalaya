@@ -79,68 +79,45 @@ class HomeScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 28),
         children: [
           // ── top bar: wordmark + streak + avatar ─────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenPadding,
-              12,
-              AppSpacing.screenPadding,
-              0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Vidyālaya',
-                        style: Theme.of(context)
-                            .textTheme
-                            .displaySmall
-                            ?.copyWith(fontSize: 23),
-                      ),
+          // Shares PageTitle's metrics so the wordmark sits at exactly the
+          // same height as the "AI Learning" / "Explore" / "Profile" titles.
+          PageTitle(
+            title: 'Vidyālaya',
+            sub: _greetingLine(firstName),
+            // Nudged down to centre against the title's line rather than
+            // constrained to its height — the 40px avatar and the streak chip
+            // are both taller than the 25px text line and would clip.
+            trailing: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (streak > 0) ...[
+                    _StreakChip(
+                      streak: streak,
+                      onTap: () => _navTap(ref, context, '/progress'),
                     ),
-                    if (streak > 0) ...[
-                      _StreakChip(
-                        streak: streak,
-                        onTap: () => _navTap(ref, context, '/progress'),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    _Avatar(
-                      letter: avatarLetter,
-                      avatar: ref.watch(selectedAvatarProvider),
-                      onTap: () => _navTap(ref, context, '/profile',
-                          replace: true),
-                    ),
+                    const SizedBox(width: 10),
                   ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _greetingLine(firstName),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.ink2Dark
-                        : AppColors.ink2,
+                  _Avatar(
+                    letter: avatarLetter,
+                    avatar: ref.watch(selectedAvatarProvider),
+                    onTap: () =>
+                        _navTap(ref, context, '/profile', replace: true),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
           // ── AI Learning section ─────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap),
-          Padding(
-            padding: const EdgeInsets.symmetric(
+          const SizedBox(height: AppSpacing.sectionGap - 14),
+          const Padding(
+            padding: EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: SectionHead(
-              label: 'AI Learning',
-              action: 'Open',
-              onAction: () => _navTap(ref, context, '/ai', replace: true),
-            ),
+            child: SectionHead(label: 'AI Learning'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(
@@ -472,33 +449,33 @@ class _WordOfDayCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-
-          // English meaning
-          _MeaningRow(
-            label: 'Meaning',
-            text: word.meaningEn,
-            accent: accent,
-          ),
-          const SizedBox(height: 10),
-
-          // Regional-language meaning (student's default language)
-          _MeaningRow(
-            label: regionalLang.labelEn,
-            text: word.regionalMeaning(regionalLang),
-            accent: accent,
-          ),
-
-          const SizedBox(height: 14),
-          Divider(height: 1, color: cs.outline),
           const SizedBox(height: 12),
+
+          // Both meanings on one line each, no label eyebrows — the card is
+          // ambient content, so it stays short next to the taller AI hero.
+          Text(
+            word.meaningEn,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            word.regionalMeaning(regionalLang),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              height: 1.35,
+              color: muted,
+            ),
+          ),
+
+          const SizedBox(height: 10),
 
           // Example sentence with the word emphasised
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.format_quote_rounded, size: 16, color: accent),
-              const SizedBox(width: 8),
+              Icon(Icons.format_quote_rounded, size: 15, color: accent),
+              const SizedBox(width: 7),
               Expanded(
                 child: _ExampleSentence(
                   sentence: word.sentence,
@@ -510,41 +487,6 @@ class _WordOfDayCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _MeaningRow extends StatelessWidget {
-  final String label;
-  final String text;
-  final Color accent;
-
-  const _MeaningRow({
-    required this.label,
-    required this.text,
-    required this.accent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 10.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.6,
-            color: accent,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
-        ),
-      ],
     );
   }
 }
