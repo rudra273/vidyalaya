@@ -456,6 +456,41 @@ class _WordOfDayCard extends StatelessWidget {
                   ],
                 ),
               ),
+              // Shortcut into the full vocabulary list — the card is a teaser
+              // for it, so the jump lives right next to the word.
+              Pressable(
+                onTap: () => context.push('/learn/vocabulary'),
+                scale: 0.94,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'More',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: accent,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 13,
+                        color: accent,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),

@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../data/seed/warmup_data.dart';
 import '../../../providers/core_providers.dart';
 import '../../../providers/progress_provider.dart';
+import '../../../providers/user_selection_provider.dart';
 import '../../../utils/haptics.dart';
 import '../../../widgets/calm_widgets.dart';
 import '../../../widgets/pressable.dart';
@@ -29,6 +30,12 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
   bool _revealed = false;
   bool _wasCorrect = false;
 
+  /// Extra questions the student pulled up with "Next" after finishing the
+  /// day's one. Only the first (index 0) counts toward the streak — the rest
+  /// are practice, so the daily card still can't be farmed.
+  late WarmupQuestion _question = widget.question;
+  int _extra = 0;
+
   @override
   void initState() {
     super.initState();
@@ -47,25 +54,44 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
 
   Future<void> _pick(int index) async {
     if (_revealed) return;
-    final correct = index == widget.question.answerIndex;
+    final correct = index == _question.answerIndex;
     Haptics.light(ref);
     setState(() {
       _picked = index;
       _revealed = true;
       _wasCorrect = correct;
     });
+    if (_extra > 0) return; // practice question — nothing to record
     await ref
         .read(userPrefsRepositoryProvider)
-        .recordWarmupAnswered(widget.question.id, correct: correct);
+        .recordWarmupAnswered(_question.id, correct: correct);
     if (!mounted) return;
     if (correct) ref.read(progressProvider.notifier).refresh();
+  }
+
+  /// Walk the pool forward from the day's question, keeping the class filter.
+  void _next() {
+    Haptics.light(ref);
+    final selected = ref.read(userSelectionProvider);
+    final pool = warmupPool(
+      classNo: selected.isEmpty ? null : (selected.toList()..sort()).first,
+    );
+    final start = pool.indexWhere((q) => q.id == widget.question.id);
+    final next = pool[((start < 0 ? 0 : start) + _extra + 1) % pool.length];
+    setState(() {
+      _extra++;
+      _question = next;
+      _picked = null;
+      _revealed = false;
+      _wasCorrect = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final question = widget.question;
+    final question = _question;
     final accent = AppColors.subjectColor(
       question.subject,
       Theme.of(context).brightness,
@@ -169,34 +195,77 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
               ],
             ),
             const SizedBox(height: 12),
-            Pressable(
-              onTap: () {
-                Haptics.light(ref);
-                context.push(
-                  '/learn/ai'
-                  '?prefill=${Uri.encodeComponent(question.question)}'
-                  '&style=simple',
-                );
-              },
-              scale: 0.98,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 15,
-                    color: cs.primary,
-                  ),
-                  const SizedBox(width: 7),
-                  Text(
-                    'Ask the AI to explain this',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: cs.primary,
+            Row(
+              children: [
+                Expanded(
+                  child: Pressable(
+                    onTap: () {
+                      Haptics.light(ref);
+                      context.push(
+                        '/learn/ai'
+                        '?prefill=${Uri.encodeComponent(question.question)}'
+                        '&style=simple',
+                      );
+                    },
+                    scale: 0.98,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 15,
+                          color: cs.primary,
+                        ),
+                        const SizedBox(width: 7),
+                        Flexible(
+                          child: Text(
+                            'Ask the AI to explain this',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: cs.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                // Keep practising past the daily question.
+                Pressable(
+                  onTap: _next,
+                  scale: 0.95,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: accent,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: accent,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],

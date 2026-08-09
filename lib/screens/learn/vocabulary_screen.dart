@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -78,6 +80,17 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   /// real query can never equal it, so the first search always runs.
   String _lastQuery = ' ';
 
+  /// Words already shown in the shuffle card, oldest first. Stepping back walks
+  /// this history rather than re-rolling, so "previous" returns the word the
+  /// student actually just saw.
+  final _shuffleHistory = <IndexedWord>[];
+
+  /// Position within [_shuffleHistory]. Advancing past the end appends a fresh
+  /// random pick.
+  int _shuffleCursor = -1;
+
+  final _random = Random();
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -141,6 +154,46 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
       _query = '';
       _results = index.words;
     });
+  }
+
+  // ─── Shuffle card ───
+
+  /// Word currently on the shuffle card, seeding the history on first build.
+  IndexedWord? _shuffleWord(VocabularyIndex index) {
+    if (index.words.isEmpty) return null;
+    if (_shuffleHistory.isEmpty) {
+      _shuffleHistory.add(index.words[_random.nextInt(index.words.length)]);
+      _shuffleCursor = 0;
+    }
+    return _shuffleHistory[_shuffleCursor];
+  }
+
+  /// Steps forward, appending a fresh random word once the history runs out.
+  void _shuffleNext(VocabularyIndex index) {
+    if (index.words.isEmpty) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      if (_shuffleCursor < _shuffleHistory.length - 1) {
+        _shuffleCursor++;
+        return;
+      }
+      // Re-roll on a repeat so the card visibly changes. One retry is enough:
+      // with ~900 words a second collision is vanishingly unlikely, and the
+      // guard keeps this bounded rather than looping on a one-word list.
+      final current = _shuffleHistory.isEmpty ? null : _shuffleHistory.last;
+      var next = index.words[_random.nextInt(index.words.length)];
+      if (identical(next, current) && index.words.length > 1) {
+        next = index.words[_random.nextInt(index.words.length)];
+      }
+      _shuffleHistory.add(next);
+      _shuffleCursor = _shuffleHistory.length - 1;
+    });
+  }
+
+  void _shufflePrevious() {
+    if (_shuffleCursor <= 0) return;
+    HapticFeedback.selectionClick();
+    setState(() => _shuffleCursor--);
   }
 
   // ─── A-Z jumping ───
@@ -277,6 +330,9 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
     final searching = _query.trim().isNotEmpty;
     final showSlider = !searching;
     final styles = _WordCardStyles.of(context);
+    // Hidden while searching — the student is looking for a specific word, so
+    // a random one above the results is just noise.
+    final shuffled = searching ? null : _shuffleWord(index);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -299,6 +355,23 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
               onClear: () => _clearQuery(index),
             ),
           ),
+          if (shuffled != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                0,
+                AppSpacing.screenPadding,
+                12,
+              ),
+              child: _ShuffleCard(
+                word: shuffled.word,
+                lang: lang,
+                styles: styles,
+                canGoBack: _shuffleCursor > 0,
+                onPrevious: _shufflePrevious,
+                onNext: () => _shuffleNext(index),
+              ),
+            ),
           Expanded(
             child: Stack(
               children: [
@@ -719,6 +792,126 @@ class _WordCardStyles {
         height: 1.4,
         fontStyle: FontStyle.italic,
       ),
+    );
+  }
+}
+
+/// Random-word card pinned above the list, with arrows to walk through picks.
+///
+/// Deliberately more compact than [_WordCard] — it sits above the whole list,
+/// so a full-height card would push the alphabet out of view on small phones.
+class _ShuffleCard extends StatelessWidget {
+  final VocabularyWord word;
+  final RegionalLanguage lang;
+  final _WordCardStyles styles;
+  final bool canGoBack;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+
+  const _ShuffleCard({
+    required this.word,
+    required this.lang,
+    required this.styles,
+    required this.canGoBack,
+    required this.onPrevious,
+    required this.onNext,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tt = theme.textTheme;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: styles.quoteBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: styles.accent.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          _ShuffleArrow(
+            icon: Icons.chevron_left_rounded,
+            tooltip: 'Previous word',
+            color: styles.accent,
+            onPressed: canGoBack ? onPrevious : null,
+          ),
+          Expanded(
+            // Keyed on the word so the fade replays on every step.
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              child: Column(
+                key: ValueKey(word.word),
+                children: [
+                  Text(
+                    word.word,
+                    textAlign: TextAlign.center,
+                    style: tt.titleLarge?.copyWith(
+                      color: styles.accent,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '/${word.pronunciation}/ · ${word.partOfSpeech}',
+                    textAlign: TextAlign.center,
+                    style: styles.pronunciation,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    word.meaningEn,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: styles.meaningEn,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    word.regionalMeaning(lang),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: styles.meaningRegional,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _ShuffleArrow(
+            icon: Icons.chevron_right_rounded,
+            tooltip: 'Next word',
+            color: styles.accent,
+            onPressed: onNext,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShuffleArrow extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final Color color;
+  final VoidCallback? onPressed;
+
+  const _ShuffleArrow({
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      icon: Icon(icon, size: 26),
+      color: color,
+      disabledColor: AppColors.textMuted.withValues(alpha: 0.35),
     );
   }
 }

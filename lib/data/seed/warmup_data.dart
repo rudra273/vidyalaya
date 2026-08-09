@@ -291,16 +291,21 @@ const List<WarmupQuestion> kWarmupQuestions = [
   ),
 ];
 
+/// The questions available to a student in [classNo] — the whole pool when no
+/// class is selected, or when no question matches that class.
+List<WarmupQuestion> warmupPool({int? classNo}) {
+  if (classNo == null) return kWarmupQuestions;
+  final pool = kWarmupQuestions
+      .where((q) => classNo >= q.minClass && classNo <= q.maxClass)
+      .toList();
+  return pool.isEmpty ? kWarmupQuestions : pool;
+}
+
 /// The warm-up for [date] — the same question all day, filtered to [classNo]
 /// when the student has a class selected. Falls back to the full pool when no
 /// question matches that class.
 WarmupQuestion warmupForDate(DateTime date, {int? classNo}) {
-  final pool = classNo == null
-      ? kWarmupQuestions
-      : kWarmupQuestions
-            .where((q) => classNo >= q.minClass && classNo <= q.maxClass)
-            .toList();
-  final questions = pool.isEmpty ? kWarmupQuestions : pool;
+  final questions = warmupPool(classNo: classNo);
   final days = DateTime.utc(date.year, date.month, date.day)
       .difference(DateTime.utc(2024, 1, 1))
       .inDays;
