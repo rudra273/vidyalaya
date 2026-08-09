@@ -115,7 +115,7 @@ class AiHubScreen extends ConsumerWidget {
               child: SectionHead(
                 label: 'Pick up where you left off',
                 action: 'Open chat',
-                onAction: () => _navTap(ref, context, '/learn/ai'),
+                onAction: () => _navTap(ref, context, '/learn/ai?resume=1'),
               ),
             ),
             SizedBox(
@@ -156,7 +156,7 @@ class AiHubScreen extends ConsumerWidget {
                 icon: Icons.forum_rounded,
                 title: 'Continue your chat',
                 sub: 'Last opened ${_ago(lastChat)}',
-                onTap: () => _navTap(ref, context, '/learn/ai'),
+                onTap: () => _navTap(ref, context, '/learn/ai?resume=1'),
               ),
             ),
           ],
@@ -288,14 +288,15 @@ class AiHubScreen extends ConsumerWidget {
       Theme.of(c).brightness == Brightness.dark;
 }
 
-/// Deep link that reopens a past question: prefilled, and on its own subject
-/// conversation when it had one.
+/// Deep link back to the conversation a past question was asked in — its own
+/// subject thread when it had one, otherwise the general chat.
 String _resumePath(RecentQuestion question) {
+  // Resume the conversation the question was asked in — don't seed the
+  // composer with it. It's already asked and answered; re-typing it into the
+  // input reads as if the tap did nothing.
   final subject = question.subject;
-  final subjectParam = subject == null
-      ? ''
-      : '&subject=${Uri.encodeComponent(subject)}';
-  return '/learn/ai?prefill=${Uri.encodeComponent(question.text)}$subjectParam';
+  if (subject == null) return '/learn/ai?resume=1';
+  return '/learn/ai?resume=1&subject=${Uri.encodeComponent(subject)}';
 }
 
 /// Coarse "how long ago" label — minutes, hours, days, then weeks.

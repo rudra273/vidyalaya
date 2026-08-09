@@ -44,11 +44,11 @@ void _navTap(
 
 /// Opens the conversation the question was asked in, scoped to its subject so
 /// the chat reopens the same thread. Deliberately does not prefill the question
-/// the way the AI tab's recent-question cards do — those re-ask, this resumes.
+/// — it's already been asked; this resumes the thread rather than re-asking.
 String _resumePath(RecentQuestion question) {
   final subject = question.subject;
-  if (subject == null) return '/learn/ai';
-  return '/learn/ai?subject=${Uri.encodeComponent(subject)}';
+  if (subject == null) return '/learn/ai?resume=1';
+  return '/learn/ai?resume=1&subject=${Uri.encodeComponent(subject)}';
 }
 
 /// AI-first Home — "Calm Scholar" layout.

@@ -47,6 +47,11 @@ class LearnAiScreen extends ConsumerStatefulWidget {
   /// sheet would leave it up once the picker closes.
   final bool openCamera;
 
+  /// Arrived from a "pick up where you left off" card. Bypasses the fresh-start
+  /// rule below: the student picked a specific past conversation, so hiding it
+  /// behind a "Load previous chat" tap would ignore what they just asked for.
+  final bool resume;
+
   /// How the student asked for the answer to be pitched (the AI tab's hero
   /// switch). Applied to the first message of this session only.
   final AnswerStyle answerStyle;
@@ -58,6 +63,7 @@ class LearnAiScreen extends ConsumerStatefulWidget {
     this.autofocus = false,
     this.initialSubject,
     this.openCamera = false,
+    this.resume = false,
     this.answerStyle = AnswerStyle.ask,
   });
 
@@ -173,12 +179,19 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // Fresh-start rule: if the student last chatted more than 30 minutes ago,
     // keep the previous conversation hidden behind a tap so the screen opens
     // on suggestions. A brand-new user (no activity yet) has nothing to hide.
+    // A resume tap opts out — that student asked for this thread by name.
     final lastActivity = ref
         .read(userPrefsRepositoryProvider)
         .getChatLastActivity(widget.channel);
     _historyHidden =
+        !widget.resume &&
         lastActivity != null &&
         DateTime.now().difference(lastActivity) > _staleChatThreshold;
+    if (widget.resume && lastActivity != null) {
+      // Same bookkeeping "Load previous chat" does: the thread is on screen
+      // now, so backing out and reopening shouldn't hide it again.
+      ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
+    }
     _ensureAccountSummary();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
   }

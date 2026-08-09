@@ -161,6 +161,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           final autofocus = state.uri.queryParameters['focus'] == '1';
           final subject = state.uri.queryParameters['subject'];
           final openCamera = state.uri.queryParameters['camera'] == '1';
+          // Arrived from a "pick up where you left off" card, so the student
+          // has already said which conversation they want back.
+          final resume = state.uri.queryParameters['resume'] == '1';
           // How the first answer should be pitched — set by the AI tab's hero
           // switch. Unknown/missing values fall back to a plain ask.
           final answerStyle = AnswerStyle.fromKey(
@@ -172,6 +175,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             autofocus: autofocus,
             initialSubject: subject,
             openCamera: openCamera,
+            resume: resume,
             answerStyle: answerStyle,
           );
         },
