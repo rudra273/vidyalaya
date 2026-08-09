@@ -45,6 +45,7 @@ import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
 import '../data/seed/diagrams_data.dart';
+import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -160,12 +161,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           final autofocus = state.uri.queryParameters['focus'] == '1';
           final subject = state.uri.queryParameters['subject'];
           final openCamera = state.uri.queryParameters['camera'] == '1';
+          // How the first answer should be pitched — set by the AI tab's hero
+          // switch. Unknown/missing values fall back to a plain ask.
+          final answerStyle = AnswerStyle.fromKey(
+            state.uri.queryParameters['style'],
+          );
           return LearnAiScreen(
             channel: channel,
             initialPrompt: prefill,
             autofocus: autofocus,
             initialSubject: subject,
             openCamera: openCamera,
+            answerStyle: answerStyle,
           );
         },
       ),

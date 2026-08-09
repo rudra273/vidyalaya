@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../data/models/learn_assist.dart';
+import '../../data/models/recent_question.dart';
 import '../../data/seed/ai_suggestions.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/ingested_books_provider.dart';
 import '../../providers/learn_assist_provider.dart';
+import '../../providers/recent_questions_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
@@ -26,7 +28,8 @@ void _navTap(WidgetRef ref, BuildContext context, String path) {
 /// landing page, not the chat itself: every action here pushes the full-screen
 /// Q&A chat (`/learn/ai`), which keeps its own composer, history and streaming.
 ///
-/// Ask card → Continue → Ask about (subjects) → Try asking → More (Tutor).
+/// Hero → Pick up where you left off → Snap a page → Ask about (subjects) →
+/// Try asking → More (Tutor).
 class AiHubScreen extends ConsumerWidget {
   const AiHubScreen({super.key});
 
@@ -59,6 +62,10 @@ class AiHubScreen extends ConsumerWidget {
       classNo,
     );
 
+    // Locally-kept questions, so "pick up where you left off" can span every
+    // subject at once — backend history is cached one conversation at a time.
+    final recents = ref.watch(recentQuestionsProvider);
+
     final lastChat = ref
         .read(userPrefsRepositoryProvider)
         .getChatLastActivity(LearnAssistChannel.learnAssist);
@@ -83,17 +90,56 @@ class AiHubScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: AskCard(
+            child: AiAskHero(
               headline: 'Ask anything from your textbooks.',
-              sub: 'Clear, simple answers — in English, Odia or Hindi.',
-              showEyebrow: true,
-              onAsk: () => _navTap(ref, context, '/learn/ai?focus=1'),
+              sub: 'Clear answers in English, Odia or Hindi.',
+              onAsk: (style) => _navTap(
+                ref,
+                context,
+                '/learn/ai?focus=1&style=${style.key}',
+              ),
               onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
             ),
           ),
 
-          // ── Continue where you left off ──────────────────────────────
-          if (showContinue) ...[
+          // ── Pick up where you left off ───────────────────────────────
+          // Real recent questions when we have them; the plain "continue"
+          // row is the fallback for a conversation started before this
+          // list existed.
+          if (recents.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sectionGap),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              child: SectionHead(
+                label: 'Pick up where you left off',
+                action: 'Open chat',
+                onAction: () => _navTap(ref, context, '/learn/ai'),
+              ),
+            ),
+            SizedBox(
+              // Fits the eyebrow, three wrapped lines of question and the
+              // timestamp without the text spilling over the row below.
+              height: 122,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                ),
+                itemCount: recents.length > 6 ? 6 : recents.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final question = recents[index];
+                  return _RecentQuestionCard(
+                    question: question,
+                    onTap: () =>
+                        _navTap(ref, context, _resumePath(question)),
+                  );
+                },
+              ),
+            ),
+          ] else if (showContinue) ...[
             const SizedBox(height: AppSpacing.sectionGap),
             const Padding(
               padding: EdgeInsets.symmetric(
@@ -115,6 +161,19 @@ class AiHubScreen extends ConsumerWidget {
             ),
           ],
 
+          // ── Snap a page ──────────────────────────────────────────────
+          // The camera used to be a 46px square on the hero that students
+          // never noticed; as its own card it reads as a feature.
+          const SizedBox(height: AppSpacing.sectionGap),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: _SnapCard(
+              onTap: () => _navTap(ref, context, '/learn/ai?camera=1'),
+            ),
+          ),
+
           // ── Ask about a subject ──────────────────────────────────────
           if (subjects.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sectionGap),
@@ -128,21 +187,30 @@ class AiHubScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final subject in subjects)
-                    _SubjectChip(
-                      subject: subject,
-                      onTap: () => _navTap(
-                        ref,
-                        context,
-                        '/learn/ai?subject=${Uri.encodeComponent(subject)}'
-                        '&focus=1',
-                      ),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 1.28,
                     ),
-                ],
+                itemCount: subjects.length,
+                itemBuilder: (context, index) {
+                  final subject = subjects[index];
+                  return _SubjectTile(
+                    subject: subject,
+                    onTap: () => _navTap(
+                      ref,
+                      context,
+                      '/learn/ai?subject=${Uri.encodeComponent(subject)}'
+                      '&focus=1',
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -220,7 +288,17 @@ class AiHubScreen extends ConsumerWidget {
       Theme.of(c).brightness == Brightness.dark;
 }
 
-/// Coarse "how long ago" label — minutes/hours, then plain "yesterday".
+/// Deep link that reopens a past question: prefilled, and on its own subject
+/// conversation when it had one.
+String _resumePath(RecentQuestion question) {
+  final subject = question.subject;
+  final subjectParam = subject == null
+      ? ''
+      : '&subject=${Uri.encodeComponent(subject)}';
+  return '/learn/ai?prefill=${Uri.encodeComponent(question.text)}$subjectParam';
+}
+
+/// Coarse "how long ago" label — minutes, hours, days, then weeks.
 String _ago(DateTime then) {
   final diff = DateTime.now().difference(then);
   if (diff.inMinutes < 1) return 'just now';
@@ -230,10 +308,150 @@ String _ago(DateTime then) {
   if (diff.inHours < 24) {
     return '${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago';
   }
-  return 'yesterday';
+  if (diff.inDays == 1) return 'yesterday';
+  if (diff.inDays < 7) return '${diff.inDays} days ago';
+  final weeks = diff.inDays ~/ 7;
+  return '$weeks week${weeks == 1 ? '' : 's'} ago';
 }
 
-// ─── Rows and chips ─────────────────────────────────────────────────────
+// ─── Recent question card (horizontal scroller item) ────────────────────
+
+class _RecentQuestionCard extends StatelessWidget {
+  final RecentQuestion question;
+  final VoidCallback onTap;
+
+  const _RecentQuestionCard({required this.question, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subject = question.subject;
+    final accent = subject == null
+        ? cs.primary
+        : AppColors.subjectColor(subject, Theme.of(context).brightness);
+
+    return Pressable(
+      onTap: onTap,
+      scale: 0.97,
+      child: Container(
+        width: 208,
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          border: Border.all(color: cs.outline),
+          borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              (subject == null ? 'Any subject' : formatSubject(subject))
+                  .toUpperCase(),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: accent,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: Text(
+                question.text,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 12.5,
+                  height: 1.35,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _ago(question.askedAt),
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Snap a page card ───────────────────────────────────────────────────
+
+class _SnapCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SnapCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            cs.primary.withValues(alpha: isDark ? 0.10 : 0.07),
+            cs.surface,
+          ),
+          border: Border.all(color: cs.primary.withValues(alpha: 0.38)),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: cs.primary,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.photo_camera_rounded,
+                size: 21,
+                color: isDark ? AppColors.onGreenDark : Colors.white,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Stuck on a printed sum?',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    "Point your camera at the page — we'll read it and solve it.",
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Rows and tiles ─────────────────────────────────────────────────────
 
 /// Bordered surface row: tinted tile + title + sub + chevron.
 class _HubRow extends StatelessWidget {
@@ -303,44 +521,47 @@ class _HubRow extends StatelessWidget {
   }
 }
 
-/// One ingested subject — opens the chat on that subject's own conversation.
-class _SubjectChip extends StatelessWidget {
+/// One ingested subject, as a coloured tile. Seven pill chips wrapped into an
+/// undifferentiated grey blob; a tile grid is scannable and matches Explore.
+class _SubjectTile extends StatelessWidget {
   final String subject;
   final VoidCallback onTap;
 
-  const _SubjectChip({required this.subject, required this.onTap});
+  const _SubjectTile({required this.subject, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final meta = subjectMeta(subject);
     final color = AppColors.subjectColor(
       subject,
-      isDark ? Brightness.dark : Brightness.light,
+      Theme.of(context).brightness,
     );
 
     return Pressable(
       onTap: onTap,
-      scale: 0.95,
+      scale: 0.96,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         decoration: BoxDecoration(
           color: cs.surface,
           border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(meta.icon, size: 15, color: color),
-            const SizedBox(width: 7),
-            Text(
-              formatSubject(subject),
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: cs.onSurface,
+            Tile(color: color, icon: meta.icon, size: 34, radius: 10),
+            const SizedBox(height: 7),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                formatSubject(subject),
+                maxLines: 1,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],

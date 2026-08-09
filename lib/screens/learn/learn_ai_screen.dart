@@ -14,6 +14,7 @@ import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
 import '../../data/models/ingested_books.dart';
 import '../../data/seed/ai_suggestions.dart';
+import '../../data/models/answer_style.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -22,6 +23,7 @@ import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/recent_questions_provider.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
@@ -45,6 +47,10 @@ class LearnAiScreen extends ConsumerStatefulWidget {
   /// sheet would leave it up once the picker closes.
   final bool openCamera;
 
+  /// How the student asked for the answer to be pitched (the AI tab's hero
+  /// switch). Applied to the first message of this session only.
+  final AnswerStyle answerStyle;
+
   const LearnAiScreen({
     super.key,
     this.channel = LearnAssistChannel.learnAssist,
@@ -52,6 +58,7 @@ class LearnAiScreen extends ConsumerStatefulWidget {
     this.autofocus = false,
     this.initialSubject,
     this.openCamera = false,
+    this.answerStyle = AnswerStyle.ask,
   });
 
   @override
@@ -68,6 +75,11 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   String? _selectedSubject;
   String _languageMode = 'auto';
   bool _isSending = false;
+
+  /// The answer-style hint rides along with the first message only — after that
+  /// the conversation carries its own tone, so repeating it every turn would
+  /// just burn context.
+  bool _styleHintSent = false;
 
   /// Index into [_messages] of the in-progress streamed answer, or null before
   /// the first token has arrived. Used to grow that one message in place
@@ -550,7 +562,14 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       _isSending = true;
       _streamingMessageIndex = null;
     });
-    ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
+    final prefs = ref.read(userPrefsRepositoryProvider);
+    prefs.recordChatActivity(widget.channel);
+    // Feed the AI tab's "pick up where you left off" row. Image-only turns have
+    // no question text worth listing.
+    if (query.isNotEmpty) {
+      await prefs.recordRecentQuestion(query, subject: _selectedSubject);
+      ref.read(recentQuestionsProvider.notifier).refresh();
+    }
     _scrollToBottom();
 
     final answerBuffer = StringBuffer();
@@ -599,10 +618,17 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       flushTimer = Timer(const Duration(milliseconds: 60), flushTokens);
     }
 
+    // The style hint is appended in brackets rather than prepended as a command,
+    // so the turn still reads naturally if the student scrolls back to it later.
+    final styleHint = _styleHintSent ? null : widget.answerStyle.hint;
+    final outgoing = styleHint == null
+        ? query
+        : (query.isEmpty ? styleHint : '$query\n\n($styleHint)');
+
     try {
       await for (final event in service.chatStream(
         LearnAssistRequest(
-          message: query.isEmpty ? null : query,
+          message: outgoing.isEmpty ? null : outgoing,
           imageBase64: imageBase64,
           imageMediaType: imageMediaType,
           board: _board,
@@ -663,6 +689,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             ),
           ]);
       ref.read(backendAccountCacheProvider.notifier).markHistoryStale();
+      // The turn landed, so the style instruction has been delivered. Marking
+      // it here (rather than before the request) means a failed first send and
+      // its retry still carry the style the student picked.
+      _styleHintSent = true;
       // Count this as learning activity: bumps the AI-session counter and keeps
       // the learning streak alive, then refresh the stats so Home/Me update.
       await ref.read(userPrefsRepositoryProvider).recordAiSession();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/highlight.dart';
+import '../models/recent_question.dart';
 import '../models/note.dart';
 import '../models/timetable_period.dart';
 import '../models/time_slot.dart';
@@ -530,6 +531,97 @@ class UserPrefsRepository {
       await _prefs.setString(_mathBestScoresKey, jsonEncode(scores));
     }
     await _recordActivityToday();
+  }
+
+  // ─── Recent AI questions ─────────────────────────────────────────────────
+  //
+  // A local ring of the last few questions the student asked, so the AI tab can
+  // offer "pick up where you left off" across every subject at once. Backend
+  // history is cached one conversation at a time, so it cannot answer that.
+
+  static const _recentQuestionsKey = 'recent_ai_questions';
+  static const _maxRecentQuestions = 12;
+
+  List<RecentQuestion> getRecentQuestions() {
+    final jsonStr = _prefs.getString(_recentQuestionsKey);
+    // A growable list either way: `recordRecentQuestion` mutates what it gets
+    // back, so handing out a const empty list would throw on the first ask.
+    if (jsonStr == null) return <RecentQuestion>[];
+    try {
+      final list = jsonDecode(jsonStr) as List;
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map(RecentQuestion.fromJson)
+          .where((q) => q.text.isNotEmpty)
+          .toList();
+    } catch (_) {
+      // Corrupt entry — drop it rather than breaking the AI tab.
+      return <RecentQuestion>[];
+    }
+  }
+
+  /// Records one asked question, newest first. Re-asking the same thing moves
+  /// it back to the top instead of adding a duplicate.
+  Future<void> recordRecentQuestion(String text, {String? subject}) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    final questions = getRecentQuestions()
+      ..removeWhere((q) => q.text.toLowerCase() == trimmed.toLowerCase());
+    questions.insert(
+      0,
+      RecentQuestion(
+        text: trimmed,
+        subject: subject,
+        askedAt: DateTime.now(),
+      ),
+    );
+    if (questions.length > _maxRecentQuestions) {
+      questions.removeRange(_maxRecentQuestions, questions.length);
+    }
+    await _prefs.setString(
+      _recentQuestionsKey,
+      jsonEncode(questions.map((q) => q.toJson()).toList()),
+    );
+  }
+
+  Future<void> clearRecentQuestions() async {
+    await _prefs.remove(_recentQuestionsKey);
+  }
+
+  // ─── Daily warm-up ───────────────────────────────────────────────────────
+  //
+  // Home shows one multiple-choice question a day. We remember which question
+  // was answered on which day so the card keeps its answered state, and count a
+  // correct answer as learning activity (it keeps the streak alive).
+
+  static const _warmupAnsweredKey = 'warmup_last_answered';
+
+  /// Today's answered warm-up — the question id plus whether the student got it
+  /// right — or null when today is still untouched. Correctness is stored so a
+  /// wrong answer doesn't come back looking correct after a rebuild.
+  ({String id, bool correct})? getWarmupAnsweredToday() {
+    final stored = _prefs.getString(_warmupAnsweredKey);
+    if (stored == null) return null;
+    final parts = stored.split('|');
+    if (parts.length < 2) return null;
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (parts[0] != today) return null;
+    return (id: parts[1], correct: parts.length > 2 && parts[2] == '1');
+  }
+
+  /// Marks today's warm-up as answered, so the card keeps its state for the
+  /// rest of the day. Only a [correct] answer counts as learning activity —
+  /// otherwise a wrong tap would keep the streak alive for free.
+  Future<void> recordWarmupAnswered(
+    String questionId, {
+    required bool correct,
+  }) async {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    await _prefs.setString(
+      _warmupAnsweredKey,
+      '$today|$questionId|${correct ? '1' : '0'}',
+    );
+    if (correct) await _recordActivityToday();
   }
 
   /// Rolls over the day and advances the learning streak. Idempotent within a

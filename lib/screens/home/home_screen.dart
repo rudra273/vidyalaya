@@ -20,6 +20,9 @@ import '../../widgets/pressable.dart';
 import '../../widgets/share_feedback_banner.dart';
 import '../../data/models/book.dart';
 import '../../data/seed/vocabulary_data.dart';
+import '../../data/seed/warmup_data.dart';
+import '../../providers/user_selection_provider.dart';
+import 'widgets/warmup_card.dart';
 
 /// Haptic tap → navigate, the pattern every Home tile shares. Uses `push` by
 /// default; pass [replace] for tabs that should swap the current route.
@@ -57,6 +60,16 @@ class HomeScreen extends ConsumerWidget {
     final firstName = _firstName(user);
     final avatarLetter = (firstName.isNotEmpty ? firstName[0] : 'S')
         .toUpperCase();
+
+    // One warm-up a day, pitched at the lowest class the student has selected
+    // (null = draw from the whole pool) so it never lands above their level.
+    final selectedClasses = ref.watch(userSelectionProvider);
+    final warmupQuestion = warmupForDate(
+      DateTime.now(),
+      classNo: selectedClasses.isEmpty
+          ? null
+          : (selectedClasses.toList()..sort()).first,
+    );
 
     final showContinueReading = booksEnabled && lastReadBook != null;
     final showRecentlyAdded = booksEnabled && books.isNotEmpty;
@@ -133,7 +146,7 @@ class HomeScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: AskCard(
+            child: HomeAskHero(
               headline: 'Stuck on a question?',
               sub: 'Ask anything from your textbooks.',
               onAsk: () => _navTap(ref, context, '/learn/ai?focus=1'),
@@ -154,6 +167,24 @@ class HomeScreen extends ConsumerWidget {
             child: _WordOfDayCard(
               word: wordOfTheDay(),
               regionalLang: ref.watch(regionalLanguageProvider),
+            ),
+          ),
+
+          // ── Today's warm-up ─────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            child: SectionHead(label: "Today's warm-up"),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: WarmupCard(
+              // Keyed by question id so the card resets its answered state when
+              // the day rolls over while Home is still on screen.
+              key: ValueKey(warmupQuestion.id),
+              question: warmupQuestion,
             ),
           ),
 
