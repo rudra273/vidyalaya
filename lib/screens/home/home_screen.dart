@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../widgets/ask_card.dart';
 import '../../widgets/calm_widgets.dart';
@@ -18,6 +19,8 @@ import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/share_feedback_banner.dart';
 import '../../data/models/book.dart';
+import '../../data/models/learn_assist.dart';
+import '../../data/models/recent_question.dart';
 import '../../data/seed/vocabulary_data.dart';
 import '../../data/seed/warmup_data.dart';
 import '../../providers/user_selection_provider.dart';
@@ -37,6 +40,15 @@ void _navTap(
   } else {
     context.push(path);
   }
+}
+
+/// Opens the conversation the question was asked in, scoped to its subject so
+/// the chat reopens the same thread. Deliberately does not prefill the question
+/// the way the AI tab's recent-question cards do — those re-ask, this resumes.
+String _resumePath(RecentQuestion question) {
+  final subject = question.subject;
+  if (subject == null) return '/learn/ai';
+  return '/learn/ai?subject=${Uri.encodeComponent(subject)}';
 }
 
 /// AI-first Home — "Calm Scholar" layout.
@@ -70,6 +82,20 @@ class HomeScreen extends ConsumerWidget {
     );
 
     final showRecentBooks = booksEnabled && recentBooks.isNotEmpty;
+
+    // "Continue" is for students already mid-topic, so it needs both a question
+    // to name and a conversation recent enough to still be that topic. The AI
+    // tab uses the same one-day window, past which the chat's fresh-start rule
+    // has tucked the old thread away anyway.
+    final lastChat = ref
+        .read(userPrefsRepositoryProvider)
+        .getChatLastActivity(LearnAssistChannel.learnAssist);
+    final resumeQuestion = ref.watch(recentQuestionsProvider).firstOrNull;
+    final canResume =
+        resumeQuestion != null &&
+        resumeQuestion.text.trim().isNotEmpty &&
+        lastChat != null &&
+        DateTime.now().difference(lastChat) < const Duration(days: 1);
 
     return SafeArea(
       child: ListView(
@@ -109,13 +135,9 @@ class HomeScreen extends ConsumerWidget {
           ),
 
           // ── AI Learning section ─────────────────────────────────
+          // No section head: the hero carries its own "ASK · Q&A" eyebrow, so a
+          // label above it just repeated the same idea twice.
           const SizedBox(height: AppSpacing.sectionGap - 14),
-          const Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: SectionHead(label: 'AI Learning'),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
@@ -125,6 +147,12 @@ class HomeScreen extends ConsumerWidget {
               sub: 'Ask anything from your textbooks.',
               onAsk: () => _navTap(ref, context, '/learn/ai?focus=1'),
               onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
+              resumeLabel: canResume
+                  ? 'Continue: ${resumeQuestion.text.trim()}'
+                  : null,
+              onResume: canResume
+                  ? () => _navTap(ref, context, _resumePath(resumeQuestion))
+                  : null,
             ),
           ),
 

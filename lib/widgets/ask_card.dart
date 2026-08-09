@@ -28,13 +28,26 @@ class HomeAskHero extends StatelessWidget {
   final VoidCallback onAsk;
   final VoidCallback onCamera;
 
+  /// Last question the student asked, for the "continue" pill. Null hides the
+  /// pill entirely — a first-time student sees the plain hero.
+  final String? resumeLabel;
+
+  /// Tapped when the resume pill is shown. Required whenever [resumeLabel] is
+  /// non-null.
+  final VoidCallback? onResume;
+
   const HomeAskHero({
     super.key,
     required this.headline,
     required this.sub,
     required this.onAsk,
     required this.onCamera,
-  });
+    this.resumeLabel,
+    this.onResume,
+  }) : assert(
+         resumeLabel == null || onResume != null,
+         'onResume is required when resumeLabel is set',
+       );
 
   /// Floor height. The card grows past this if the student runs a large text
   /// scale — the Stack is bottom-aligned, so nothing clips.
@@ -119,6 +132,14 @@ class HomeAskHero extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (resumeLabel != null) ...[
+                  const SizedBox(height: 12),
+                  _ResumePill(
+                    label: resumeLabel!,
+                    accent: accent,
+                    onTap: onResume!,
+                  ),
+                ],
               ],
             ),
           ),
@@ -223,6 +244,63 @@ class _AtomPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_AtomPainter oldDelegate) => oldDelegate.color != color;
+}
+
+/// `Continue: <last question>` — a quiet outlined row under the hero's buttons.
+/// Deliberately not a second filled button: asking something new stays the
+/// primary action, and this is the shortcut for students already mid-topic.
+class _ResumePill extends StatelessWidget {
+  final String label;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _ResumePill({
+    required this.label,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = AppColors.heroInk.withValues(alpha: 0.86);
+
+    return Pressable(
+      onTap: onTap,
+      scale: 0.98,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.07),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.history_rounded, size: 15, color: accent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: ink,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              Icons.arrow_forward_rounded,
+              size: 15,
+              color: AppColors.heroInk.withValues(alpha: 0.5),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -299,6 +299,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _isLoadingHistory = false;
         _isRevalidating = true;
       });
+      // Cached history paints straight away, well before the revalidation
+      // below returns — scroll now so the chat opens at the newest turn
+      // instead of sitting mid-conversation until the network settles.
+      _scrollToBottom(immediate: true);
     } else {
       setState(() {
         _isLoadingHistory = true;
@@ -336,7 +340,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _streamingMessageIndex = streamingAt < 0 ? null : streamingAt;
       }
     });
-    _scrollToBottom();
+    // A whole conversation arrived in one setState — jump, don't animate.
+    _scrollToBottom(immediate: true);
   }
 
   Future<void> _loadOlderHistory() async {
@@ -753,7 +758,25 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     _streamingMessageIndex = null;
   }
 
-  void _scrollToBottom() {
+  /// Scrolls the message list to the newest turn.
+  ///
+  /// Pass [immediate] when the whole conversation just landed at once (opening
+  /// a chat with history). The list is lazy, so `maxScrollExtent` right after
+  /// that setState is only an estimate from the first screenful of bubbles —
+  /// animating to it stops short, in the middle of the conversation. Jumping
+  /// and re-checking over a few frames lets the estimate settle as more bubbles
+  /// build, and a jump is what you want there anyway: an opened chat should
+  /// already be at the bottom rather than visibly scrolling there.
+  ///
+  /// The default animated path is for turns appended to an already-settled
+  /// list, where the extent is accurate and the motion shows the new message
+  /// arriving.
+  void _scrollToBottom({bool immediate = false}) {
+    if (immediate) {
+      _scrollScheduled = false;
+      _settleAtBottom(_maxSettlePasses);
+      return;
+    }
     if (_scrollScheduled) return;
     _scrollScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -764,6 +787,32 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
+    });
+  }
+
+  /// How many settle passes [_settleAtBottom] gets. Each pass is one frame, and
+  /// the extent converges in two or three; the cap only stops a list whose
+  /// height never stabilises from re-jumping forever.
+  static const int _maxSettlePasses = 6;
+
+  /// Jumps to the bottom, then re-checks on the next frame: building the bubbles
+  /// we just scrolled past grows `maxScrollExtent`, so one jump lands short.
+  /// Repeats until the extent stops growing or [passes] runs out.
+  void _settleAtBottom(int passes) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (_scrollController.offset < target) {
+        _scrollController.jumpTo(target);
+      }
+      if (passes <= 1) return;
+      // Re-measure next frame; stop as soon as the extent has stopped moving.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        if (_scrollController.position.maxScrollExtent > target) {
+          _settleAtBottom(passes - 1);
+        }
+      });
     });
   }
 
