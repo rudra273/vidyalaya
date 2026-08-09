@@ -16,6 +16,7 @@ import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/ask_card.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 
 /// Haptic tap → push, shared by every row on this page.
@@ -181,9 +182,11 @@ class AiHubScreen extends ConsumerWidget {
                 gridDelegate:
                     const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 1.28,
+                      // Wider gutters than the flat tiles needed — the clay
+                      // shadows want room to fall before the next card starts.
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 1.5,
                     ),
                 itemCount: subjects.length,
                 itemBuilder: (context, index) {
@@ -444,15 +447,18 @@ class _HubRow extends StatelessWidget {
 
 /// One ingested subject, as a coloured tile. Seven pill chips wrapped into an
 /// undifferentiated grey blob; a tile grid is scannable and matches Explore.
-class _SubjectTile extends StatelessWidget {
+///
+/// Uses [ClayCard] with the same depth as Home's mini-tool grid, so both tile
+/// grids read as one surface — and both drop to flat cards together when
+/// claymorphism is turned off in Settings → Appearance.
+class _SubjectTile extends ConsumerWidget {
   final String subject;
   final VoidCallback onTap;
 
   const _SubjectTile({required this.subject, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+  Widget build(BuildContext context, WidgetRef ref) {
     final meta = subjectMeta(subject);
     final color = AppColors.subjectColor(
       subject,
@@ -462,13 +468,11 @@ class _SubjectTile extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       scale: 0.96,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
-        ),
+      child: ClayCard(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        radius: AppSpacing.tileRadius,
+        blur: 11,
+        distance: 3,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -476,17 +480,17 @@ class _SubjectTile extends StatelessWidget {
               color: color,
               icon: meta.icon,
               meta: meta,
-              size: 34,
-              radius: 10,
+              size: 28,
+              radius: 9,
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: 6),
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 formatSubject(subject),
                 maxLines: 1,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontSize: 11.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
               ),
