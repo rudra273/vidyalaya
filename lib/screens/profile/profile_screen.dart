@@ -44,6 +44,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _restoreFromLocalPrefs();
+    // Revalidate once per screen open (the tab shell rebuilds this screen on
+    // each visit), off the build frame. Every other refresh is driven by an
+    // explicit event — account change, Retry, save — never by a rebuild: the
+    // load rebuilds this screen, so a fetch started from `build` re-triggers
+    // itself for as long as the tab is open.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureProfile(forceRefresh: true);
+    });
+  }
+
+  /// Seeds the form from local prefs — the source of truth while signed out,
+  /// and the placeholder until the backend profile lands.
+  void _restoreFromLocalPrefs() {
     final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
     if (selectedClasses.isNotEmpty) {
       _selectedClass = selectedClasses.first;
@@ -51,6 +65,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _board = ref.read(userBoardProvider);
     _preferredLanguage =
         ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
+  }
+
+  void _ensureProfile({bool forceRefresh = false}) {
+    ref
+        .read(backendAccountCacheProvider.notifier)
+        .ensureProfile(forceRefresh: forceRefresh);
   }
 
   @override
@@ -62,6 +82,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Re-sync only when the signed-in account actually changes. Signing in
+    // fetches the new student's profile; signing out drops the previous
+    // student's name and school so a shared phone doesn't show them to whoever
+    // signs in next.
+    ref.listen(authStateProvider, (previous, next) {
+      final previousUid = previous?.value?.uid;
+      final nextUid = next.value?.uid;
+      if (previousUid == nextUid) return;
+      setState(() {
+        _appliedProfileKey = null;
+        _isEditing = false;
+        if (nextUid == null) {
+          _nameController.clear();
+          _schoolController.clear();
+          _restoreFromLocalPrefs();
+        }
+      });
+      if (nextUid != null) _ensureProfile();
+    });
+
     final authState = ref.watch(authStateProvider);
     final accountState = ref.watch(backendAccountCacheProvider);
     final isSignedIn = authState.maybeWhen(
@@ -69,12 +109,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       orElse: () => false,
     );
     final user = authState.maybeWhen(data: (u) => u, orElse: () => null);
-    _ensureCachedProfile(user);
     final cachedProfile = accountState.profile.maybeWhen(
       data: (profile) => profile,
       orElse: () => null,
     );
-    final isProfileLoading = accountState.profile is AsyncLoading;
+    // Only a first load that is genuinely in flight blocks the form — until it
+    // settles we don't know the student's saved name/school, so letting them
+    // save would overwrite server data with blanks. Both halves matter: a
+    // background revalidation (loaded, refreshing) must never disable the form
+    // — that was the "Edit profile does nothing" report — and a profile that
+    // was never requested must not either, so the form fails open, not shut.
+    final isInitialProfileLoad = isSignedIn &&
+        !accountState.profileLoaded &&
+        accountState.profile is AsyncLoading;
     // A failed backend sync doesn't blank the screen (the form runs off local
     // prefs), but it silently stops the profile from staying in sync — surface
     // it so the student can retry rather than wonder why edits don't stick.
@@ -199,9 +246,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 padding: const EdgeInsets.fromLTRB(
                     AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
                 child: _ProfileSyncErrorBanner(
-                  onRetry: () => ref
-                      .read(backendAccountCacheProvider.notifier)
-                      .ensureProfile(forceRefresh: true),
+                  onRetry: () => _ensureProfile(forceRefresh: true),
                 ),
               ),
             Padding(
@@ -210,7 +255,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: _isEditing
                   ? _StudentForm(
                       isSignedIn: isSignedIn,
-                      isLoading: isProfileLoading,
+                      isInitialLoad: isInitialProfileLoad,
                       isSaving: _isProfileSaving,
                       selectedClass: _selectedClass,
                       preferredLanguage: _preferredLanguage,
@@ -251,22 +296,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
+    // Clearing the form is handled by the auth listener in `build`, so it also
+    // covers a session that ends without this button (expired/revoked token).
     await _runAuthAction(() {
-      _appliedProfileKey = null;
       return ref.read(authRepositoryProvider).signOut();
-    });
-  }
-
-  void _ensureCachedProfile(User? user) {
-    // Skip the background revalidation while editing: for an account with no
-    // saved profile (no cache), ensureProfile flips `profile` to AsyncLoading,
-    // which drives the form's `isBusy` true and greys out the fields the
-    // student is typing into. Their edits aren't lost when we resume — the
-    // cached profile only re-applies when not editing.
-    if (user == null || _isProfileSaving || _isEditing) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(backendAccountCacheProvider.notifier).ensureProfile();
     });
   }
 
@@ -310,13 +343,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _appliedProfileKey = null; // re-apply the cached profile on next build
       // Signed out there is no cached profile to re-apply, so restore the
       // local prefs values directly.
-      final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
-      if (selectedClasses.isNotEmpty) {
-        _selectedClass = selectedClasses.first;
-      }
-      _board = ref.read(userBoardProvider);
-      _preferredLanguage =
-          ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
+      _restoreFromLocalPrefs();
     });
   }
 
@@ -1156,7 +1183,12 @@ class _SummaryRow extends StatelessWidget {
 
 class _StudentForm extends StatelessWidget {
   final bool isSignedIn;
-  final bool isLoading;
+
+  /// True only until the student's saved profile has been read for the first
+  /// time. Saving before that would push blanks over their stored name/school,
+  /// so the form waits — but a *background* refresh never sets this, or the
+  /// form would go dead every time it re-synced.
+  final bool isInitialLoad;
   final bool isSaving;
   final int selectedClass;
   final String preferredLanguage;
@@ -1170,7 +1202,7 @@ class _StudentForm extends StatelessWidget {
 
   const _StudentForm({
     required this.isSignedIn,
-    required this.isLoading,
+    required this.isInitialLoad,
     required this.isSaving,
     required this.selectedClass,
     required this.preferredLanguage,
@@ -1186,7 +1218,7 @@ class _StudentForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isBusy = isLoading || isSaving;
+    final isBusy = isInitialLoad || isSaving;
     final langLabel = const {
       'en': 'English',
       'or': 'Odia',
@@ -1251,12 +1283,32 @@ class _StudentForm extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
+          // The fields are greyed out while the first load runs; say why,
+          // rather than leaving the student tapping a form that ignores them.
+          if (isInitialLoad) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const SizedBox.square(
+                  dimension: 13,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 9),
+                Text(
+                  'Loading your saved profile…',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: isBusy ? null : onCancel,
+                  // Cancel stays live even mid-load: it only drops back to the
+                  // summary, and a student must always be able to back out.
+                  onPressed: isSaving ? null : onCancel,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: cs.outline),
                     padding: const EdgeInsets.symmetric(vertical: 12),

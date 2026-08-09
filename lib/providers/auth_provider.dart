@@ -123,6 +123,39 @@ class BackendAccountState {
       historyLoaded: historyLoaded ?? this.historyLoaded,
     );
   }
+
+  // Value equality is load-bearing, not a nicety: Riverpod notifies listeners
+  // whenever `state` is reassigned to a non-`==` value, and every `copyWith`
+  // allocates a fresh object. Without this, a revalidation that changed nothing
+  // still rebuilt every listener — and a screen that kicks `ensureX()` off a
+  // rebuild then re-fetched forever (rebuild → fetch → notify → rebuild …).
+  @override
+  bool operator ==(Object other) =>
+      other is BackendAccountState &&
+      other.uid == uid &&
+      other.user == user &&
+      other.profile == profile &&
+      other.usage == usage &&
+      other.history == history &&
+      other.historySelector == historySelector &&
+      other.userLoaded == userLoaded &&
+      other.profileLoaded == profileLoaded &&
+      other.usageLoaded == usageLoaded &&
+      other.historyLoaded == historyLoaded;
+
+  @override
+  int get hashCode => Object.hash(
+    uid,
+    user,
+    profile,
+    usage,
+    history,
+    historySelector,
+    userLoaded,
+    profileLoaded,
+    usageLoaded,
+    historyLoaded,
+  );
 }
 
 class BackendAccountCache extends Notifier<BackendAccountState> {
@@ -136,6 +169,18 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   // a slow response clobbers a conversation the user already switched away from.
   HistorySelector? _historyRequestSelector;
 
+  // Resources already revalidated against the backend for the current uid.
+  // Stale-while-revalidate means "once per signed-in session", not "once per
+  // caller": `ensureX()` is invoked from widget builds, and without this an
+  // unchanged response would still be re-requested on the next rebuild the
+  // load itself caused. Cleared whenever the uid changes; bypassed by
+  // `forceRefresh` (pull-to-refresh, the profile Retry button, post-save).
+  final Set<String> _revalidated = {};
+
+  static const _userResource = 'user';
+  static const _profileResource = 'profile';
+  static const _usageResource = 'usage';
+
   @override
   BackendAccountState build() {
     final uid = ref
@@ -148,11 +193,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       if (previousUid != null) {
         unawaited(_cache.deleteNamespace(previousUid));
       }
-      _userRequest = null;
-      _profileRequest = null;
-      _usageRequest = null;
-      _historyRequest = null;
-      _historyRequestSelector = null;
+      _resetRequests();
       return const BackendAccountState();
     }
 
@@ -160,11 +201,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       if (previousUid != null) {
         unawaited(_cache.deleteNamespace(previousUid));
       }
-      _userRequest = null;
-      _profileRequest = null;
-      _usageRequest = null;
-      _historyRequest = null;
-      _historyRequestSelector = null;
+      _resetRequests();
       return BackendAccountState(uid: uid);
     }
 
@@ -177,15 +214,16 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _hydrateUserFromCache(uid);
 
     final cached = _asyncData(state.user);
-    final hasCache = state.userLoaded && cached != null;
-    if (_userRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) {
+    if (_userRequest == null &&
+        (forceRefresh || _shouldRevalidate(_userResource))) {
+      if (!state.userLoaded) {
         state = state.copyWith(uid: uid, user: const AsyncLoading());
       }
       _userRequest = _loadUser(uid, cached);
     }
 
-    return hasCache
+    if (forceRefresh && _userRequest != null) return _userRequest!;
+    return state.userLoaded
         ? Future.value(cached)
         : (_userRequest ?? Future.value(null));
   }
@@ -196,15 +234,21 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _hydrateProfileFromCache(uid);
 
     final cached = _asyncData(state.profile);
-    final hasCache = state.profileLoaded && cached != null;
-    if (_profileRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) {
+    // Gate the visible `AsyncLoading` on "nothing has settled yet", not on
+    // "there is no cached value". A student with no saved profile legitimately
+    // has a null one, and treating that as "still loading" put the account in
+    // AsyncLoading on *every* revalidation — which the profile form reads as
+    // "disable the whole form".
+    if (_profileRequest == null &&
+        (forceRefresh || _shouldRevalidate(_profileResource))) {
+      if (!state.profileLoaded) {
         state = state.copyWith(uid: uid, profile: const AsyncLoading());
       }
       _profileRequest = _loadProfile(uid, cached);
     }
 
-    return hasCache
+    if (forceRefresh && _profileRequest != null) return _profileRequest!;
+    return state.profileLoaded
         ? Future.value(cached)
         : (_profileRequest ?? Future.value(null));
   }
@@ -215,15 +259,16 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _hydrateUsageFromCache(uid);
 
     final cached = _asyncData(state.usage);
-    final hasCache = state.usageLoaded && cached != null;
-    if (_usageRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) {
+    if (_usageRequest == null &&
+        (forceRefresh || _shouldRevalidate(_usageResource))) {
+      if (!state.usageLoaded) {
         state = state.copyWith(uid: uid, usage: const AsyncLoading());
       }
       _usageRequest = _loadUsage(uid, cached);
     }
 
-    return hasCache
+    if (forceRefresh && _usageRequest != null) return _usageRequest!;
+    return state.usageLoaded
         ? Future.value(cached)
         : (_usageRequest ?? Future.value(null));
   }
@@ -252,7 +297,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         ? _historyRequest
         : null;
 
-    if (inFlight == null && (forceRefresh || _shouldRevalidate())) {
+    // History has no session-level revalidation guard: every caller drives it
+    // explicitly (opening a conversation, switching subject, `markHistoryStale`
+    // after a new turn), and each of those passes `forceRefresh`.
+    if (inFlight == null) {
       if (!hasCache) {
         state = state.copyWith(
           uid: uid,
@@ -307,6 +355,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           (profile) => profile.toCacheJson(),
         );
         state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
+        // The PUT response *is* the authoritative profile — no follow-up GET.
+        _revalidated.add(_profileResource);
         _mirrorProfileToPrefs(saved);
       }
       return saved;
@@ -406,7 +456,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       return previous;
     } finally {
-      _userRequest = null;
+      _settleRequest(_userResource, uid);
     }
   }
 
@@ -453,7 +503,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       return previous;
     } finally {
-      _profileRequest = null;
+      _settleRequest(_profileResource, uid);
     }
   }
 
@@ -487,7 +537,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       return previous;
     } finally {
-      _usageRequest = null;
+      _settleRequest(_usageResource, uid);
     }
   }
 
@@ -575,7 +625,33 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     );
   }
 
-  bool _shouldRevalidate() => true;
+  bool _shouldRevalidate(String resource) => !_revalidated.contains(resource);
+
+  /// Marks [resource] fetched for this session and frees its request slot —
+  /// but only while the account that started the fetch is still signed in.
+  /// A response landing after a sign-out/switch must not mark the *new*
+  /// account's data as already loaded, or its first fetch never runs.
+  void _settleRequest(String resource, String uid) {
+    if (_currentUid != uid) return;
+    _revalidated.add(resource);
+    switch (resource) {
+      case _userResource:
+        _userRequest = null;
+      case _profileResource:
+        _profileRequest = null;
+      case _usageResource:
+        _usageRequest = null;
+    }
+  }
+
+  void _resetRequests() {
+    _revalidated.clear();
+    _userRequest = null;
+    _profileRequest = null;
+    _usageRequest = null;
+    _historyRequest = null;
+    _historyRequestSelector = null;
+  }
 
   void _hydrateUserFromCache(String uid) {
     if (state.uid == uid && state.userLoaded) return;

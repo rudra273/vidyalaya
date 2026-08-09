@@ -21,6 +21,11 @@ class UserSelectionNotifier extends Notifier<Set<int>> {
   }
 
   void setClasses(Set<int> classes) {
+    // Profile loads/saves call this with the class the student already has.
+    // `Set` compares by identity, so re-assigning an equal-but-new set would
+    // still notify every listener — enough to rebuild screens that fetch on
+    // build and re-trigger the load that called us.
+    if (classes.length == state.length && state.containsAll(classes)) return;
     state = classes;
     _persist(classes);
   }
