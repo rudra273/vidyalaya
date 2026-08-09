@@ -125,6 +125,28 @@ class UserPrefsRepository {
     await _prefs.setString(_lastReadBookIdKey, bookId);
   }
 
+  // ─── Recently opened books ──────────────────────────────────────────────
+  // Book ids in most-recently-opened-first order, so Home's "Your books" row
+  // reflects what the student actually reads rather than seed order.
+
+  static const _recentBookIdsKey = 'recent_book_ids';
+  static const _maxRecentBooks = 12;
+
+  List<String> getRecentBookIds() {
+    return _prefs.getStringList(_recentBookIdsKey) ?? const <String>[];
+  }
+
+  /// Moves [bookId] to the front, de-duplicating any earlier visit.
+  Future<void> recordBookOpened(String bookId) async {
+    final ids = getRecentBookIds().toList()
+      ..remove(bookId)
+      ..insert(0, bookId);
+    if (ids.length > _maxRecentBooks) {
+      ids.removeRange(_maxRecentBooks, ids.length);
+    }
+    await _prefs.setStringList(_recentBookIdsKey, ids);
+  }
+
   // ─── Per-Book Last Read Page ────────────────────────────────────────────
 
   int getLastReadPage(String bookId) {

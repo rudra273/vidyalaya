@@ -7,7 +7,6 @@ import '../../app/theme.dart';
 import '../../data/avatars.dart';
 import '../../utils/haptics.dart';
 import '../../providers/reading_provider.dart';
-import '../../providers/books_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
@@ -49,8 +48,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lastReadBook = ref.watch(readingProvider);
-    final books = ref.watch(selectedBooksProvider);
+    final recentBooks = ref.watch(recentBooksProvider);
     final booksEnabled = ref.watch(booksEnabledProvider);
     final streak = ref.watch(progressProvider).currentStreak;
     final user = ref
@@ -71,8 +69,7 @@ class HomeScreen extends ConsumerWidget {
           : (selectedClasses.toList()..sort()).first,
     );
 
-    final showContinueReading = booksEnabled && lastReadBook != null;
-    final showRecentlyAdded = booksEnabled && books.isNotEmpty;
+    final showRecentBooks = booksEnabled && recentBooks.isNotEmpty;
 
     return SafeArea(
       child: ListView(
@@ -131,93 +128,10 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Word of the day ──────────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'Word of the day'),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: _WordOfDayCard(
-              word: wordOfTheDay(),
-              regionalLang: ref.watch(regionalLanguageProvider),
-            ),
-          ),
-
-          // ── Today's warm-up ─────────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: "Today's warm-up"),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: WarmupCard(
-              // Keyed by question id so the card resets its answered state when
-              // the day rolls over while Home is still on screen.
-              key: ValueKey(warmupQuestion.id),
-              question: warmupQuestion,
-            ),
-          ),
-
-          // ── Your books ───────────────────────────────────────────
-          if (booksEnabled && (showContinueReading || showRecentlyAdded)) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(
-                label: 'Your books',
-                action: 'See all',
-                onAction: () => _navTap(ref, context, '/library'),
-              ),
-            ),
-            if (showContinueReading) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                ),
-                child: _ContinueCard(
-                  book: lastReadBook,
-                  lastPage: ref
-                      .read(userPrefsRepositoryProvider)
-                      .getLastReadPage(lastReadBook.id),
-                ),
-              ),
-              if (showRecentlyAdded)
-                const SizedBox(height: AppSpacing.stackGap),
-            ],
-            if (showRecentlyAdded)
-              SizedBox(
-                height: 168,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenPadding,
-                  ),
-                  itemCount: books.length > 8 ? 8 : books.length,
-                  separatorBuilder: (_, _) =>
-                      const SizedBox(width: AppSpacing.stackGap),
-                  itemBuilder: (context, index) {
-                    final book = books[index];
-                    return _RecentBookCard(book: book);
-                  },
-                ),
-              ),
-          ],
-
           // ── Study tools ──────────────────────────────────────────
+          // No section head: three labelled tiles read as their own group, and
+          // dropping the label keeps the tools tight under the AI hero.
           const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'Study tools'),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
@@ -255,6 +169,73 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+
+          // ── Word of the day ──────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            child: SectionHead(label: 'Word of the day'),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: _WordOfDayCard(
+              word: wordOfTheDay(),
+              regionalLang: ref.watch(regionalLanguageProvider),
+            ),
+          ),
+
+          // ── Your books ───────────────────────────────────────────
+          // Most-recently-opened first, so the row tracks what the student is
+          // actually reading. No continue-reading card — the first tile in
+          // this row is that book.
+          if (showRecentBooks) ...[
+            const SizedBox(height: AppSpacing.sectionGap),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              child: SectionHead(
+                label: 'Your books',
+                action: 'See all',
+                onAction: () => _navTap(ref, context, '/library'),
+              ),
+            ),
+            SizedBox(
+              height: 168,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                ),
+                itemCount: recentBooks.length > 8 ? 8 : recentBooks.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: AppSpacing.stackGap),
+                itemBuilder: (context, index) {
+                  return _RecentBookCard(book: recentBooks[index]);
+                },
+              ),
+            ),
+          ],
+
+          // ── Today's warm-up ─────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+            child: SectionHead(label: "Today's warm-up"),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: WarmupCard(
+              // Keyed by question id so the card resets its answered state when
+              // the day rolls over while Home is still on screen.
+              key: ValueKey(warmupQuestion.id),
+              question: warmupQuestion,
             ),
           ),
 
@@ -535,96 +516,6 @@ class _ExampleSentence extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─── Continue reading card ──────────────────────────────────────────────
-
-class _ContinueCard extends ConsumerWidget {
-  final Book book;
-
-  /// Real last-read page (0-based) from prefs; -1/0 means not started yet. We
-  /// show only this — the book's total page count isn't known until the PDF
-  /// loads in the reader, so there's no honest percentage to display here.
-  final int lastPage;
-
-  const _ContinueCard({required this.book, required this.lastPage});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
-    final subjectColor = AppColors.subjectColor(book.subject, brightness);
-
-    return Pressable(
-      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.cardPad - 4),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    book.title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontSize: 17,
-                      height: 1.15,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Class ${book.classNumber} · ${_capitalize(book.subject)}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.play_circle_outline_rounded,
-                        size: 14,
-                        color: subjectColor,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        lastPage > 0
-                            ? 'Resume on page ${lastPage + 1}'
-                            : 'Start reading',
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: subjectColor,
-                            ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 64,
-              height: 84,
-              child: BookCover(subjectKey: book.subject, big: false),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static String _capitalize(String s) =>
-      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
 // ─── Mini tool tile (3-column grid) ─────────────────────────────────────
