@@ -11,8 +11,34 @@ String planLabel(String planKey) {
   };
 }
 
-/// Backend subject key → title case ("social_science" → "Social Science").
+/// Subject keys whose title case reads poorly for students.
+///
+/// Classes 9-10 split several subjects into separate books, so the vector DB
+/// uses keys like `math_algebra` and `history_civics`. Those keys are the wire
+/// contract with the backend retrieval filter and must be sent unchanged — this
+/// map only affects what the student reads on screen.
+const Map<String, String> _subjectLabels = {
+  'math_algebra': 'Maths (Algebra)',
+  'math_geometry': 'Maths (Geometry)',
+  'physical_science': 'Physical Science',
+  'life_science': 'Life Science',
+  'history_civics': 'History & Civics',
+  'geography_economics': 'Geography & Economics',
+  'english_grammar': 'English Grammar',
+  'hindi_grammar': 'Hindi Grammar',
+  'odia_grammar': 'Odia Grammar',
+  'sanskrit_grammar': 'Sanskrit Grammar',
+};
+
+/// Backend subject key → the label students see ("social_science" → "Social
+/// Science", "history_civics" → "History & Civics").
+///
+/// Falls back to title case, so a newly ingested subject still reads sensibly
+/// before it is added to [_subjectLabels].
 String formatSubject(String subject) {
+  final label = _subjectLabels[subject];
+  if (label != null) return label;
+
   return subject
       .split('_')
       .map(
