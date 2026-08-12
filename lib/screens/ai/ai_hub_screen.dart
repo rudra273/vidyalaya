@@ -57,9 +57,10 @@ class AiHubScreen extends ConsumerWidget {
     // Same board/class the chat resolves to, so the subjects offered here are
     // exactly the conversations the chat can open.
     final classNo = resolveLearnAssistClass(ref.watch(userSelectionProvider));
+    final board = ref.watch(userBoardProvider);
     final subjects = learnAssistSubjects(
       ref.watch(ingestedBooksProvider),
-      ref.watch(userBoardProvider),
+      board,
       classNo,
     );
 
@@ -134,6 +135,8 @@ class AiHubScreen extends ConsumerWidget {
                   final question = recents[index];
                   return _RecentQuestionCard(
                     question: question,
+                    board: board,
+                    classNo: classNo,
                     onTap: () =>
                         _navTap(ref, context, _resumePath(question)),
                   );
@@ -193,6 +196,8 @@ class AiHubScreen extends ConsumerWidget {
                   final subject = subjects[index];
                   return _SubjectTile(
                     subject: subject,
+                    board: board,
+                    classNo: classNo,
                     onTap: () => _navTap(
                       ref,
                       context,
@@ -309,9 +314,16 @@ String _ago(DateTime then) {
 
 class _RecentQuestionCard extends StatelessWidget {
   final RecentQuestion question;
+  final String board;
+  final int classNo;
   final VoidCallback onTap;
 
-  const _RecentQuestionCard({required this.question, required this.onTap});
+  const _RecentQuestionCard({
+    required this.question,
+    required this.board,
+    required this.classNo,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +349,9 @@ class _RecentQuestionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              (subject == null ? 'Any subject' : formatSubject(subject))
+              (subject == null
+                      ? 'Any subject'
+                      : formatSubject(subject, board: board, classNo: classNo))
                   .toUpperCase(),
               style: TextStyle(
                 fontSize: 10,
@@ -453,9 +467,16 @@ class _HubRow extends StatelessWidget {
 /// claymorphism is turned off in Settings → Appearance.
 class _SubjectTile extends ConsumerWidget {
   final String subject;
+  final String board;
+  final int classNo;
   final VoidCallback onTap;
 
-  const _SubjectTile({required this.subject, required this.onTap});
+  const _SubjectTile({
+    required this.subject,
+    required this.board,
+    required this.classNo,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -487,7 +508,7 @@ class _SubjectTile extends ConsumerWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                formatSubject(subject),
+                formatSubject(subject, board: board, classNo: classNo),
                 maxLines: 1,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontSize: 11,

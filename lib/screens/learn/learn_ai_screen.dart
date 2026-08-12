@@ -906,6 +906,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         child: Column(
           children: [
             _ContextControls(
+              board: _board,
+              classNo: _selectedClass,
               subjectOptions: subjectOptions,
               selectedSubject: _selectedSubject,
               onSubjectChanged: (value) {
@@ -1100,6 +1102,8 @@ class _PlanUsageBadge extends StatelessWidget {
 }
 
 class _ContextControls extends StatelessWidget {
+  final String board;
+  final int classNo;
   final List<String> subjectOptions;
   final String? selectedSubject;
   final ValueChanged<String?> onSubjectChanged;
@@ -1107,6 +1111,8 @@ class _ContextControls extends StatelessWidget {
   final ValueChanged<String> onLanguageChanged;
 
   const _ContextControls({
+    required this.board,
+    required this.classNo,
     required this.subjectOptions,
     required this.selectedSubject,
     required this.onSubjectChanged,
@@ -1129,12 +1135,12 @@ class _ContextControls extends StatelessWidget {
             icon: Icons.menu_book_rounded,
             label: selectedSubject == null
                 ? 'All subjects'
-                : formatSubject(selectedSubject!),
+                : formatSubject(selectedSubject!, board: board, classNo: classNo),
             value: selectedSubject ?? 'all',
             options: [
               const ('all', 'All subjects'),
               for (final subject in subjectOptions)
-                (subject, formatSubject(subject)),
+                (subject, formatSubject(subject, board: board, classNo: classNo)),
             ],
             onSelected: (value) {
               onSubjectChanged(value == 'all' ? null : value);
