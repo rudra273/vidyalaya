@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
-import '../../data/seed/seed_data.dart' show boardLabel;
+import '../../data/seed/seed_data.dart' show boardLabel, boards;
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
@@ -265,6 +265,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onClassChanged: (v) => setState(() => _selectedClass = v),
                       onLanguageChanged: (v) =>
                           setState(() => _preferredLanguage = v),
+                      onBoardChanged: (v) => setState(() => _board = v),
                       onSave: _saveStudentProfile,
                       onCancel: _cancelEditing,
                     )
@@ -1197,6 +1198,7 @@ class _StudentForm extends StatelessWidget {
   final TextEditingController schoolController;
   final ValueChanged<int> onClassChanged;
   final ValueChanged<String> onLanguageChanged;
+  final ValueChanged<String> onBoardChanged;
   final VoidCallback onSave;
   final VoidCallback onCancel;
 
@@ -1211,6 +1213,7 @@ class _StudentForm extends StatelessWidget {
     required this.schoolController,
     required this.onClassChanged,
     required this.onLanguageChanged,
+    required this.onBoardChanged,
     required this.onSave,
     required this.onCancel,
   });
@@ -1252,12 +1255,12 @@ class _StudentForm extends StatelessWidget {
                 : () => _showClassPicker(context, onClassChanged, selectedClass),
           ),
           const SizedBox(height: 12),
-          // Single supported board today; shown for transparency, picker
-          // activates once the backend accepts more boards.
           _Field<String>(
             label: 'Board',
             value: boardLabel(board),
-            onTap: null,
+            onTap: isBusy
+                ? null
+                : () => _showBoardPicker(context, onBoardChanged, board),
           ),
           const SizedBox(height: 12),
           _Field<String>(
@@ -1380,6 +1383,39 @@ class _StudentForm extends StatelessWidget {
                 },
               );
             },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showBoardPicker(BuildContext context,
+      ValueChanged<String> onChanged, String current) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: boards.map((b) {
+              return ListTile(
+                title: Text(b.name),
+                subtitle: Text(b.state),
+                trailing: b.id == current
+                    ? Icon(Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  onChanged(b.id);
+                },
+              );
+            }).toList(),
           ),
         );
       },

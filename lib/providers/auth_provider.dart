@@ -318,9 +318,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     if (hasCache && forceRefresh && pending != null) {
       return pending;
     }
-    return hasCache
-        ? Future.value(cached)
-        : (pending ?? Future.value(null));
+    return hasCache ? Future.value(cached) : (pending ?? Future.value(null));
   }
 
   Future<ChatHistoryPage?> loadOlderHistory() {
@@ -394,36 +392,41 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     state = state.copyWith(uid: uid, historyLoaded: false);
   }
 
-  void prependLatestHistoryMessages(List<ChatHistoryMessage> messages) {
-    final uid = _currentUid;
-    if (uid == null || messages.isEmpty) return;
-    final selector = state.historySelector;
-    if (selector == null) return;
-    final current =
-        _asyncData(state.history) ??
-        const ChatHistoryPage(messages: [], nextBefore: null);
+  void prependLatestHistoryMessages({
+    required String uid,
+    required HistorySelector selector,
+    required List<ChatHistoryMessage> messages,
+  }) {
+    if (_currentUid != uid || messages.isEmpty) return;
+    final cached = _cache.readWithMeta<ChatHistoryPage>(
+      _historyKey(uid, selector),
+      (json) => ChatHistoryPage.fromJson(_jsonMap(json)),
+    );
+    final current = state.historySelector == selector
+        ? (_asyncData(state.history) ??
+              const ChatHistoryPage(messages: [], nextBefore: null))
+        : (cached?.value ??
+              const ChatHistoryPage(messages: [], nextBefore: null));
     final existingIds = current.messages.map((message) => message.id).toSet();
     final uniqueMessages = [
       ...messages.where((message) => !existingIds.contains(message.id)),
       ...current.messages,
     ]..sort((a, b) => b.id.compareTo(a.id));
-    state = state.copyWith(
-      uid: uid,
-      history: AsyncData(
-        ChatHistoryPage(
-          messages: uniqueMessages,
-          nextBefore: current.nextBefore,
-        ),
-      ),
-      historyLoaded: true,
+    final updated = ChatHistoryPage(
+      messages: uniqueMessages,
+      nextBefore: current.nextBefore,
     );
+    if (state.historySelector == selector) {
+      state = state.copyWith(
+        uid: uid,
+        history: AsyncData(updated),
+        historyLoaded: false,
+      );
+    }
     unawaited(
       _cache.write<ChatHistoryPage>(
         _historyKey(uid, selector),
-        ChatHistoryPage(
-          messages: uniqueMessages,
-          nextBefore: current.nextBefore,
-        ),
+        updated,
         (page) => page.toJson(),
       ),
     );
@@ -438,7 +441,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           user,
           (user) => user.toJson(),
         );
-        final changed = state.user is! AsyncData ||
+        final changed =
+            state.user is! AsyncData ||
             !_jsonEquals(previous?.toJson(), user.toJson());
         state = changed
             ? state.copyWith(user: AsyncData(user), userLoaded: true)
@@ -479,11 +483,9 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         // "Unchanged" may only skip the state write when the state already
         // holds data — a first fetch that returns null matches a null
         // `previous`, and skipping would leave AsyncLoading in place forever.
-        final changed = state.profile is! AsyncData ||
-            !_jsonEquals(
-              previous?.toCacheJson(),
-              profile?.toCacheJson(),
-            );
+        final changed =
+            state.profile is! AsyncData ||
+            !_jsonEquals(previous?.toCacheJson(), profile?.toCacheJson());
         state = changed
             ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
             : state.copyWith(profileLoaded: true);
@@ -519,7 +521,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           usage,
           (usage) => usage.toJson(),
         );
-        final changed = state.usage is! AsyncData ||
+        final changed =
+            state.usage is! AsyncData ||
             !_jsonEquals(previous?.toJson(), usage.toJson());
         state = changed
             ? state.copyWith(usage: AsyncData(usage), usageLoaded: true)

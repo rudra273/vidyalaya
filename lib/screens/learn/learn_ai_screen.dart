@@ -215,6 +215,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   /// screen and load that conversation's own saved history, so the screen always
   /// matches the model's per-conversation memory.
   void _switchConversation(VoidCallback applySelection) {
+    if (_isSending) return;
     setState(() {
       applySelection();
       _messages.clear();
@@ -223,6 +224,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       // into the wrong bubble.
       _streamingMessageIndex = null;
       _historyNextBefore = null;
+      _isLoadingOlder = false;
       _isRevalidating = false;
     });
     _loadHistory();
@@ -329,7 +331,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // A null page with nothing cached means the fetch failed with no fallback.
     // Distinguish that from a genuinely empty conversation by checking whether
     // the account state parked an error for this selector.
-    final historyErrored = page == null &&
+    final historyErrored =
+        page == null &&
         ref.read(backendAccountCacheProvider).history is AsyncError;
     setState(() {
       _isRevalidating = false;
@@ -358,7 +361,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   }
 
   Future<void> _loadOlderHistory() async {
-    if (_isLoadingOlder || _historyNextBefore == null) return;
+    if (_isSending || _isLoadingOlder || _historyNextBefore == null) return;
     setState(() => _isLoadingOlder = true);
 
     final selector = _selector;
@@ -378,6 +381,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         ..clear()
         ..addAll(_historyToMessages(page))
         ..addAll(liveMessages);
+      if (_streamingMessageIndex != null) {
+        final streamingAt = _messages.lastIndexWhere((m) => m.isStreaming);
+        _streamingMessageIndex = streamingAt < 0 ? null : streamingAt;
+      }
     });
   }
 
@@ -522,8 +529,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     if (_isSending || _messages.isEmpty) return;
     // Find the last user message and everything after it (the failed/last
     // assistant reply) so we can replace that reply in place.
-    final lastUserIndex =
-        _messages.lastIndexWhere((m) => m.role == _MessageRole.user);
+    final lastUserIndex = _messages.lastIndexWhere(
+      (m) => m.role == _MessageRole.user,
+    );
     if (lastUserIndex < 0) return;
     final userTurn = _messages[lastUserIndex];
     // A history image-only turn keeps the '[Image shared]' placeholder but no
@@ -558,6 +566,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   }) async {
     if (query.isEmpty && imageBytes == null) return;
 
+    final originUid = ref.read(firebaseAuthProvider).currentUser?.uid;
+    if (originUid == null) return;
+    final originSelector = _selector;
+
     final imageBase64 = imageBytes == null ? null : base64Encode(imageBytes);
     // What we persist to history when the turn is image-only (the backend stores
     // the same placeholder server-side).
@@ -571,11 +583,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     Haptics.light(ref);
     setState(() {
       if (appendUserBubble) {
-        _messages.add(_ChatMessage.user(
-          query,
-          imageBytes: imageBytes,
-          imageMediaType: imageMediaType,
-        ));
+        _messages.add(
+          _ChatMessage.user(
+            query,
+            imageBytes: imageBytes,
+            imageMediaType: imageMediaType,
+          ),
+        );
       }
       _isSending = true;
       _streamingMessageIndex = null;
@@ -585,8 +599,24 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // Feed the AI tab's "pick up where you left off" row. Image-only turns have
     // no question text worth listing.
     if (query.isNotEmpty) {
-      await prefs.recordRecentQuestion(query, subject: _selectedSubject);
+      await prefs.recordRecentQuestion(
+        originUid,
+        query,
+        subject: originSelector.subject,
+      );
       ref.read(recentQuestionsProvider.notifier).refresh();
+    }
+    if (!mounted ||
+        ref.read(firebaseAuthProvider).currentUser?.uid != originUid ||
+        _selector != originSelector) {
+      if (mounted) {
+        setState(() {
+          _messages.clear();
+          _streamingMessageIndex = null;
+          _isSending = false;
+        });
+      }
+      return;
     }
     _scrollToBottom();
 
@@ -649,15 +679,26 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           message: outgoing.isEmpty ? null : outgoing,
           imageBase64: imageBase64,
           imageMediaType: imageMediaType,
-          board: _board,
-          classNo: _selectedClass,
-          channel: widget.channel,
-          subject: _selectedSubject,
+          board: originSelector.board,
+          classNo: originSelector.classNo,
+          channel: originSelector.channel,
+          subject: originSelector.subject,
           language: language,
           debug: false,
         ),
       )) {
-        if (!mounted) return;
+        if (!mounted ||
+            ref.read(firebaseAuthProvider).currentUser?.uid != originUid ||
+            _selector != originSelector) {
+          if (mounted) {
+            setState(() {
+              _messages.clear();
+              _streamingMessageIndex = null;
+              _isSending = false;
+            });
+          }
+          return;
+        }
         switch (event) {
           case LearnAssistTokenEvent(:final text):
             appendToken(text);
@@ -678,7 +719,18 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         }
       }
 
-      if (!mounted) return;
+      if (!mounted ||
+          ref.read(firebaseAuthProvider).currentUser?.uid != originUid ||
+          _selector != originSelector) {
+        if (mounted) {
+          setState(() {
+            _messages.clear();
+            _streamingMessageIndex = null;
+            _isSending = false;
+          });
+        }
+        return;
+      }
       // Prefer the text streamed token-by-token; fall back to the complete
       // answer from the 'done' frame when a provider emitted no token frames.
       final streamed = answerBuffer.toString();
@@ -691,22 +743,25 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       final localId = now.microsecondsSinceEpoch;
       ref
           .read(backendAccountCacheProvider.notifier)
-          .prependLatestHistoryMessages([
-            ChatHistoryMessage(
-              id: localId,
-              role: 'user',
-              content: historyText,
-              createdAt: now,
-            ),
-            ChatHistoryMessage(
-              id: localId + 1,
-              role: 'assistant',
-              content: answer,
-              citations: citations,
-              createdAt: now,
-            ),
-          ]);
-      ref.read(backendAccountCacheProvider.notifier).markHistoryStale();
+          .prependLatestHistoryMessages(
+            uid: originUid,
+            selector: originSelector,
+            messages: [
+              ChatHistoryMessage(
+                id: localId,
+                role: 'user',
+                content: historyText,
+                createdAt: now,
+              ),
+              ChatHistoryMessage(
+                id: localId + 1,
+                role: 'assistant',
+                content: answer,
+                citations: citations,
+                createdAt: now,
+              ),
+            ],
+          );
       // The turn landed, so the style instruction has been delivered. Marking
       // it here (rather than before the request) means a failed first send and
       // its retry still carry the style the student picked.
@@ -716,11 +771,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       await ref.read(userPrefsRepositoryProvider).recordAiSession();
       ref.read(progressProvider.notifier).refresh();
       setState(() {
-        _finalizeStreamingMessage(_ChatMessage.assistant(
-          answer.isEmpty ? '(no answer)' : answer,
-          citations: citations,
-          usage: usage,
-        ));
+        _finalizeStreamingMessage(
+          _ChatMessage.assistant(
+            answer.isEmpty ? '(no answer)' : answer,
+            citations: citations,
+            usage: usage,
+          ),
+        );
         _isSending = false;
       });
     } on LearnAssistApiException catch (error) {
@@ -751,9 +808,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   /// can tweak the question before sending.
   void _applySuggestion(String text) {
     _messageController.text = text;
-    _messageController.selection = TextSelection.collapsed(
-      offset: text.length,
-    );
+    _messageController.selection = TextSelection.collapsed(offset: text.length);
     _composerFocusNode.requestFocus();
   }
 
@@ -877,7 +932,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     }
 
     // Leading "load older" row shows only when the conversation has older pages.
-    final hasOlder = _historyNextBefore != null;
+    final hasOlder = _historyNextBefore != null && !_isSending;
     final leadingCount = hasOlder ? 1 : 0;
 
     return Scaffold(
@@ -910,6 +965,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
               classNo: _selectedClass,
               subjectOptions: subjectOptions,
               selectedSubject: _selectedSubject,
+              subjectEnabled: !_isSending,
               onSubjectChanged: (value) {
                 if (value == _selectedSubject) return;
                 _switchConversation(() => _selectedSubject = value);
@@ -969,22 +1025,26 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                         // finished assistant answer; regenerate on the last one;
                         // retry on an error bubble.
                         final isLast = messageIndex == _messages.length - 1;
-                        final showActions = !_isSending &&
+                        final showActions =
+                            !_isSending &&
                             !msg.isStreaming &&
                             msg.role != _MessageRole.user;
                         return _MessageView(
                           message: msg,
-                          onCopy: showActions &&
+                          onCopy:
+                              showActions &&
                                   msg.role == _MessageRole.assistant &&
                                   msg.text.trim().isNotEmpty
                               ? () => _copyMessage(msg.text)
                               : null,
-                          onRegenerate: showActions &&
+                          onRegenerate:
+                              showActions &&
                                   isLast &&
                                   msg.role == _MessageRole.assistant
                               ? _retryLastTurn
                               : null,
-                          onRetry: showActions &&
+                          onRetry:
+                              showActions &&
                                   isLast &&
                                   msg.role == _MessageRole.error
                               ? _retryLastTurn
@@ -1106,6 +1166,7 @@ class _ContextControls extends StatelessWidget {
   final int classNo;
   final List<String> subjectOptions;
   final String? selectedSubject;
+  final bool subjectEnabled;
   final ValueChanged<String?> onSubjectChanged;
   final String languageMode;
   final ValueChanged<String> onLanguageChanged;
@@ -1115,6 +1176,7 @@ class _ContextControls extends StatelessWidget {
     required this.classNo,
     required this.subjectOptions,
     required this.selectedSubject,
+    required this.subjectEnabled,
     required this.onSubjectChanged,
     required this.languageMode,
     required this.onLanguageChanged,
@@ -1135,13 +1197,21 @@ class _ContextControls extends StatelessWidget {
             icon: Icons.menu_book_rounded,
             label: selectedSubject == null
                 ? 'All subjects'
-                : formatSubject(selectedSubject!, board: board, classNo: classNo),
+                : formatSubject(
+                    selectedSubject!,
+                    board: board,
+                    classNo: classNo,
+                  ),
             value: selectedSubject ?? 'all',
             options: [
               const ('all', 'All subjects'),
               for (final subject in subjectOptions)
-                (subject, formatSubject(subject, board: board, classNo: classNo)),
+                (
+                  subject,
+                  formatSubject(subject, board: board, classNo: classNo),
+                ),
             ],
+            enabled: subjectEnabled,
             onSelected: (value) {
               onSubjectChanged(value == 'all' ? null : value);
             },
@@ -1177,6 +1247,7 @@ class _MenuChip<T> extends StatelessWidget {
   final T value;
   final List<(T, String)> options;
   final ValueChanged<T> onSelected;
+  final bool enabled;
 
   const _MenuChip({
     required this.icon,
@@ -1184,6 +1255,7 @@ class _MenuChip<T> extends StatelessWidget {
     required this.value,
     required this.options,
     required this.onSelected,
+    this.enabled = true,
   });
 
   @override
@@ -1193,6 +1265,7 @@ class _MenuChip<T> extends StatelessWidget {
     final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
 
     return PopupMenuButton<T>(
+      enabled: enabled,
       initialValue: value,
       onSelected: onSelected,
       shape: RoundedRectangleBorder(
@@ -1284,9 +1357,9 @@ class _HistoryErrorBar extends StatelessWidget {
           Expanded(
             child: Text(
               "Couldn't load your past chat.",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: cs.onErrorContainer,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: cs.onErrorContainer),
             ),
           ),
           TextButton(
@@ -1332,9 +1405,7 @@ class _EmptyChat extends StatelessWidget {
       builder: (context, constraints) {
         return SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
@@ -1348,10 +1419,11 @@ class _EmptyChat extends StatelessWidget {
                       child: TextButton.icon(
                         onPressed: onLoadPrevious,
                         style: TextButton.styleFrom(
-                          foregroundColor: isDark ? AppColors.ink2Dark : AppColors.ink2,
-                          textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          foregroundColor: isDark
+                              ? AppColors.ink2Dark
+                              : AppColors.ink2,
+                          textStyle: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         icon: const Icon(Icons.history_rounded, size: 16),
                         label: const Text('Load previous chat'),
@@ -1361,7 +1433,11 @@ class _EmptyChat extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.auto_awesome_rounded, size: 26, color: cs.primary),
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 26,
+                        color: cs.primary,
+                      ),
                       const SizedBox(height: 14),
                       Text(
                         'What would you like to learn?',
@@ -1689,10 +1765,7 @@ class _CitationChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          cs.primary.withValues(alpha: 0.07),
-          cs.surface,
-        ),
+        color: Color.alphaBlend(cs.primary.withValues(alpha: 0.07), cs.surface),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: cs.primary.withValues(alpha: 0.16)),
       ),

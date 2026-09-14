@@ -406,41 +406,43 @@ void main() {
       ]);
     });
 
-    test('chatStream carries the full answer in done when no tokens stream',
-        () async {
-      // Reproduces the OpenRouter (paid-plan) path: the server emits zero token
-      // frames and delivers the whole answer in the terminal done frame.
-      final service = LearnAssistService(
-        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
-        client: MockClient(
-          (_) async => http.Response(
-            'event: done\n'
-            'data: {"answer":"Full answer with no token frames.",'
-            '"citations":[]}\n'
-            '\n',
-            200,
-          ),
-        ),
-      );
-
-      final events = await service
-          .chatStream(
-            const LearnAssistRequest(
-              message: 'Question',
-              board: 'scert_odisha',
-              classNo: 8,
+    test(
+      'chatStream carries the full answer in done when no tokens stream',
+      () async {
+        // Reproduces the OpenRouter (paid-plan) path: the server emits zero token
+        // frames and delivers the whole answer in the terminal done frame.
+        final service = LearnAssistService(
+          idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+          client: MockClient(
+            (_) async => http.Response(
+              'event: done\n'
+              'data: {"answer":"Full answer with no token frames.",'
+              '"citations":[]}\n'
+              '\n',
+              200,
             ),
-          )
-          .toList();
+          ),
+        );
 
-      expect(events, [
-        isA<LearnAssistDoneEvent>().having(
-          (e) => e.answer,
-          'answer',
-          'Full answer with no token frames.',
-        ),
-      ]);
-    });
+        final events = await service
+            .chatStream(
+              const LearnAssistRequest(
+                message: 'Question',
+                board: 'scert_odisha',
+                classNo: 8,
+              ),
+            )
+            .toList();
+
+        expect(events, [
+          isA<LearnAssistDoneEvent>().having(
+            (e) => e.answer,
+            'answer',
+            'Full answer with no token frames.',
+          ),
+        ]);
+      },
+    );
 
     test('chatStream yields an error event for a mid-stream failure', () async {
       final service = LearnAssistService(
@@ -472,6 +474,57 @@ void main() {
       expect((events.last as LearnAssistErrorEvent).code, 'assistant_timeout');
     });
 
+    test('chatStream rejects EOF before a terminal frame', () async {
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+        client: MockClient(
+          (_) async =>
+              http.Response('event: token\ndata: {"text":"Partial"}\n\n', 200),
+        ),
+      );
+
+      expect(
+        service
+            .chatStream(
+              const LearnAssistRequest(
+                message: 'Question',
+                board: 'scert_odisha',
+                classNo: 8,
+              ),
+            )
+            .toList(),
+        throwsA(
+          isA<LearnAssistApiException>().having(
+            (error) => error.code,
+            'code',
+            'interrupted_response',
+          ),
+        ),
+      );
+    });
+
+    test('chatStream rejects a malformed terminal frame', () async {
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'firebase-token',
+        client: MockClient(
+          (_) async => http.Response('event: done\ndata: not-json\n\n', 200),
+        ),
+      );
+
+      expect(
+        service
+            .chatStream(
+              const LearnAssistRequest(
+                message: 'Question',
+                board: 'scert_odisha',
+                classNo: 8,
+              ),
+            )
+            .toList(),
+        throwsA(isA<LearnAssistApiException>()),
+      );
+    });
+
     test('chatStream refreshes token once on a pre-flight 401', () async {
       final forceRefreshValues = <bool>[];
       var callCount = 0;
@@ -494,10 +547,7 @@ void main() {
               401,
             );
           }
-          return http.Response(
-            'event: done\ndata: {"citations":[]}\n\n',
-            200,
-          );
+          return http.Response('event: done\ndata: {"citations":[]}\n\n', 200);
         }),
       );
 

@@ -497,7 +497,9 @@ class UserPrefsRepository {
     final done = getPythonCompletedLessons();
     if (done.add(lessonId)) {
       await _prefs.setString(
-          _pythonCompletedLessonsKey, jsonEncode(done.toList()));
+        _pythonCompletedLessonsKey,
+        jsonEncode(done.toList()),
+      );
     }
     await _recordActivityToday();
   }
@@ -561,11 +563,17 @@ class UserPrefsRepository {
   // offer "pick up where you left off" across every subject at once. Backend
   // history is cached one conversation at a time, so it cannot answer that.
 
-  static const _recentQuestionsKey = 'recent_ai_questions';
+  static const _legacyRecentQuestionsKey = 'recent_ai_questions';
+  static const _recentQuestionsPrefix = 'recent_ai_questions:';
   static const _maxRecentQuestions = 12;
 
-  List<RecentQuestion> getRecentQuestions() {
-    final jsonStr = _prefs.getString(_recentQuestionsKey);
+  String _recentQuestionsKey(String uid) => '$_recentQuestionsPrefix$uid';
+
+  List<RecentQuestion> getRecentQuestions(String uid) {
+    // The legacy value has no owner. Discard it instead of exposing one
+    // account's questions to whichever account signs in next.
+    _prefs.remove(_legacyRecentQuestionsKey);
+    final jsonStr = _prefs.getString(_recentQuestionsKey(uid));
     // A growable list either way: `recordRecentQuestion` mutates what it gets
     // back, so handing out a const empty list would throw on the first ask.
     if (jsonStr == null) return <RecentQuestion>[];
@@ -584,30 +592,30 @@ class UserPrefsRepository {
 
   /// Records one asked question, newest first. Re-asking the same thing moves
   /// it back to the top instead of adding a duplicate.
-  Future<void> recordRecentQuestion(String text, {String? subject}) async {
+  Future<void> recordRecentQuestion(
+    String uid,
+    String text, {
+    String? subject,
+  }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
-    final questions = getRecentQuestions()
+    final questions = getRecentQuestions(uid)
       ..removeWhere((q) => q.text.toLowerCase() == trimmed.toLowerCase());
     questions.insert(
       0,
-      RecentQuestion(
-        text: trimmed,
-        subject: subject,
-        askedAt: DateTime.now(),
-      ),
+      RecentQuestion(text: trimmed, subject: subject, askedAt: DateTime.now()),
     );
     if (questions.length > _maxRecentQuestions) {
       questions.removeRange(_maxRecentQuestions, questions.length);
     }
     await _prefs.setString(
-      _recentQuestionsKey,
+      _recentQuestionsKey(uid),
       jsonEncode(questions.map((q) => q.toJson()).toList()),
     );
   }
 
-  Future<void> clearRecentQuestions() async {
-    await _prefs.remove(_recentQuestionsKey);
+  Future<void> clearRecentQuestions(String uid) async {
+    await _prefs.remove(_recentQuestionsKey(uid));
   }
 
   // ─── Daily warm-up ───────────────────────────────────────────────────────

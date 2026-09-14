@@ -191,13 +191,22 @@ class LearnAssistService {
 
     var eventName = 'message';
     final dataLines = <String>[];
+    var terminalReceived = false;
+
+    LearnAssistStreamEvent? finishFrame() {
+      if (dataLines.isEmpty) return null;
+      final event = _parseSseEvent(eventName, dataLines.join('\n'));
+      if (event is LearnAssistDoneEvent || event is LearnAssistErrorEvent) {
+        terminalReceived = true;
+      }
+      return event;
+    }
+
     try {
       await for (final line in lines) {
         if (line.isEmpty) {
-          if (dataLines.isNotEmpty) {
-            final event = _parseSseEvent(eventName, dataLines.join('\n'));
-            if (event != null) yield event;
-          }
+          final event = finishFrame();
+          if (event != null) yield event;
           eventName = 'message';
           dataLines.clear();
         } else if (line.startsWith(':')) {
@@ -221,8 +230,14 @@ class LearnAssistService {
     }
     if (dataLines.isNotEmpty) {
       // Flush a trailing event with no terminating blank line.
-      final event = _parseSseEvent(eventName, dataLines.join('\n'));
+      final event = finishFrame();
       if (event != null) yield event;
+    }
+    if (!terminalReceived) {
+      throw const LearnAssistApiException(
+        'interrupted_response',
+        'The response was interrupted. Please try again.',
+      );
     }
   }
 
