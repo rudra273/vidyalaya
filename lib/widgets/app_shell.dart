@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../app/theme.dart';
+import '../providers/auth_provider.dart';
 import '../utils/haptics.dart';
 import 'pressable.dart';
 
@@ -58,6 +59,18 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final signedIn = ref
+        .watch(authStateProvider)
+        .maybeWhen(data: (user) => user != null, orElse: () => false);
+    if (signedIn) {
+      // The shell stays mounted across all main tabs, so it is the earliest
+      // stable place to hydrate account-owned browsing preferences. The cache
+      // deduplicates this call for the rest of the signed-in session.
+      Future.microtask(
+        ref.read(backendAccountCacheProvider.notifier).ensureExplorePreferences,
+      );
+    }
+
     final currentIndex = _currentIndex(context);
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;

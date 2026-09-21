@@ -77,11 +77,13 @@ class BackendAccountState {
   final String? uid;
   final AsyncValue<BackendUser?> user;
   final AsyncValue<StudentProfile?> profile;
+  final AsyncValue<ExplorePreferences?> explorePreferences;
   final AsyncValue<LearnAssistUsage?> usage;
   final AsyncValue<ChatHistoryPage?> history;
   final HistorySelector? historySelector;
   final bool userLoaded;
   final bool profileLoaded;
+  final bool explorePreferencesLoaded;
   final bool usageLoaded;
   final bool historyLoaded;
 
@@ -89,11 +91,13 @@ class BackendAccountState {
     this.uid,
     this.user = const AsyncData(null),
     this.profile = const AsyncData(null),
+    this.explorePreferences = const AsyncData(null),
     this.usage = const AsyncData(null),
     this.history = const AsyncData(null),
     this.historySelector,
     this.userLoaded = false,
     this.profileLoaded = false,
+    this.explorePreferencesLoaded = false,
     this.usageLoaded = false,
     this.historyLoaded = false,
   });
@@ -102,11 +106,13 @@ class BackendAccountState {
     String? uid,
     AsyncValue<BackendUser?>? user,
     AsyncValue<StudentProfile?>? profile,
+    AsyncValue<ExplorePreferences?>? explorePreferences,
     AsyncValue<LearnAssistUsage?>? usage,
     AsyncValue<ChatHistoryPage?>? history,
     HistorySelector? historySelector,
     bool? userLoaded,
     bool? profileLoaded,
+    bool? explorePreferencesLoaded,
     bool? usageLoaded,
     bool? historyLoaded,
   }) {
@@ -114,11 +120,14 @@ class BackendAccountState {
       uid: uid ?? this.uid,
       user: user ?? this.user,
       profile: profile ?? this.profile,
+      explorePreferences: explorePreferences ?? this.explorePreferences,
       usage: usage ?? this.usage,
       history: history ?? this.history,
       historySelector: historySelector ?? this.historySelector,
       userLoaded: userLoaded ?? this.userLoaded,
       profileLoaded: profileLoaded ?? this.profileLoaded,
+      explorePreferencesLoaded:
+          explorePreferencesLoaded ?? this.explorePreferencesLoaded,
       usageLoaded: usageLoaded ?? this.usageLoaded,
       historyLoaded: historyLoaded ?? this.historyLoaded,
     );
@@ -135,11 +144,13 @@ class BackendAccountState {
       other.uid == uid &&
       other.user == user &&
       other.profile == profile &&
+      other.explorePreferences == explorePreferences &&
       other.usage == usage &&
       other.history == history &&
       other.historySelector == historySelector &&
       other.userLoaded == userLoaded &&
       other.profileLoaded == profileLoaded &&
+      other.explorePreferencesLoaded == explorePreferencesLoaded &&
       other.usageLoaded == usageLoaded &&
       other.historyLoaded == historyLoaded;
 
@@ -148,11 +159,13 @@ class BackendAccountState {
     uid,
     user,
     profile,
+    explorePreferences,
     usage,
     history,
     historySelector,
     userLoaded,
     profileLoaded,
+    explorePreferencesLoaded,
     usageLoaded,
     historyLoaded,
   );
@@ -161,6 +174,7 @@ class BackendAccountState {
 class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<BackendUser?>? _userRequest;
   Future<StudentProfile?>? _profileRequest;
+  Future<ExplorePreferences?>? _explorePreferencesRequest;
   Future<LearnAssistUsage?>? _usageRequest;
   Future<ChatHistoryPage?>? _historyRequest;
   // Which conversation [_historyRequest] is fetching. A single shared request
@@ -179,6 +193,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
 
   static const _userResource = 'user';
   static const _profileResource = 'profile';
+  static const _explorePreferencesResource = 'explore_preferences';
   static const _usageResource = 'usage';
 
   @override
@@ -251,6 +266,33 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     return state.profileLoaded
         ? Future.value(cached)
         : (_profileRequest ?? Future.value(null));
+  }
+
+  Future<ExplorePreferences?> ensureExplorePreferences({
+    bool forceRefresh = false,
+  }) {
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    _hydrateExplorePreferencesFromCache(uid);
+
+    final cached = _asyncData(state.explorePreferences);
+    if (_explorePreferencesRequest == null &&
+        (forceRefresh || _shouldRevalidate(_explorePreferencesResource))) {
+      if (!state.explorePreferencesLoaded) {
+        state = state.copyWith(
+          uid: uid,
+          explorePreferences: const AsyncLoading(),
+        );
+      }
+      _explorePreferencesRequest = _loadExplorePreferences(uid, cached);
+    }
+
+    if (forceRefresh && _explorePreferencesRequest != null) {
+      return _explorePreferencesRequest!;
+    }
+    return state.explorePreferencesLoaded
+        ? Future.value(cached)
+        : (_explorePreferencesRequest ?? Future.value(null));
   }
 
   Future<LearnAssistUsage?> ensureUsage({bool forceRefresh = false}) {
@@ -364,6 +406,40 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       if (previous != null && _currentUid == uid) {
         state = state.copyWith(profile: AsyncData(previous));
+      }
+      rethrow;
+    }
+  }
+
+  Future<ExplorePreferences> saveExplorePreferences(
+    ExplorePreferences preferences,
+  ) async {
+    final uid = _requireUid();
+    final previous = _asyncData(state.explorePreferences);
+    state = state.copyWith(uid: uid, explorePreferences: const AsyncLoading());
+    try {
+      final saved = await ref
+          .read(backendAuthServiceProvider)
+          .updateExplorePreferences(preferences);
+      if (_currentUid == uid) {
+        await _cache.write<ExplorePreferences>(
+          _explorePreferencesKey(uid),
+          saved,
+          (value) => value.toJson(),
+        );
+        state = state.copyWith(
+          explorePreferences: AsyncData(saved),
+          explorePreferencesLoaded: true,
+        );
+        _revalidated.add(_explorePreferencesResource);
+        _mirrorExplorePreferencesToPrefs(saved);
+      }
+      return saved;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = previous == null
+            ? state.copyWith(explorePreferences: AsyncError(error, stackTrace))
+            : state.copyWith(explorePreferences: AsyncData(previous));
       }
       rethrow;
     }
@@ -544,6 +620,47 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     }
   }
 
+  Future<ExplorePreferences?> _loadExplorePreferences(
+    String uid,
+    ExplorePreferences? previous,
+  ) async {
+    try {
+      final preferences = await ref
+          .read(backendAuthServiceProvider)
+          .explorePreferences();
+      if (_currentUid == uid) {
+        await _cache.write<ExplorePreferences>(
+          _explorePreferencesKey(uid),
+          preferences,
+          (value) => value.toJson(),
+        );
+        final changed =
+            state.explorePreferences is! AsyncData ||
+            !_jsonEquals(previous?.toJson(), preferences.toJson());
+        state = changed
+            ? state.copyWith(
+                explorePreferences: AsyncData(preferences),
+                explorePreferencesLoaded: true,
+              )
+            : state.copyWith(explorePreferencesLoaded: true);
+        _mirrorExplorePreferencesToPrefs(preferences);
+      }
+      return preferences;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = previous == null
+            ? state.copyWith(
+                explorePreferences: AsyncError(error, stackTrace),
+                explorePreferencesLoaded: true,
+              )
+            : state.copyWith(explorePreferencesLoaded: true);
+      }
+      return previous;
+    } finally {
+      _settleRequest(_explorePreferencesResource, uid);
+    }
+  }
+
   Future<ChatHistoryPage?> _loadHistory(
     String uid,
     HistorySelector selector,
@@ -618,6 +735,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     return CacheStore.key(uid: uid, name: 'student_profile');
   }
 
+  String _explorePreferencesKey(String uid) {
+    return CacheStore.key(uid: uid, name: 'explore_preferences');
+  }
+
   String _usageKey(String uid) => CacheStore.key(uid: uid, name: 'usage');
 
   String _historyKey(String uid, HistorySelector selector) {
@@ -642,6 +763,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         _userRequest = null;
       case _profileResource:
         _profileRequest = null;
+      case _explorePreferencesResource:
+        _explorePreferencesRequest = null;
       case _usageResource:
         _usageRequest = null;
     }
@@ -651,6 +774,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _revalidated.clear();
     _userRequest = null;
     _profileRequest = null;
+    _explorePreferencesRequest = null;
     _usageRequest = null;
     _historyRequest = null;
     _historyRequestSelector = null;
@@ -701,6 +825,22 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     }
   }
 
+  void _hydrateExplorePreferencesFromCache(String uid) {
+    if (state.uid == uid && state.explorePreferencesLoaded) return;
+    final entry = _cache.readWithMeta<ExplorePreferences>(
+      _explorePreferencesKey(uid),
+      (json) => ExplorePreferences.fromJson(_jsonMap(json)),
+    );
+    if (entry != null) {
+      state = state.copyWith(
+        uid: uid,
+        explorePreferences: AsyncData(entry.value),
+        explorePreferencesLoaded: true,
+      );
+      _mirrorExplorePreferencesToPrefs(entry.value);
+    }
+  }
+
   void _hydrateHistoryFromCache(String uid, HistorySelector selector) {
     if (state.historySelector == selector && state.historyLoaded) return;
     final entry = _cache.readWithMeta<ChatHistoryPage>(
@@ -730,18 +870,28 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     return uid;
   }
 
-  /// Mirror the backend profile's class/board/language into local prefs so the
-  /// rest of the app (Home rows, Explore tools, regional language) stays in
+  /// Mirror the backend profile into local prefs. The primary class is mirrored
+  /// only when Explore explicitly follows it; selected classes remain separate.
   /// sync no matter which screen triggered the load/save. Previously this ran
   /// only inside ProfileScreen, so a cross-device edit landing while the
   /// student was elsewhere drifted until they reopened Profile.
   void _mirrorProfileToPrefs(StudentProfile? profile) {
     if (profile == null) return;
     ref.read(userBoardProvider.notifier).setBoard(profile.board);
-    ref.read(userSelectionProvider.notifier).setClasses({profile.classNo});
+    final explorePreferences = _asyncData(state.explorePreferences);
+    if (explorePreferences?.selectionMode == 'primary') {
+      ref.read(userSelectionProvider.notifier).setClasses({profile.classNo});
+    }
     ref
         .read(userPrefsRepositoryProvider)
         .setPreferredLanguage(profile.preferredLanguage);
+  }
+
+  void _mirrorExplorePreferencesToPrefs(ExplorePreferences preferences) {
+    if (preferences.selectionMode == 'all') return;
+    final classes = preferences.selectedClasses.toSet();
+    if (classes.isEmpty) return;
+    ref.read(userSelectionProvider.notifier).setClasses(classes);
   }
 }
 

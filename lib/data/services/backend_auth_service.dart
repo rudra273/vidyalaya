@@ -131,6 +131,30 @@ class ProfileNotFoundException implements Exception {
   const ProfileNotFoundException();
 }
 
+class ExplorePreferences {
+  final String selectionMode;
+  final List<int> selectedClasses;
+
+  const ExplorePreferences({
+    required this.selectionMode,
+    required this.selectedClasses,
+  });
+
+  factory ExplorePreferences.fromJson(Map<String, dynamic> json) {
+    return ExplorePreferences(
+      selectionMode: json['selection_mode'] as String? ?? 'primary',
+      selectedClasses: (json['selected_classes'] as List? ?? const [])
+          .whereType<int>()
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'selection_mode': selectionMode,
+    'selected_classes': selectedClasses,
+  };
+}
+
 class ChatHistoryPage {
   final List<ChatHistoryMessage> messages;
   final int? nextBefore;
@@ -255,6 +279,42 @@ class BackendAuthService {
     );
 
     return StudentProfile.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<ExplorePreferences> explorePreferences() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/me/explore-preferences'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+    return ExplorePreferences.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<ExplorePreferences> updateExplorePreferences(
+    ExplorePreferences preferences,
+  ) async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .put(
+              _baseUrl.resolve('/me/explore-preferences'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+              body: jsonEncode(preferences.toJson()),
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+    return ExplorePreferences.fromJson(_decodeJsonObject(response.body));
   }
 
   Future<LearnAssistUsage> usage() async {

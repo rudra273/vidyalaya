@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/seed/seed_data.dart';
-import '../../providers/ingested_books_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
 
@@ -46,9 +45,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       child: Builder(
         builder: (context) {
           final cs = Theme.of(context).colorScheme;
-          // Classes with seeded books or AI-ingested content for this board.
-          final classesForBoard = availableClassNumbersForBoard(_selectedBoard)
-              .union(ref.watch(ingestedBooksProvider).classesFor(_selectedBoard));
+          // Onboarding is for the Library, so availability comes from readable
+          // books—not from the separate AI ingestion catalog.
+          final classesForBoard = availableClassNumbersForBoard(_selectedBoard);
           final isAvailable = classesForBoard.contains(_selectedClass);
 
           return Scaffold(
@@ -79,9 +78,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   const SizedBox(height: 8),
                   Text(
                     "Let's set up your learning space.",
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyLarge?.copyWith(color: AppColors.textMuted),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),

@@ -9,7 +9,8 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
-import '../../data/seed/seed_data.dart' show boardLabel, boards;
+import '../../data/seed/seed_data.dart'
+    show availableBoardIds, availableClassNumbersForBoard, boardLabel, boards;
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
@@ -119,13 +120,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // background revalidation (loaded, refreshing) must never disable the form
     // — that was the "Edit profile does nothing" report — and a profile that
     // was never requested must not either, so the form fails open, not shut.
-    final isInitialProfileLoad = isSignedIn &&
+    final isInitialProfileLoad =
+        isSignedIn &&
         !accountState.profileLoaded &&
         accountState.profile is AsyncLoading;
     // A failed backend sync doesn't blank the screen (the form runs off local
     // prefs), but it silently stops the profile from staying in sync — surface
     // it so the student can retry rather than wonder why edits don't stick.
-    final profileSyncFailed = isSignedIn &&
+    final profileSyncFailed =
+        isSignedIn &&
         accountState.profile is AsyncError &&
         cachedProfile == null;
     _applyCachedProfile(cachedProfile);
@@ -137,7 +140,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ? backendName
         : (firebaseName.isNotEmpty ? firebaseName : 'Student');
     final email = user?.email ?? '—';
-    final avatarLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S';
+    final avatarLetter = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : 'S';
 
     final progress = ref.watch(progressProvider);
     final books = ref.watch(selectedBooksProvider);
@@ -159,8 +164,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _ThemeToggle(
-                      isDark:
-                          Theme.of(context).brightness == Brightness.dark,
+                      isDark: Theme.of(context).brightness == Brightness.dark,
                       onTap: () =>
                           ref.read(themeModeProvider.notifier).toggle(),
                     ),
@@ -189,11 +193,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onTap: _showAvatarPicker,
                     ),
                     const SizedBox(height: 10),
-                    Text(displayName,
-                        style:
-                            Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontSize: 21,
-                                )),
+                    Text(
+                      displayName,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(fontSize: 21),
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       isSignedIn
@@ -226,7 +231,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── My Learning (tappable summary → /progress) ───────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 14, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                14,
+                AppSpacing.screenPadding,
+                0,
+              ),
               child: _StatsStrip(
                 streak: progress.currentStreak,
                 aiSessions: progress.aiSessions,
@@ -238,20 +247,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── Student profile form ─────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                16,
+                AppSpacing.screenPadding,
+                0,
+              ),
               child: const SectionHead(label: 'Student profile'),
             ),
             if (profileSyncFailed)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
+                  AppSpacing.screenPadding,
+                  8,
+                  AppSpacing.screenPadding,
+                  0,
+                ),
                 child: _ProfileSyncErrorBanner(
                   onRetry: () => _ensureProfile(forceRefresh: true),
                 ),
               ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: _isEditing
                   ? _StudentForm(
                       isSignedIn: isSignedIn,
@@ -265,7 +283,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onClassChanged: (v) => setState(() => _selectedClass = v),
                       onLanguageChanged: (v) =>
                           setState(() => _preferredLanguage = v),
-                      onBoardChanged: (v) => setState(() => _board = v),
+                      onBoardChanged: _selectBoardForEditing,
                       onSave: _saveStudentProfile,
                       onCancel: _cancelEditing,
                     )
@@ -280,7 +298,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SupportSection(
               headingPadding: EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                24,
+                AppSpacing.screenPadding,
+                0,
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -333,7 +355,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _nameController.text = profile.name ?? '';
       });
       _syncLocalProfile(
-          profile.classNo, profile.board, profile.preferredLanguage);
+        profile.classNo,
+        profile.board,
+        profile.preferredLanguage,
+      );
     });
   }
 
@@ -370,15 +395,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               final currentId = ref.watch(avatarIdProvider);
               return Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 20),
+                  AppSpacing.screenPadding,
+                  18,
+                  AppSpacing.screenPadding,
+                  20,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Choose your avatar',
-                      style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
-                            fontSize: 18,
-                          ),
+                      style: Theme.of(
+                        ctx,
+                      ).textTheme.headlineMedium?.copyWith(fontSize: 18),
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -424,12 +453,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (user == null) {
       // Class, board and language are local prefs, so a signed-out student
       // can still change them — only name/school need the backend.
-      _syncLocalProfile(_selectedClass, _board, _preferredLanguage);
+      _syncLocalProfile(
+        _selectedClass,
+        _board,
+        _preferredLanguage,
+        syncExploreClass: true,
+      );
       setState(() => _isEditing = false);
       Haptics.medium(ref);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated.')));
       return;
     }
 
@@ -447,8 +481,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           );
 
-      _syncLocalProfile(savedProfile.classNo, savedProfile.board,
-          savedProfile.preferredLanguage);
+      _syncLocalProfile(
+        savedProfile.classNo,
+        savedProfile.board,
+        savedProfile.preferredLanguage,
+      );
       if (!mounted) return;
       setState(() {
         _selectedClass = savedProfile.classNo;
@@ -466,7 +503,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (!mounted) return;
       Haptics.error(ref);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn\'t save your profile. Please try again.')),
+        const SnackBar(
+          content: Text('Couldn\'t save your profile. Please try again.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -475,10 +514,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _syncLocalProfile(int classNo, String board, String language) {
+  void _syncLocalProfile(
+    int classNo,
+    String board,
+    String language, {
+    bool syncExploreClass = false,
+  }) {
     ref.read(userBoardProvider.notifier).setBoard(board);
-    ref.read(userSelectionProvider.notifier).setClasses({classNo});
+    if (syncExploreClass) {
+      ref.read(userSelectionProvider.notifier).setClasses({classNo});
+    }
+    ref.read(subjectFilterProvider.notifier).setFilter(null);
     ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
+  }
+
+  void _selectBoardForEditing(String board) {
+    final availableClasses = availableClassNumbersForBoard(board).toList()
+      ..sort();
+    if (availableClasses.isEmpty) return;
+
+    setState(() {
+      _board = board;
+      if (!availableClasses.contains(_selectedClass)) {
+        _selectedClass = availableClasses.first;
+      }
+    });
   }
 
   Future<void> _copyFirebaseIdToken() async {
@@ -505,8 +565,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       // The user backing out of the Google sheet is not an error — stay quiet.
       if (_isUserCancellation(error)) return;
       Haptics.error(ref);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_friendlyAuthError(error))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyAuthError(error))));
     } finally {
       if (mounted) {
         setState(() => _isAuthBusy = false);
@@ -575,9 +636,7 @@ class _ThemeToggle extends StatelessWidget {
             child: ScaleTransition(scale: animation, child: child),
           ),
           child: Icon(
-            isDark
-                ? Icons.nightlight_round
-                : Icons.wb_sunny_rounded,
+            isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
             key: ValueKey(isDark),
             size: 20,
             color: accent,
@@ -627,18 +686,20 @@ class _BigAvatar extends StatelessWidget {
               boxShadow: clay
                   ? [
                       BoxShadow(
-                        color: (isDark
-                                ? AppColors.clayShadowDark
-                                : AppColors.clayShadow)
-                            .withValues(alpha: isDark ? 0.55 : 0.7),
+                        color:
+                            (isDark
+                                    ? AppColors.clayShadowDark
+                                    : AppColors.clayShadow)
+                                .withValues(alpha: isDark ? 0.55 : 0.7),
                         blurRadius: 16,
                         offset: const Offset(5, 5),
                       ),
                       BoxShadow(
-                        color: (isDark
-                                ? AppColors.clayHighlightDark
-                                : AppColors.clayHighlight)
-                            .withValues(alpha: isDark ? 0.30 : 0.9),
+                        color:
+                            (isDark
+                                    ? AppColors.clayHighlightDark
+                                    : AppColors.clayHighlight)
+                                .withValues(alpha: isDark ? 0.30 : 0.9),
                         blurRadius: 16,
                         offset: const Offset(-5, -5),
                       ),
@@ -657,9 +718,9 @@ class _BigAvatar extends StatelessWidget {
                 : Text(
                     letter,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontSize: 38,
-                          color: cs.primary,
-                        ),
+                      fontSize: 38,
+                      color: cs.primary,
+                    ),
                   ),
           ),
           if (onTap != null)
@@ -674,11 +735,7 @@ class _BigAvatar extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: cs.surface, width: 2.5),
                 ),
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: 13,
-                  color: cs.onPrimary,
-                ),
+                child: Icon(Icons.edit_rounded, size: 13, color: cs.onPrimary),
               ),
             ),
         ],
@@ -737,9 +794,9 @@ class _AvatarChoice extends StatelessWidget {
                 : Text(
                     letter,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontSize: 24,
-                          color: cs.primary,
-                        ),
+                      fontSize: 24,
+                      color: cs.primary,
+                    ),
                   ),
           ),
           if (selected)
@@ -754,11 +811,7 @@ class _AvatarChoice extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: cs.surface, width: 2),
                 ),
-                child: Icon(
-                  Icons.check_rounded,
-                  size: 12,
-                  color: cs.onPrimary,
-                ),
+                child: Icon(Icons.check_rounded, size: 12, color: cs.onPrimary),
               ),
             ),
         ],
@@ -820,10 +873,10 @@ class _StatsStripState extends State<_StatsStrip> {
                       Text(
                         'View details',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
+                          color: cs.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                       Icon(
                         Icons.chevron_right_rounded,
@@ -857,7 +910,9 @@ class _StatsStripState extends State<_StatsStrip> {
                   _Divider(),
                   Expanded(
                     child: _Stat(
-                      color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                      color: isDark
+                          ? AppColors.cEnglishDark
+                          : AppColors.cEnglish,
                       icon: Icons.menu_book_rounded,
                       value: '${widget.books}',
                       label: 'Books',
@@ -897,10 +952,9 @@ class _Stat extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: 21,
-                    height: 1,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontSize: 21, height: 1),
             ),
           ],
         ),
@@ -908,9 +962,9 @@ class _Stat extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-              ),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -949,10 +1003,10 @@ class _AuthButton extends StatelessWidget {
   });
 
   const _AuthButton.loading()
-      : isSignedIn = false,
-        isBusy = true,
-        onTap = null,
-        onLongPress = null;
+    : isSignedIn = false,
+      isBusy = true,
+      onTap = null,
+      onLongPress = null;
 
   @override
   Widget build(BuildContext context) {
@@ -990,9 +1044,9 @@ class _AuthButton extends StatelessWidget {
             Text(
               isSignedIn ? 'Sign out' : 'Sign in with Google',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: accent,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -1026,9 +1080,9 @@ class _ProfileSyncErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               "Couldn't sync your profile.",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.onErrorContainer,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer),
             ),
           ),
           TextButton(
@@ -1107,9 +1161,9 @@ class _ProfileSummary extends StatelessWidget {
               icon: const Icon(Icons.edit_rounded, size: 16),
               label: Text(
                 'Edit profile',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: cs.primary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: cs.primary),
               ),
             ),
           ),
@@ -1144,8 +1198,7 @@ class _SummaryRow extends StatelessWidget {
           : BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color:
-                      isDark ? AppColors.hairline2Dark : AppColors.hairline2,
+                  color: isDark ? AppColors.hairline2Dark : AppColors.hairline2,
                 ),
               ),
             ),
@@ -1156,9 +1209,9 @@ class _SummaryRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Expanded(
@@ -1167,11 +1220,11 @@ class _SummaryRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: muted
-                        ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
-                        : cs.onSurface,
-                  ),
+                fontWeight: FontWeight.w600,
+                color: muted
+                    ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
+                    : cs.onSurface,
+              ),
             ),
           ),
         ],
@@ -1222,11 +1275,12 @@ class _StudentForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isBusy = isInitialLoad || isSaving;
-    final langLabel = const {
-      'en': 'English',
-      'or': 'Odia',
-      'hi': 'Hindi',
-    }[preferredLanguage] ??
+    final langLabel =
+        const {
+          'en': 'English',
+          'or': 'Odia',
+          'hi': 'Hindi',
+        }[preferredLanguage] ??
         'English';
 
     return Container(
@@ -1252,7 +1306,12 @@ class _StudentForm extends StatelessWidget {
             value: 'Class $selectedClass',
             onTap: isBusy
                 ? null
-                : () => _showClassPicker(context, onClassChanged, selectedClass),
+                : () => _showClassPicker(
+                    context,
+                    onClassChanged,
+                    selectedClass,
+                    board,
+                  ),
           ),
           const SizedBox(height: 12),
           _Field<String>(
@@ -1269,7 +1328,10 @@ class _StudentForm extends StatelessWidget {
             onTap: isBusy
                 ? null
                 : () => _showLanguagePicker(
-                    context, onLanguageChanged, preferredLanguage),
+                    context,
+                    onLanguageChanged,
+                    preferredLanguage,
+                  ),
           ),
           const SizedBox(height: 12),
           _TextInput(
@@ -1350,19 +1412,22 @@ class _StudentForm extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        const SnackBar(
-            content: Text('Sign in to edit your name and school.')),
+        const SnackBar(content: Text('Sign in to edit your name and school.')),
       );
   }
 
-  void _showClassPicker(BuildContext context,
-      ValueChanged<int> onChanged, int current) {
+  void _showClassPicker(
+    BuildContext context,
+    ValueChanged<int> onChanged,
+    int current,
+    String board,
+  ) {
+    final availableClasses = availableClassNumbersForBoard(board);
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -1371,16 +1436,23 @@ class _StudentForm extends StatelessWidget {
             itemCount: 12,
             itemBuilder: (_, i) {
               final c = i + 1;
+              final isAvailable = availableClasses.contains(c);
               return ListTile(
                 title: Text('Class $c'),
+                subtitle: isAvailable ? null : const Text('Coming soon'),
                 trailing: c == current
-                    ? Icon(Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
                     : null,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  onChanged(c);
-                },
+                enabled: isAvailable,
+                onTap: isAvailable
+                    ? () {
+                        Navigator.of(ctx).pop();
+                        onChanged(c);
+                      }
+                    : null,
               );
             },
           ),
@@ -1389,31 +1461,41 @@ class _StudentForm extends StatelessWidget {
     );
   }
 
-  void _showBoardPicker(BuildContext context,
-      ValueChanged<String> onChanged, String current) {
+  void _showBoardPicker(
+    BuildContext context,
+    ValueChanged<String> onChanged,
+    String current,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: boards.map((b) {
+              final isAvailable = availableBoardIds.contains(b.id);
               return ListTile(
                 title: Text(b.name),
-                subtitle: Text(b.state),
+                subtitle: Text(
+                  isAvailable ? b.state : '${b.state} · Coming soon',
+                ),
                 trailing: b.id == current
-                    ? Icon(Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
                     : null,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  onChanged(b.id);
-                },
+                enabled: isAvailable,
+                onTap: isAvailable
+                    ? () {
+                        Navigator.of(ctx).pop();
+                        onChanged(b.id);
+                      }
+                    : null,
               );
             }).toList(),
           ),
@@ -1422,15 +1504,17 @@ class _StudentForm extends StatelessWidget {
     );
   }
 
-  void _showLanguagePicker(BuildContext context,
-      ValueChanged<String> onChanged, String current) {
+  void _showLanguagePicker(
+    BuildContext context,
+    ValueChanged<String> onChanged,
+    String current,
+  ) {
     const langs = {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'};
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -1440,8 +1524,10 @@ class _StudentForm extends StatelessWidget {
               return ListTile(
                 title: Text(e.value),
                 trailing: e.key == current
-                    ? Icon(Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
                     : null,
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1473,23 +1559,20 @@ class _Field<T> extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-              ),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+          ),
         ),
         const SizedBox(height: 7),
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surface3Dark : AppColors.surface3,
               border: Border.all(
-                color: isDark
-                    ? AppColors.hairline2Dark
-                    : AppColors.hairline2,
+                color: isDark ? AppColors.hairline2Dark : AppColors.hairline2,
               ),
               borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
             ),
@@ -1499,16 +1582,17 @@ class _Field<T> extends StatelessWidget {
                   child: Text(
                     value,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: cs.onSurface,
-                        ),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ),
-                Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 19,
-                    color:
-                        isDark ? AppColors.ink3Dark : AppColors.ink3),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 19,
+                  color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+                ),
               ],
             ),
           ),
@@ -1545,10 +1629,10 @@ class _TextInput extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-              ),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+          ),
         ),
         const SizedBox(height: 7),
         GestureDetector(

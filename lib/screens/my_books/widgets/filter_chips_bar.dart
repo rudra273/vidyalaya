@@ -3,26 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../providers/books_provider.dart';
 import '../../../utils/haptics.dart';
+import '../../../widgets/calm_widgets.dart';
 
 class FilterChipsBar extends ConsumerWidget {
   const FilterChipsBar({super.key});
 
-  static const _filters = [
-    (null, 'All'),
-    ('odia', 'Odia'),
-    ('english', 'English'),
-    ('maths', 'Maths'),
-    ('hindi', 'Hindi'),
-    ('sanskrit', 'Sanskrit'),
-    ('science', 'Science'),
-    ('social_science', 'Social Sci'),
-    ('skill', 'Skill'),
-    ('work', 'Work'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeFilter = ref.watch(subjectFilterProvider);
+    final subjectLabels = <String, String>{};
+    for (final book in ref.watch(selectedBooksProvider)) {
+      subjectLabels.putIfAbsent(
+        book.subject,
+        () => subjectMeta(book.subject).label,
+      );
+    }
+    final filters = <(String?, String)>[
+      (null, 'All'),
+      ...subjectLabels.entries.map((entry) => (entry.key, entry.value)),
+    ];
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -30,12 +29,13 @@ class FilterChipsBar extends ConsumerWidget {
       height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding:
-            const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-        itemCount: _filters.length,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenPadding,
+        ),
+        itemCount: filters.length,
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final (value, label) = _filters[index];
+          final (value, label) = filters[index];
           final isSelected = activeFilter == value;
 
           return GestureDetector(
@@ -48,24 +48,21 @@ class FilterChipsBar extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected ? cs.primary : cs.surface,
-                borderRadius:
-                    BorderRadius.circular(AppSpacing.chipRadius),
+                borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
                 border: Border.all(
-                  color: isSelected
-                      ? Colors.transparent
-                      : cs.outline,
+                  color: isSelected ? Colors.transparent : cs.outline,
                 ),
               ),
               alignment: Alignment.center,
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      fontSize: 13.5,
-                      color: isSelected
-                          ? cs.onPrimary
-                          : (isDark ? AppColors.ink2Dark : AppColors.ink2),
-                      fontWeight: FontWeight.w600,
-                    ),
+                  fontSize: 13.5,
+                  color: isSelected
+                      ? cs.onPrimary
+                      : (isDark ? AppColors.ink2Dark : AppColors.ink2),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           );

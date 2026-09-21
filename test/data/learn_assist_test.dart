@@ -94,6 +94,18 @@ void main() {
   });
 
   group('cache model serialization', () {
+    test('round-trips Explore preferences', () {
+      const preferences = ExplorePreferences(
+        selectionMode: 'selected',
+        selectedClasses: [7, 8, 9],
+      );
+
+      final roundTripped = ExplorePreferences.fromJson(preferences.toJson());
+
+      expect(roundTripped.selectionMode, 'selected');
+      expect(roundTripped.selectedClasses, [7, 8, 9]);
+    });
+
     test('round-trips LearnAssistUsage', () {
       const usage = LearnAssistUsage(
         dateIst: '2026-05-31',

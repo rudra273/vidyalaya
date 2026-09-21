@@ -70,6 +70,20 @@ Set<int> availableClassNumbersForBoard(String boardId) => allBooks
     .map((b) => b.classNumber)
     .toSet();
 
+/// Books for selected classes in one board.
+///
+/// A class number is not sufficient once multiple boards are available: Class
+/// 8 SCERT Odisha and Class 8 NCERT are separate textbook collections.
+List<Book> getBooksForBoardAndClasses(
+  String boardId,
+  Set<int> selectedClasses,
+) => allBooks
+    .where(
+      (book) =>
+          book.boardId == boardId && selectedClasses.contains(book.classNumber),
+    )
+    .toList();
+
 /// Board ids that have at least one book in the database.
 Set<String> get availableBoardIds => allBooks.map((b) => b.boardId).toSet();
 

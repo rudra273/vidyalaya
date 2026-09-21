@@ -2,19 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
 import '../../data/seed/seed_data.dart';
-import '../../providers/ingested_books_provider.dart';
+import '../../data/services/backend_auth_service.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/user_selection_provider.dart';
 
-class ClassSelectorScreen extends ConsumerWidget {
+class ClassSelectorScreen extends ConsumerStatefulWidget {
   const ClassSelectorScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ClassSelectorScreen> createState() =>
+      _ClassSelectorScreenState();
+}
+
+class _ClassSelectorScreenState extends ConsumerState<ClassSelectorScreen> {
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(backendAccountCacheProvider.notifier).ensureExplorePreferences();
+    });
+  }
+
+  Future<void> _save(Set<int> selectedClasses) async {
+    if (selectedClasses.isEmpty || _isSaving) return;
+    final signedIn = ref
+        .read(authStateProvider)
+        .maybeWhen(data: (user) => user != null, orElse: () => false);
+    if (!signedIn) {
+      Navigator.of(context).pop();
+      return;
+    }
+    setState(() => _isSaving = true);
+    try {
+      await ref
+          .read(backendAccountCacheProvider.notifier)
+          .saveExplorePreferences(
+            ExplorePreferences(
+              selectionMode: 'selected',
+              selectedClasses: selectedClasses.toList()..sort(),
+            ),
+          );
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Couldn\'t save class selection. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedClasses = ref.watch(userSelectionProvider);
     final board = ref.watch(userBoardProvider);
-    // A class is selectable when it has seeded books or AI-ingested content.
-    final available = availableClassNumbers
-        .union(ref.watch(ingestedBooksProvider).classesFor(board));
+    // Library availability is separate from AI ingestion. A class must have
+    // readable books for the selected board before it can be chosen here.
+    final available = availableClassNumbersForBoard(board);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,14 +81,17 @@ class ClassSelectorScreen extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16,
+              AppSpacing.screenPadding,
+              8,
+              AppSpacing.screenPadding,
+              16,
             ),
             child: Text(
               'Select the classes whose textbooks you want to access. '
               'More classes will be added soon!',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
             ),
           ),
           Expanded(
@@ -75,8 +128,10 @@ class ClassSelectorScreen extends ConsumerWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Save & Go Back'),
+                onPressed: selectedClasses.isEmpty || _isSaving
+                    ? null
+                    : () => _save(selectedClasses),
+                child: Text(_isSaving ? 'Saving…' : 'Save & Go Back'),
               ),
             ),
           ),
@@ -102,7 +157,8 @@ class _ClassTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final mutedColor = Theme.of(context).textTheme.bodySmall?.color ??
+    final mutedColor =
+        Theme.of(context).textTheme.bodySmall?.color ??
         cs.onSurface.withValues(alpha: 0.5);
 
     return GestureDetector(
@@ -114,9 +170,7 @@ class _ClassTile extends StatelessWidget {
           color: isChecked ? cs.secondary : cs.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isChecked
-                ? cs.primary.withValues(alpha: 0.3)
-                : cs.outline,
+            color: isChecked ? cs.primary.withValues(alpha: 0.3) : cs.outline,
           ),
         ),
         child: Row(
@@ -152,16 +206,16 @@ class _ClassTile extends StatelessWidget {
                   Text(
                     'Class $classNumber',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: isAvailable ? cs.onSurface : mutedColor,
-                        ),
+                      color: isAvailable ? cs.onSurface : mutedColor,
+                    ),
                   ),
                   if (!isAvailable)
                     Text(
                       'Coming soon',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: mutedColor,
-                            fontSize: 11,
-                          ),
+                        color: mutedColor,
+                        fontSize: 11,
+                      ),
                     ),
                 ],
               ),
@@ -169,10 +223,7 @@ class _ClassTile extends StatelessWidget {
 
             // Checkbox
             if (isAvailable)
-              Checkbox(
-                value: isChecked,
-                onChanged: (_) => onToggle?.call(),
-              )
+              Checkbox(value: isChecked, onChanged: (_) => onToggle?.call())
             else
               Icon(Icons.lock_outline, size: 18, color: mutedColor),
           ],

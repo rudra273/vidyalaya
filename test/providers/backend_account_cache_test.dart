@@ -53,6 +53,31 @@ void main() {
       );
     });
 
+    test('changed Explore preferences produce a different state', () {
+      const base = BackendAccountState(uid: 'uid-1');
+
+      expect(
+        base.copyWith(
+          explorePreferences: const AsyncData(
+            ExplorePreferences(
+              selectionMode: 'selected',
+              selectedClasses: [7, 8],
+            ),
+          ),
+        ),
+        isNot(
+          base.copyWith(
+            explorePreferences: const AsyncData(
+              ExplorePreferences(
+                selectionMode: 'selected',
+                selectedClasses: [8],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+
     test('an empty profile is distinct from one that has not loaded', () {
       const base = BackendAccountState(uid: 'uid-1');
 

@@ -14,15 +14,15 @@ class SubjectFilterNotifier extends Notifier<String?> {
   }
 }
 
-final subjectFilterProvider =
-    NotifierProvider<SubjectFilterNotifier, String?>(
+final subjectFilterProvider = NotifierProvider<SubjectFilterNotifier, String?>(
   SubjectFilterNotifier.new,
 );
 
 /// Books for the user's selected classes.
 final selectedBooksProvider = Provider<List<Book>>((ref) {
   final selectedClasses = ref.watch(userSelectionProvider);
-  return getBooksForClasses(selectedClasses);
+  final selectedBoard = ref.watch(userBoardProvider);
+  return getBooksForBoardAndClasses(selectedBoard, selectedClasses);
 });
 
 /// Books filtered by the currently active subject chip.
