@@ -181,6 +181,7 @@ void main() {
         preferredLanguage: 'or',
         schoolName: 'Demo School',
         onboardingCompleted: true,
+        revision: 7,
         createdAt: DateTime.utc(2026, 5, 30, 10),
         updatedAt: DateTime.utc(2026, 5, 31, 11),
       );
@@ -192,6 +193,7 @@ void main() {
       expect(roundTripped.preferredLanguage, profile.preferredLanguage);
       expect(roundTripped.schoolName, profile.schoolName);
       expect(roundTripped.onboardingCompleted, profile.onboardingCompleted);
+      expect(roundTripped.revision, 7);
       expect(roundTripped.createdAt, profile.createdAt);
       expect(roundTripped.updatedAt, profile.updatedAt);
     });

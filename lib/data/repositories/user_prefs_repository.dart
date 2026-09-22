@@ -5,6 +5,7 @@ import '../models/recent_question.dart';
 import '../models/note.dart';
 import '../models/timetable_period.dart';
 import '../models/time_slot.dart';
+import '../models/virtual_lab.dart';
 
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
@@ -25,10 +26,35 @@ class UserPrefsRepository {
   static const _pythonCompletedLessonsKey = 'python_completed_lessons';
   static const _pythonQuizScoresKey = 'python_quiz_scores';
   static const _pythonPlaygroundCodeKey = 'python_playground_code';
+  static const _labAttemptsKey = 'lab_attempts';
 
   final SharedPreferences _prefs;
 
   UserPrefsRepository(this._prefs);
+
+  List<LabAttempt> getLabAttempts() {
+    final stored = _prefs.getString(_labAttemptsKey);
+    if (stored == null) return const [];
+    try {
+      return (jsonDecode(stored) as List<dynamic>)
+          .map((value) => LabAttempt.fromJson(value as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveLabAttempt(LabAttempt attempt) async {
+    final attempts = getLabAttempts()
+        .where((entry) => entry.clientAttemptId != attempt.clientAttemptId)
+        .toList();
+    attempts.insert(0, attempt);
+    if (attempts.length > 100) attempts.removeRange(100, attempts.length);
+    await _prefs.setString(
+      _labAttemptsKey,
+      jsonEncode(attempts.map((entry) => entry.toJson()).toList()),
+    );
+  }
 
   // ─── Onboarding ─────────────────────────────────────────────────────────
 

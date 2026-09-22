@@ -38,8 +38,5 @@ final recentBooksProvider = Provider<List<Book>>((ref) {
   final opened = [for (final id in recentIds) ?byId[id]];
   final openedIds = opened.map((b) => b.id).toSet();
 
-  return [
-    ...opened,
-    ...selected.where((book) => !openedIds.contains(book.id)),
-  ];
+  return [...opened, ...selected.where((book) => !openedIds.contains(book.id))];
 });

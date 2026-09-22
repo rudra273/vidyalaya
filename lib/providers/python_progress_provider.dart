@@ -67,22 +67,21 @@ class PythonProgressNotifier extends Notifier<PythonProgress> {
   void refresh() => state = _load();
 
   Future<void> completeLesson(String lessonId) async {
-    await ref.read(userPrefsRepositoryProvider).markPythonLessonCompleted(
-          lessonId,
-        );
+    await ref
+        .read(userPrefsRepositoryProvider)
+        .markPythonLessonCompleted(lessonId);
     refresh();
   }
 
   Future<void> recordQuizScore(String chapterId, int correct) async {
-    await ref.read(userPrefsRepositoryProvider).recordPythonQuizScore(
-          chapterId,
-          correct,
-        );
+    await ref
+        .read(userPrefsRepositoryProvider)
+        .recordPythonQuizScore(chapterId, correct);
     refresh();
   }
 }
 
 final pythonProgressProvider =
     NotifierProvider<PythonProgressNotifier, PythonProgress>(
-  PythonProgressNotifier.new,
-);
+      PythonProgressNotifier.new,
+    );

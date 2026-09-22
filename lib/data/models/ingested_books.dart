@@ -40,12 +40,36 @@ class IngestedBooks {
       for (final classJson
           in (board['classes'] as List<dynamic>? ?? const [])) {
         final classEntry = classJson as Map<String, dynamic>;
-        classes[classEntry['class'] as int] =
-            (classEntry['subjects'] as List<dynamic>? ?? const [])
-                .map((s) => IngestedSubject.fromJson(s as Map<String, dynamic>))
-                .toList();
+        classes[classEntry['class']
+            as int] = (classEntry['subjects'] as List<dynamic>? ?? const [])
+            .map((s) => IngestedSubject.fromJson(s as Map<String, dynamic>))
+            .toList();
       }
       byBoard[board['board'] as String] = classes;
+    }
+    return IngestedBooks(byBoard);
+  }
+
+  factory IngestedBooks.fromCatalogApi(Map<String, dynamic> json) {
+    if (json['version'] != 1) {
+      throw const FormatException('Unsupported catalog version');
+    }
+    final byBoard = <String, Map<int, List<IngestedSubject>>>{};
+    for (final raw in json['items'] as List<dynamic>) {
+      final item = raw as Map<String, dynamic>;
+      if (item['content_type'] != 'ai_textbook') continue;
+      final board = item['board'] as String;
+      final classNo = item['class_no'] as int;
+      byBoard
+          .putIfAbsent(board, () => {})
+          .putIfAbsent(classNo, () => [])
+          .add(
+            IngestedSubject(
+              subject: item['subject'] as String,
+              bookName: item['title'] as String,
+              language: item['language'] as String,
+            ),
+          );
     }
     return IngestedBooks(byBoard);
   }

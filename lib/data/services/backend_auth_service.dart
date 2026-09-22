@@ -73,6 +73,9 @@ class StudentProfile {
   /// Student display name (custom if edited, else the Google account name).
   final String? name;
   final bool onboardingCompleted;
+
+  /// Zero means no server profile has been saved yet.
+  final int revision;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -83,6 +86,7 @@ class StudentProfile {
     this.schoolName,
     this.name,
     this.onboardingCompleted = false,
+    this.revision = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -95,6 +99,7 @@ class StudentProfile {
       schoolName: json['school_name'] as String?,
       name: json['name'] as String?,
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+      revision: json['revision'] as int? ?? 0,
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
     );
@@ -112,6 +117,7 @@ class StudentProfile {
           : trimmedSchoolName,
       // Omitted (null) means "leave the stored name unchanged" server-side.
       'name': trimmedName == null || trimmedName.isEmpty ? null : trimmedName,
+      'revision': revision,
     };
   }
 
@@ -122,6 +128,7 @@ class StudentProfile {
     'school_name': schoolName,
     'name': name,
     'onboarding_completed': onboardingCompleted,
+    'revision': revision,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),
   };

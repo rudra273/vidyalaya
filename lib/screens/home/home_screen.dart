@@ -11,16 +11,13 @@ import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
-import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
-import '../../widgets/ask_card.dart';
+import '../../widgets/home_ai_chat.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/share_feedback_banner.dart';
 import '../../data/models/book.dart';
-import '../../data/models/learn_assist.dart';
-import '../../data/models/recent_question.dart';
 import '../../data/seed/vocabulary_data.dart';
 import '../../data/seed/warmup_data.dart';
 import '../../providers/user_selection_provider.dart';
@@ -40,15 +37,6 @@ void _navTap(
   } else {
     context.push(path);
   }
-}
-
-/// Opens the conversation the question was asked in, scoped to its subject so
-/// the chat reopens the same thread. Deliberately does not prefill the question
-/// — it's already been asked; this resumes the thread rather than re-asking.
-String _resumePath(RecentQuestion question) {
-  final subject = question.subject;
-  if (subject == null) return '/learn/ai?resume=1';
-  return '/learn/ai?resume=1&subject=${Uri.encodeComponent(subject)}';
 }
 
 /// AI-first Home — "Calm Scholar" layout.
@@ -82,20 +70,6 @@ class HomeScreen extends ConsumerWidget {
     );
 
     final showRecentBooks = booksEnabled && recentBooks.isNotEmpty;
-
-    // "Continue" is for students already mid-topic, so it needs both a question
-    // to name and a conversation recent enough to still be that topic. The AI
-    // tab uses the same one-day window, past which the chat's fresh-start rule
-    // has tucked the old thread away anyway.
-    final lastChat = ref
-        .read(userPrefsRepositoryProvider)
-        .getChatLastActivity(LearnAssistChannel.learnAssist);
-    final resumeQuestion = ref.watch(recentQuestionsProvider).firstOrNull;
-    final canResume =
-        resumeQuestion != null &&
-        resumeQuestion.text.trim().isNotEmpty &&
-        lastChat != null &&
-        DateTime.now().difference(lastChat) < const Duration(days: 1);
 
     return SafeArea(
       child: ListView(
@@ -134,69 +108,93 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── AI Learning section ─────────────────────────────────
-          // No section head: the hero carries its own "ASK · Q&A" eyebrow, so a
-          // label above it just repeated the same idea twice.
+          // ── Q&A AI conversation entry ──────────────────────────
           const SizedBox(height: AppSpacing.sectionGap - 14),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: HomeAskHero(
-              headline: 'Stuck on a question?',
-              sub: 'Ask anything from your textbooks.',
-              onAsk: () => _navTap(ref, context, '/learn/ai?focus=1'),
-              onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
-              resumeLabel: canResume
-                  ? 'Continue: ${resumeQuestion.text.trim()}'
-                  : null,
-              onResume: canResume
-                  ? () => _navTap(ref, context, _resumePath(resumeQuestion))
-                  : null,
+            child: HomeAiChat(
+              onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
             ),
           ),
 
           // ── Study tools ──────────────────────────────────────────
-          // No section head: three labelled tiles read as their own group, and
-          // dropping the label keeps the tools tight under the AI hero.
+          // Compact shortcuts below the Q&A entry.
           const SizedBox(height: AppSpacing.sectionGap),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _MiniTool(
-                    color: _isDark(context) ? AppColors.cAiDark : AppColors.cAi,
-                    icon: Icons.bookmark_rounded,
-                    label: 'Bookmarks',
-                    onTap: () => _navTap(ref, context, '/bookmarks'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _MiniTool(
-                    color: _isDark(context)
-                        ? AppColors.cEnglishDark
-                        : AppColors.cEnglish,
-                    icon: Icons.calendar_month_rounded,
-                    label: 'Timetable',
-                    onTap: () => _navTap(ref, context, '/timetable'),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _MiniTool(
-                    color: _isDark(context)
-                        ? AppColors.cSocialDark
-                        : AppColors.cSocial,
-                    icon: Icons.edit_note_rounded,
-                    label: 'Notes',
-                    onTap: () => _navTap(ref, context, '/notes'),
-                  ),
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const spacing = 9.0;
+                final tileWidth = (constraints.maxWidth - spacing * 2) / 3;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: spacing,
+                  children: [
+                    SizedBox(
+                      width: tileWidth,
+                      child: _MiniTool(
+                        color: _isDark(context)
+                            ? AppColors.cAiDark
+                            : AppColors.cAi,
+                        icon: Icons.bookmark_rounded,
+                        label: 'Bookmarks',
+                        onTap: () => _navTap(ref, context, '/bookmarks'),
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _MiniTool(
+                        color: _isDark(context)
+                            ? AppColors.cEnglishDark
+                            : AppColors.cEnglish,
+                        icon: Icons.calendar_month_rounded,
+                        label: 'Timetable',
+                        onTap: () => _navTap(ref, context, '/timetable'),
+                      ),
+                    ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _MiniTool(
+                        color: _isDark(context)
+                            ? AppColors.cSocialDark
+                            : AppColors.cSocial,
+                        icon: Icons.edit_note_rounded,
+                        label: 'Notes',
+                        onTap: () => _navTap(ref, context, '/notes'),
+                      ),
+                    ),
+                    if (booksEnabled)
+                      SizedBox(
+                        width: tileWidth,
+                        child: _MiniTool(
+                          color: _isDark(context)
+                              ? AppColors.cAiDark
+                              : AppColors.cAi,
+                          icon: Icons.menu_book_rounded,
+                          label: 'Books',
+                          onTap: () =>
+                              _navTap(ref, context, '/library', replace: true),
+                        ),
+                      ),
+                    SizedBox(
+                      width: tileWidth,
+                      child: _MiniTool(
+                        color: _isDark(context)
+                            ? AppColors.cMathsDark
+                            : AppColors.cMaths,
+                        icon: Icons.bolt_rounded,
+                        label: 'Practice',
+                        onTap: () =>
+                            _navTap(ref, context, '/learn/math/drills'),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 
@@ -270,9 +268,7 @@ class HomeScreen extends ConsumerWidget {
           // ── Share & rate ─────────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
           const Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
             child: ShareFeedbackBanner(),
           ),
         ],
@@ -387,8 +383,9 @@ class _Avatar extends StatelessWidget {
             : Text(
                 letter,
                 style: TextStyle(
-                  fontFamily:
-                      Theme.of(context).textTheme.displaySmall?.fontFamily,
+                  fontFamily: Theme.of(
+                    context,
+                  ).textTheme.displaySmall?.fontFamily,
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
                   color: cs.primary,
@@ -499,17 +496,16 @@ class _WordOfDayCard extends StatelessWidget {
           // ambient content, so it stays short next to the taller AI hero.
           Text(
             word.meaningEn,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              height: 1.35,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(height: 1.35),
           ),
           const SizedBox(height: 4),
           Text(
             word.regionalMeaning(regionalLang),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              height: 1.35,
-              color: muted,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(height: 1.35, color: muted),
           ),
 
           const SizedBox(height: 10),

@@ -8,9 +8,11 @@ import 'package:http/http.dart' as http;
 
 import '../data/cache/cache_store.dart';
 import '../data/models/learn_assist.dart';
+import '../data/seed/seed_data.dart' show availableClassNumbersForBoard;
 import '../data/repositories/auth_repository.dart';
 import '../data/services/backend_auth_service.dart';
 import 'core_providers.dart';
+import 'ingested_books_provider.dart';
 import 'user_selection_provider.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
@@ -198,6 +200,12 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
 
   @override
   BackendAccountState build() {
+    ref.listen(activeIngestedBooksProvider, (previous, next) {
+      final preferences = _asyncData(state.explorePreferences);
+      if (preferences?.selectionMode == 'all') {
+        _mirrorExplorePreferencesToPrefs(preferences!);
+      }
+    });
     final uid = ref
         .watch(authStateProvider)
         .maybeWhen(data: (user) => user?.uid, orElse: () => null);
@@ -881,6 +889,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     final explorePreferences = _asyncData(state.explorePreferences);
     if (explorePreferences?.selectionMode == 'primary') {
       ref.read(userSelectionProvider.notifier).setClasses({profile.classNo});
+    } else if (explorePreferences?.selectionMode == 'all') {
+      ref
+          .read(userSelectionProvider.notifier)
+          .setClasses(_availableClasses(profile.board));
     }
     ref
         .read(userPrefsRepositoryProvider)
@@ -888,11 +900,22 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   }
 
   void _mirrorExplorePreferencesToPrefs(ExplorePreferences preferences) {
-    if (preferences.selectionMode == 'all') return;
+    if (preferences.selectionMode == 'all') {
+      final board = ref.read(userBoardProvider);
+      ref
+          .read(userSelectionProvider.notifier)
+          .setClasses(_availableClasses(board));
+      return;
+    }
     final classes = preferences.selectedClasses.toSet();
     if (classes.isEmpty) return;
     ref.read(userSelectionProvider.notifier).setClasses(classes);
   }
+
+  Set<int> _availableClasses(String board) => {
+    ...availableClassNumbersForBoard(board),
+    ...ref.read(activeIngestedBooksProvider).classesFor(board),
+  };
 }
 
 final backendAccountCacheProvider =

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
+import '../providers/lab_provider.dart';
 import '../data/seed/seed_data.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -44,6 +45,7 @@ import '../screens/learn/math/math_quiz_screen.dart';
 import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
+import '../screens/learn/virtual_lab_screen.dart';
 import '../data/seed/diagrams_data.dart';
 import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
@@ -62,6 +64,7 @@ const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.watch(userPrefsRepositoryProvider);
   final booksEnabled = ref.watch(booksEnabledProvider);
+  final labsEnabled = ref.watch(labsEnabledProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -76,10 +79,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!booksEnabled) {
         final path = state.matchedLocation;
-        final isBookRoute =
-            _bookRoutePrefixes.any((p) => path == p || path.startsWith('$p/'));
+        final isBookRoute = _bookRoutePrefixes.any(
+          (p) => path == p || path.startsWith('$p/'),
+        );
         if (isBookRoute) return '/';
       }
+      if (!labsEnabled && state.matchedLocation == '/labs') return '/explore';
       return null;
     },
     routes: [
@@ -312,6 +317,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/class-selector',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ClassSelectorScreen(),
+      ),
+      GoRoute(
+        path: '/labs',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const VirtualLabScreen(),
       ),
       GoRoute(
         path: '/timetable',

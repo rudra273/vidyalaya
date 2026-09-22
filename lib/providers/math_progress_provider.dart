@@ -42,5 +42,5 @@ class MathProgressNotifier extends Notifier<MathProgress> {
 
 final mathProgressProvider =
     NotifierProvider<MathProgressNotifier, MathProgress>(
-  MathProgressNotifier.new,
-);
+      MathProgressNotifier.new,
+    );

@@ -41,6 +41,7 @@ class AiHubScreen extends ConsumerWidget {
       final cache = ref.read(backendAccountCacheProvider.notifier);
       cache.ensureUser();
       cache.ensureUsage();
+      cache.ensureProfile();
     });
   }
 
@@ -50,16 +51,26 @@ class AiHubScreen extends ConsumerWidget {
         .watch(authStateProvider)
         .maybeWhen(data: (user) => user != null, orElse: () => false);
     final account = ref.watch(backendAccountCacheProvider);
-    if (isSignedIn && (!account.userLoaded || !account.usageLoaded)) {
+    if (isSignedIn &&
+        (!account.userLoaded ||
+            !account.usageLoaded ||
+            !account.profileLoaded)) {
       _ensureAccountSummary(ref);
     }
 
     // Same board/class the chat resolves to, so the subjects offered here are
     // exactly the conversations the chat can open.
-    final classNo = resolveLearnAssistClass(ref.watch(userSelectionProvider));
+    final primaryClass = account.profile.maybeWhen(
+      data: (profile) => profile?.classNo,
+      orElse: () => null,
+    );
+    final classNo = resolveLearnAssistClass(
+      ref.watch(userSelectionProvider),
+      primaryClass: primaryClass,
+    );
     final board = ref.watch(userBoardProvider);
     final subjects = learnAssistSubjects(
-      ref.watch(ingestedBooksProvider),
+      ref.watch(activeIngestedBooksProvider),
       board,
       classNo,
     );
@@ -95,11 +106,8 @@ class AiHubScreen extends ConsumerWidget {
             child: AiAskHero(
               headline: 'Ask anything from your textbooks.',
               sub: 'Clear answers in English, Odia or Hindi.',
-              onAsk: (style) => _navTap(
-                ref,
-                context,
-                '/learn/ai?focus=1&style=${style.key}',
-              ),
+              onAsk: (style) =>
+                  _navTap(ref, context, '/learn/ai?focus=1&style=${style.key}'),
               onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
             ),
           ),
@@ -137,8 +145,7 @@ class AiHubScreen extends ConsumerWidget {
                     question: question,
                     board: board,
                     classNo: classNo,
-                    onTap: () =>
-                        _navTap(ref, context, _resumePath(question)),
+                    onTap: () => _navTap(ref, context, _resumePath(question)),
                   );
                 },
               ),
@@ -182,15 +189,14 @@ class AiHubScreen extends ConsumerWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      // Wider gutters than the flat tiles needed — the clay
-                      // shadows want room to fall before the next card starts.
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 1.5,
-                    ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  // Wider gutters than the flat tiles needed — the clay
+                  // shadows want room to fall before the next card starts.
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.5,
+                ),
                 itemCount: subjects.length,
                 itemBuilder: (context, index) {
                   final subject = subjects[index];
@@ -481,10 +487,7 @@ class _SubjectTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final meta = subjectMeta(subject);
-    final color = AppColors.subjectColor(
-      subject,
-      Theme.of(context).brightness,
-    );
+    final color = AppColors.subjectColor(subject, Theme.of(context).brightness);
 
     return Pressable(
       onTap: onTap,

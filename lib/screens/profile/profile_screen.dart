@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
+import '../../data/models/learn_assist.dart' show LearnAssistApiException;
 import '../../data/seed/seed_data.dart'
     show availableBoardIds, availableClassNumbersForBoard, boardLabel, boards;
 import '../../data/services/backend_auth_service.dart';
@@ -100,7 +101,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _restoreFromLocalPrefs();
         }
       });
-      if (nextUid != null) _ensureProfile();
+      if (nextUid != null) {
+        _ensureProfile();
+      }
     });
 
     final authState = ref.watch(authStateProvider);
@@ -468,7 +471,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     setState(() => _isProfileSaving = true);
+    var submittedRevision = 0;
     try {
+      final currentProfile = ref
+          .read(backendAccountCacheProvider)
+          .profile
+          .maybeWhen(data: (profile) => profile, orElse: () => null);
+      submittedRevision = currentProfile?.revision ?? 0;
       final savedProfile = await ref
           .read(backendAccountCacheProvider.notifier)
           .saveProfile(
@@ -478,15 +487,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               preferredLanguage: _preferredLanguage,
               schoolName: _schoolController.text,
               name: _nameController.text,
+              revision: submittedRevision,
             ),
           );
 
+      if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
+        return;
+      }
       _syncLocalProfile(
         savedProfile.classNo,
         savedProfile.board,
         savedProfile.preferredLanguage,
       );
-      if (!mounted) return;
       setState(() {
         _selectedClass = savedProfile.classNo;
         _preferredLanguage = savedProfile.preferredLanguage;
@@ -500,8 +512,79 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SnackBar(content: Text('Profile updated successfully.')),
       );
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
+        return;
+      }
       Haptics.error(ref);
+      if (error is LearnAssistApiException &&
+          error.code == 'profile_conflict') {
+        StudentProfile? latest;
+        try {
+          latest = await ref
+              .read(backendAccountCacheProvider.notifier)
+              .ensureProfile(forceRefresh: true);
+        } catch (_) {
+          // Keep the student's edits. A later retry will re-fetch the profile.
+        }
+        // AccountCache may return its stale cached profile when a refresh
+        // fails. A conflict guarantees the server has a newer revision.
+        if (latest != null && latest.revision <= submittedRevision) {
+          latest = null;
+        }
+        if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
+          return;
+        }
+        if (latest != null) {
+          final useLatest = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Profile changed elsewhere'),
+              content: Text(
+                'The latest saved profile is ${latest!.name ?? 'Student'}, '
+                'class ${latest.classNo} (${boardLabel(latest.board)}), '
+                'language ${latest.preferredLanguage}, '
+                'school ${latest.schoolName ?? 'none'}. '
+                'Your edits are still here. Use the latest profile or keep '
+                'editing and save your version?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Keep my edits'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Use latest'),
+                ),
+              ],
+            ),
+          );
+          if (mounted && useLatest == true) {
+            setState(() {
+              _selectedClass = latest!.classNo;
+              _preferredLanguage = latest.preferredLanguage;
+              _board = latest.board;
+              _schoolController.text = latest.schoolName ?? '';
+              _nameController.text = latest.name ?? '';
+              _isEditing = false;
+            });
+            _syncLocalProfile(
+              latest.classNo,
+              latest.board,
+              latest.preferredLanguage,
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Profile changed elsewhere. Your edits are kept; refresh and try again.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Couldn\'t save your profile. Please try again.'),

@@ -154,7 +154,14 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedClass = resolveLearnAssistClass(ref.read(userSelectionProvider));
+    final profile = ref
+        .read(backendAccountCacheProvider)
+        .profile
+        .maybeWhen(data: (value) => value, orElse: () => null);
+    _selectedClass = resolveLearnAssistClass(
+      ref.read(userSelectionProvider),
+      primaryClass: profile?.classNo,
+    );
     // A subject from the route (AI hub chip). build() drops it again if it
     // isn't one of the ingested subjects for this board/class.
     final subject = widget.initialSubject?.trim();
@@ -890,6 +897,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       final cache = ref.read(backendAccountCacheProvider.notifier);
       cache.ensureUser();
       cache.ensureUsage();
+      cache.ensureProfile();
     });
   }
 
@@ -903,14 +911,21 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       orElse: () => false,
     );
     // Kick off user/usage fetch in background if not yet loaded — only once.
-    if (isSignedIn && (!accountState.userLoaded || !accountState.usageLoaded)) {
+    if (isSignedIn &&
+        (!accountState.userLoaded ||
+            !accountState.usageLoaded ||
+            !accountState.profileLoaded)) {
       _ensureAccountSummary();
     }
     // Derive the effective class from profile selection (not user-choosable in UI).
-    final classOptions = learnAssistClassOptions(selectedClasses);
-    final effectiveClass = classOptions.contains(_selectedClass)
-        ? _selectedClass
-        : classOptions.first;
+    final primaryClass = accountState.profile.maybeWhen(
+      data: (profile) => profile?.classNo,
+      orElse: () => null,
+    );
+    final effectiveClass = resolveLearnAssistClass(
+      selectedClasses,
+      primaryClass: primaryClass,
+    );
     if (effectiveClass != _selectedClass) {
       // Profile changed class — sync without triggering a rebuild loop.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -922,7 +937,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       });
     }
     final subjectOptions = _subjectsFor(
-      ref.watch(ingestedBooksProvider),
+      ref.watch(activeIngestedBooksProvider),
       _board,
       _selectedClass,
     );
