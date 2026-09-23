@@ -72,7 +72,6 @@ class ExploreScreen extends ConsumerWidget {
     final classes = ref.watch(userSelectionProvider).toList()..sort();
     final labsAvailable = labAvailableForSelection(classes);
     final tools = _tools(isDark, labsAvailable);
-    final soon = _soon(isDark);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -90,30 +89,11 @@ class ExploreScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sectionGap - 4),
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(label: 'Explore & Play'),
-            ),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
               child: _Grid(items: tools, onTap: (t) => _open(context, ref, t)),
-            ),
-            const SizedBox(height: AppSpacing.sectionGap),
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(label: 'Coming soon'),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: _Grid(items: soon, soon: true),
             ),
           ],
         ),
@@ -352,10 +332,9 @@ class _ClassFilterSheetState extends ConsumerState<_ClassFilterSheet> {
 
 class _Grid extends StatelessWidget {
   final List<_Tool> items;
-  final bool soon;
   final ValueChanged<_Tool>? onTap;
 
-  const _Grid({required this.items, this.soon = false, this.onTap});
+  const _Grid({required this.items, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -371,7 +350,6 @@ class _Grid extends StatelessWidget {
               width: cellW,
               child: _ToolCard(
                 tool: t,
-                soon: soon,
                 onTap: onTap == null ? null : () => onTap!(t),
               ),
             );
@@ -384,102 +362,75 @@ class _Grid extends StatelessWidget {
 
 class _ToolCard extends StatelessWidget {
   final _Tool tool;
-  final bool soon;
   final VoidCallback? onTap;
 
-  const _ToolCard({required this.tool, this.soon = false, this.onTap});
+  const _ToolCard({required this.tool, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Semantics(
-      button: !soon,
-      enabled: !soon,
-      label: soon ? '${tool.title}, coming soon' : tool.title,
+      button: true,
+      enabled: true,
+      label: tool.title,
       child: Pressable(
-        onTap: soon ? null : onTap,
-        child: Opacity(
-          opacity: soon ? 0.72 : 1,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 152),
-            padding: const EdgeInsets.all(AppSpacing.cardPad),
-            decoration: BoxDecoration(
-              color: cs.surface,
-              border: Border.all(color: cs.outline),
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            ),
-            child: Stack(
-              clipBehavior: Clip.hardEdge,
-              children: [
-                // faint glyph backdrop
-                Positioned(
-                  right: -16,
-                  bottom: -18,
-                  child: Icon(
-                    tool.icon,
-                    size: 92,
-                    color: tool.color.withValues(alpha: 0.12),
+        onTap: onTap,
+        child: Container(
+          // Every tile reserves room for a two-line description, so a
+          // longer subtitle never makes its row taller than its neighbour.
+          height: 144,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: Border.all(color: cs.outline),
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          ),
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              // faint glyph backdrop
+              Positioned(
+                right: -16,
+                bottom: -18,
+                child: Icon(
+                  tool.icon,
+                  size: 92,
+                  color: tool.color.withValues(alpha: 0.12),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Tile(color: tool.color, icon: tool.icon, size: 46),
+                    ],
                   ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Tile(color: tool.color, icon: tool.icon, size: 46),
-                        if (soon)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isDark
-                                    ? AppColors.hairlineDark
-                                    : AppColors.hairline,
-                              ),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              'SOON',
-                              style: TextStyle(
-                                fontSize: AppFontSize.caption,
-                                fontWeight: AppFontWeight.bold,
-                                letterSpacing: 0.5,
-                                color: isDark
-                                    ? AppColors.ink3Dark
-                                    : AppColors.ink3,
-                              ),
-                            ),
-                          ),
-                      ],
+                  const SizedBox(height: 10),
+                  Text(
+                    tool.title,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: AppFontSize.content,
+                      height: 1.12,
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      tool.title,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontSize: AppFontSize.content,
-                            height: 1.12,
-                          ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    tool.sub,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: AppFontSize.small,
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      tool.sub,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: AppFontSize.small,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -508,11 +459,11 @@ class _Tool {
 }
 
 List<_Tool> _tools(bool isDark, bool labsAvailable) => [
-  // Math is a hub: tables, drills, quizzes and Formulas all live inside it.
+  // Math is a hub for tables, drills, and formulas.
   _Tool(
     id: 'math',
     title: 'Math',
-    sub: 'Tables, drills & quizzes',
+    sub: 'Tables and drills',
     icon: Icons.calculate_rounded,
     color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
     route: '/learn/math',
@@ -573,15 +524,5 @@ List<_Tool> _tools(bool isDark, bool labsAvailable) => [
     icon: Icons.timeline_rounded,
     color: isDark ? AppColors.cTimelineDark : AppColors.cTimeline,
     route: '/learn/timeline',
-  ),
-];
-
-List<_Tool> _soon(bool isDark) => [
-  _Tool(
-    id: 'quizzes',
-    title: 'Quizzes',
-    sub: 'Test yourself',
-    icon: Icons.help_outline_rounded,
-    color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
   ),
 ];
