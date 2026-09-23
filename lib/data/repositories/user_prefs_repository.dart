@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/highlight.dart';
+import '../models/recent_question.dart';
 import '../models/note.dart';
 import '../models/timetable_period.dart';
 import '../models/time_slot.dart';
+import '../models/virtual_lab.dart';
 
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
@@ -24,10 +26,35 @@ class UserPrefsRepository {
   static const _pythonCompletedLessonsKey = 'python_completed_lessons';
   static const _pythonQuizScoresKey = 'python_quiz_scores';
   static const _pythonPlaygroundCodeKey = 'python_playground_code';
+  static const _labAttemptsKey = 'lab_attempts';
 
   final SharedPreferences _prefs;
 
   UserPrefsRepository(this._prefs);
+
+  List<LabAttempt> getLabAttempts() {
+    final stored = _prefs.getString(_labAttemptsKey);
+    if (stored == null) return const [];
+    try {
+      return (jsonDecode(stored) as List<dynamic>)
+          .map((value) => LabAttempt.fromJson(value as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveLabAttempt(LabAttempt attempt) async {
+    final attempts = getLabAttempts()
+        .where((entry) => entry.clientAttemptId != attempt.clientAttemptId)
+        .toList();
+    attempts.insert(0, attempt);
+    if (attempts.length > 100) attempts.removeRange(100, attempts.length);
+    await _prefs.setString(
+      _labAttemptsKey,
+      jsonEncode(attempts.map((entry) => entry.toJson()).toList()),
+    );
+  }
 
   // ─── Onboarding ─────────────────────────────────────────────────────────
 
@@ -93,25 +120,29 @@ class UserPrefsRepository {
 
   // ─── Selected Classes ───────────────────────────────────────────────────
 
-  Set<int> getSelectedClasses() {
-    final jsonStr = _prefs.getString(_selectedClassesKey);
+  Set<int> getSelectedClasses({String? uid}) {
+    final key = uid == null ? _selectedClassesKey : '$uid:$_selectedClassesKey';
+    final jsonStr = _prefs.getString(key);
     if (jsonStr == null) return {};
     final list = jsonDecode(jsonStr) as List;
     return list.map((e) => e as int).toSet();
   }
 
-  Future<void> setSelectedClasses(Set<int> classes) async {
-    await _prefs.setString(_selectedClassesKey, jsonEncode(classes.toList()));
+  Future<void> setSelectedClasses(Set<int> classes, {String? uid}) async {
+    final key = uid == null ? _selectedClassesKey : '$uid:$_selectedClassesKey';
+    await _prefs.setString(key, jsonEncode(classes.toList()));
   }
 
   // ─── Selected Board ─────────────────────────────────────────────────────
 
-  String getSelectedBoard() {
-    return _prefs.getString(_selectedBoardKey) ?? 'scert_odisha';
+  String getSelectedBoard({String? uid}) {
+    final key = uid == null ? _selectedBoardKey : '$uid:$_selectedBoardKey';
+    return _prefs.getString(key) ?? 'scert_odisha';
   }
 
-  Future<void> setSelectedBoard(String board) async {
-    await _prefs.setString(_selectedBoardKey, board);
+  Future<void> setSelectedBoard(String board, {String? uid}) async {
+    final key = uid == null ? _selectedBoardKey : '$uid:$_selectedBoardKey';
+    await _prefs.setString(key, board);
   }
 
   // ─── Last Read Book ─────────────────────────────────────────────────────
@@ -122,6 +153,28 @@ class UserPrefsRepository {
 
   Future<void> setLastReadBookId(String bookId) async {
     await _prefs.setString(_lastReadBookIdKey, bookId);
+  }
+
+  // ─── Recently opened books ──────────────────────────────────────────────
+  // Book ids in most-recently-opened-first order, so Home's "Your books" row
+  // reflects what the student actually reads rather than seed order.
+
+  static const _recentBookIdsKey = 'recent_book_ids';
+  static const _maxRecentBooks = 12;
+
+  List<String> getRecentBookIds() {
+    return _prefs.getStringList(_recentBookIdsKey) ?? const <String>[];
+  }
+
+  /// Moves [bookId] to the front, de-duplicating any earlier visit.
+  Future<void> recordBookOpened(String bookId) async {
+    final ids = getRecentBookIds().toList()
+      ..remove(bookId)
+      ..insert(0, bookId);
+    if (ids.length > _maxRecentBooks) {
+      ids.removeRange(_maxRecentBooks, ids.length);
+    }
+    await _prefs.setStringList(_recentBookIdsKey, ids);
   }
 
   // ─── Per-Book Last Read Page ────────────────────────────────────────────
@@ -474,7 +527,9 @@ class UserPrefsRepository {
     final done = getPythonCompletedLessons();
     if (done.add(lessonId)) {
       await _prefs.setString(
-          _pythonCompletedLessonsKey, jsonEncode(done.toList()));
+        _pythonCompletedLessonsKey,
+        jsonEncode(done.toList()),
+      );
     }
     await _recordActivityToday();
   }
@@ -504,6 +559,129 @@ class UserPrefsRepository {
 
   Future<void> setPythonPlaygroundCode(String code) async {
     await _prefs.setString(_pythonPlaygroundCodeKey, code);
+  }
+
+  // ─── Math tools ──────────────────────────────────────────────────────────
+  //
+  // Best score per math tool id, following the Python quiz precedent. Practice
+  // is learning, so recording a score keeps the streak alive.
+
+  static const _mathBestScoresKey = 'math_best_scores';
+
+  /// toolId → best score achieved.
+  Map<String, int> getMathBestScores() {
+    final jsonStr = _prefs.getString(_mathBestScoresKey);
+    if (jsonStr == null) return {};
+    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+    return map.map((k, v) => MapEntry(k, v as int));
+  }
+
+  /// Records a finished round, keeping only the best score for [toolId].
+  Future<void> recordMathScore(String toolId, int score) async {
+    final scores = getMathBestScores();
+    final best = scores[toolId] ?? 0;
+    if (score > best) {
+      scores[toolId] = score;
+      await _prefs.setString(_mathBestScoresKey, jsonEncode(scores));
+    }
+    await _recordActivityToday();
+  }
+
+  // ─── Recent AI questions ─────────────────────────────────────────────────
+  //
+  // A local ring of the last few questions the student asked, so the AI tab can
+  // offer "pick up where you left off" across every subject at once. Backend
+  // history is cached one conversation at a time, so it cannot answer that.
+
+  static const _legacyRecentQuestionsKey = 'recent_ai_questions';
+  static const _recentQuestionsPrefix = 'recent_ai_questions:';
+  static const _maxRecentQuestions = 12;
+
+  String _recentQuestionsKey(String uid) => '$_recentQuestionsPrefix$uid';
+
+  List<RecentQuestion> getRecentQuestions(String uid) {
+    // The legacy value has no owner. Discard it instead of exposing one
+    // account's questions to whichever account signs in next.
+    _prefs.remove(_legacyRecentQuestionsKey);
+    final jsonStr = _prefs.getString(_recentQuestionsKey(uid));
+    // A growable list either way: `recordRecentQuestion` mutates what it gets
+    // back, so handing out a const empty list would throw on the first ask.
+    if (jsonStr == null) return <RecentQuestion>[];
+    try {
+      final list = jsonDecode(jsonStr) as List;
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map(RecentQuestion.fromJson)
+          .where((q) => q.text.isNotEmpty)
+          .toList();
+    } catch (_) {
+      // Corrupt entry — drop it rather than breaking the AI tab.
+      return <RecentQuestion>[];
+    }
+  }
+
+  /// Records one asked question, newest first. Re-asking the same thing moves
+  /// it back to the top instead of adding a duplicate.
+  Future<void> recordRecentQuestion(
+    String uid,
+    String text, {
+    String? subject,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    final questions = getRecentQuestions(uid)
+      ..removeWhere((q) => q.text.toLowerCase() == trimmed.toLowerCase());
+    questions.insert(
+      0,
+      RecentQuestion(text: trimmed, subject: subject, askedAt: DateTime.now()),
+    );
+    if (questions.length > _maxRecentQuestions) {
+      questions.removeRange(_maxRecentQuestions, questions.length);
+    }
+    await _prefs.setString(
+      _recentQuestionsKey(uid),
+      jsonEncode(questions.map((q) => q.toJson()).toList()),
+    );
+  }
+
+  Future<void> clearRecentQuestions(String uid) async {
+    await _prefs.remove(_recentQuestionsKey(uid));
+  }
+
+  // ─── Daily warm-up ───────────────────────────────────────────────────────
+  //
+  // Home shows one multiple-choice question a day. We remember which question
+  // was answered on which day so the card keeps its answered state, and count a
+  // correct answer as learning activity (it keeps the streak alive).
+
+  static const _warmupAnsweredKey = 'warmup_last_answered';
+
+  /// Today's answered warm-up — the question id plus whether the student got it
+  /// right — or null when today is still untouched. Correctness is stored so a
+  /// wrong answer doesn't come back looking correct after a rebuild.
+  ({String id, bool correct})? getWarmupAnsweredToday() {
+    final stored = _prefs.getString(_warmupAnsweredKey);
+    if (stored == null) return null;
+    final parts = stored.split('|');
+    if (parts.length < 2) return null;
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (parts[0] != today) return null;
+    return (id: parts[1], correct: parts.length > 2 && parts[2] == '1');
+  }
+
+  /// Marks today's warm-up as answered, so the card keeps its state for the
+  /// rest of the day. Only a [correct] answer counts as learning activity —
+  /// otherwise a wrong tap would keep the streak alive for free.
+  Future<void> recordWarmupAnswered(
+    String questionId, {
+    required bool correct,
+  }) async {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    await _prefs.setString(
+      _warmupAnsweredKey,
+      '$today|$questionId|${correct ? '1' : '0'}',
+    );
+    if (correct) await _recordActivityToday();
   }
 
   /// Rolls over the day and advances the learning streak. Idempotent within a

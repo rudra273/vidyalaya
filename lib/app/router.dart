@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
+import '../providers/lab_provider.dart';
+import '../providers/user_selection_provider.dart';
 import '../data/seed/seed_data.dart';
+import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
 import '../screens/class_selector/class_selector_screen.dart';
@@ -36,7 +39,16 @@ import '../screens/learn/python/python_chapter_screen.dart';
 import '../screens/learn/python/python_lesson_screen.dart';
 import '../screens/learn/python/python_quiz_screen.dart';
 import '../screens/learn/python/python_playground_screen.dart';
+import '../screens/learn/math/math_home_screen.dart';
+import '../screens/learn/math/math_tables_screen.dart';
+import '../screens/learn/math/math_flash_screen.dart';
+import '../screens/learn/math/math_quiz_screen.dart';
+import '../screens/learn/math/math_drills_screen.dart';
+import '../screens/learn/math/math_number_sense_screen.dart';
+import '../screens/learn/math/math_fractions_screen.dart';
+import '../screens/learn/virtual_lab_screen.dart';
 import '../data/seed/diagrams_data.dart';
+import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
 
 // ─── Navigation keys ────────────────────────────────────────────────────────
@@ -51,10 +63,11 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final prefsRepo = ref.watch(userPrefsRepositoryProvider);
-  final booksEnabled = ref.watch(booksEnabledProvider);
-
-  return GoRouter(
+  final prefsRepo = ref.read(userPrefsRepositoryProvider);
+  final booksEnabled = ref.read(booksEnabledProvider);
+  final labsEnabled = ref.read(labsEnabledProvider);
+  late final GoRouter router;
+  router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
@@ -67,10 +80,17 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!booksEnabled) {
         final path = state.matchedLocation;
-        final isBookRoute =
-            _bookRoutePrefixes.any((p) => path == p || path.startsWith('$p/'));
+        final isBookRoute = _bookRoutePrefixes.any(
+          (p) => path == p || path.startsWith('$p/'),
+        );
         if (isBookRoute) return '/';
       }
+      final labsAvailable = labAvailableForSelection(
+        enabled: labsEnabled,
+        board: ref.read(userBoardProvider),
+        selectedClasses: ref.read(userSelectionProvider),
+      );
+      if (!labsAvailable && state.matchedLocation == '/labs') return '/explore';
       return null;
     },
     routes: [
@@ -84,14 +104,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                 const NoTransitionPage(child: HomeScreen()),
           ),
           GoRoute(
+            path: '/ai',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AiHubScreen()),
+          ),
+          GoRoute(
             path: '/explore',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: ExploreScreen()),
-          ),
-          GoRoute(
-            path: '/library',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: MyBooksScreen()),
           ),
           GoRoute(
             path: '/profile',
@@ -105,6 +125,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/learn', redirect: (_, _) => '/explore'),
       GoRoute(path: '/my-books', redirect: (_, _) => '/library'),
       GoRoute(path: '/learn-ai', redirect: (_, _) => '/learn/ai'),
+      // Library lost its tab to AI: it now pushes full-screen from Home.
+      GoRoute(
+        path: '/library',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MyBooksScreen(),
+      ),
       GoRoute(
         path: '/settings',
         parentNavigatorKey: _rootNavigatorKey,
@@ -144,10 +170,24 @@ final routerProvider = Provider<GoRouter>((ref) {
               LearnAssistChannel.learnAssist;
           final prefill = state.uri.queryParameters['prefill'];
           final autofocus = state.uri.queryParameters['focus'] == '1';
+          final subject = state.uri.queryParameters['subject'];
+          final openCamera = state.uri.queryParameters['camera'] == '1';
+          // Arrived from a "pick up where you left off" card, so the student
+          // has already said which conversation they want back.
+          final resume = state.uri.queryParameters['resume'] == '1';
+          // How the first answer should be pitched — set by the AI tab's hero
+          // switch. Unknown/missing values fall back to a plain ask.
+          final answerStyle = AnswerStyle.fromKey(
+            state.uri.queryParameters['style'],
+          );
           return LearnAiScreen(
             channel: channel,
             initialPrompt: prefill,
             autofocus: autofocus,
+            initialSubject: subject,
+            openCamera: openCamera,
+            resume: resume,
+            answerStyle: answerStyle,
           );
         },
       ),
@@ -241,10 +281,53 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) =>
             PythonQuizScreen(chapterId: state.pathParameters['chapterId']!),
       ),
+      // ── Math hub ──
+      // Note: Formulas keeps its original /learn/math-formulas path (above) and
+      // is reached from the hub, so existing deep links keep working.
+      GoRoute(
+        path: '/learn/math',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathHomeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/tables',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathTablesScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/flash',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathFlashScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/quiz',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathQuizScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/drills',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathDrillsScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/number-sense',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathNumberSenseScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/fractions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathFractionsScreen(),
+      ),
       GoRoute(
         path: '/class-selector',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ClassSelectorScreen(),
+      ),
+      GoRoute(
+        path: '/labs',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const VirtualLabScreen(),
       ),
       GoRoute(
         path: '/timetable',
@@ -300,4 +383,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  // The router must retain its Navigator while a route is active. Board and
+  // class changes only affect the lab-route guard, so refresh that guard
+  // instead of recreating GoRouter (which detaches live inherited dependents).
+  ref.listen(userBoardProvider, (_, _) => router.refresh());
+  ref.listen(userSelectionProvider, (_, _) => router.refresh());
+  ref.onDispose(router.dispose);
+  return router;
 });

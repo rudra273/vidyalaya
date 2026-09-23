@@ -27,7 +27,31 @@ class PyEditor extends StatefulWidget {
 class _PyEditorState extends State<PyEditor> {
   final FocusNode _focus = FocusNode();
 
-  static const _keys = ['⇥', ':', '( )', '[ ]', '"', "'", '=', '#', '+', '*'];
+  // Symbols — the fiddly punctuation that's slow to reach on a phone keyboard.
+  static const _symbols = ['⇥', ':', '( )', '[ ]', '"', "'", '=', ',', '#'];
+
+  // Keywords — tap to drop a ready-made Python snippet at the cursor. Each
+  // entry is (chip label, text to insert, where the caret lands afterwards),
+  // so tapping `print` inserts `print()` with the cursor already between the
+  // brackets, ready to type.
+  static const _keywords = <(String, String, int)>[
+    ('print', 'print()', 6),
+    ('input', 'input()', 6),
+    ('if', 'if :', 3),
+    ('elif', 'elif :', 5),
+    ('else', 'else:', 5),
+    ('for', 'for i in range():', 15),
+    ('while', 'while :', 6),
+    ('range', 'range()', 6),
+    ('len', 'len()', 4),
+    ('int', 'int()', 4),
+    ('str', 'str()', 4),
+    ('True', 'True', 4),
+    ('False', 'False', 5),
+    ('and', 'and ', 4),
+    ('or', 'or ', 3),
+    ('not', 'not ', 4),
+  ];
 
   @override
   void dispose() {
@@ -35,12 +59,7 @@ class _PyEditorState extends State<PyEditor> {
     super.dispose();
   }
 
-  void _insert(String key) {
-    final text = widget.controller.text;
-    final sel = widget.controller.selection;
-    final start = sel.start < 0 ? text.length : sel.start;
-    final end = sel.end < 0 ? text.length : sel.end;
-
+  void _insertSymbol(String key) {
     String insert;
     int caretOffset;
     switch (key) {
@@ -57,8 +76,18 @@ class _PyEditorState extends State<PyEditor> {
         insert = key;
         caretOffset = key.length;
     }
+    _insert(insert, caretOffset);
+  }
 
-    final newText = text.replaceRange(start, end, insert);
+  /// Inserts [text] at the cursor, then places the caret [caretOffset]
+  /// characters into what was inserted.
+  void _insert(String text, int caretOffset) {
+    final current = widget.controller.text;
+    final sel = widget.controller.selection;
+    final start = sel.start < 0 ? current.length : sel.start;
+    final end = sel.end < 0 ? current.length : sel.end;
+
+    final newText = current.replaceRange(start, end, text);
     widget.controller.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: start + caretOffset),
@@ -118,20 +147,208 @@ class _PyEditorState extends State<PyEditor> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 40,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _keys.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, i) => _KeyChip(
-              label: _keys[i],
-              onTap: () => _insert(_keys[i]),
-            ),
+        const SizedBox(height: 12),
+        _RowLabel('Keywords'),
+        const SizedBox(height: 6),
+        _ChipStrip(
+          count: _keywords.length,
+          chipBuilder: (i) {
+            final (label, text, caret) = _keywords[i];
+            return _KeyChip(label: label, onTap: () => _insert(text, caret));
+          },
+        ),
+        const SizedBox(height: 10),
+        _RowLabel('Symbols'),
+        const SizedBox(height: 6),
+        _ChipStrip(
+          count: _symbols.length,
+          chipBuilder: (i) => _KeyChip(
+            label: _symbols[i],
+            onTap: () => _insertSymbol(_symbols[i]),
           ),
         ),
       ],
+    );
+  }
+}
+
+// A horizontal, swipeable row of chips that makes its scrollability obvious:
+// a fade on whichever edge has more chips off-screen, plus a slim scrollbar
+// underneath. Without these cues the row reads as "that's all there is".
+class _ChipStrip extends StatefulWidget {
+  final int count;
+  final Widget Function(int index) chipBuilder;
+  const _ChipStrip({required this.count, required this.chipBuilder});
+
+  @override
+  State<_ChipStrip> createState() => _ChipStripState();
+}
+
+class _ChipStripState extends State<_ChipStrip> {
+  final ScrollController _scroll = ScrollController();
+  bool _fadeLeft = false;
+  bool _fadeRight = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+    // First frame: decide whether the right fade is even needed (short lists
+    // that fit on screen shouldn't show a "there's more" hint).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    final pos = _scroll.position;
+    final left = pos.pixels > 2;
+    final right = pos.pixels < pos.maxScrollExtent - 2;
+    if (left != _fadeLeft || right != _fadeRight) {
+      setState(() {
+        _fadeLeft = left;
+        _fadeRight = right;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Fade the edge(s) where chips continue off-screen — the primary
+        // "there's more, swipe me" cue.
+        ShaderMask(
+          shaderCallback: (rect) => LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              _fadeLeft ? Colors.transparent : Colors.white,
+              Colors.white,
+              Colors.white,
+              _fadeRight ? Colors.transparent : Colors.white,
+            ],
+            stops: const [0.0, 0.06, 0.94, 1.0],
+          ).createShader(rect),
+          blendMode: BlendMode.dstIn,
+          child: SizedBox(
+            height: 38,
+            child: ListView.separated(
+              controller: _scroll,
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              itemCount: widget.count,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, i) => widget.chipBuilder(i),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        // A slim progress track under the row: a second, static cue that the
+        // strip scrolls, with a thumb that tracks how far along you are.
+        _ScrollProgressBar(controller: _scroll, color: onSurface),
+      ],
+    );
+  }
+}
+
+// A thin horizontal bar whose filled portion reflects the chip strip's scroll
+// position and visible fraction — like a scrollbar track, but purely a hint.
+class _ScrollProgressBar extends StatefulWidget {
+  final ScrollController controller;
+  final Color color;
+  const _ScrollProgressBar({required this.controller, required this.color});
+
+  @override
+  State<_ScrollProgressBar> createState() => _ScrollProgressBarState();
+}
+
+class _ScrollProgressBarState extends State<_ScrollProgressBar> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_tick);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tick());
+  }
+
+  void _tick() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_tick);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double fraction = 1.0; // fully filled when everything fits (nothing to scroll)
+    double offset = 0.0;
+    if (widget.controller.hasClients) {
+      final pos = widget.controller.position;
+      final total = pos.viewportDimension + pos.maxScrollExtent;
+      if (total > 0) {
+        fraction = (pos.viewportDimension / total).clamp(0.15, 1.0);
+        final scrollable = pos.maxScrollExtent;
+        final t = scrollable > 0 ? (pos.pixels / scrollable).clamp(0.0, 1.0) : 0.0;
+        offset = t * (1 - fraction);
+      }
+    }
+    return SizedBox(
+      height: 4,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          return Stack(
+            children: [
+              // track
+              Container(
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // thumb
+              Positioned(
+                left: c.maxWidth * offset,
+                width: c.maxWidth * fraction,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: widget.color.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _RowLabel extends StatelessWidget {
+  final String text;
+  const _RowLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            letterSpacing: 0.8,
+            fontWeight: FontWeight.w700,
+          ),
     );
   }
 }

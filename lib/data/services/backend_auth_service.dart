@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'secure_http_client.dart';
 
 import '../models/learn_assist.dart';
 import 'learn_assist_service.dart';
@@ -73,6 +74,9 @@ class StudentProfile {
   /// Student display name (custom if edited, else the Google account name).
   final String? name;
   final bool onboardingCompleted;
+
+  /// Zero means no server profile has been saved yet.
+  final int revision;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -83,6 +87,7 @@ class StudentProfile {
     this.schoolName,
     this.name,
     this.onboardingCompleted = false,
+    this.revision = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -95,6 +100,7 @@ class StudentProfile {
       schoolName: json['school_name'] as String?,
       name: json['name'] as String?,
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
+      revision: json['revision'] as int? ?? 0,
       createdAt: _parseDateTime(json['created_at']),
       updatedAt: _parseDateTime(json['updated_at']),
     );
@@ -112,6 +118,7 @@ class StudentProfile {
           : trimmedSchoolName,
       // Omitted (null) means "leave the stored name unchanged" server-side.
       'name': trimmedName == null || trimmedName.isEmpty ? null : trimmedName,
+      'revision': revision,
     };
   }
 
@@ -122,6 +129,7 @@ class StudentProfile {
     'school_name': schoolName,
     'name': name,
     'onboarding_completed': onboardingCompleted,
+    'revision': revision,
     'created_at': createdAt?.toIso8601String(),
     'updated_at': updatedAt?.toIso8601String(),
   };
@@ -129,6 +137,30 @@ class StudentProfile {
 
 class ProfileNotFoundException implements Exception {
   const ProfileNotFoundException();
+}
+
+class ExplorePreferences {
+  final String selectionMode;
+  final List<int> selectedClasses;
+
+  const ExplorePreferences({
+    required this.selectionMode,
+    required this.selectedClasses,
+  });
+
+  factory ExplorePreferences.fromJson(Map<String, dynamic> json) {
+    return ExplorePreferences(
+      selectionMode: json['selection_mode'] as String? ?? 'primary',
+      selectedClasses: (json['selected_classes'] as List? ?? const [])
+          .whereType<int>()
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'selection_mode': selectionMode,
+    'selected_classes': selectedClasses,
+  };
 }
 
 class ChatHistoryPage {
@@ -197,7 +229,7 @@ class BackendAuthService {
     required http.Client client,
     required FirebaseIdTokenProvider idTokenProvider,
     Uri? baseUrl,
-  }) : _client = client,
+  }) : _client = SecureHttpClient(client),
        _idTokenProvider = idTokenProvider,
        _baseUrl = baseUrl ?? LearnAssistService.defaultBaseUrl;
 
@@ -215,6 +247,38 @@ class BackendAuthService {
     );
 
     return BackendUser.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<void> recordLearningEvent({
+    required String eventId,
+    required String eventType,
+    required String feature,
+    String? board,
+    int? classNo,
+  }) async {
+    final event = <String, Object?>{
+      'event_id': eventId,
+      'event_type': eventType,
+      'feature': feature,
+    };
+    if (board != null) event['board'] = board;
+    if (classNo != null) event['class_no'] = classNo;
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) => _client
+          .post(
+            _baseUrl.resolve('/me/events'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(event),
+          )
+          .timeout(const Duration(seconds: 20)),
+    );
+    if (_decodeJsonObject(response.body)['event_id'] != eventId) {
+      throw const FormatException('Learning event ID mismatch.');
+    }
   }
 
   Future<StudentProfile?> profile() async {
@@ -255,6 +319,42 @@ class BackendAuthService {
     );
 
     return StudentProfile.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<ExplorePreferences> explorePreferences() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/me/explore-preferences'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+    return ExplorePreferences.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<ExplorePreferences> updateExplorePreferences(
+    ExplorePreferences preferences,
+  ) async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .put(
+              _baseUrl.resolve('/me/explore-preferences'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+              body: jsonEncode(preferences.toJson()),
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+    return ExplorePreferences.fromJson(_decodeJsonObject(response.body));
   }
 
   Future<LearnAssistUsage> usage() async {

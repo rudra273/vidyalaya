@@ -67,6 +67,45 @@ class LearnAssistRequest {
   };
 }
 
+/// Request to clear the agent's working memory for a single thread. Mirrors the
+/// chat selectors so the backend can reconstruct the exact thread id. The
+/// permanent chat history (`messages`) is never affected — only the model's
+/// in-context conversation state is dropped, so the next turn starts fresh.
+class MemoryResetRequest {
+  final String board;
+  final int classNo;
+
+  /// Agent/surface, e.g. [LearnAssistChannel.learnAssist].
+  final String channel;
+
+  /// Academic subject to clear, or null for the cross-subject "general" thread.
+  final String? subject;
+
+  const MemoryResetRequest({
+    required this.board,
+    required this.classNo,
+    this.channel = LearnAssistChannel.learnAssist,
+    this.subject,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'board': board,
+    'class_no': classNo,
+    'channel': channel,
+    'subject': subject,
+  };
+}
+
+class MemoryResetResponse {
+  final bool reset;
+
+  const MemoryResetResponse({required this.reset});
+
+  factory MemoryResetResponse.fromJson(Map<String, dynamic> json) {
+    return MemoryResetResponse(reset: json['reset'] as bool? ?? false);
+  }
+}
+
 class LearnAssistResponse {
   final String answer;
   final List<LearnAssistCitation> citations;

@@ -33,7 +33,7 @@ class ProgressNotifier extends Notifier<ProgressStats> {
 
   ProgressStats _loadStats() {
     final repo = ref.read(userPrefsRepositoryProvider);
-    
+
     final currentStreak = repo.getCurrentStreak();
     final totalPagesRead = repo.getTotalPagesRead();
     final totalStudySeconds = repo.getTotalStudySeconds();
@@ -43,9 +43,16 @@ class ProgressNotifier extends Notifier<ProgressStats> {
     final pythonLessonsCompleted = repo.getPythonCompletedLessons().length;
 
     // Standard subjects
-    final subjects = ['Mathematics', 'Science', 'Odia', 'English', 'History', 'Geography'];
+    final subjects = [
+      'Mathematics',
+      'Science',
+      'Odia',
+      'English',
+      'History',
+      'Geography',
+    ];
     final subjectPages = <String, int>{};
-    
+
     for (final subject in subjects) {
       final pages = repo.getSubjectPages(subject);
       if (pages > 0) {

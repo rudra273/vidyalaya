@@ -67,130 +67,138 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
         ? '${selectedClasses.map((c) => "Class $c").join(", ")} · ${boardLabel(selectedBoard)} · ${allSelectedBooks.length} books'
         : 'No class selected';
 
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          PageTitle(
-            title: 'Library',
-            sub: sub,
-            trailing: IconBox(
-              icon: _searchActive ? Icons.close_rounded : Icons.search_rounded,
-              tooltip: _searchActive ? 'Close search' : 'Search books',
-              onTap: _toggleSearch,
-            ),
-          ),
-
-          if (_searchActive) ...[
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
+    // Pushed full-screen from Home (it no longer has a tab), so it owns its
+    // own Scaffold — the back button's ink needs a Material ancestor.
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            PageTitle(
+              title: 'Library',
+              sub: sub,
+              // Pushed from Home rather than a tab, so it carries its own back.
+              onBack: () => context.pop(),
+              trailing: IconBox(
+                icon: _searchActive
+                    ? Icons.close_rounded
+                    : Icons.search_rounded,
+                tooltip: _searchActive ? 'Close search' : 'Search books',
+                onTap: _toggleSearch,
               ),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                textInputAction: TextInputAction.search,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: 'Search books or subjects…',
-                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                  isDense: true,
-                  suffixIcon: isSearching
-                      ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 18),
-                          onPressed: () =>
-                              setState(() => _searchController.clear()),
-                        )
-                      : null,
+            ),
+
+            if (_searchActive) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Search books or subjects…',
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    isDense: true,
+                    suffixIcon: isSearching
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () =>
+                                setState(() => _searchController.clear()),
+                          )
+                        : null,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
 
-          if (hasSelection && !_searchActive) ...[
-            const SizedBox(height: 14),
-            const FilterChipsBar(),
-          ],
+            if (hasSelection && !_searchActive) ...[
+              const SizedBox(height: 14),
+              const FilterChipsBar(),
+            ],
 
-          const SizedBox(height: AppSpacing.stackGap),
+            const SizedBox(height: AppSpacing.stackGap),
 
-          Expanded(
-            child: !hasSelection
-                ? EmptyState(
-                    icon: Icons.menu_book_rounded,
-                    title: 'No class selected',
-                    subtitle:
-                        'Select your class to get started with your textbooks.',
-                    ctaLabel: 'Select Class',
-                    onCtaTap: () => context.push('/class-selector'),
-                  )
-                : filteredBooks.isEmpty
-                    ? EmptyState(
-                        icon: Icons.search_off_rounded,
-                        title: 'No books found',
-                        subtitle: isSearching
-                            ? 'No matches for "${_searchController.text.trim()}". Try another word.'
-                            : 'Try a different subject filter.',
-                      )
-                    : CustomScrollView(
-                        slivers: [
-                          for (final classNum in sortedClasses) ...[
-                            if (selectedClasses.length > 1)
-                              SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  AppSpacing.screenPadding,
-                                  16,
-                                  AppSpacing.screenPadding,
-                                  12,
-                                ),
-                                sliver: SliverToBoxAdapter(
-                                  child: Text(
-                                    'Class $classNum',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall,
-                                  ),
-                                ),
-                              ),
+            Expanded(
+              child: !hasSelection
+                  ? EmptyState(
+                      icon: Icons.menu_book_rounded,
+                      title: 'No class selected',
+                      subtitle:
+                          'Select your class to get started with your textbooks.',
+                      ctaLabel: 'Select Class',
+                      onCtaTap: () => context.push('/class-selector'),
+                    )
+                  : filteredBooks.isEmpty
+                  ? EmptyState(
+                      icon: Icons.search_off_rounded,
+                      title: 'No books found',
+                      subtitle: isSearching
+                          ? 'No matches for "${_searchController.text.trim()}". Try another word.'
+                          : 'Try a different subject filter.',
+                    )
+                  : CustomScrollView(
+                      slivers: [
+                        for (final classNum in sortedClasses) ...[
+                          if (selectedClasses.length > 1)
                             SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.screenPadding,
-                              ),
-                              sliver: SliverGrid(
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  mainAxisSpacing: 14,
-                                  crossAxisSpacing: 14,
-                                  childAspectRatio: 0.62,
-                                ),
-                                delegate: SliverChildBuilderDelegate(
-                                  (context, index) => BookGridCard(
-                                    book: booksByClass[classNum]![index],
-                                  ),
-                                  childCount: booksByClass[classNum]!.length,
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (!isSearching)
-                            SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.screenPadding,
-                                vertical: 24,
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.screenPadding,
+                                16,
+                                AppSpacing.screenPadding,
+                                12,
                               ),
                               sliver: SliverToBoxAdapter(
-                                child: _AddClassBanner(
-                                  onTap: () =>
-                                      context.push('/class-selector'),
+                                child: Text(
+                                  'Class $classNum',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineSmall,
                                 ),
                               ),
                             ),
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.screenPadding,
+                            ),
+                            sliver: SliverGrid(
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 14,
+                                    childAspectRatio: 0.62,
+                                  ),
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) => BookGridCard(
+                                  book: booksByClass[classNum]![index],
+                                ),
+                                childCount: booksByClass[classNum]!.length,
+                              ),
+                            ),
+                          ),
                         ],
-                      ),
-          ),
-        ],
+                        if (!isSearching)
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.screenPadding,
+                              vertical: 24,
+                            ),
+                            sliver: SliverToBoxAdapter(
+                              child: _AddClassBanner(
+                                onTap: () => context.push('/class-selector'),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -225,9 +233,9 @@ class _AddClassBanner extends StatelessWidget {
             Text(
               'Add another class',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: cs.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: cs.primary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

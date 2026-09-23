@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../app/theme.dart';
-import '../providers/core_providers.dart';
+import '../providers/auth_provider.dart';
 import '../utils/haptics.dart';
 import 'pressable.dart';
 
@@ -13,24 +13,19 @@ class AppShell extends ConsumerWidget {
 
   const AppShell({super.key, required this.child});
 
-  static const _homeTab = ('/', Icons.home_rounded, 'Home');
-  static const _exploreTab = ('/explore', Icons.explore_rounded, 'Explore');
-  static const _libraryTab = ('/library', Icons.menu_book_rounded, 'Library');
-  static const _profileTab = ('/profile', Icons.person_rounded, 'Profile');
+  /// The four tabs. AI sits second because asking a question is the app's
+  /// core action; Library is reached from Home instead of holding a tab.
+  static const _tabs = [
+    ('/', Icons.home_rounded, 'Home'),
+    ('/ai', Icons.auto_awesome_rounded, 'AI'),
+    ('/explore', Icons.explore_rounded, 'Explore'),
+    ('/profile', Icons.person_rounded, 'Profile'),
+  ];
 
-  /// The visible tabs, minus Library when the books feature is disabled — so
-  /// the flag hides the tab entirely rather than leaving a dead surface.
-  List<(String, IconData, String)> _tabsFor(bool booksEnabled) => [
-        _homeTab,
-        _exploreTab,
-        if (booksEnabled) _libraryTab,
-        _profileTab,
-      ];
-
-  int _currentIndex(BuildContext context, List<(String, IconData, String)> tabs) {
+  int _currentIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    for (int i = 0; i < tabs.length; i++) {
-      if (location == tabs[i].$1) return i;
+    for (int i = 0; i < _tabs.length; i++) {
+      if (location == _tabs[i].$1) return i;
     }
     return 0;
   }
@@ -54,8 +49,7 @@ class AppShell extends ConsumerWidget {
     final router = GoRouter.of(context);
     if (router.canPop()) return false;
 
-    final tabs = _tabsFor(ref.read(booksEnabledProvider));
-    if (_currentIndex(context, tabs) != 0) {
+    if (_currentIndex(context) != 0) {
       context.go('/');
       return true;
     }
@@ -65,8 +59,19 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tabs = _tabsFor(ref.watch(booksEnabledProvider));
-    final currentIndex = _currentIndex(context, tabs);
+    final signedIn = ref
+        .watch(authStateProvider)
+        .maybeWhen(data: (user) => user != null, orElse: () => false);
+    if (signedIn) {
+      // The shell stays mounted across all main tabs, so it is the earliest
+      // stable place to hydrate account-owned browsing preferences. The cache
+      // deduplicates this call for the rest of the signed-in session.
+      Future.microtask(
+        ref.read(backendAccountCacheProvider.notifier).ensureExplorePreferences,
+      );
+    }
+
+    final currentIndex = _currentIndex(context);
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hair = isDark ? AppColors.hairline2Dark : AppColors.hairline2;
@@ -85,9 +90,9 @@ class AppShell extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
               child: Row(
-                children: List.generate(tabs.length, (index) {
+                children: List.generate(_tabs.length, (index) {
                   final isActive = index == currentIndex;
-                  final tab = tabs[index];
+                  final tab = _tabs[index];
                   return Expanded(
                     child: _NavBarItem(
                       icon: tab.$2,

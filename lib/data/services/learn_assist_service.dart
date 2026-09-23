@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/learn_assist.dart';
+import 'secure_http_client.dart';
 
 typedef FirebaseIdTokenProvider =
     Future<String?> Function({required bool forceRefresh});
@@ -21,7 +22,7 @@ class LearnAssistService {
     required http.Client client,
     required FirebaseIdTokenProvider idTokenProvider,
     Uri? baseUrl,
-  }) : _client = client,
+  }) : _client = SecureHttpClient(client),
        _idTokenProvider = idTokenProvider,
        _baseUrl = baseUrl ?? defaultBaseUrl;
 
@@ -43,6 +44,79 @@ class LearnAssistService {
   Stream<LearnAssistStreamEvent> chatStream(LearnAssistRequest request) {
     final uri = _baseUrl.resolve('/learnassist/chat/stream');
     return _streamChat(uri, request, forceRefresh: false);
+  }
+
+  /// Clears the agent's working memory for the thread identified by [request]'s
+  /// selectors (board/class/channel/subject), so the next turn starts fresh.
+  /// The permanent chat history is untouched. Throws [LearnAssistApiException]
+  /// on failure, matching [chat].
+  Future<MemoryResetResponse> resetMemory(MemoryResetRequest request) async {
+    final uri = _baseUrl.resolve('/learnassist/memory/reset');
+    final response = await _postReset(uri, request, forceRefresh: false);
+    final decoded = _decodeJsonObject(response.body);
+    return MemoryResetResponse.fromJson(decoded);
+  }
+
+  Future<http.Response> _postReset(
+    Uri uri,
+    MemoryResetRequest request, {
+    required bool forceRefresh,
+  }) async {
+    final token = await _idTokenProvider(forceRefresh: forceRefresh);
+    if (token == null || token.isEmpty) {
+      throw const LearnAssistApiException(
+        'unauthorized',
+        'Please sign in to use Learn Assist.',
+      );
+    }
+
+    http.Response response;
+    try {
+      response = await _client
+          .post(
+            uri,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(request.toJson()),
+          )
+          .timeout(const Duration(seconds: 30));
+    } on TimeoutException {
+      throw const LearnAssistApiException(
+        'network_error',
+        'The request took too long. Please try again.',
+      );
+    } on http.ClientException {
+      throw const LearnAssistApiException(
+        'network_error',
+        'Could not reach the AI service. Please check your connection.',
+      );
+    }
+
+    if (response.statusCode == 401 && !forceRefresh) {
+      return _postReset(uri, request, forceRefresh: true);
+    }
+
+    final decoded = _decodeJsonObject(response.body);
+    final error = decoded['error'];
+    if (error is Map<String, dynamic>) {
+      throw LearnAssistApiException(
+        error['code'] as String? ?? 'service_error',
+        response.statusCode == 401
+            ? 'Please sign in again.'
+            : error['message'] as String? ?? 'Something went wrong.',
+      );
+    }
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw LearnAssistApiException(
+        'service_error',
+        'The AI service returned status ${response.statusCode}.',
+      );
+    }
+
+    return response;
   }
 
   Stream<LearnAssistStreamEvent> _streamChat(
@@ -118,13 +192,22 @@ class LearnAssistService {
 
     var eventName = 'message';
     final dataLines = <String>[];
+    var terminalReceived = false;
+
+    LearnAssistStreamEvent? finishFrame() {
+      if (dataLines.isEmpty) return null;
+      final event = _parseSseEvent(eventName, dataLines.join('\n'));
+      if (event is LearnAssistDoneEvent || event is LearnAssistErrorEvent) {
+        terminalReceived = true;
+      }
+      return event;
+    }
+
     try {
       await for (final line in lines) {
         if (line.isEmpty) {
-          if (dataLines.isNotEmpty) {
-            final event = _parseSseEvent(eventName, dataLines.join('\n'));
-            if (event != null) yield event;
-          }
+          final event = finishFrame();
+          if (event != null) yield event;
           eventName = 'message';
           dataLines.clear();
         } else if (line.startsWith(':')) {
@@ -148,8 +231,14 @@ class LearnAssistService {
     }
     if (dataLines.isNotEmpty) {
       // Flush a trailing event with no terminating blank line.
-      final event = _parseSseEvent(eventName, dataLines.join('\n'));
+      final event = finishFrame();
       if (event != null) yield event;
+    }
+    if (!terminalReceived) {
+      throw const LearnAssistApiException(
+        'interrupted_response',
+        'The response was interrupted. Please try again.',
+      );
     }
   }
 

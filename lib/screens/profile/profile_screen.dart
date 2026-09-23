@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +11,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/avatars.dart';
-import '../../data/seed/seed_data.dart' show boardLabel;
+import '../../data/models/learn_assist.dart' show LearnAssistApiException;
+import '../../data/seed/seed_data.dart'
+    show availableBoardIds, availableClassNumbersForBoard, boardLabel, boards;
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
@@ -44,6 +48,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _restoreFromLocalPrefs();
+    // Revalidate once per screen open (the tab shell rebuilds this screen on
+    // each visit), off the build frame. Every other refresh is driven by an
+    // explicit event — account change, Retry, save — never by a rebuild: the
+    // load rebuilds this screen, so a fetch started from `build` re-triggers
+    // itself for as long as the tab is open.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureProfile(forceRefresh: true);
+    });
+  }
+
+  /// Seeds the form from local prefs — the source of truth while signed out,
+  /// and the placeholder until the backend profile lands.
+  void _restoreFromLocalPrefs() {
     final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
     if (selectedClasses.isNotEmpty) {
       _selectedClass = selectedClasses.first;
@@ -51,6 +69,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _board = ref.read(userBoardProvider);
     _preferredLanguage =
         ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
+  }
+
+  void _ensureProfile({bool forceRefresh = false}) {
+    ref
+        .read(backendAccountCacheProvider.notifier)
+        .ensureProfile(forceRefresh: forceRefresh);
   }
 
   @override
@@ -62,6 +86,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Re-sync only when the signed-in account actually changes. Signing in
+    // fetches the new student's profile; signing out drops the previous
+    // student's name and school so a shared phone doesn't show them to whoever
+    // signs in next.
+    ref.listen(authStateProvider, (previous, next) {
+      final previousUid = previous?.value?.uid;
+      final nextUid = next.value?.uid;
+      if (previousUid == nextUid) return;
+      setState(() {
+        _appliedProfileKey = null;
+        _isEditing = false;
+        _nameController.clear();
+        _schoolController.clear();
+        _selectedClass = 8;
+        _board = 'scert_odisha';
+        _preferredLanguage = 'en';
+        if (nextUid == null) {
+          _restoreFromLocalPrefs();
+        }
+      });
+      if (nextUid != null) {
+        _ensureProfile();
+      }
+    });
+
     final authState = ref.watch(authStateProvider);
     final accountState = ref.watch(backendAccountCacheProvider);
     final isSignedIn = authState.maybeWhen(
@@ -69,16 +118,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       orElse: () => false,
     );
     final user = authState.maybeWhen(data: (u) => u, orElse: () => null);
-    _ensureCachedProfile(user);
-    final cachedProfile = accountState.profile.maybeWhen(
-      data: (profile) => profile,
-      orElse: () => null,
-    );
-    final isProfileLoading = accountState.profile is AsyncLoading;
+    final cachedProfile = accountState.uid == user?.uid
+        ? accountState.profile.maybeWhen(
+            data: (profile) => profile,
+            orElse: () => null,
+          )
+        : null;
+    // Only a first load that is genuinely in flight blocks the form — until it
+    // settles we don't know the student's saved name/school, so letting them
+    // save would overwrite server data with blanks. Both halves matter: a
+    // background revalidation (loaded, refreshing) must never disable the form
+    // — that was the "Edit profile does nothing" report — and a profile that
+    // was never requested must not either, so the form fails open, not shut.
+    final isInitialProfileLoad =
+        isSignedIn &&
+        !accountState.profileLoaded &&
+        accountState.profile is AsyncLoading;
     // A failed backend sync doesn't blank the screen (the form runs off local
     // prefs), but it silently stops the profile from staying in sync — surface
     // it so the student can retry rather than wonder why edits don't stick.
-    final profileSyncFailed = isSignedIn &&
+    final profileSyncFailed =
+        isSignedIn &&
         accountState.profile is AsyncError &&
         cachedProfile == null;
     _applyCachedProfile(cachedProfile);
@@ -90,7 +150,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ? backendName
         : (firebaseName.isNotEmpty ? firebaseName : 'Student');
     final email = user?.email ?? '—';
-    final avatarLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'S';
+    final avatarLetter = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : 'S';
 
     final progress = ref.watch(progressProvider);
     final books = ref.watch(selectedBooksProvider);
@@ -112,8 +174,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _ThemeToggle(
-                      isDark:
-                          Theme.of(context).brightness == Brightness.dark,
+                      isDark: Theme.of(context).brightness == Brightness.dark,
                       onTap: () =>
                           ref.read(themeModeProvider.notifier).toggle(),
                     ),
@@ -142,11 +203,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onTap: _showAvatarPicker,
                     ),
                     const SizedBox(height: 10),
-                    Text(displayName,
-                        style:
-                            Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  fontSize: 21,
-                                )),
+                    Text(
+                      displayName,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(fontSize: 21),
+                    ),
                     const SizedBox(height: 3),
                     Text(
                       isSignedIn
@@ -179,7 +241,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── My Learning (tappable summary → /progress) ───────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 14, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                14,
+                AppSpacing.screenPadding,
+                0,
+              ),
               child: _StatsStrip(
                 streak: progress.currentStreak,
                 aiSessions: progress.aiSessions,
@@ -191,26 +257,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── Student profile form ─────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 16, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                16,
+                AppSpacing.screenPadding,
+                0,
+              ),
               child: const SectionHead(label: 'Student profile'),
             ),
             if (profileSyncFailed)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
+                  AppSpacing.screenPadding,
+                  8,
+                  AppSpacing.screenPadding,
+                  0,
+                ),
                 child: _ProfileSyncErrorBanner(
-                  onRetry: () => ref
-                      .read(backendAccountCacheProvider.notifier)
-                      .ensureProfile(forceRefresh: true),
+                  onRetry: () => _ensureProfile(forceRefresh: true),
                 ),
               ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: _isEditing
                   ? _StudentForm(
                       isSignedIn: isSignedIn,
-                      isLoading: isProfileLoading,
+                      isInitialLoad: isInitialProfileLoad,
                       isSaving: _isProfileSaving,
                       selectedClass: _selectedClass,
                       preferredLanguage: _preferredLanguage,
@@ -220,6 +293,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onClassChanged: (v) => setState(() => _selectedClass = v),
                       onLanguageChanged: (v) =>
                           setState(() => _preferredLanguage = v),
+                      onBoardChanged: _selectBoardForEditing,
                       onSave: _saveStudentProfile,
                       onCancel: _cancelEditing,
                     )
@@ -234,7 +308,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SupportSection(
               headingPadding: EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                24,
+                AppSpacing.screenPadding,
+                0,
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -251,22 +329,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
+    // Clearing the form is handled by the auth listener in `build`, so it also
+    // covers a session that ends without this button (expired/revoked token).
     await _runAuthAction(() {
-      _appliedProfileKey = null;
       return ref.read(authRepositoryProvider).signOut();
-    });
-  }
-
-  void _ensureCachedProfile(User? user) {
-    // Skip the background revalidation while editing: for an account with no
-    // saved profile (no cache), ensureProfile flips `profile` to AsyncLoading,
-    // which drives the form's `isBusy` true and greys out the fields the
-    // student is typing into. Their edits aren't lost when we resume — the
-    // cached profile only re-applies when not editing.
-    if (user == null || _isProfileSaving || _isEditing) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      ref.read(backendAccountCacheProvider.notifier).ensureProfile();
     });
   }
 
@@ -299,7 +365,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _nameController.text = profile.name ?? '';
       });
       _syncLocalProfile(
-          profile.classNo, profile.board, profile.preferredLanguage);
+        profile.classNo,
+        profile.board,
+        profile.preferredLanguage,
+      );
     });
   }
 
@@ -310,13 +379,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _appliedProfileKey = null; // re-apply the cached profile on next build
       // Signed out there is no cached profile to re-apply, so restore the
       // local prefs values directly.
-      final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
-      if (selectedClasses.isNotEmpty) {
-        _selectedClass = selectedClasses.first;
-      }
-      _board = ref.read(userBoardProvider);
-      _preferredLanguage =
-          ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
+      _restoreFromLocalPrefs();
     });
   }
 
@@ -342,15 +405,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               final currentId = ref.watch(avatarIdProvider);
               return Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.screenPadding, 18, AppSpacing.screenPadding, 20),
+                  AppSpacing.screenPadding,
+                  18,
+                  AppSpacing.screenPadding,
+                  20,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Choose your avatar',
-                      style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
-                            fontSize: 18,
-                          ),
+                      style: Theme.of(
+                        ctx,
+                      ).textTheme.headlineMedium?.copyWith(fontSize: 18),
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -396,17 +463,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     if (user == null) {
       // Class, board and language are local prefs, so a signed-out student
       // can still change them — only name/school need the backend.
-      _syncLocalProfile(_selectedClass, _board, _preferredLanguage);
+      _syncLocalProfile(
+        _selectedClass,
+        _board,
+        _preferredLanguage,
+        syncExploreClass: true,
+      );
       setState(() => _isEditing = false);
       Haptics.medium(ref);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated.')));
       return;
     }
 
     setState(() => _isProfileSaving = true);
+    var submittedRevision = 0;
     try {
+      final currentProfile = ref
+          .read(backendAccountCacheProvider)
+          .profile
+          .maybeWhen(data: (profile) => profile, orElse: () => null);
+      submittedRevision = currentProfile?.revision ?? 0;
       final savedProfile = await ref
           .read(backendAccountCacheProvider.notifier)
           .saveProfile(
@@ -416,12 +494,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               preferredLanguage: _preferredLanguage,
               schoolName: _schoolController.text,
               name: _nameController.text,
+              revision: submittedRevision,
             ),
           );
 
-      _syncLocalProfile(savedProfile.classNo, savedProfile.board,
-          savedProfile.preferredLanguage);
-      if (!mounted) return;
+      if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
+        return;
+      }
+      if (submittedRevision == 0 && savedProfile.revision == 1) {
+        unawaited(
+          ref
+              .read(learningEventServiceProvider)
+              .recordBestEffort(
+                eventType: 'onboarding_completed',
+                feature: 'session',
+              ),
+        );
+      }
+      _syncLocalProfile(
+        savedProfile.classNo,
+        savedProfile.board,
+        savedProfile.preferredLanguage,
+      );
       setState(() {
         _selectedClass = savedProfile.classNo;
         _preferredLanguage = savedProfile.preferredLanguage;
@@ -435,10 +529,83 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SnackBar(content: Text('Profile updated successfully.')),
       );
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
+        return;
+      }
       Haptics.error(ref);
+      if (error is LearnAssistApiException &&
+          error.code == 'profile_conflict') {
+        StudentProfile? latest;
+        try {
+          latest = await ref
+              .read(backendAccountCacheProvider.notifier)
+              .ensureProfile(forceRefresh: true);
+        } catch (_) {
+          // Keep the student's edits. A later retry will re-fetch the profile.
+        }
+        // AccountCache may return its stale cached profile when a refresh
+        // fails. A conflict guarantees the server has a newer revision.
+        if (latest != null && latest.revision <= submittedRevision) {
+          latest = null;
+        }
+        if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
+          return;
+        }
+        if (latest != null) {
+          final useLatest = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Profile changed elsewhere'),
+              content: Text(
+                'The latest saved profile is ${latest!.name ?? 'Student'}, '
+                'class ${latest.classNo} (${boardLabel(latest.board)}), '
+                'language ${latest.preferredLanguage}, '
+                'school ${latest.schoolName ?? 'none'}. '
+                'Your edits are still here. Use the latest profile or keep '
+                'editing and save your version?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Keep my edits'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Use latest'),
+                ),
+              ],
+            ),
+          );
+          if (mounted && useLatest == true) {
+            setState(() {
+              _selectedClass = latest!.classNo;
+              _preferredLanguage = latest.preferredLanguage;
+              _board = latest.board;
+              _schoolController.text = latest.schoolName ?? '';
+              _nameController.text = latest.name ?? '';
+              _isEditing = false;
+            });
+            _syncLocalProfile(
+              latest.classNo,
+              latest.board,
+              latest.preferredLanguage,
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Profile changed elsewhere. Your edits are kept; refresh and try again.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Couldn\'t save your profile. Please try again.')),
+        const SnackBar(
+          content: Text('Couldn\'t save your profile. Please try again.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -447,10 +614,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _syncLocalProfile(int classNo, String board, String language) {
+  void _syncLocalProfile(
+    int classNo,
+    String board,
+    String language, {
+    bool syncExploreClass = false,
+  }) {
     ref.read(userBoardProvider.notifier).setBoard(board);
-    ref.read(userSelectionProvider.notifier).setClasses({classNo});
+    if (syncExploreClass) {
+      ref.read(userSelectionProvider.notifier).setClasses({classNo});
+    }
+    ref.read(subjectFilterProvider.notifier).setFilter(null);
     ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
+  }
+
+  void _selectBoardForEditing(String board) {
+    final availableClasses = availableClassNumbersForBoard(board).toList()
+      ..sort();
+    if (availableClasses.isEmpty) return;
+
+    setState(() {
+      _board = board;
+      if (!availableClasses.contains(_selectedClass)) {
+        _selectedClass = availableClasses.first;
+      }
+    });
   }
 
   Future<void> _copyFirebaseIdToken() async {
@@ -477,8 +665,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       // The user backing out of the Google sheet is not an error — stay quiet.
       if (_isUserCancellation(error)) return;
       Haptics.error(ref);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(_friendlyAuthError(error))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_friendlyAuthError(error))));
     } finally {
       if (mounted) {
         setState(() => _isAuthBusy = false);
@@ -547,9 +736,7 @@ class _ThemeToggle extends StatelessWidget {
             child: ScaleTransition(scale: animation, child: child),
           ),
           child: Icon(
-            isDark
-                ? Icons.nightlight_round
-                : Icons.wb_sunny_rounded,
+            isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
             key: ValueKey(isDark),
             size: 20,
             color: accent,
@@ -599,18 +786,20 @@ class _BigAvatar extends StatelessWidget {
               boxShadow: clay
                   ? [
                       BoxShadow(
-                        color: (isDark
-                                ? AppColors.clayShadowDark
-                                : AppColors.clayShadow)
-                            .withValues(alpha: isDark ? 0.55 : 0.7),
+                        color:
+                            (isDark
+                                    ? AppColors.clayShadowDark
+                                    : AppColors.clayShadow)
+                                .withValues(alpha: isDark ? 0.55 : 0.7),
                         blurRadius: 16,
                         offset: const Offset(5, 5),
                       ),
                       BoxShadow(
-                        color: (isDark
-                                ? AppColors.clayHighlightDark
-                                : AppColors.clayHighlight)
-                            .withValues(alpha: isDark ? 0.30 : 0.9),
+                        color:
+                            (isDark
+                                    ? AppColors.clayHighlightDark
+                                    : AppColors.clayHighlight)
+                                .withValues(alpha: isDark ? 0.30 : 0.9),
                         blurRadius: 16,
                         offset: const Offset(-5, -5),
                       ),
@@ -629,9 +818,9 @@ class _BigAvatar extends StatelessWidget {
                 : Text(
                     letter,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontSize: 38,
-                          color: cs.primary,
-                        ),
+                      fontSize: 38,
+                      color: cs.primary,
+                    ),
                   ),
           ),
           if (onTap != null)
@@ -646,11 +835,7 @@ class _BigAvatar extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: cs.surface, width: 2.5),
                 ),
-                child: Icon(
-                  Icons.edit_rounded,
-                  size: 13,
-                  color: cs.onPrimary,
-                ),
+                child: Icon(Icons.edit_rounded, size: 13, color: cs.onPrimary),
               ),
             ),
         ],
@@ -709,9 +894,9 @@ class _AvatarChoice extends StatelessWidget {
                 : Text(
                     letter,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontSize: 24,
-                          color: cs.primary,
-                        ),
+                      fontSize: 24,
+                      color: cs.primary,
+                    ),
                   ),
           ),
           if (selected)
@@ -726,11 +911,7 @@ class _AvatarChoice extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: cs.surface, width: 2),
                 ),
-                child: Icon(
-                  Icons.check_rounded,
-                  size: 12,
-                  color: cs.onPrimary,
-                ),
+                child: Icon(Icons.check_rounded, size: 12, color: cs.onPrimary),
               ),
             ),
         ],
@@ -792,10 +973,10 @@ class _StatsStripState extends State<_StatsStrip> {
                       Text(
                         'View details',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13,
-                            ),
+                          color: cs.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                       ),
                       Icon(
                         Icons.chevron_right_rounded,
@@ -829,7 +1010,9 @@ class _StatsStripState extends State<_StatsStrip> {
                   _Divider(),
                   Expanded(
                     child: _Stat(
-                      color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                      color: isDark
+                          ? AppColors.cEnglishDark
+                          : AppColors.cEnglish,
                       icon: Icons.menu_book_rounded,
                       value: '${widget.books}',
                       label: 'Books',
@@ -869,10 +1052,9 @@ class _Stat extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontSize: 21,
-                    height: 1,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontSize: 21, height: 1),
             ),
           ],
         ),
@@ -880,9 +1062,9 @@ class _Stat extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w500,
-              ),
+            fontSize: 11.5,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -921,10 +1103,10 @@ class _AuthButton extends StatelessWidget {
   });
 
   const _AuthButton.loading()
-      : isSignedIn = false,
-        isBusy = true,
-        onTap = null,
-        onLongPress = null;
+    : isSignedIn = false,
+      isBusy = true,
+      onTap = null,
+      onLongPress = null;
 
   @override
   Widget build(BuildContext context) {
@@ -962,9 +1144,9 @@ class _AuthButton extends StatelessWidget {
             Text(
               isSignedIn ? 'Sign out' : 'Sign in with Google',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: accent,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: accent,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -998,9 +1180,9 @@ class _ProfileSyncErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               "Couldn't sync your profile.",
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: cs.onErrorContainer,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer),
             ),
           ),
           TextButton(
@@ -1079,9 +1261,9 @@ class _ProfileSummary extends StatelessWidget {
               icon: const Icon(Icons.edit_rounded, size: 16),
               label: Text(
                 'Edit profile',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: cs.primary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: cs.primary),
               ),
             ),
           ),
@@ -1116,8 +1298,7 @@ class _SummaryRow extends StatelessWidget {
           : BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color:
-                      isDark ? AppColors.hairline2Dark : AppColors.hairline2,
+                  color: isDark ? AppColors.hairline2Dark : AppColors.hairline2,
                 ),
               ),
             ),
@@ -1128,9 +1309,9 @@ class _SummaryRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                  ),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
           Expanded(
@@ -1139,11 +1320,11 @@ class _SummaryRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: muted
-                        ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
-                        : cs.onSurface,
-                  ),
+                fontWeight: FontWeight.w600,
+                color: muted
+                    ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
+                    : cs.onSurface,
+              ),
             ),
           ),
         ],
@@ -1156,7 +1337,12 @@ class _SummaryRow extends StatelessWidget {
 
 class _StudentForm extends StatelessWidget {
   final bool isSignedIn;
-  final bool isLoading;
+
+  /// True only until the student's saved profile has been read for the first
+  /// time. Saving before that would push blanks over their stored name/school,
+  /// so the form waits — but a *background* refresh never sets this, or the
+  /// form would go dead every time it re-synced.
+  final bool isInitialLoad;
   final bool isSaving;
   final int selectedClass;
   final String preferredLanguage;
@@ -1165,12 +1351,13 @@ class _StudentForm extends StatelessWidget {
   final TextEditingController schoolController;
   final ValueChanged<int> onClassChanged;
   final ValueChanged<String> onLanguageChanged;
+  final ValueChanged<String> onBoardChanged;
   final VoidCallback onSave;
   final VoidCallback onCancel;
 
   const _StudentForm({
     required this.isSignedIn,
-    required this.isLoading,
+    required this.isInitialLoad,
     required this.isSaving,
     required this.selectedClass,
     required this.preferredLanguage,
@@ -1179,6 +1366,7 @@ class _StudentForm extends StatelessWidget {
     required this.schoolController,
     required this.onClassChanged,
     required this.onLanguageChanged,
+    required this.onBoardChanged,
     required this.onSave,
     required this.onCancel,
   });
@@ -1186,12 +1374,13 @@ class _StudentForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isBusy = isLoading || isSaving;
-    final langLabel = const {
-      'en': 'English',
-      'or': 'Odia',
-      'hi': 'Hindi',
-    }[preferredLanguage] ??
+    final isBusy = isInitialLoad || isSaving;
+    final langLabel =
+        const {
+          'en': 'English',
+          'or': 'Odia',
+          'hi': 'Hindi',
+        }[preferredLanguage] ??
         'English';
 
     return Container(
@@ -1217,15 +1406,20 @@ class _StudentForm extends StatelessWidget {
             value: 'Class $selectedClass',
             onTap: isBusy
                 ? null
-                : () => _showClassPicker(context, onClassChanged, selectedClass),
+                : () => _showClassPicker(
+                    context,
+                    onClassChanged,
+                    selectedClass,
+                    board,
+                  ),
           ),
           const SizedBox(height: 12),
-          // Single supported board today; shown for transparency, picker
-          // activates once the backend accepts more boards.
           _Field<String>(
             label: 'Board',
             value: boardLabel(board),
-            onTap: null,
+            onTap: isBusy
+                ? null
+                : () => _showBoardPicker(context, onBoardChanged, board),
           ),
           const SizedBox(height: 12),
           _Field<String>(
@@ -1234,7 +1428,10 @@ class _StudentForm extends StatelessWidget {
             onTap: isBusy
                 ? null
                 : () => _showLanguagePicker(
-                    context, onLanguageChanged, preferredLanguage),
+                    context,
+                    onLanguageChanged,
+                    preferredLanguage,
+                  ),
           ),
           const SizedBox(height: 12),
           _TextInput(
@@ -1251,12 +1448,32 @@ class _StudentForm extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
+          // The fields are greyed out while the first load runs; say why,
+          // rather than leaving the student tapping a form that ignores them.
+          if (isInitialLoad) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const SizedBox.square(
+                  dimension: 13,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 9),
+                Text(
+                  'Loading your saved profile…',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: isBusy ? null : onCancel,
+                  // Cancel stays live even mid-load: it only drops back to the
+                  // summary, and a student must always be able to back out.
+                  onPressed: isSaving ? null : onCancel,
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: cs.outline),
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1295,19 +1512,22 @@ class _StudentForm extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        const SnackBar(
-            content: Text('Sign in to edit your name and school.')),
+        const SnackBar(content: Text('Sign in to edit your name and school.')),
       );
   }
 
-  void _showClassPicker(BuildContext context,
-      ValueChanged<int> onChanged, int current) {
+  void _showClassPicker(
+    BuildContext context,
+    ValueChanged<int> onChanged,
+    int current,
+    String board,
+  ) {
+    final availableClasses = availableClassNumbersForBoard(board);
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -1316,16 +1536,23 @@ class _StudentForm extends StatelessWidget {
             itemCount: 12,
             itemBuilder: (_, i) {
               final c = i + 1;
+              final isAvailable = availableClasses.contains(c);
               return ListTile(
                 title: Text('Class $c'),
+                subtitle: isAvailable ? null : const Text('Coming soon'),
                 trailing: c == current
-                    ? Icon(Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
                     : null,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  onChanged(c);
-                },
+                enabled: isAvailable,
+                onTap: isAvailable
+                    ? () {
+                        Navigator.of(ctx).pop();
+                        onChanged(c);
+                      }
+                    : null,
               );
             },
           ),
@@ -1334,15 +1561,60 @@ class _StudentForm extends StatelessWidget {
     );
   }
 
-  void _showLanguagePicker(BuildContext context,
-      ValueChanged<String> onChanged, String current) {
+  void _showBoardPicker(
+    BuildContext context,
+    ValueChanged<String> onChanged,
+    String current,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: boards.map((b) {
+              final isAvailable = availableBoardIds.contains(b.id);
+              return ListTile(
+                title: Text(b.name),
+                subtitle: Text(
+                  isAvailable ? b.state : '${b.state} · Coming soon',
+                ),
+                trailing: b.id == current
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
+                    : null,
+                enabled: isAvailable,
+                onTap: isAvailable
+                    ? () {
+                        Navigator.of(ctx).pop();
+                        onChanged(b.id);
+                      }
+                    : null,
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLanguagePicker(
+    BuildContext context,
+    ValueChanged<String> onChanged,
+    String current,
+  ) {
     const langs = {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'};
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
         return SafeArea(
@@ -1352,8 +1624,10 @@ class _StudentForm extends StatelessWidget {
               return ListTile(
                 title: Text(e.value),
                 trailing: e.key == current
-                    ? Icon(Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
                     : null,
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -1385,23 +1659,20 @@ class _Field<T> extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-              ),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+          ),
         ),
         const SizedBox(height: 7),
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surface3Dark : AppColors.surface3,
               border: Border.all(
-                color: isDark
-                    ? AppColors.hairline2Dark
-                    : AppColors.hairline2,
+                color: isDark ? AppColors.hairline2Dark : AppColors.hairline2,
               ),
               borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
             ),
@@ -1411,16 +1682,17 @@ class _Field<T> extends StatelessWidget {
                   child: Text(
                     value,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: cs.onSurface,
-                        ),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: cs.onSurface,
+                    ),
                   ),
                 ),
-                Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 19,
-                    color:
-                        isDark ? AppColors.ink3Dark : AppColors.ink3),
+                Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 19,
+                  color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+                ),
               ],
             ),
           ),
@@ -1457,10 +1729,10 @@ class _TextInput extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-              ),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+          ),
         ),
         const SizedBox(height: 7),
         GestureDetector(

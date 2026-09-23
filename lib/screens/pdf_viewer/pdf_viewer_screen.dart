@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +10,9 @@ import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/models/book.dart';
 import '../../data/models/highlight.dart';
+import '../../data/services/secure_http_client.dart';
 import '../../providers/core_providers.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/reading_provider.dart';
 import '../../providers/progress_provider.dart';
 import 'widgets/highlight_overlay.dart';
@@ -59,6 +62,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
     _sessionStartTime = DateTime.now();
     _loadPreferences();
     _loadPdf();
+    unawaited(ref.read(learningEventServiceProvider).recordBestEffort(
+      eventType: 'content_opened',
+      feature: 'book',
+      board: widget.book.boardId,
+      classNo: widget.book.classNumber,
+    ));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(readingProvider.notifier).setLastRead(widget.book);
     });
@@ -432,7 +441,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       // Stream to a temp file and rename on success, so an interrupted
       // download never leaves a half-written .pdf that later reads as valid.
       final tmpFile = File('$filePath.part');
-      final client = http.Client();
+      final client = SecureHttpClient(http.Client());
       try {
         final request = http.Request('GET', Uri.parse(widget.book.pdfUrl));
         final response = await client.send(request);

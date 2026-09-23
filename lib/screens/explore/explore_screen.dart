@@ -1,10 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../providers/core_providers.dart';
+import '../../providers/books_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/ingested_books_provider.dart';
+import '../../providers/lab_provider.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/user_selection_provider.dart';
+import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/pressable.dart';
@@ -18,15 +26,58 @@ class ExploreScreen extends ConsumerWidget {
   void _open(BuildContext context, WidgetRef ref, _Tool tool) {
     Haptics.light(ref);
     ref.read(userPrefsRepositoryProvider).recordToolOpened(tool.id);
+    final selectedClasses = ref.read(userSelectionProvider);
+    unawaited(
+      ref
+          .read(learningEventServiceProvider)
+          .recordBestEffort(
+            eventType: 'content_opened',
+            feature: 'tool',
+            board: ref.read(userBoardProvider),
+            classNo: selectedClasses.length == 1
+                ? selectedClasses.single
+                : null,
+          ),
+    );
     ref.read(progressProvider.notifier).refresh();
     context.push(tool.route);
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final signedIn = ref
+        .watch(authStateProvider)
+        .maybeWhen(data: (user) => user != null, orElse: () => false);
+    final account = ref.watch(backendAccountCacheProvider);
+    if (signedIn &&
+        (!account.profileLoaded || !account.explorePreferencesLoaded)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final cache = ref.read(backendAccountCacheProvider.notifier);
+        cache.ensureProfile();
+        cache.ensureExplorePreferences();
+      });
+    }
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tools = _tools(isDark);
-    final soon = _soon(isDark);
+    final labsEnabled = ref.watch(labsEnabledProvider);
+    final classes = ref.watch(userSelectionProvider).toList()..sort();
+    final board = ref.watch(userBoardProvider);
+    final labsAvailable = labAvailableForSelection(
+      enabled: labsEnabled,
+      board: board,
+      selectedClasses: classes,
+    );
+    final tools = _tools(isDark, labsAvailable);
+    final soon = _soon(isDark, labsEnabled);
+    final aiCatalog = ref.watch(activeIngestedBooksProvider);
+    final aiSubjects = classes.fold<int>(
+      0,
+      (total, classNo) => total + aiCatalog.subjectsFor(board, classNo).length,
+    );
+    final booksEnabled = ref.watch(booksEnabledProvider);
+    final bookCount = booksEnabled
+        ? ref.watch(selectedBooksProvider).length
+        : 0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -38,29 +89,69 @@ class ExploreScreen extends ConsumerWidget {
               title: 'Explore',
               sub: 'Hands-on, interactive learning',
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.school_rounded, size: 28),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              classes.isEmpty
+                                  ? 'Choose your classes'
+                                  : classes.length == 1
+                                  ? 'Class ${classes.single}'
+                                  : '${classes.length} classes selected',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              '${boardLabel(board)} · ${booksEnabled ? '$bookCount books · ' : ''}${aiSubjects == 0 ? 'AI textbooks coming soon' : '$aiSubjects AI subjects'}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/class-selector'),
+                        child: const Text('Change'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: AppSpacing.sectionGap - 14),
             const Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(label: 'Explore & Play'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
-              child: _Grid(
-                items: tools,
-                onTap: (t) => _open(context, ref, t),
+                horizontal: AppSpacing.screenPadding,
               ),
+              child: _Grid(items: tools, onTap: (t) => _open(context, ref, t)),
             ),
             const SizedBox(height: AppSpacing.sectionGap),
             const Padding(
-              padding:
-                  EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(label: 'Coming soon'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: _Grid(items: soon, soon: true),
             ),
           ],
@@ -79,24 +170,26 @@ class _Grid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: (context, c) {
-      const gap = AppSpacing.stackGap;
-      final cellW = (c.maxWidth - gap) / 2;
-      return Wrap(
-        spacing: gap,
-        runSpacing: gap,
-        children: items.map((t) {
-          return SizedBox(
-            width: cellW,
-            child: _ToolCard(
-              tool: t,
-              soon: soon,
-              onTap: onTap == null ? null : () => onTap!(t),
-            ),
-          );
-        }).toList(),
-      );
-    });
+    return LayoutBuilder(
+      builder: (context, c) {
+        const gap = AppSpacing.stackGap;
+        final cellW = (c.maxWidth - gap) / 2;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: items.map((t) {
+            return SizedBox(
+              width: cellW,
+              child: _ToolCard(
+                tool: t,
+                soon: soon,
+                onTap: onTap == null ? null : () => onTap!(t),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
   }
 }
 
@@ -112,83 +205,89 @@ class _ToolCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Pressable(
-      onTap: soon ? null : onTap,
-      child: Opacity(
-        opacity: soon ? 0.72 : 1,
-        child: Container(
-          height: 152,
-          padding: const EdgeInsets.all(AppSpacing.cardPad),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            border: Border.all(color: cs.outline),
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          ),
-          child: Stack(
-            clipBehavior: Clip.hardEdge,
-            children: [
-              // faint glyph backdrop
-              Positioned(
-                right: -16,
-                bottom: -18,
-                child: Icon(
-                  tool.icon,
-                  size: 92,
-                  color: tool.color.withValues(alpha: 0.12),
+    return Semantics(
+      button: !soon,
+      enabled: !soon,
+      label: soon ? '${tool.title}, coming soon' : tool.title,
+      child: Pressable(
+        onTap: soon ? null : onTap,
+        child: Opacity(
+          opacity: soon ? 0.72 : 1,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 152),
+            padding: const EdgeInsets.all(AppSpacing.cardPad),
+            decoration: BoxDecoration(
+              color: cs.surface,
+              border: Border.all(color: cs.outline),
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            ),
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                // faint glyph backdrop
+                Positioned(
+                  right: -16,
+                  bottom: -18,
+                  child: Icon(
+                    tool.icon,
+                    size: 92,
+                    color: tool.color.withValues(alpha: 0.12),
+                  ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Tile(color: tool.color, icon: tool.icon, size: 46),
-                      if (soon)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color:
-                                  isDark ? AppColors.hairlineDark : AppColors.hairline,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Tile(color: tool.color, icon: tool.icon, size: 46),
+                        if (soon)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
                             ),
-                            borderRadius: BorderRadius.circular(999),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.hairlineDark
+                                    : AppColors.hairline,
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'SOON',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: isDark
+                                    ? AppColors.ink3Dark
+                                    : AppColors.ink3,
+                              ),
+                            ),
                           ),
-                          child: Text(
-                            'SOON',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.5,
-                              color: isDark
-                                  ? AppColors.ink3Dark
-                                  : AppColors.ink3,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Text(
-                    tool.title,
-                    style:
-                        Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontSize: 16.5,
-                              height: 1.12,
-                            ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    tool.sub,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 12.5,
-                        ),
-                  ),
-                ],
-              ),
-            ],
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      tool.title,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontSize: 16.5, height: 1.12),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      tool.sub,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -216,78 +315,89 @@ class _Tool {
   });
 }
 
-List<_Tool> _tools(bool isDark) => [
-      _Tool(
-        id: 'python',
-        title: 'Python',
-        sub: 'Learn to code, playfully',
-        icon: Icons.code_rounded,
-        color: isDark ? AppColors.cPythonDark : AppColors.cPython,
-        route: '/learn/python',
-      ),
-      _Tool(
-        id: 'math-formulas',
-        title: 'Formulas',
-        sub: 'Formulas & calculator',
-        icon: Icons.functions_rounded,
-        color: isDark ? AppColors.cFormulasDark : AppColors.cFormulas,
-        route: '/learn/math-formulas',
-      ),
-      _Tool(
-        id: 'periodic-table',
-        title: 'Periodic Table',
-        sub: 'Explore the elements',
-        icon: Icons.grid_view_rounded,
-        color: isDark ? AppColors.cPeriodicDark : AppColors.cPeriodic,
-        route: '/learn/periodic-table',
-      ),
-      _Tool(
-        id: 'vocabulary',
-        title: 'Vocabulary',
-        sub: 'Build your word power',
-        icon: Icons.menu_book_outlined,
-        color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-        route: '/learn/vocabulary',
-      ),
-      _Tool(
-        id: 'diagrams',
-        title: 'Diagrams',
-        sub: 'Interactive diagrams',
-        icon: Icons.account_tree_rounded,
-        color: isDark ? AppColors.cDiagramsDark : AppColors.cDiagrams,
-        route: '/learn/diagrams',
-      ),
-      _Tool(
-        id: 'timeline',
-        title: 'Timeline',
-        sub: 'Major history events',
-        icon: Icons.timeline_rounded,
-        color: isDark ? AppColors.cTimelineDark : AppColors.cTimeline,
-        route: '/learn/timeline',
-      ),
-      _Tool(
-        id: 'cosmulator',
-        title: 'Cosmulator',
-        sub: 'Solar system in 3D',
-        icon: Icons.public_rounded,
-        color: isDark ? AppColors.cCosmosDark : AppColors.cCosmos,
-        route: '/learn/cosmulator',
-      ),
-    ];
+List<_Tool> _tools(bool isDark, bool labsEnabled) => [
+  // Math is a hub: tables, drills, quizzes and Formulas all live inside it.
+  _Tool(
+    id: 'math',
+    title: 'Math',
+    sub: 'Tables, drills & quizzes',
+    icon: Icons.calculate_rounded,
+    color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
+    route: '/learn/math',
+  ),
+  _Tool(
+    id: 'python',
+    title: 'Python',
+    sub: 'Learn to code, playfully',
+    icon: Icons.code_rounded,
+    color: isDark ? AppColors.cPythonDark : AppColors.cPython,
+    route: '/learn/python',
+  ),
+  _Tool(
+    id: 'periodic-table',
+    title: 'Periodic Table',
+    sub: 'Explore the elements',
+    icon: Icons.grid_view_rounded,
+    color: isDark ? AppColors.cPeriodicDark : AppColors.cPeriodic,
+    route: '/learn/periodic-table',
+  ),
+  _Tool(
+    id: 'vocabulary',
+    title: 'Vocabulary',
+    sub: 'Build your word power',
+    icon: Icons.menu_book_outlined,
+    color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+    route: '/learn/vocabulary',
+  ),
+  _Tool(
+    id: 'diagrams',
+    title: 'Diagrams',
+    sub: 'Interactive diagrams',
+    icon: Icons.account_tree_rounded,
+    color: isDark ? AppColors.cDiagramsDark : AppColors.cDiagrams,
+    route: '/learn/diagrams',
+  ),
+  _Tool(
+    id: 'timeline',
+    title: 'Timeline',
+    sub: 'Major history events',
+    icon: Icons.timeline_rounded,
+    color: isDark ? AppColors.cTimelineDark : AppColors.cTimeline,
+    route: '/learn/timeline',
+  ),
+  _Tool(
+    id: 'cosmulator',
+    title: 'Cosmulator',
+    sub: 'Solar system in 3D',
+    icon: Icons.public_rounded,
+    color: isDark ? AppColors.cCosmosDark : AppColors.cCosmos,
+    route: '/learn/cosmulator',
+  ),
+  if (labsEnabled)
+    _Tool(
+      id: 'virtual-lab',
+      title: 'Science Lab',
+      sub: 'Try two experiments',
+      icon: Icons.science_rounded,
+      color: isDark ? AppColors.cScienceDark : AppColors.cScience,
+      route: '/labs',
+    ),
+];
 
-List<_Tool> _soon(bool isDark) => [
-      _Tool(
-        id: 'quizzes',
-        title: 'Quizzes',
-        sub: 'Test yourself',
-        icon: Icons.help_outline_rounded,
-        color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-      ),
-      _Tool(
-        id: 'virtual-lab',
-        title: 'Virtual Science Lab',
-        sub: 'Run experiments',
-        icon: Icons.science_rounded,
-        color: isDark ? AppColors.cScienceDark : AppColors.cScience,
-      ),
-    ];
+List<_Tool> _soon(bool isDark, bool labsEnabled) => [
+  _Tool(
+    id: 'quizzes',
+    title: 'Quizzes',
+    sub: 'Test yourself',
+    icon: Icons.help_outline_rounded,
+    color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+  ),
+  if (!labsEnabled)
+    _Tool(
+      id: 'virtual-lab',
+      title: 'Virtual Science Lab',
+      sub: 'Run experiments',
+      icon: Icons.science_rounded,
+      color: isDark ? AppColors.cScienceDark : AppColors.cScience,
+    ),
+];

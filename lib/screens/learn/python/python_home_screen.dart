@@ -9,6 +9,7 @@ import '../../../providers/python_progress_provider.dart';
 import '../../../utils/haptics.dart';
 import '../../../widgets/calm_widgets.dart';
 import '../../../widgets/pressable.dart';
+import 'python_icons.dart';
 
 // ─── Python home ──────────────────────────────────────────────────────────────
 //
@@ -33,7 +34,7 @@ class PythonHomeScreen extends ConsumerWidget {
         children: [
           const PageTitle(
             title: 'Learn Python',
-            sub: 'Code step by step — read, run, and play 🐍',
+            sub: 'Code step by step — read, run, and play',
           ),
           const SizedBox(height: 8),
           _HeaderCard(progress: progress, accent: accent),
@@ -187,7 +188,15 @@ class _PlaygroundCard extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              const Text('🧪', style: TextStyle(fontSize: 26)),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.terminal_rounded, color: accent, size: 24),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -297,8 +306,7 @@ class _ChapterCard extends ConsumerWidget {
                   color: accent.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
                 ),
-                child: Text(chapter.emoji,
-                    style: const TextStyle(fontSize: 24)),
+                child: Icon(chapterIcon(chapter.id), color: accent, size: 24),
               ),
               const SizedBox(width: 14),
               Expanded(

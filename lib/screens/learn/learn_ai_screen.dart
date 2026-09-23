@@ -10,8 +10,11 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../app/theme.dart';
+import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
 import '../../data/models/ingested_books.dart';
+import '../../data/seed/ai_suggestions.dart';
+import '../../data/models/answer_style.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
@@ -20,6 +23,7 @@ import '../../providers/learn_assist_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/recent_questions_provider.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
@@ -33,11 +37,34 @@ class LearnAiScreen extends ConsumerStatefulWidget {
   /// [initialPrompt] always focuses regardless of this flag.
   final bool autofocus;
 
+  /// Conversation to open on, e.g. a subject chip tapped on the AI hub.
+  /// Ignored when the subject isn't one of the ingested subjects for the
+  /// student's board/class, so a stale deep link falls back to all-subjects.
+  final String? initialSubject;
+
+  /// Open the camera/gallery sheet on arrival — the "snap a photo" shortcut.
+  /// Takes precedence over [autofocus]: raising the keyboard behind a modal
+  /// sheet would leave it up once the picker closes.
+  final bool openCamera;
+
+  /// Arrived from a "pick up where you left off" card. Bypasses the fresh-start
+  /// rule below: the student picked a specific past conversation, so hiding it
+  /// behind a "Load previous chat" tap would ignore what they just asked for.
+  final bool resume;
+
+  /// How the student asked for the answer to be pitched (the AI tab's hero
+  /// switch). Applied to the first message of this session only.
+  final AnswerStyle answerStyle;
+
   const LearnAiScreen({
     super.key,
     this.channel = LearnAssistChannel.learnAssist,
     this.initialPrompt,
     this.autofocus = false,
+    this.initialSubject,
+    this.openCamera = false,
+    this.resume = false,
+    this.answerStyle = AnswerStyle.ask,
   });
 
   @override
@@ -54,6 +81,11 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   String? _selectedSubject;
   String _languageMode = 'auto';
   bool _isSending = false;
+
+  /// The answer-style hint rides along with the first message only — after that
+  /// the conversation carries its own tone, so repeating it every turn would
+  /// just burn context.
+  bool _styleHintSent = false;
 
   /// Index into [_messages] of the in-progress streamed answer, or null before
   /// the first token has arrived. Used to grow that one message in place
@@ -122,14 +154,31 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedClass = resolveLearnAssistClass(ref.read(userSelectionProvider));
+    final profile = ref
+        .read(backendAccountCacheProvider)
+        .profile
+        .maybeWhen(data: (value) => value, orElse: () => null);
+    _selectedClass = resolveLearnAssistClass(
+      ref.read(userSelectionProvider),
+      primaryClass: profile?.classNo,
+    );
+    // A subject from the route (AI hub chip). build() drops it again if it
+    // isn't one of the ingested subjects for this board/class.
+    final subject = widget.initialSubject?.trim();
+    _selectedSubject = (subject != null && subject.isNotEmpty) ? subject : null;
     final prefill = widget.initialPrompt?.trim() ?? '';
     if (prefill.isNotEmpty) {
       _messageController.text = prefill;
     }
-    // Focus the composer (keyboard up) when arriving from a tapped suggestion
-    // or the Home Ask bar, so the screen lands ready to type/send.
-    if (prefill.isNotEmpty || widget.autofocus) {
+    if (widget.openCamera) {
+      // "Snap a photo" shortcut: land straight on the picker instead of the
+      // keyboard, so the student never has to find the attach button.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showImageSourceSheet();
+      });
+    } else if (prefill.isNotEmpty || widget.autofocus) {
+      // Focus the composer (keyboard up) when arriving from a tapped suggestion
+      // or the Home Ask bar, so the screen lands ready to type/send.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _composerFocusNode.requestFocus();
       });
@@ -137,12 +186,19 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // Fresh-start rule: if the student last chatted more than 30 minutes ago,
     // keep the previous conversation hidden behind a tap so the screen opens
     // on suggestions. A brand-new user (no activity yet) has nothing to hide.
+    // A resume tap opts out — that student asked for this thread by name.
     final lastActivity = ref
         .read(userPrefsRepositoryProvider)
         .getChatLastActivity(widget.channel);
     _historyHidden =
+        !widget.resume &&
         lastActivity != null &&
         DateTime.now().difference(lastActivity) > _staleChatThreshold;
+    if (widget.resume && lastActivity != null) {
+      // Same bookkeeping "Load previous chat" does: the thread is on screen
+      // now, so backing out and reopening shouldn't hide it again.
+      ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
+    }
     _ensureAccountSummary();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
   }
@@ -166,6 +222,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   /// screen and load that conversation's own saved history, so the screen always
   /// matches the model's per-conversation memory.
   void _switchConversation(VoidCallback applySelection) {
+    if (_isSending) return;
     setState(() {
       applySelection();
       _messages.clear();
@@ -174,9 +231,74 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       // into the wrong bubble.
       _streamingMessageIndex = null;
       _historyNextBefore = null;
+      _isLoadingOlder = false;
       _isRevalidating = false;
     });
     _loadHistory();
+  }
+
+  /// Student tapped "Start fresh": confirm, then clear the agent's working
+  /// memory for the current thread (board/class/subject) on the backend and wipe
+  /// the on-screen conversation. The permanent chat history is untouched, so the
+  /// student can still reveal past turns via "Load previous chat".
+  Future<void> _resetMemory() async {
+    if (_isSending) return;
+    if (ref.read(firebaseAuthProvider).currentUser == null) {
+      _showSnack('Sign in to use the AI tutor.');
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Start fresh?'),
+        content: const Text(
+          "The AI will forget this conversation and start over. Your chat "
+          "history is kept — you can still view it.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Start fresh'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final service = ref.read(learnAssistServiceProvider);
+    try {
+      await service.resetMemory(
+        MemoryResetRequest(
+          board: _board,
+          classNo: _selectedClass,
+          channel: widget.channel,
+          subject: _selectedSubject,
+        ),
+      );
+    } on LearnAssistApiException catch (e) {
+      if (!mounted) return;
+      Haptics.error(ref);
+      _showSnack(e.message);
+      return;
+    }
+
+    if (!mounted) return;
+    Haptics.light(ref);
+    setState(() {
+      _messages.clear();
+      _streamingMessageIndex = null;
+      _historyNextBefore = null;
+      _isRevalidating = false;
+      // Land on the fresh-start empty state (suggestions) rather than reloading
+      // the preserved history the student just chose to move past.
+      _historyHidden = true;
+    });
+    _showSnack('Started a fresh conversation.');
   }
 
   /// Load the first page of history for the current selector into the chat.
@@ -199,6 +321,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _isLoadingHistory = false;
         _isRevalidating = true;
       });
+      // Cached history paints straight away, well before the revalidation
+      // below returns — scroll now so the chat opens at the newest turn
+      // instead of sitting mid-conversation until the network settles.
+      _scrollToBottom(immediate: true);
     } else {
       setState(() {
         _isLoadingHistory = true;
@@ -212,7 +338,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // A null page with nothing cached means the fetch failed with no fallback.
     // Distinguish that from a genuinely empty conversation by checking whether
     // the account state parked an error for this selector.
-    final historyErrored = page == null &&
+    final historyErrored =
+        page == null &&
         ref.read(backendAccountCacheProvider).history is AsyncError;
     setState(() {
       _isRevalidating = false;
@@ -236,11 +363,12 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _streamingMessageIndex = streamingAt < 0 ? null : streamingAt;
       }
     });
-    _scrollToBottom();
+    // A whole conversation arrived in one setState — jump, don't animate.
+    _scrollToBottom(immediate: true);
   }
 
   Future<void> _loadOlderHistory() async {
-    if (_isLoadingOlder || _historyNextBefore == null) return;
+    if (_isSending || _isLoadingOlder || _historyNextBefore == null) return;
     setState(() => _isLoadingOlder = true);
 
     final selector = _selector;
@@ -260,6 +388,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         ..clear()
         ..addAll(_historyToMessages(page))
         ..addAll(liveMessages);
+      if (_streamingMessageIndex != null) {
+        final streamingAt = _messages.lastIndexWhere((m) => m.isStreaming);
+        _streamingMessageIndex = streamingAt < 0 ? null : streamingAt;
+      }
     });
   }
 
@@ -404,8 +536,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     if (_isSending || _messages.isEmpty) return;
     // Find the last user message and everything after it (the failed/last
     // assistant reply) so we can replace that reply in place.
-    final lastUserIndex =
-        _messages.lastIndexWhere((m) => m.role == _MessageRole.user);
+    final lastUserIndex = _messages.lastIndexWhere(
+      (m) => m.role == _MessageRole.user,
+    );
     if (lastUserIndex < 0) return;
     final userTurn = _messages[lastUserIndex];
     // A history image-only turn keeps the '[Image shared]' placeholder but no
@@ -440,6 +573,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   }) async {
     if (query.isEmpty && imageBytes == null) return;
 
+    final originUid = ref.read(firebaseAuthProvider).currentUser?.uid;
+    if (originUid == null) return;
+    final originSelector = _selector;
+
     final imageBase64 = imageBytes == null ? null : base64Encode(imageBytes);
     // What we persist to history when the turn is image-only (the backend stores
     // the same placeholder server-side).
@@ -453,16 +590,41 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     Haptics.light(ref);
     setState(() {
       if (appendUserBubble) {
-        _messages.add(_ChatMessage.user(
-          query,
-          imageBytes: imageBytes,
-          imageMediaType: imageMediaType,
-        ));
+        _messages.add(
+          _ChatMessage.user(
+            query,
+            imageBytes: imageBytes,
+            imageMediaType: imageMediaType,
+          ),
+        );
       }
       _isSending = true;
       _streamingMessageIndex = null;
     });
-    ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
+    final prefs = ref.read(userPrefsRepositoryProvider);
+    prefs.recordChatActivity(widget.channel);
+    // Feed the AI tab's "pick up where you left off" row. Image-only turns have
+    // no question text worth listing.
+    if (query.isNotEmpty) {
+      await prefs.recordRecentQuestion(
+        originUid,
+        query,
+        subject: originSelector.subject,
+      );
+      ref.read(recentQuestionsProvider.notifier).refresh();
+    }
+    if (!mounted ||
+        ref.read(firebaseAuthProvider).currentUser?.uid != originUid ||
+        _selector != originSelector) {
+      if (mounted) {
+        setState(() {
+          _messages.clear();
+          _streamingMessageIndex = null;
+          _isSending = false;
+        });
+      }
+      return;
+    }
     _scrollToBottom();
 
     final answerBuffer = StringBuffer();
@@ -511,21 +673,39 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       flushTimer = Timer(const Duration(milliseconds: 60), flushTokens);
     }
 
+    // The style hint is appended in brackets rather than prepended as a command,
+    // so the turn still reads naturally if the student scrolls back to it later.
+    final styleHint = _styleHintSent ? null : widget.answerStyle.hint;
+    final outgoing = styleHint == null
+        ? query
+        : (query.isEmpty ? styleHint : '$query\n\n($styleHint)');
+
     try {
       await for (final event in service.chatStream(
         LearnAssistRequest(
-          message: query.isEmpty ? null : query,
+          message: outgoing.isEmpty ? null : outgoing,
           imageBase64: imageBase64,
           imageMediaType: imageMediaType,
-          board: _board,
-          classNo: _selectedClass,
-          channel: widget.channel,
-          subject: _selectedSubject,
+          board: originSelector.board,
+          classNo: originSelector.classNo,
+          channel: originSelector.channel,
+          subject: originSelector.subject,
           language: language,
           debug: false,
         ),
       )) {
-        if (!mounted) return;
+        if (!mounted ||
+            ref.read(firebaseAuthProvider).currentUser?.uid != originUid ||
+            _selector != originSelector) {
+          if (mounted) {
+            setState(() {
+              _messages.clear();
+              _streamingMessageIndex = null;
+              _isSending = false;
+            });
+          }
+          return;
+        }
         switch (event) {
           case LearnAssistTokenEvent(:final text):
             appendToken(text);
@@ -546,7 +726,18 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         }
       }
 
-      if (!mounted) return;
+      if (!mounted ||
+          ref.read(firebaseAuthProvider).currentUser?.uid != originUid ||
+          _selector != originSelector) {
+        if (mounted) {
+          setState(() {
+            _messages.clear();
+            _streamingMessageIndex = null;
+            _isSending = false;
+          });
+        }
+        return;
+      }
       // Prefer the text streamed token-by-token; fall back to the complete
       // answer from the 'done' frame when a provider emitted no token frames.
       final streamed = answerBuffer.toString();
@@ -559,32 +750,41 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       final localId = now.microsecondsSinceEpoch;
       ref
           .read(backendAccountCacheProvider.notifier)
-          .prependLatestHistoryMessages([
-            ChatHistoryMessage(
-              id: localId,
-              role: 'user',
-              content: historyText,
-              createdAt: now,
-            ),
-            ChatHistoryMessage(
-              id: localId + 1,
-              role: 'assistant',
-              content: answer,
-              citations: citations,
-              createdAt: now,
-            ),
-          ]);
-      ref.read(backendAccountCacheProvider.notifier).markHistoryStale();
+          .prependLatestHistoryMessages(
+            uid: originUid,
+            selector: originSelector,
+            messages: [
+              ChatHistoryMessage(
+                id: localId,
+                role: 'user',
+                content: historyText,
+                createdAt: now,
+              ),
+              ChatHistoryMessage(
+                id: localId + 1,
+                role: 'assistant',
+                content: answer,
+                citations: citations,
+                createdAt: now,
+              ),
+            ],
+          );
+      // The turn landed, so the style instruction has been delivered. Marking
+      // it here (rather than before the request) means a failed first send and
+      // its retry still carry the style the student picked.
+      _styleHintSent = true;
       // Count this as learning activity: bumps the AI-session counter and keeps
       // the learning streak alive, then refresh the stats so Home/Me update.
       await ref.read(userPrefsRepositoryProvider).recordAiSession();
       ref.read(progressProvider.notifier).refresh();
       setState(() {
-        _finalizeStreamingMessage(_ChatMessage.assistant(
-          answer.isEmpty ? '(no answer)' : answer,
-          citations: citations,
-          usage: usage,
-        ));
+        _finalizeStreamingMessage(
+          _ChatMessage.assistant(
+            answer.isEmpty ? '(no answer)' : answer,
+            citations: citations,
+            usage: usage,
+          ),
+        );
         _isSending = false;
       });
     } on LearnAssistApiException catch (error) {
@@ -615,9 +815,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   /// can tweak the question before sending.
   void _applySuggestion(String text) {
     _messageController.text = text;
-    _messageController.selection = TextSelection.collapsed(
-      offset: text.length,
-    );
+    _messageController.selection = TextSelection.collapsed(offset: text.length);
     _composerFocusNode.requestFocus();
   }
 
@@ -635,7 +833,25 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     _streamingMessageIndex = null;
   }
 
-  void _scrollToBottom() {
+  /// Scrolls the message list to the newest turn.
+  ///
+  /// Pass [immediate] when the whole conversation just landed at once (opening
+  /// a chat with history). The list is lazy, so `maxScrollExtent` right after
+  /// that setState is only an estimate from the first screenful of bubbles —
+  /// animating to it stops short, in the middle of the conversation. Jumping
+  /// and re-checking over a few frames lets the estimate settle as more bubbles
+  /// build, and a jump is what you want there anyway: an opened chat should
+  /// already be at the bottom rather than visibly scrolling there.
+  ///
+  /// The default animated path is for turns appended to an already-settled
+  /// list, where the extent is accurate and the motion shows the new message
+  /// arriving.
+  void _scrollToBottom({bool immediate = false}) {
+    if (immediate) {
+      _scrollScheduled = false;
+      _settleAtBottom(_maxSettlePasses);
+      return;
+    }
     if (_scrollScheduled) return;
     _scrollScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -649,12 +865,39 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     });
   }
 
+  /// How many settle passes [_settleAtBottom] gets. Each pass is one frame, and
+  /// the extent converges in two or three; the cap only stops a list whose
+  /// height never stabilises from re-jumping forever.
+  static const int _maxSettlePasses = 6;
+
+  /// Jumps to the bottom, then re-checks on the next frame: building the bubbles
+  /// we just scrolled past grows `maxScrollExtent`, so one jump lands short.
+  /// Repeats until the extent stops growing or [passes] runs out.
+  void _settleAtBottom(int passes) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent;
+      if (_scrollController.offset < target) {
+        _scrollController.jumpTo(target);
+      }
+      if (passes <= 1) return;
+      // Re-measure next frame; stop as soon as the extent has stopped moving.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        if (_scrollController.position.maxScrollExtent > target) {
+          _settleAtBottom(passes - 1);
+        }
+      });
+    });
+  }
+
   void _ensureAccountSummary() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final cache = ref.read(backendAccountCacheProvider.notifier);
       cache.ensureUser();
       cache.ensureUsage();
+      cache.ensureProfile();
     });
   }
 
@@ -668,14 +911,21 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       orElse: () => false,
     );
     // Kick off user/usage fetch in background if not yet loaded — only once.
-    if (isSignedIn && (!accountState.userLoaded || !accountState.usageLoaded)) {
+    if (isSignedIn &&
+        (!accountState.userLoaded ||
+            !accountState.usageLoaded ||
+            !accountState.profileLoaded)) {
       _ensureAccountSummary();
     }
     // Derive the effective class from profile selection (not user-choosable in UI).
-    final classOptions = learnAssistClassOptions(selectedClasses);
-    final effectiveClass = classOptions.contains(_selectedClass)
-        ? _selectedClass
-        : classOptions.first;
+    final primaryClass = accountState.profile.maybeWhen(
+      data: (profile) => profile?.classNo,
+      orElse: () => null,
+    );
+    final effectiveClass = resolveLearnAssistClass(
+      selectedClasses,
+      primaryClass: primaryClass,
+    );
     if (effectiveClass != _selectedClass) {
       // Profile changed class — sync without triggering a rebuild loop.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -687,7 +937,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       });
     }
     final subjectOptions = _subjectsFor(
-      ref.watch(ingestedBooksProvider),
+      ref.watch(activeIngestedBooksProvider),
       _board,
       _selectedClass,
     );
@@ -697,7 +947,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     }
 
     // Leading "load older" row shows only when the conversation has older pages.
-    final hasOlder = _historyNextBefore != null;
+    final hasOlder = _historyNextBefore != null && !_isSending;
     final leadingCount = hasOlder ? 1 : 0;
 
     return Scaffold(
@@ -712,6 +962,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             user: accountState.user,
             usage: accountState.usage,
           ),
+          IconButton(
+            icon: const Icon(Icons.restart_alt_rounded),
+            tooltip: 'Start fresh',
+            // Disabled mid-turn: resetting memory while a response streams would
+            // desync the on-screen bubble from the (now-cleared) thread.
+            onPressed: _isSending ? null : _resetMemory,
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -719,8 +976,11 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         child: Column(
           children: [
             _ContextControls(
+              board: _board,
+              classNo: _selectedClass,
               subjectOptions: subjectOptions,
               selectedSubject: _selectedSubject,
+              subjectEnabled: !_isSending,
               onSubjectChanged: (value) {
                 if (value == _selectedSubject) return;
                 _switchConversation(() => _selectedSubject = value);
@@ -739,7 +999,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             Expanded(
               child: _messages.isEmpty && !_isLoadingHistory && !_isSending
                   ? _EmptyChat(
-                      suggestions: _suggestionsFor(_selectedSubject),
+                      suggestions: aiSuggestionsFor(_selectedSubject),
                       onSuggestionTap: _applySuggestion,
                       showLoadPrevious: _historyHidden && isSignedIn,
                       onLoadPrevious: _revealHistory,
@@ -780,22 +1040,26 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                         // finished assistant answer; regenerate on the last one;
                         // retry on an error bubble.
                         final isLast = messageIndex == _messages.length - 1;
-                        final showActions = !_isSending &&
+                        final showActions =
+                            !_isSending &&
                             !msg.isStreaming &&
                             msg.role != _MessageRole.user;
                         return _MessageView(
                           message: msg,
-                          onCopy: showActions &&
+                          onCopy:
+                              showActions &&
                                   msg.role == _MessageRole.assistant &&
                                   msg.text.trim().isNotEmpty
                               ? () => _copyMessage(msg.text)
                               : null,
-                          onRegenerate: showActions &&
+                          onRegenerate:
+                              showActions &&
                                   isLast &&
                                   msg.role == _MessageRole.assistant
                               ? _retryLastTurn
                               : null,
-                          onRetry: showActions &&
+                          onRetry:
+                              showActions &&
                                   isLast &&
                                   msg.role == _MessageRole.error
                               ? _retryLastTurn
@@ -866,19 +1130,19 @@ class _PlanUsageBadge extends StatelessWidget {
     final usageErrored = usage is AsyncError && currentUsage == null;
 
     final planKey = backendUser?.planKey ?? 'free';
-    final planLabel = _planLabel(planKey);
+    final plan = planLabel(planKey);
 
     String usageLabel;
     if (isLoading) {
       usageLabel = '...';
     } else if (usageErrored) {
-      usageLabel = '$planLabel · —';
+      usageLabel = '$plan · —';
     } else if (currentUsage == null) {
-      usageLabel = planLabel;
+      usageLabel = plan;
     } else if (currentUsage.unlimited) {
-      usageLabel = '$planLabel · ∞';
+      usageLabel = '$plan · ∞';
     } else {
-      usageLabel = '$planLabel · ${currentUsage.remaining} left';
+      usageLabel = '$plan · ${currentUsage.remaining} left';
     }
 
     return Container(
@@ -913,15 +1177,21 @@ class _PlanUsageBadge extends StatelessWidget {
 }
 
 class _ContextControls extends StatelessWidget {
+  final String board;
+  final int classNo;
   final List<String> subjectOptions;
   final String? selectedSubject;
+  final bool subjectEnabled;
   final ValueChanged<String?> onSubjectChanged;
   final String languageMode;
   final ValueChanged<String> onLanguageChanged;
 
   const _ContextControls({
+    required this.board,
+    required this.classNo,
     required this.subjectOptions,
     required this.selectedSubject,
+    required this.subjectEnabled,
     required this.onSubjectChanged,
     required this.languageMode,
     required this.onLanguageChanged,
@@ -942,13 +1212,21 @@ class _ContextControls extends StatelessWidget {
             icon: Icons.menu_book_rounded,
             label: selectedSubject == null
                 ? 'All subjects'
-                : _formatSubject(selectedSubject!),
+                : formatSubject(
+                    selectedSubject!,
+                    board: board,
+                    classNo: classNo,
+                  ),
             value: selectedSubject ?? 'all',
             options: [
               const ('all', 'All subjects'),
               for (final subject in subjectOptions)
-                (subject, _formatSubject(subject)),
+                (
+                  subject,
+                  formatSubject(subject, board: board, classNo: classNo),
+                ),
             ],
+            enabled: subjectEnabled,
             onSelected: (value) {
               onSubjectChanged(value == 'all' ? null : value);
             },
@@ -984,6 +1262,7 @@ class _MenuChip<T> extends StatelessWidget {
   final T value;
   final List<(T, String)> options;
   final ValueChanged<T> onSelected;
+  final bool enabled;
 
   const _MenuChip({
     required this.icon,
@@ -991,6 +1270,7 @@ class _MenuChip<T> extends StatelessWidget {
     required this.value,
     required this.options,
     required this.onSelected,
+    this.enabled = true,
   });
 
   @override
@@ -1000,6 +1280,7 @@ class _MenuChip<T> extends StatelessWidget {
     final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
 
     return PopupMenuButton<T>(
+      enabled: enabled,
       initialValue: value,
       onSelected: onSelected,
       shape: RoundedRectangleBorder(
@@ -1091,9 +1372,9 @@ class _HistoryErrorBar extends StatelessWidget {
           Expanded(
             child: Text(
               "Couldn't load your past chat.",
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: cs.onErrorContainer,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: cs.onErrorContainer),
             ),
           ),
           TextButton(
@@ -1112,37 +1393,8 @@ class _HistoryErrorBar extends StatelessWidget {
 }
 
 // ─── Suggested questions ─────────────────────────────────────────────────
-// Subject-specific starters shown on the fresh chat screen. Subjects without
-// their own list fall back to the mixed set (one per covered subject).
-
-const Map<String, List<String>> _subjectSuggestions = {
-  'maths': [
-    'How do I find the area of a triangle?',
-    'Explain fractions with a simple example',
-    'What is the difference between LCM and HCF?',
-  ],
-  'science': [
-    'Why does the moon change shape?',
-    'How does the water cycle work?',
-    'What is photosynthesis in simple words?',
-  ],
-  'english': [
-    'What is the difference between a noun and a verb?',
-    'Help me write a paragraph about my school',
-    'When do I use "a", "an" and "the"?',
-  ],
-};
-
-const List<String> _mixedSuggestions = [
-  'How do I find the area of a triangle?',
-  'Why does the moon change shape?',
-  'Help me write a paragraph about my school',
-];
-
-List<String> _suggestionsFor(String? subject) {
-  if (subject == null) return _mixedSuggestions;
-  return _subjectSuggestions[subject.toLowerCase()] ?? _mixedSuggestions;
-}
+// Starter data lives in data/seed/ai_suggestions.dart so the AI hub and this
+// screen offer the same questions — see [aiSuggestionsFor].
 
 /// Fresh-start screen: a quiet heading, tappable starter questions, and (when
 /// an older conversation is tucked away) a link to bring it back.
@@ -1168,9 +1420,7 @@ class _EmptyChat extends StatelessWidget {
       builder: (context, constraints) {
         return SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
@@ -1184,10 +1434,11 @@ class _EmptyChat extends StatelessWidget {
                       child: TextButton.icon(
                         onPressed: onLoadPrevious,
                         style: TextButton.styleFrom(
-                          foregroundColor: isDark ? AppColors.ink2Dark : AppColors.ink2,
-                          textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          foregroundColor: isDark
+                              ? AppColors.ink2Dark
+                              : AppColors.ink2,
+                          textStyle: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         icon: const Icon(Icons.history_rounded, size: 16),
                         label: const Text('Load previous chat'),
@@ -1197,7 +1448,11 @@ class _EmptyChat extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.auto_awesome_rounded, size: 26, color: cs.primary),
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 26,
+                        color: cs.primary,
+                      ),
                       const SizedBox(height: 14),
                       Text(
                         'What would you like to learn?',
@@ -1525,10 +1780,7 @@ class _CitationChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          cs.primary.withValues(alpha: 0.07),
-          cs.surface,
-        ),
+        color: Color.alphaBlend(cs.primary.withValues(alpha: 0.07), cs.surface),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: cs.primary.withValues(alpha: 0.16)),
       ),
@@ -1880,21 +2132,4 @@ String? _lowQuotaNote(LearnAssistUsage? usage) {
   return '${usage.remaining} $word left today.';
 }
 
-String _planLabel(String planKey) {
-  return switch (planKey) {
-    'plus' => 'Plus',
-    'pro' => 'Pro',
-    _ => 'Free',
-  };
-}
-
-String _formatSubject(String subject) {
-  return subject
-      .split('_')
-      .map(
-        (part) => part.isEmpty
-            ? part
-            : '${part[0].toUpperCase()}${part.substring(1)}',
-      )
-      .join(' ');
-}
+// Plan + subject labels live in utils/ai_labels.dart, shared with the AI hub.

@@ -1,12 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'auth_provider.dart';
 import 'core_providers.dart';
+
+final accountUidProvider = Provider<String?>((ref) {
+  return ref.watch(authStateProvider).value?.uid;
+});
 
 /// Notifier that manages the set of class numbers the user has selected.
 class UserSelectionNotifier extends Notifier<Set<int>> {
+  String? _accountUid;
+
   @override
   Set<int> build() {
+    _accountUid = ref.watch(accountUidProvider);
     final repo = ref.read(userPrefsRepositoryProvider);
-    return repo.getSelectedClasses();
+    return repo.getSelectedClasses(uid: _accountUid);
   }
 
   void toggleClass(int classNumber) {
@@ -21,13 +29,18 @@ class UserSelectionNotifier extends Notifier<Set<int>> {
   }
 
   void setClasses(Set<int> classes) {
+    // Profile loads/saves call this with the class the student already has.
+    // `Set` compares by identity, so re-assigning an equal-but-new set would
+    // still notify every listener — enough to rebuild screens that fetch on
+    // build and re-trigger the load that called us.
+    if (classes.length == state.length && state.containsAll(classes)) return;
     state = classes;
     _persist(classes);
   }
 
   void _persist(Set<int> classes) {
     final repo = ref.read(userPrefsRepositoryProvider);
-    repo.setSelectedClasses(classes);
+    repo.setSelectedClasses(classes, uid: _accountUid);
   }
 }
 
@@ -37,10 +50,13 @@ final userSelectionProvider = NotifierProvider<UserSelectionNotifier, Set<int>>(
 
 /// Notifier that manages the user's selected syllabus board.
 class UserBoardNotifier extends Notifier<String> {
+  String? _accountUid;
+
   @override
   String build() {
+    _accountUid = ref.watch(accountUidProvider);
     final repo = ref.read(userPrefsRepositoryProvider);
-    return repo.getSelectedBoard();
+    return repo.getSelectedBoard(uid: _accountUid);
   }
 
   void setBoard(String board) {
@@ -53,7 +69,7 @@ class UserBoardNotifier extends Notifier<String> {
     // to the new board's default.
     repo.clearRegionalLanguage();
     state = board;
-    repo.setSelectedBoard(board);
+    repo.setSelectedBoard(board, uid: _accountUid);
   }
 }
 

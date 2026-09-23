@@ -8,9 +8,12 @@ import 'package:http/http.dart' as http;
 
 import '../data/cache/cache_store.dart';
 import '../data/models/learn_assist.dart';
+import '../data/seed/seed_data.dart' show availableClassNumbersForBoard;
 import '../data/repositories/auth_repository.dart';
 import '../data/services/backend_auth_service.dart';
+import '../data/services/learning_event_service.dart';
 import 'core_providers.dart';
+import 'ingested_books_provider.dart';
 import 'user_selection_provider.dart';
 
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
@@ -31,6 +34,13 @@ final backendAuthServiceProvider = Provider<BackendAuthService>((ref) {
       final user = ref.read(firebaseAuthProvider).currentUser;
       return user?.getIdToken(forceRefresh);
     },
+  );
+});
+
+final learningEventServiceProvider = Provider<LearningEventService>((ref) {
+  return LearningEventService(
+    backend: ref.watch(backendAuthServiceProvider),
+    auth: ref.watch(firebaseAuthProvider),
   );
 });
 
@@ -77,11 +87,13 @@ class BackendAccountState {
   final String? uid;
   final AsyncValue<BackendUser?> user;
   final AsyncValue<StudentProfile?> profile;
+  final AsyncValue<ExplorePreferences?> explorePreferences;
   final AsyncValue<LearnAssistUsage?> usage;
   final AsyncValue<ChatHistoryPage?> history;
   final HistorySelector? historySelector;
   final bool userLoaded;
   final bool profileLoaded;
+  final bool explorePreferencesLoaded;
   final bool usageLoaded;
   final bool historyLoaded;
 
@@ -89,11 +101,13 @@ class BackendAccountState {
     this.uid,
     this.user = const AsyncData(null),
     this.profile = const AsyncData(null),
+    this.explorePreferences = const AsyncData(null),
     this.usage = const AsyncData(null),
     this.history = const AsyncData(null),
     this.historySelector,
     this.userLoaded = false,
     this.profileLoaded = false,
+    this.explorePreferencesLoaded = false,
     this.usageLoaded = false,
     this.historyLoaded = false,
   });
@@ -102,11 +116,13 @@ class BackendAccountState {
     String? uid,
     AsyncValue<BackendUser?>? user,
     AsyncValue<StudentProfile?>? profile,
+    AsyncValue<ExplorePreferences?>? explorePreferences,
     AsyncValue<LearnAssistUsage?>? usage,
     AsyncValue<ChatHistoryPage?>? history,
     HistorySelector? historySelector,
     bool? userLoaded,
     bool? profileLoaded,
+    bool? explorePreferencesLoaded,
     bool? usageLoaded,
     bool? historyLoaded,
   }) {
@@ -114,30 +130,92 @@ class BackendAccountState {
       uid: uid ?? this.uid,
       user: user ?? this.user,
       profile: profile ?? this.profile,
+      explorePreferences: explorePreferences ?? this.explorePreferences,
       usage: usage ?? this.usage,
       history: history ?? this.history,
       historySelector: historySelector ?? this.historySelector,
       userLoaded: userLoaded ?? this.userLoaded,
       profileLoaded: profileLoaded ?? this.profileLoaded,
+      explorePreferencesLoaded:
+          explorePreferencesLoaded ?? this.explorePreferencesLoaded,
       usageLoaded: usageLoaded ?? this.usageLoaded,
       historyLoaded: historyLoaded ?? this.historyLoaded,
     );
   }
+
+  // Value equality is load-bearing, not a nicety: Riverpod notifies listeners
+  // whenever `state` is reassigned to a non-`==` value, and every `copyWith`
+  // allocates a fresh object. Without this, a revalidation that changed nothing
+  // still rebuilt every listener — and a screen that kicks `ensureX()` off a
+  // rebuild then re-fetched forever (rebuild → fetch → notify → rebuild …).
+  @override
+  bool operator ==(Object other) =>
+      other is BackendAccountState &&
+      other.uid == uid &&
+      other.user == user &&
+      other.profile == profile &&
+      other.explorePreferences == explorePreferences &&
+      other.usage == usage &&
+      other.history == history &&
+      other.historySelector == historySelector &&
+      other.userLoaded == userLoaded &&
+      other.profileLoaded == profileLoaded &&
+      other.explorePreferencesLoaded == explorePreferencesLoaded &&
+      other.usageLoaded == usageLoaded &&
+      other.historyLoaded == historyLoaded;
+
+  @override
+  int get hashCode => Object.hash(
+    uid,
+    user,
+    profile,
+    explorePreferences,
+    usage,
+    history,
+    historySelector,
+    userLoaded,
+    profileLoaded,
+    explorePreferencesLoaded,
+    usageLoaded,
+    historyLoaded,
+  );
 }
 
 class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<BackendUser?>? _userRequest;
   Future<StudentProfile?>? _profileRequest;
+  Future<ExplorePreferences?>? _explorePreferencesRequest;
   Future<LearnAssistUsage?>? _usageRequest;
   Future<ChatHistoryPage?>? _historyRequest;
+  // A profile fetch begun before a save must not replace the save response.
+  int _profileGeneration = 0;
   // Which conversation [_historyRequest] is fetching. A single shared request
   // slot is fine, but it must be keyed: otherwise a still-in-flight fetch for
   // one subject gets reused for another (returning the wrong conversation), or
   // a slow response clobbers a conversation the user already switched away from.
   HistorySelector? _historyRequestSelector;
 
+  // Resources already revalidated against the backend for the current uid.
+  // Stale-while-revalidate means "once per signed-in session", not "once per
+  // caller": `ensureX()` is invoked from widget builds, and without this an
+  // unchanged response would still be re-requested on the next rebuild the
+  // load itself caused. Cleared whenever the uid changes; bypassed by
+  // `forceRefresh` (pull-to-refresh, the profile Retry button, post-save).
+  final Set<String> _revalidated = {};
+
+  static const _userResource = 'user';
+  static const _profileResource = 'profile';
+  static const _explorePreferencesResource = 'explore_preferences';
+  static const _usageResource = 'usage';
+
   @override
   BackendAccountState build() {
+    ref.listen(activeIngestedBooksProvider, (previous, next) {
+      final preferences = _asyncData(state.explorePreferences);
+      if (preferences?.selectionMode == 'all') {
+        _mirrorExplorePreferencesToPrefs(preferences!);
+      }
+    });
     final uid = ref
         .watch(authStateProvider)
         .maybeWhen(data: (user) => user?.uid, orElse: () => null);
@@ -148,11 +226,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       if (previousUid != null) {
         unawaited(_cache.deleteNamespace(previousUid));
       }
-      _userRequest = null;
-      _profileRequest = null;
-      _usageRequest = null;
-      _historyRequest = null;
-      _historyRequestSelector = null;
+      _resetRequests();
       return const BackendAccountState();
     }
 
@@ -160,11 +234,19 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       if (previousUid != null) {
         unawaited(_cache.deleteNamespace(previousUid));
       }
-      _userRequest = null;
-      _profileRequest = null;
-      _usageRequest = null;
-      _historyRequest = null;
-      _historyRequestSelector = null;
+      final auth = ref.read(firebaseAuthProvider);
+      final events = ref.read(learningEventServiceProvider);
+      unawaited(
+        Future.microtask(() {
+          if (auth.currentUser?.uid == uid) {
+            return events.recordBestEffort(
+              eventType: 'session_started',
+              feature: 'session',
+            );
+          }
+        }),
+      );
+      _resetRequests();
       return BackendAccountState(uid: uid);
     }
 
@@ -177,15 +259,16 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _hydrateUserFromCache(uid);
 
     final cached = _asyncData(state.user);
-    final hasCache = state.userLoaded && cached != null;
-    if (_userRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) {
+    if (_userRequest == null &&
+        (forceRefresh || _shouldRevalidate(_userResource))) {
+      if (!state.userLoaded) {
         state = state.copyWith(uid: uid, user: const AsyncLoading());
       }
       _userRequest = _loadUser(uid, cached);
     }
 
-    return hasCache
+    if (forceRefresh && _userRequest != null) return _userRequest!;
+    return state.userLoaded
         ? Future.value(cached)
         : (_userRequest ?? Future.value(null));
   }
@@ -196,17 +279,50 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _hydrateProfileFromCache(uid);
 
     final cached = _asyncData(state.profile);
-    final hasCache = state.profileLoaded && cached != null;
-    if (_profileRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) {
+    // Gate the visible `AsyncLoading` on "nothing has settled yet", not on
+    // "there is no cached value". A student with no saved profile legitimately
+    // has a null one, and treating that as "still loading" put the account in
+    // AsyncLoading on *every* revalidation — which the profile form reads as
+    // "disable the whole form".
+    if (_profileRequest == null &&
+        (forceRefresh || _shouldRevalidate(_profileResource))) {
+      if (!state.profileLoaded) {
         state = state.copyWith(uid: uid, profile: const AsyncLoading());
       }
       _profileRequest = _loadProfile(uid, cached);
     }
 
-    return hasCache
+    if (forceRefresh && _profileRequest != null) return _profileRequest!;
+    return state.profileLoaded
         ? Future.value(cached)
         : (_profileRequest ?? Future.value(null));
+  }
+
+  Future<ExplorePreferences?> ensureExplorePreferences({
+    bool forceRefresh = false,
+  }) {
+    final uid = _currentUid;
+    if (uid == null) return Future.value(null);
+    _hydrateExplorePreferencesFromCache(uid);
+
+    final cached = _asyncData(state.explorePreferences);
+    if (_explorePreferencesRequest == null &&
+        (forceRefresh || _shouldRevalidate(_explorePreferencesResource))) {
+      if (!state.explorePreferencesLoaded) {
+        state = state.copyWith(
+          uid: uid,
+          explorePreferences: const AsyncLoading(),
+        );
+      }
+      _explorePreferencesRequest = _loadExplorePreferences(uid, cached);
+    }
+
+    if (forceRefresh && _explorePreferencesRequest != null) {
+      return _explorePreferencesRequest!;
+    }
+    return state.explorePreferencesLoaded
+        ? Future.value(cached)
+        : (_explorePreferencesRequest ?? Future.value(null));
   }
 
   Future<LearnAssistUsage?> ensureUsage({bool forceRefresh = false}) {
@@ -215,15 +331,16 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     _hydrateUsageFromCache(uid);
 
     final cached = _asyncData(state.usage);
-    final hasCache = state.usageLoaded && cached != null;
-    if (_usageRequest == null && (forceRefresh || _shouldRevalidate())) {
-      if (!hasCache) {
+    if (_usageRequest == null &&
+        (forceRefresh || _shouldRevalidate(_usageResource))) {
+      if (!state.usageLoaded) {
         state = state.copyWith(uid: uid, usage: const AsyncLoading());
       }
       _usageRequest = _loadUsage(uid, cached);
     }
 
-    return hasCache
+    if (forceRefresh && _usageRequest != null) return _usageRequest!;
+    return state.usageLoaded
         ? Future.value(cached)
         : (_usageRequest ?? Future.value(null));
   }
@@ -252,7 +369,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         ? _historyRequest
         : null;
 
-    if (inFlight == null && (forceRefresh || _shouldRevalidate())) {
+    // History has no session-level revalidation guard: every caller drives it
+    // explicitly (opening a conversation, switching subject, `markHistoryStale`
+    // after a new turn), and each of those passes `forceRefresh`.
+    if (inFlight == null) {
       if (!hasCache) {
         state = state.copyWith(
           uid: uid,
@@ -270,9 +390,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     if (hasCache && forceRefresh && pending != null) {
       return pending;
     }
-    return hasCache
-        ? Future.value(cached)
-        : (pending ?? Future.value(null));
+    return hasCache ? Future.value(cached) : (pending ?? Future.value(null));
   }
 
   Future<ChatHistoryPage?> loadOlderHistory() {
@@ -295,27 +413,95 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<StudentProfile> saveProfile(StudentProfile profile) async {
     final uid = _requireUid();
     final previous = _asyncData(state.profile);
+    _profileGeneration++;
+    final saveGeneration = _profileGeneration;
     state = state.copyWith(uid: uid, profile: const AsyncLoading());
     try {
       final saved = await ref
           .read(backendAuthServiceProvider)
           .updateProfile(profile);
+      await _applySavedProfile(uid, saveGeneration, saved);
+      return saved;
+    } catch (error, stackTrace) {
+      // A timeout can occur after Postgres commits. If the server already has
+      // these edits, use its revision instead of creating a false conflict on
+      // the student's next Retry.
+      if (error is LearnAssistApiException &&
+          error.code == 'network_error' &&
+          _currentUid == uid &&
+          _profileGeneration == saveGeneration) {
+        try {
+          final server = await ref.read(backendAuthServiceProvider).profile();
+          if (server != null && _sameProfileEdits(profile, server)) {
+            await _applySavedProfile(uid, saveGeneration, server);
+            return server;
+          }
+        } catch (_) {
+          // Offline remains a visible failure with the form edits intact.
+        }
+      }
+      if (_currentUid == uid && _profileGeneration == saveGeneration) {
+        state = state.copyWith(profile: AsyncError(error, stackTrace));
+      }
+      if (previous != null &&
+          _currentUid == uid &&
+          _profileGeneration == saveGeneration) {
+        state = state.copyWith(profile: AsyncData(previous));
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _applySavedProfile(
+    String uid,
+    int generation,
+    StudentProfile saved,
+  ) async {
+    if (_currentUid != uid || _profileGeneration != generation) return;
+    await _cache.write<StudentProfile>(
+      _profileKey(uid),
+      saved,
+      (value) => value.toCacheJson(),
+    );
+    if (_currentUid != uid || _profileGeneration != generation) {
+      await _cache.delete(_profileKey(uid));
+      return;
+    }
+    _profileGeneration++;
+    state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
+    _revalidated.add(_profileResource);
+    _mirrorProfileToPrefs(saved);
+  }
+
+  Future<ExplorePreferences> saveExplorePreferences(
+    ExplorePreferences preferences,
+  ) async {
+    final uid = _requireUid();
+    final previous = _asyncData(state.explorePreferences);
+    state = state.copyWith(uid: uid, explorePreferences: const AsyncLoading());
+    try {
+      final saved = await ref
+          .read(backendAuthServiceProvider)
+          .updateExplorePreferences(preferences);
       if (_currentUid == uid) {
-        await _cache.write<StudentProfile>(
-          _profileKey(uid),
+        await _cache.write<ExplorePreferences>(
+          _explorePreferencesKey(uid),
           saved,
-          (profile) => profile.toCacheJson(),
+          (value) => value.toJson(),
         );
-        state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
-        _mirrorProfileToPrefs(saved);
+        state = state.copyWith(
+          explorePreferences: AsyncData(saved),
+          explorePreferencesLoaded: true,
+        );
+        _revalidated.add(_explorePreferencesResource);
+        _mirrorExplorePreferencesToPrefs(saved);
       }
       return saved;
     } catch (error, stackTrace) {
       if (_currentUid == uid) {
-        state = state.copyWith(profile: AsyncError(error, stackTrace));
-      }
-      if (previous != null && _currentUid == uid) {
-        state = state.copyWith(profile: AsyncData(previous));
+        state = previous == null
+            ? state.copyWith(explorePreferences: AsyncError(error, stackTrace))
+            : state.copyWith(explorePreferences: AsyncData(previous));
       }
       rethrow;
     }
@@ -344,36 +530,41 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     state = state.copyWith(uid: uid, historyLoaded: false);
   }
 
-  void prependLatestHistoryMessages(List<ChatHistoryMessage> messages) {
-    final uid = _currentUid;
-    if (uid == null || messages.isEmpty) return;
-    final selector = state.historySelector;
-    if (selector == null) return;
-    final current =
-        _asyncData(state.history) ??
-        const ChatHistoryPage(messages: [], nextBefore: null);
+  void prependLatestHistoryMessages({
+    required String uid,
+    required HistorySelector selector,
+    required List<ChatHistoryMessage> messages,
+  }) {
+    if (_currentUid != uid || messages.isEmpty) return;
+    final cached = _cache.readWithMeta<ChatHistoryPage>(
+      _historyKey(uid, selector),
+      (json) => ChatHistoryPage.fromJson(_jsonMap(json)),
+    );
+    final current = state.historySelector == selector
+        ? (_asyncData(state.history) ??
+              const ChatHistoryPage(messages: [], nextBefore: null))
+        : (cached?.value ??
+              const ChatHistoryPage(messages: [], nextBefore: null));
     final existingIds = current.messages.map((message) => message.id).toSet();
     final uniqueMessages = [
       ...messages.where((message) => !existingIds.contains(message.id)),
       ...current.messages,
     ]..sort((a, b) => b.id.compareTo(a.id));
-    state = state.copyWith(
-      uid: uid,
-      history: AsyncData(
-        ChatHistoryPage(
-          messages: uniqueMessages,
-          nextBefore: current.nextBefore,
-        ),
-      ),
-      historyLoaded: true,
+    final updated = ChatHistoryPage(
+      messages: uniqueMessages,
+      nextBefore: current.nextBefore,
     );
+    if (state.historySelector == selector) {
+      state = state.copyWith(
+        uid: uid,
+        history: AsyncData(updated),
+        historyLoaded: false,
+      );
+    }
     unawaited(
       _cache.write<ChatHistoryPage>(
         _historyKey(uid, selector),
-        ChatHistoryPage(
-          messages: uniqueMessages,
-          nextBefore: current.nextBefore,
-        ),
+        updated,
         (page) => page.toJson(),
       ),
     );
@@ -388,7 +579,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           user,
           (user) => user.toJson(),
         );
-        final changed = state.user is! AsyncData ||
+        final changed =
+            state.user is! AsyncData ||
             !_jsonEquals(previous?.toJson(), user.toJson());
         state = changed
             ? state.copyWith(user: AsyncData(user), userLoaded: true)
@@ -406,7 +598,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       return previous;
     } finally {
-      _userRequest = null;
+      _settleRequest(_userResource, uid);
     }
   }
 
@@ -414,9 +606,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     String uid,
     StudentProfile? previous,
   ) async {
+    final generation = _profileGeneration;
     try {
       final profile = await ref.read(backendAuthServiceProvider).profile();
-      if (_currentUid == uid) {
+      if (_currentUid == uid && generation == _profileGeneration) {
         if (profile == null) {
           await _cache.delete(_profileKey(uid));
         } else {
@@ -429,21 +622,22 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         // "Unchanged" may only skip the state write when the state already
         // holds data — a first fetch that returns null matches a null
         // `previous`, and skipping would leave AsyncLoading in place forever.
-        final changed = state.profile is! AsyncData ||
-            !_jsonEquals(
-              previous?.toCacheJson(),
-              profile?.toCacheJson(),
-            );
-        state = changed
-            ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
-            : state.copyWith(profileLoaded: true);
-        // Keep local prefs in sync on every load (incl. background revalidation
-        // and cross-device edits), not just when ProfileScreen is open.
-        _mirrorProfileToPrefs(profile);
+        if (_currentUid == uid && generation == _profileGeneration) {
+          final changed =
+              state.profile is! AsyncData ||
+              !_jsonEquals(previous?.toCacheJson(), profile?.toCacheJson());
+          state = changed
+              ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
+              : state.copyWith(profileLoaded: true);
+          // Keep local prefs in sync on every load (incl. cross-device edits).
+          _mirrorProfileToPrefs(profile);
+        }
       }
-      return profile;
+      return generation == _profileGeneration
+          ? profile
+          : _asyncData(state.profile);
     } catch (error, stackTrace) {
-      if (_currentUid == uid) {
+      if (_currentUid == uid && generation == _profileGeneration) {
         state = previous == null
             ? state.copyWith(
                 profile: AsyncError(error, stackTrace),
@@ -451,9 +645,11 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
               )
             : state.copyWith(profileLoaded: true);
       }
-      return previous;
+      return generation == _profileGeneration
+          ? previous
+          : _asyncData(state.profile);
     } finally {
-      _profileRequest = null;
+      _settleRequest(_profileResource, uid);
     }
   }
 
@@ -469,7 +665,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
           usage,
           (usage) => usage.toJson(),
         );
-        final changed = state.usage is! AsyncData ||
+        final changed =
+            state.usage is! AsyncData ||
             !_jsonEquals(previous?.toJson(), usage.toJson());
         state = changed
             ? state.copyWith(usage: AsyncData(usage), usageLoaded: true)
@@ -487,7 +684,48 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       }
       return previous;
     } finally {
-      _usageRequest = null;
+      _settleRequest(_usageResource, uid);
+    }
+  }
+
+  Future<ExplorePreferences?> _loadExplorePreferences(
+    String uid,
+    ExplorePreferences? previous,
+  ) async {
+    try {
+      final preferences = await ref
+          .read(backendAuthServiceProvider)
+          .explorePreferences();
+      if (_currentUid == uid) {
+        await _cache.write<ExplorePreferences>(
+          _explorePreferencesKey(uid),
+          preferences,
+          (value) => value.toJson(),
+        );
+        final changed =
+            state.explorePreferences is! AsyncData ||
+            !_jsonEquals(previous?.toJson(), preferences.toJson());
+        state = changed
+            ? state.copyWith(
+                explorePreferences: AsyncData(preferences),
+                explorePreferencesLoaded: true,
+              )
+            : state.copyWith(explorePreferencesLoaded: true);
+        _mirrorExplorePreferencesToPrefs(preferences);
+      }
+      return preferences;
+    } catch (error, stackTrace) {
+      if (_currentUid == uid) {
+        state = previous == null
+            ? state.copyWith(
+                explorePreferences: AsyncError(error, stackTrace),
+                explorePreferencesLoaded: true,
+              )
+            : state.copyWith(explorePreferencesLoaded: true);
+      }
+      return previous;
+    } finally {
+      _settleRequest(_explorePreferencesResource, uid);
     }
   }
 
@@ -565,6 +803,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     return CacheStore.key(uid: uid, name: 'student_profile');
   }
 
+  String _explorePreferencesKey(String uid) {
+    return CacheStore.key(uid: uid, name: 'explore_preferences');
+  }
+
   String _usageKey(String uid) => CacheStore.key(uid: uid, name: 'usage');
 
   String _historyKey(String uid, HistorySelector selector) {
@@ -575,7 +817,37 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     );
   }
 
-  bool _shouldRevalidate() => true;
+  bool _shouldRevalidate(String resource) => !_revalidated.contains(resource);
+
+  /// Marks [resource] fetched for this session and frees its request slot —
+  /// but only while the account that started the fetch is still signed in.
+  /// A response landing after a sign-out/switch must not mark the *new*
+  /// account's data as already loaded, or its first fetch never runs.
+  void _settleRequest(String resource, String uid) {
+    if (_currentUid != uid) return;
+    _revalidated.add(resource);
+    switch (resource) {
+      case _userResource:
+        _userRequest = null;
+      case _profileResource:
+        _profileRequest = null;
+      case _explorePreferencesResource:
+        _explorePreferencesRequest = null;
+      case _usageResource:
+        _usageRequest = null;
+    }
+  }
+
+  void _resetRequests() {
+    _profileGeneration++;
+    _revalidated.clear();
+    _userRequest = null;
+    _profileRequest = null;
+    _explorePreferencesRequest = null;
+    _usageRequest = null;
+    _historyRequest = null;
+    _historyRequestSelector = null;
+  }
 
   void _hydrateUserFromCache(String uid) {
     if (state.uid == uid && state.userLoaded) return;
@@ -622,6 +894,22 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     }
   }
 
+  void _hydrateExplorePreferencesFromCache(String uid) {
+    if (state.uid == uid && state.explorePreferencesLoaded) return;
+    final entry = _cache.readWithMeta<ExplorePreferences>(
+      _explorePreferencesKey(uid),
+      (json) => ExplorePreferences.fromJson(_jsonMap(json)),
+    );
+    if (entry != null) {
+      state = state.copyWith(
+        uid: uid,
+        explorePreferences: AsyncData(entry.value),
+        explorePreferencesLoaded: true,
+      );
+      _mirrorExplorePreferencesToPrefs(entry.value);
+    }
+  }
+
   void _hydrateHistoryFromCache(String uid, HistorySelector selector) {
     if (state.historySelector == selector && state.historyLoaded) return;
     final entry = _cache.readWithMeta<ChatHistoryPage>(
@@ -651,19 +939,44 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     return uid;
   }
 
-  /// Mirror the backend profile's class/board/language into local prefs so the
-  /// rest of the app (Home rows, Explore tools, regional language) stays in
+  /// Mirror the backend profile into local prefs. The primary class is mirrored
+  /// only when Explore explicitly follows it; selected classes remain separate.
   /// sync no matter which screen triggered the load/save. Previously this ran
   /// only inside ProfileScreen, so a cross-device edit landing while the
   /// student was elsewhere drifted until they reopened Profile.
   void _mirrorProfileToPrefs(StudentProfile? profile) {
     if (profile == null) return;
     ref.read(userBoardProvider.notifier).setBoard(profile.board);
-    ref.read(userSelectionProvider.notifier).setClasses({profile.classNo});
+    final explorePreferences = _asyncData(state.explorePreferences);
+    if (explorePreferences?.selectionMode == 'primary') {
+      ref.read(userSelectionProvider.notifier).setClasses({profile.classNo});
+    } else if (explorePreferences?.selectionMode == 'all') {
+      ref
+          .read(userSelectionProvider.notifier)
+          .setClasses(_availableClasses(profile.board));
+    }
     ref
         .read(userPrefsRepositoryProvider)
         .setPreferredLanguage(profile.preferredLanguage);
   }
+
+  void _mirrorExplorePreferencesToPrefs(ExplorePreferences preferences) {
+    if (preferences.selectionMode == 'all') {
+      final board = ref.read(userBoardProvider);
+      ref
+          .read(userSelectionProvider.notifier)
+          .setClasses(_availableClasses(board));
+      return;
+    }
+    final classes = preferences.selectedClasses.toSet();
+    if (classes.isEmpty) return;
+    ref.read(userSelectionProvider.notifier).setClasses(classes);
+  }
+
+  Set<int> _availableClasses(String board) => {
+    ...availableClassNumbersForBoard(board),
+    ...ref.read(activeIngestedBooksProvider).classesFor(board),
+  };
 }
 
 final backendAccountCacheProvider =
@@ -673,6 +986,20 @@ final backendAccountCacheProvider =
 
 T? _asyncData<T>(AsyncValue<T?> value) {
   return value.maybeWhen(data: (data) => data, orElse: () => null);
+}
+
+bool _sameProfileEdits(StudentProfile requested, StudentProfile stored) {
+  String? normalized(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  return requested.board == stored.board &&
+      requested.classNo == stored.classNo &&
+      requested.preferredLanguage == stored.preferredLanguage &&
+      normalized(requested.schoolName) == normalized(stored.schoolName) &&
+      (normalized(requested.name) == null ||
+          normalized(requested.name) == normalized(stored.name));
 }
 
 Map<String, dynamic> _jsonMap(Object json) {

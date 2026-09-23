@@ -25,16 +25,20 @@ const int learnAssistMinClass = 6;
 /// selected, so the channel still has a sensible conversation to open.
 const int learnAssistDefaultClass = 8;
 
-int resolveLearnAssistClass(Set<int> selectedClasses) {
+int resolveLearnAssistClass(Set<int> selectedClasses, {int? primaryClass}) {
   final options = learnAssistClassOptions(selectedClasses);
+  if (primaryClass != null && options.contains(primaryClass)) {
+    return primaryClass;
+  }
   return options.first;
 }
 
 List<int> learnAssistClassOptions(Set<int> selectedClasses) {
-  final supported = selectedClasses
-      .where((classNo) => classNo >= learnAssistMinClass)
-      .toList()
-    ..sort();
+  final supported =
+      selectedClasses
+          .where((classNo) => classNo >= learnAssistMinClass)
+          .toList()
+        ..sort();
   if (supported.isEmpty) return const [learnAssistDefaultClass];
   return supported;
 }

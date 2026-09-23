@@ -32,6 +32,7 @@ class _PressableState extends State<Pressable> {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return GestureDetector(
       onTap: widget.onTap,
       onTapDown: (_) => _set(true),
@@ -39,8 +40,10 @@ class _PressableState extends State<Pressable> {
       onTapCancel: () => _set(false),
       behavior: HitTestBehavior.opaque,
       child: AnimatedScale(
-        scale: _down ? widget.scale : 1.0,
-        duration: const Duration(milliseconds: 110),
+        scale: _down && !reduceMotion ? widget.scale : 1.0,
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 110),
         curve: Curves.easeOut,
         child: widget.child,
       ),

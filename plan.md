@@ -1,7 +1,9 @@
+IN timeline add range filter. add more history 
 
-IN my app i want add.
-add share and feedback banner. also add whatapp logo to share the app link..
+add more 200 daily used woord in voca
 
-playstore link- https://play.google.com/store/apps/details?id=com.vidyalaya.ai
+add more generic formuls in math
 
-do a plaing wlike where to add these
+add more digram suggetion
+
+Plan for virtual labs and quizs

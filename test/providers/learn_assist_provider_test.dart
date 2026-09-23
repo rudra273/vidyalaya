@@ -37,6 +37,11 @@ void main() {
       expect(learnAssistClassOptions({8, 6, 7}), [6, 7, 8]);
     });
 
+    test('prefers the primary class when all classes are available', () {
+      expect(resolveLearnAssistClass({7, 8, 9}, primaryClass: 8), 8);
+      expect(resolveLearnAssistClass({7, 9}, primaryClass: 8), 7);
+    });
+
     test('ignores classes below the LearnAssist minimum', () {
       expect(resolveLearnAssistClass({3, 9}), 9);
       expect(learnAssistClassOptions({3, 9}), [9]);
@@ -54,8 +59,16 @@ void main() {
             {
               'class': 9,
               'subjects': [
-                {'subject': 'math_algebra', 'book_name': 'Math_Algebra', 'language': 'or'},
-                {'subject': 'english', 'book_name': 'English', 'language': 'en'},
+                {
+                  'subject': 'math_algebra',
+                  'book_name': 'Math_Algebra',
+                  'language': 'or',
+                },
+                {
+                  'subject': 'english',
+                  'book_name': 'English',
+                  'language': 'en',
+                },
               ],
             },
           ],
@@ -64,10 +77,10 @@ void main() {
     });
 
     test('returns sorted subjects for an ingested board and class', () {
-      expect(
-        learnAssistSubjects(ingestedBooks, 'scert_odisha', 9),
-        ['english', 'math_algebra'],
-      );
+      expect(learnAssistSubjects(ingestedBooks, 'scert_odisha', 9), [
+        'english',
+        'math_algebra',
+      ]);
     });
 
     test('returns empty for classes or boards with nothing ingested', () {
