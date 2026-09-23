@@ -33,21 +33,34 @@ Color _categoryColor(String category) =>
 
 String _categoryLabel(String category) =>
     _categoryInfo[category]?.label ??
-    category.split('_').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
+    category
+        .split('_')
+        .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+        .join(' ');
 
 class PeriodicTableScreen extends ConsumerStatefulWidget {
   const PeriodicTableScreen({super.key});
 
   @override
-  ConsumerState<PeriodicTableScreen> createState() => _PeriodicTableScreenState();
+  ConsumerState<PeriodicTableScreen> createState() =>
+      _PeriodicTableScreenState();
 }
 
 class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
   static const double _elementWidth = 72.0;
   static const double _elementHeight = 84.0;
   static const double _gap = 4.0;
+  static const double _initialScale = 0.8;
+  static const double _minimumScale = 0.2;
+  static const double _initialLeftPadding = 24.0;
+  static const double _initialTopPadding = 24.0;
 
-  final TransformationController _transformController = TransformationController();
+  final TransformationController _transformController =
+      TransformationController(
+        Matrix4.identity()
+          ..translateByDouble(_initialLeftPadding, _initialTopPadding, 0, 1)
+          ..scaleByDouble(_initialScale, _initialScale, _initialScale, 1),
+      );
   final TextEditingController _searchController = TextEditingController();
   final GlobalKey _viewerKey = GlobalKey();
 
@@ -127,7 +140,8 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _ElementDetailSheet(element: element, color: color, lang: lang),
+      builder: (context) =>
+          _ElementDetailSheet(element: element, color: color, lang: lang),
     );
   }
 
@@ -170,7 +184,7 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
                   key: _viewerKey,
                   transformationController: _transformController,
                   boundaryMargin: const EdgeInsets.all(80.0),
-                  minScale: 0.2,
+                  minScale: _minimumScale,
                   maxScale: 3.0,
                   constrained: false,
                   child: SizedBox(
@@ -187,7 +201,8 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
                           child: _ElementCell(
                             element: e,
                             color: color,
-                            highlighted: _highlightedAtomicNumber == e.atomicNumber,
+                            highlighted:
+                                _highlightedAtomicNumber == e.atomicNumber,
                             onTap: () => _showElementDetails(context, e),
                           ),
                         );
@@ -238,12 +253,18 @@ class _CategoryLegend extends StatelessWidget {
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   entry.value.label,
-                  style: const TextStyle(fontSize: AppFontSize.small, fontWeight: AppFontWeight.semibold),
+                  style: const TextStyle(
+                    fontSize: AppFontSize.small,
+                    fontWeight: AppFontWeight.semibold,
+                  ),
                 ),
               ],
             ),
@@ -260,7 +281,11 @@ class _SearchResultsOverlay extends StatelessWidget {
   final RegionalLanguage lang;
   final ValueChanged<ElementData> onSelect;
 
-  const _SearchResultsOverlay({required this.results, required this.lang, required this.onSelect});
+  const _SearchResultsOverlay({
+    required this.results,
+    required this.lang,
+    required this.onSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -269,14 +294,18 @@ class _SearchResultsOverlay extends StatelessWidget {
         color: Theme.of(context).scaffoldBackgroundColor,
         child: results.isEmpty
             ? const Center(
-                child: Text('No elements found', style: TextStyle(color: AppColors.textMuted)),
+                child: Text(
+                  'No elements found',
+                  style: TextStyle(color: AppColors.textMuted),
+                ),
               )
             : ListView.builder(
                 itemCount: results.length,
                 itemBuilder: (context, i) {
                   final e = results[i];
                   final color = _categoryColor(e.category);
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
                   return ListTile(
                     leading: Container(
                       width: 42,
@@ -289,13 +318,19 @@ class _SearchResultsOverlay extends StatelessWidget {
                       child: Center(
                         child: Text(
                           e.symbol,
-                          style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.content),
+                          style: const TextStyle(
+                            fontWeight: AppFontWeight.bold,
+                            fontSize: AppFontSize.content,
+                          ),
                         ),
                       ),
                     ),
                     title: Text(e.name),
                     subtitle: Text(e.regionalName(lang)),
-                    trailing: Text('#${e.atomicNumber}', style: const TextStyle(color: AppColors.textMuted)),
+                    trailing: Text(
+                      '#${e.atomicNumber}',
+                      style: const TextStyle(color: AppColors.textMuted),
+                    ),
                     onTap: () => onSelect(e),
                   );
                 },
@@ -332,11 +367,19 @@ class _ElementCell extends StatelessWidget {
           color: color.withValues(alpha: isDark ? 0.3 : 0.2),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: highlighted ? color : color.withValues(alpha: isDark ? 0.6 : 0.4),
+            color: highlighted
+                ? color
+                : color.withValues(alpha: isDark ? 0.6 : 0.4),
             width: highlighted ? 3 : 1.5,
           ),
           boxShadow: highlighted
-              ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 12, spreadRadius: 1)]
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.6),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
+                ]
               : null,
         ),
         padding: const EdgeInsets.all(4),
@@ -367,7 +410,10 @@ class _ElementCell extends StatelessWidget {
               child: Text(
                 element.name,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: AppFontSize.caption, color: textColor.withValues(alpha: 0.9)),
+                style: TextStyle(
+                  fontSize: AppFontSize.caption,
+                  color: textColor.withValues(alpha: 0.9),
+                ),
               ),
             ),
           ],
@@ -383,7 +429,11 @@ class _ElementDetailSheet extends StatelessWidget {
   final Color color;
   final RegionalLanguage lang;
 
-  const _ElementDetailSheet({required this.element, required this.color, required this.lang});
+  const _ElementDetailSheet({
+    required this.element,
+    required this.color,
+    required this.lang,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -429,7 +479,10 @@ class _ElementDetailSheet extends StatelessWidget {
                 children: [
                   Text(
                     'Atomic Number: ${element.atomicNumber}',
-                    style: const TextStyle(color: AppColors.textMuted, fontWeight: AppFontWeight.semibold),
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontWeight: AppFontWeight.semibold,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -464,7 +517,9 @@ class _ElementDetailSheet extends StatelessWidget {
               Center(
                 child: Text(
                   element.name,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: AppFontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: AppFontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -472,13 +527,18 @@ class _ElementDetailSheet extends StatelessWidget {
                 child: Text(
                   element.regionalName(lang),
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
                 ),
               ),
               const SizedBox(height: 10),
               Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
@@ -486,7 +546,11 @@ class _ElementDetailSheet extends StatelessWidget {
                   ),
                   child: Text(
                     _categoryLabel(element.category),
-                    style: TextStyle(color: color, fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body),
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: AppFontWeight.bold,
+                      fontSize: AppFontSize.body,
+                    ),
                   ),
                 ),
               ),
@@ -508,7 +572,11 @@ class _ElementDetailSheet extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Electron shells
-              _sectionTitle(context, Icons.blur_circular, 'Electrons per shell'),
+              _sectionTitle(
+                context,
+                Icons.blur_circular,
+                'Electrons per shell',
+              ),
               const SizedBox(height: 8),
               _shellChips(),
 
@@ -546,10 +614,19 @@ class _ElementDetailSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Fun fact',
-                              style: TextStyle(fontWeight: AppFontWeight.bold, color: color, fontSize: AppFontSize.body)),
+                          Text(
+                            'Fun fact',
+                            style: TextStyle(
+                              fontWeight: AppFontWeight.bold,
+                              color: color,
+                              fontSize: AppFontSize.body,
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(element.funFact, style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                            element.funFact,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       ),
                     ),
@@ -561,7 +638,10 @@ class _ElementDetailSheet extends StatelessWidget {
               const SizedBox(height: 20),
               _sectionTitle(context, Icons.history_edu, 'Discovery'),
               const SizedBox(height: 6),
-              Text(element.discovery, style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                element.discovery,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
 
               const SizedBox(height: 24),
 
@@ -570,7 +650,9 @@ class _ElementDetailSheet extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('AI tutor for elements is coming soon!')),
+                    const SnackBar(
+                      content: Text('AI tutor for elements is coming soon!'),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.auto_awesome),
@@ -595,7 +677,11 @@ class _ElementDetailSheet extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body, color: AppColors.textMuted),
+          style: const TextStyle(
+            fontWeight: AppFontWeight.bold,
+            fontSize: AppFontSize.body,
+            color: AppColors.textMuted,
+          ),
         ),
       ],
     );
@@ -629,14 +715,21 @@ class _ElementDetailSheet extends StatelessWidget {
                 children: [
                   Text(
                     s[0],
-                    style: const TextStyle(fontSize: AppFontSize.caption, color: AppColors.textMuted, fontWeight: AppFontWeight.semibold),
+                    style: const TextStyle(
+                      fontSize: AppFontSize.caption,
+                      color: AppColors.textMuted,
+                      fontWeight: AppFontWeight.semibold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     s[1],
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body),
+                    style: const TextStyle(
+                      fontWeight: AppFontWeight.bold,
+                      fontSize: AppFontSize.body,
+                    ),
                   ),
                 ],
               ),
@@ -661,9 +754,18 @@ class _ElementDetailSheet extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Text('Shell ${i + 1}', style: const TextStyle(fontSize: AppFontSize.caption, color: AppColors.textMuted)),
+              Text(
+                'Shell ${i + 1}',
+                style: const TextStyle(
+                  fontSize: AppFontSize.caption,
+                  color: AppColors.textMuted,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text('${element.shells[i]} e⁻', style: const TextStyle(fontWeight: AppFontWeight.bold)),
+              Text(
+                '${element.shells[i]} e⁻',
+                style: const TextStyle(fontWeight: AppFontWeight.bold),
+              ),
             ],
           ),
         );
@@ -686,16 +788,28 @@ class _ElementDetailSheet extends StatelessWidget {
       child: Row(
         children: [
           for (int i = 0; i < items.length; i++) ...[
-            if (i > 0) Container(width: 1, height: 36, color: cs.outlineVariant),
+            if (i > 0)
+              Container(width: 1, height: 36, color: cs.outlineVariant),
             Expanded(
               child: Column(
                 children: [
-                  Text(items[i][0],
-                      style: const TextStyle(fontSize: AppFontSize.caption, color: AppColors.textMuted, fontWeight: AppFontWeight.semibold)),
+                  Text(
+                    items[i][0],
+                    style: const TextStyle(
+                      fontSize: AppFontSize.caption,
+                      color: AppColors.textMuted,
+                      fontWeight: AppFontWeight.semibold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(items[i][1],
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body)),
+                  Text(
+                    items[i][1],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontWeight: AppFontWeight.bold,
+                      fontSize: AppFontSize.body,
+                    ),
+                  ),
                 ],
               ),
             ),

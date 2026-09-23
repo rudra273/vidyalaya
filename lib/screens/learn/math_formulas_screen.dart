@@ -155,9 +155,11 @@ const _allFormulas = [
     formula: 'SI = (P × R × T) / 100',
     type: FormulaType.simpleInterest,
     category: 'Arithmetic',
-    descEn: 'Calculates the simple interest earned on a principal sum over a period of time.',
+    descEn:
+        'Calculates the simple interest earned on a principal sum over a period of time.',
     descOr: 'ଏକ ନିର୍ଦ୍ଦିଷ୍ଟ ସମୟ ପାଇଁ ମୂଳଧନ ଉପରେ ମିଳୁଥିବା ସରଳ ସୁଧ ହିସାବ କରେ।',
-    descHi: 'एक निश्चित अवधि के लिए मूलधन पर अर्जित साधारण ब्याज की गणना करता है।',
+    descHi:
+        'एक निश्चित अवधि के लिए मूलधन पर अर्जित साधारण ब्याज की गणना करता है।',
   ),
   FormulaData(
     titleEn: 'Compound Interest',
@@ -166,9 +168,12 @@ const _allFormulas = [
     formula: 'A = P(1 + R/100)^T',
     type: FormulaType.compoundInterest,
     category: 'Arithmetic',
-    descEn: 'Calculates the final amount when interest is compounded annually on a principal.',
-    descOr: 'ମୂଳଧନ ଉପରେ ବାର୍ଷିକ ଚକ୍ରବୃଦ୍ଧି ସୁଧ ଲାଗିଲେ ମିଳୁଥିବା ସମୁଦାୟ ରାଶି ହିସାବ କରେ।',
-    descHi: 'मूलधन पर वार्षिक चक्रवृद्धि होने पर प्राप्त कुल राशि की गणना करता है।',
+    descEn:
+        'Calculates the final amount when interest is compounded annually on a principal.',
+    descOr:
+        'ମୂଳଧନ ଉପରେ ବାର୍ଷିକ ଚକ୍ରବୃଦ୍ଧି ସୁଧ ଲାଗିଲେ ମିଳୁଥିବା ସମୁଦାୟ ରାଶି ହିସାବ କରେ।',
+    descHi:
+        'मूलधन पर वार्षिक चक्रवृद्धि होने पर प्राप्त कुल राशि की गणना करता है।',
   ),
   FormulaData(
     titleEn: 'Percentage',
@@ -179,7 +184,8 @@ const _allFormulas = [
     category: 'Arithmetic',
     descEn: 'Expresses a value as a fraction of a total, out of one hundred.',
     descOr: 'ଏକ ମୂଲ୍ୟକୁ ସମୁଦାୟର ଅଂଶ ଭାବେ ଶହକୁ ହିସାବ କରି ପ୍ରକାଶ କରେ।',
-    descHi: 'किसी मान को कुल का अंश मानते हुए सौ में से प्रतिशत के रूप में दर्शाता है।',
+    descHi:
+        'किसी मान को कुल का अंश मानते हुए सौ में से प्रतिशत के रूप में दर्शाता है।',
   ),
   FormulaData(
     titleEn: 'Average (Mean)',
@@ -188,8 +194,10 @@ const _allFormulas = [
     formula: 'Mean = Sum / Count',
     type: FormulaType.average,
     category: 'Arithmetic',
-    descEn: 'Finds the average of two numbers by dividing their sum by the count.',
-    descOr: 'ଦୁଇଟି ସଂଖ୍ୟାର ଯୋଗଫଳକୁ ସଂଖ୍ୟା ଦ୍ୱାରା ଭାଗ କରି ହାରାହାରି ନିର୍ଣ୍ଣୟ କରେ।',
+    descEn:
+        'Finds the average of two numbers by dividing their sum by the count.',
+    descOr:
+        'ଦୁଇଟି ସଂଖ୍ୟାର ଯୋଗଫଳକୁ ସଂଖ୍ୟା ଦ୍ୱାରା ଭାଗ କରି ହାରାହାରି ନିର୍ଣ୍ଣୟ କରେ।',
     descHi: 'दो संख्याओं के योग को उनकी संख्या से भाग देकर औसत ज्ञात करता है।',
   ),
   FormulaData(
@@ -199,7 +207,8 @@ const _allFormulas = [
     formula: 'Profit % = ((SP - CP) / CP) × 100',
     type: FormulaType.profitPercent,
     category: 'Arithmetic',
-    descEn: 'Calculates the profit percentage from the cost price and selling price.',
+    descEn:
+        'Calculates the profit percentage from the cost price and selling price.',
     descOr: 'କ୍ରୟ ମୂଲ୍ୟ ଓ ବିକ୍ରୟ ମୂଲ୍ୟରୁ ଲାଭ ଶତକଡ଼ା ହିସାବ କରେ।',
     descHi: 'क्रय मूल्य और विक्रय मूल्य से लाभ प्रतिशत की गणना करता है।',
   ),
@@ -210,7 +219,8 @@ const _allFormulas = [
     formula: 'Loss % = ((CP - SP) / CP) × 100',
     type: FormulaType.lossPercent,
     category: 'Arithmetic',
-    descEn: 'Calculates the loss percentage from the cost price and selling price.',
+    descEn:
+        'Calculates the loss percentage from the cost price and selling price.',
     descOr: 'କ୍ରୟ ମୂଲ୍ୟ ଓ ବିକ୍ରୟ ମୂଲ୍ୟରୁ କ୍ଷତି ଶତକଡ଼ା ହିସାବ କରେ।',
     descHi: 'क्रय मूल्य और विक्रय मूल्य से हानि प्रतिशत की गणना करता है।',
   ),
@@ -223,7 +233,8 @@ const _allFormulas = [
     formula: 'x = (-b ± √(b² - 4ac)) / 2a',
     type: FormulaType.quadratic,
     category: 'Algebra',
-    descEn: 'Finds the unknown variable x (roots) in a second-degree polynomial equation.',
+    descEn:
+        'Finds the unknown variable x (roots) in a second-degree polynomial equation.',
     descOr: 'ଏକ ଦ୍ୱିଘାତ ସମୀକରଣରେ ଅଜ୍ଞାତ ରାଶି x ର ମୂଲ୍ୟ (ମୂଳ) ନିର୍ଣ୍ଣୟ କରେ।',
     descHi: 'एक द्विघात समीकरण में अज्ञात राशि x का मान (मूल) ज्ञात करता है।',
   ),
@@ -289,9 +300,12 @@ const _allFormulas = [
     formula: 'aₙ = a + (n - 1)d',
     type: FormulaType.apNthTerm,
     category: 'Algebra',
-    descEn: 'Finds the nth term of an arithmetic progression with first term a and common difference d.',
-    descOr: 'ପ୍ରଥମ ପଦ a ଓ ସାଧାରଣ ଅନ୍ତର d ବିଶିଷ୍ଟ ସମାନ୍ତର ଶ୍ରେଣୀର nth ପଦ ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'प्रथम पद a और सार्व अंतर d वाली समांतर श्रेणी का nवाँ पद ज्ञात करता है।',
+    descEn:
+        'Finds the nth term of an arithmetic progression with first term a and common difference d.',
+    descOr:
+        'ପ୍ରଥମ ପଦ a ଓ ସାଧାରଣ ଅନ୍ତର d ବିଶିଷ୍ଟ ସମାନ୍ତର ଶ୍ରେଣୀର nth ପଦ ନିର୍ଣ୍ଣୟ କରେ।',
+    descHi:
+        'प्रथम पद a और सार्व अंतर d वाली समांतर श्रेणी का nवाँ पद ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Sum of an AP',
@@ -401,9 +415,11 @@ const _allFormulas = [
     formula: 'A = ½ × b × h',
     type: FormulaType.triangleArea,
     category: 'Geometry',
-    descEn: 'Calculates the space enclosed by a triangle using its base and height.',
+    descEn:
+        'Calculates the space enclosed by a triangle using its base and height.',
     descOr: 'ଭୂମି ଏବଂ ଉଚ୍ଚତା ବ୍ୟବହାର କରି ଏକ ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi: 'आधार और ऊँचाई का उपयोग करके एक त्रिभुज के क्षेत्रफल की गणना करता है।',
+    descHi:
+        'आधार और ऊँचाई का उपयोग करके एक त्रिभुज के क्षेत्रफल की गणना करता है।',
   ),
   FormulaData(
     titleEn: 'Volume of Cube',
@@ -436,9 +452,12 @@ const _allFormulas = [
     formula: 'A = ½ ab sin(C)',
     type: FormulaType.triangleAreaTrig,
     category: 'Trigonometry',
-    descEn: 'Calculates the area of a triangle using two sides and the included angle.',
-    descOr: 'ଦୁଇଟି ବାହୁ ଏବଂ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣ ବ୍ୟବହାର କରି ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi: 'दो भुजाओं और उनके बीच के कोण का उपयोग करके त्रिभुज के क्षेत्रफल की गणना करता है।',
+    descEn:
+        'Calculates the area of a triangle using two sides and the included angle.',
+    descOr:
+        'ଦୁଇଟି ବାହୁ ଏବଂ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣ ବ୍ୟବହାର କରି ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
+    descHi:
+        'दो भुजाओं और उनके बीच के कोण का उपयोग करके त्रिभुज के क्षेत्रफल की गणना करता है।',
   ),
   FormulaData(
     titleEn: 'Sine Ratio',
@@ -447,9 +466,11 @@ const _allFormulas = [
     formula: 'sin(θ) = Opposite / Hypotenuse',
     type: FormulaType.sinRatio,
     category: 'Trigonometry',
-    descEn: 'Calculates the sine of an angle, the ratio of the opposite side to the hypotenuse.',
+    descEn:
+        'Calculates the sine of an angle, the ratio of the opposite side to the hypotenuse.',
     descOr: 'ଏକ କୋଣର ସାଇନ୍, ଅର୍ଥାତ୍ ସମ୍ମୁଖ ବାହୁ ଓ କର୍ଣ୍ଣର ଅନୁପାତ ହିସାବ କରେ।',
-    descHi: 'किसी कोण की ज्या, अर्थात् सम्मुख भुजा और कर्ण का अनुपात ज्ञात करता है।',
+    descHi:
+        'किसी कोण की ज्या, अर्थात् सम्मुख भुजा और कर्ण का अनुपात ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Cosine Ratio',
@@ -458,9 +479,11 @@ const _allFormulas = [
     formula: 'cos(θ) = Adjacent / Hypotenuse',
     type: FormulaType.cosRatio,
     category: 'Trigonometry',
-    descEn: 'Calculates the cosine of an angle, the ratio of the adjacent side to the hypotenuse.',
+    descEn:
+        'Calculates the cosine of an angle, the ratio of the adjacent side to the hypotenuse.',
     descOr: 'ଏକ କୋଣର କୋସାଇନ୍, ଅର୍ଥାତ୍ ସଂଲଗ୍ନ ବାହୁ ଓ କର୍ଣ୍ଣର ଅନୁପାତ ହିସାବ କରେ।',
-    descHi: 'किसी कोण की कोज्या, अर्थात् आसन्न भुजा और कर्ण का अनुपात ज्ञात करता है।',
+    descHi:
+        'किसी कोण की कोज्या, अर्थात् आसन्न भुजा और कर्ण का अनुपात ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Tangent Ratio',
@@ -469,9 +492,12 @@ const _allFormulas = [
     formula: 'tan(θ) = Opposite / Adjacent',
     type: FormulaType.tanRatio,
     category: 'Trigonometry',
-    descEn: 'Calculates the tangent of an angle, the ratio of the opposite side to the adjacent side.',
-    descOr: 'ଏକ କୋଣର ଟାଞ୍ଜେଣ୍ଟ, ଅର୍ଥାତ୍ ସମ୍ମୁଖ ବାହୁ ଓ ସଂଲଗ୍ନ ବାହୁର ଅନୁପାତ ହିସାବ କରେ।',
-    descHi: 'किसी कोण की स्पर्शज्या, अर्थात् सम्मुख भुजा और आसन्न भुजा का अनुपात ज्ञात करता है।',
+    descEn:
+        'Calculates the tangent of an angle, the ratio of the opposite side to the adjacent side.',
+    descOr:
+        'ଏକ କୋଣର ଟାଞ୍ଜେଣ୍ଟ, ଅର୍ଥାତ୍ ସମ୍ମୁଖ ବାହୁ ଓ ସଂଲଗ୍ନ ବାହୁର ଅନୁପାତ ହିସାବ କରେ।',
+    descHi:
+        'किसी कोण की स्पर्शज्या, अर्थात् सम्मुख भुजा और आसन्न भुजा का अनुपात ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Law of Cosines',
@@ -480,9 +506,12 @@ const _allFormulas = [
     formula: 'c = √(a² + b² - 2ab·cos C)',
     type: FormulaType.lawOfCosines,
     category: 'Trigonometry',
-    descEn: 'Finds the third side of a triangle from two sides and the included angle.',
-    descOr: 'ଦୁଇଟି ବାହୁ ଓ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣରୁ ତ୍ରିଭୁଜର ତୃତୀୟ ବାହୁ ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'दो भुजाओं और उनके बीच के कोण से त्रिभुज की तीसरी भुजा ज्ञात करता है।',
+    descEn:
+        'Finds the third side of a triangle from two sides and the included angle.',
+    descOr:
+        'ଦୁଇଟି ବାହୁ ଓ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣରୁ ତ୍ରିଭୁଜର ତୃତୀୟ ବାହୁ ନିର୍ଣ୍ଣୟ କରେ।',
+    descHi:
+        'दो भुजाओं और उनके बीच के कोण से त्रिभुज की तीसरी भुजा ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Law of Sines',
@@ -491,9 +520,12 @@ const _allFormulas = [
     formula: 'a / sin A = b / sin B',
     type: FormulaType.lawOfSines,
     category: 'Trigonometry',
-    descEn: 'Finds an unknown side b using a known side a and its opposite angles A and B.',
-    descOr: 'ଜଣା ବାହୁ a ଏବଂ ତାହାର ସମ୍ମୁଖ କୋଣ A ଓ B ବ୍ୟବହାର କରି ଅଜ୍ଞାତ ବାହୁ b ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'ज्ञात भुजा a और उसके सम्मुख कोणों A तथा B का उपयोग कर अज्ञात भुजा b ज्ञात करता है।',
+    descEn:
+        'Finds an unknown side b using a known side a and its opposite angles A and B.',
+    descOr:
+        'ଜଣା ବାହୁ a ଏବଂ ତାହାର ସମ୍ମୁଖ କୋଣ A ଓ B ବ୍ୟବହାର କରି ଅଜ୍ଞାତ ବାହୁ b ନିର୍ଣ୍ଣୟ କରେ।',
+    descHi:
+        'ज्ञात भुजा a और उसके सम्मुख कोणों A तथा B का उपयोग कर अज्ञात भुजा b ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Arc Length',
@@ -502,7 +534,8 @@ const _allFormulas = [
     formula: 'L = (θ / 360) × 2πr',
     type: FormulaType.arcLength,
     category: 'Trigonometry',
-    descEn: 'Calculates the length of an arc subtending an angle θ (in degrees) at the centre.',
+    descEn:
+        'Calculates the length of an arc subtending an angle θ (in degrees) at the centre.',
     descOr: 'କେନ୍ଦ୍ରରେ θ (ଡିଗ୍ରୀ) କୋଣ ସୃଷ୍ଟି କରୁଥିବା ଚାପର ଦୈର୍ଘ୍ୟ ହିସାବ କରେ।',
     descHi: 'केंद्र पर θ (डिग्री) कोण बनाने वाले चाप की लंबाई की गणना करता है।',
   ),
@@ -515,7 +548,8 @@ const _allFormulas = [
     formula: 's = d / t',
     type: FormulaType.speedDistanceTime,
     category: 'Science',
-    descEn: 'Calculates the speed of an object based on distance traveled over time.',
+    descEn:
+        'Calculates the speed of an object based on distance traveled over time.',
     descOr: 'ଦୂରତା ଏବଂ ସମୟ ଉପରେ ଭିତ୍ତି କରି ଏକ ବସ୍ତୁର ବେଗ ହିସାବ କରେ।',
     descHi: 'दूरी और समय के आधार पर किसी वस्तु की चाल की गणना करता है।',
   ),
@@ -526,9 +560,11 @@ const _allFormulas = [
     formula: 'C = (F - 32) × 5/9',
     type: FormulaType.fahrenheitToCelsius,
     category: 'Science',
-    descEn: 'Converts temperature from the Fahrenheit scale to the Celsius scale.',
+    descEn:
+        'Converts temperature from the Fahrenheit scale to the Celsius scale.',
     descOr: 'ତାପମାତ୍ରାକୁ ଫାରେନହାଇଟ୍ ରୁ ସେଲସିୟସ୍ ସ୍କେଲ୍ କୁ ପରିବର୍ତ୍ତନ କରେ।',
-    descHi: 'तापमान को फारेनहाइट पैमाने से सेल्सियस पैमाने में परिवर्तित करता है।',
+    descHi:
+        'तापमान को फारेनहाइट पैमाने से सेल्सियस पैमाने में परिवर्तित करता है।',
   ),
   FormulaData(
     titleEn: 'Celsius to Fahrenheit',
@@ -537,9 +573,11 @@ const _allFormulas = [
     formula: 'F = (C × 9/5) + 32',
     type: FormulaType.celsiusToFahrenheit,
     category: 'Science',
-    descEn: 'Converts temperature from the Celsius scale to the Fahrenheit scale.',
+    descEn:
+        'Converts temperature from the Celsius scale to the Fahrenheit scale.',
     descOr: 'ତାପମାତ୍ରାକୁ ସେଲସିୟସ୍ ରୁ ଫାରେନହାଇଟ୍ ସ୍କେଲ୍ କୁ ପରିବର୍ତ୍ତନ କରେ।',
-    descHi: 'तापमान को सेल्सियस पैमाने से फारेनहाइट पैमाने में परिवर्तित करता है।',
+    descHi:
+        'तापमान को सेल्सियस पैमाने से फारेनहाइट पैमाने में परिवर्तित करता है।',
   ),
 ];
 
@@ -639,12 +677,12 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
   }
 
   List<FormulaData> get _matches => _allFormulas.where((f) {
-        return f.titleEn.toLowerCase().contains(_query) ||
-            f.titleOr.contains(_query) ||
-            f.titleHi.contains(_query) ||
-            f.formula.toLowerCase().contains(_query) ||
-            f.category.toLowerCase().contains(_query);
-      }).toList();
+    return f.titleEn.toLowerCase().contains(_query) ||
+        f.titleOr.contains(_query) ||
+        f.titleHi.contains(_query) ||
+        f.formula.toLowerCase().contains(_query) ||
+        f.category.toLowerCase().contains(_query);
+  }).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -662,7 +700,11 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 12),
+              AppSpacing.screenPadding,
+              8,
+              AppSpacing.screenPadding,
+              12,
+            ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -674,8 +716,10 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
               ),
             ),
           ),
@@ -696,7 +740,11 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
     }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
+        AppSpacing.screenPadding,
+        8,
+        AppSpacing.screenPadding,
+        16,
+      ),
       itemCount: results.length,
       itemBuilder: (context, index) =>
           _FormulaCard(formulaData: results[index], lang: lang),
@@ -709,7 +757,11 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
 
     return GridView.count(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
+        AppSpacing.screenPadding,
+        8,
+        AppSpacing.screenPadding,
+        16,
+      ),
       crossAxisCount: 2,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
@@ -717,9 +769,8 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
       children: _formulaCategories.map((category) {
         final count = category.formulas.length;
         return GestureDetector(
-          onTap: () => context.push(
-            '/learn/math-formulas/category/${category.name}',
-          ),
+          onTap: () =>
+              context.push('/learn/math-formulas/category/${category.name}'),
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? cs.surface : Colors.white,
@@ -733,7 +784,9 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
                 ),
               ],
             ),
-            padding: const EdgeInsets.all(16),
+            // The translated label and formula count need a little more room
+            // than this compact category tile originally allowed.
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -752,22 +805,22 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
                     Text(
                       category.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: AppFontWeight.bold,
-                          ),
+                        fontWeight: AppFontWeight.bold,
+                      ),
                     ),
                     Text(
                       category.regionalTitle(lang),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textMuted,
-                            fontWeight: AppFontWeight.semibold,
-                          ),
+                        color: AppColors.textMuted,
+                        fontWeight: AppFontWeight.semibold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '$count formula${count == 1 ? '' : 's'}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textMuted,
-                          ),
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -834,7 +887,11 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 12),
+              AppSpacing.screenPadding,
+              8,
+              AppSpacing.screenPadding,
+              12,
+            ),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -846,8 +903,10 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
               ),
             ),
           ),
@@ -856,7 +915,11 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
                 ? const Center(child: Text('No formulas found.'))
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 16),
+                      AppSpacing.screenPadding,
+                      8,
+                      AppSpacing.screenPadding,
+                      16,
+                    ),
                     itemCount: formulas.length + 1,
                     itemBuilder: (context, index) {
                       if (index == formulas.length) {
@@ -865,9 +928,7 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
                           child: Center(
                             child: Text(
                               'More formulas coming soon...',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     color: AppColors.textMuted,
                                     fontStyle: FontStyle.italic,
@@ -893,10 +954,7 @@ class _FormulaCard extends StatelessWidget {
   final FormulaData formulaData;
   final RegionalLanguage lang;
 
-  const _FormulaCard({
-    required this.formulaData,
-    required this.lang,
-  });
+  const _FormulaCard({required this.formulaData, required this.lang});
 
   void _openCalculator(BuildContext context) {
     Navigator.of(context).push(
@@ -934,17 +992,16 @@ class _FormulaCard extends StatelessWidget {
                     children: [
                       Text(
                         formulaData.titleEn,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: AppFontWeight.bold,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: AppFontWeight.bold),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         formulaData.regionalTitle(lang),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textMuted,
-                              fontWeight: AppFontWeight.semibold,
-                            ),
+                          color: AppColors.textMuted,
+                          fontWeight: AppFontWeight.semibold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -953,9 +1010,14 @@ class _FormulaCard extends StatelessWidget {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
-                              color: cs.secondaryContainer.withValues(alpha: 0.5),
+                              color: cs.secondaryContainer.withValues(
+                                alpha: 0.5,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -972,10 +1034,7 @@ class _FormulaCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppColors.textMuted,
-                ),
+                Icon(Icons.chevron_right, color: AppColors.textMuted),
               ],
             ),
           ),
@@ -989,10 +1048,7 @@ class _CalculatorPage extends StatefulWidget {
   final FormulaData formulaData;
   final RegionalLanguage lang;
 
-  const _CalculatorPage({
-    required this.formulaData,
-    required this.lang,
-  });
+  const _CalculatorPage({required this.formulaData, required this.lang});
 
   @override
   State<_CalculatorPage> createState() => _CalculatorPageState();
@@ -1019,41 +1075,111 @@ class _CalculatorPageState extends State<_CalculatorPage> {
   void _setupControllers() {
     List<String> keys = [];
     switch (widget.formulaData.type) {
-      case FormulaType.simpleInterest: keys = ['P', 'R', 'T']; break;
-      case FormulaType.circleArea: keys = ['r']; break;
-      case FormulaType.circleCircumference: keys = ['r']; break;
-      case FormulaType.pythagoras: keys = ['a', 'b']; break;
-      case FormulaType.cylinderVolume: keys = ['r', 'h']; break;
-      case FormulaType.quadratic: keys = ['a', 'b', 'c']; break;
-      case FormulaType.rectanglePerimeter: keys = ['l', 'w']; break;
-      case FormulaType.rectangleArea: keys = ['l', 'w']; break;
-      case FormulaType.squarePerimeter: keys = ['a']; break;
-      case FormulaType.squareArea: keys = ['a']; break;
-      case FormulaType.triangleArea: keys = ['b', 'h']; break;
-      case FormulaType.cubeVolume: keys = ['a']; break;
-      case FormulaType.cuboidVolume: keys = ['l', 'w', 'h']; break;
-      case FormulaType.speedDistanceTime: keys = ['d', 't']; break;
-      case FormulaType.fahrenheitToCelsius: keys = ['F']; break;
-      case FormulaType.celsiusToFahrenheit: keys = ['C']; break;
-      case FormulaType.triangleAreaTrig: keys = ['a', 'b', 'C (deg)']; break;
-      case FormulaType.compoundInterest: keys = ['P', 'R', 'T']; break;
-      case FormulaType.percentage: keys = ['Value', 'Total']; break;
-      case FormulaType.average: keys = ['a', 'b']; break;
-      case FormulaType.profitPercent: keys = ['CP', 'SP']; break;
-      case FormulaType.lossPercent: keys = ['CP', 'SP']; break;
-      case FormulaType.aPlusBSquared: keys = ['a', 'b']; break;
-      case FormulaType.aMinusBSquared: keys = ['a', 'b']; break;
-      case FormulaType.aSquaredMinusBSquared: keys = ['a', 'b']; break;
-      case FormulaType.aPlusBCubed: keys = ['a', 'b']; break;
-      case FormulaType.aMinusBCubed: keys = ['a', 'b']; break;
-      case FormulaType.apNthTerm: keys = ['a', 'd', 'n']; break;
-      case FormulaType.apSum: keys = ['a', 'd', 'n']; break;
-      case FormulaType.sinRatio: keys = ['θ (deg)']; break;
-      case FormulaType.cosRatio: keys = ['θ (deg)']; break;
-      case FormulaType.tanRatio: keys = ['θ (deg)']; break;
-      case FormulaType.lawOfCosines: keys = ['a', 'b', 'C (deg)']; break;
-      case FormulaType.lawOfSines: keys = ['a', 'A (deg)', 'B (deg)']; break;
-      case FormulaType.arcLength: keys = ['r', 'θ (deg)']; break;
+      case FormulaType.simpleInterest:
+        keys = ['P', 'R', 'T'];
+        break;
+      case FormulaType.circleArea:
+        keys = ['r'];
+        break;
+      case FormulaType.circleCircumference:
+        keys = ['r'];
+        break;
+      case FormulaType.pythagoras:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.cylinderVolume:
+        keys = ['r', 'h'];
+        break;
+      case FormulaType.quadratic:
+        keys = ['a', 'b', 'c'];
+        break;
+      case FormulaType.rectanglePerimeter:
+        keys = ['l', 'w'];
+        break;
+      case FormulaType.rectangleArea:
+        keys = ['l', 'w'];
+        break;
+      case FormulaType.squarePerimeter:
+        keys = ['a'];
+        break;
+      case FormulaType.squareArea:
+        keys = ['a'];
+        break;
+      case FormulaType.triangleArea:
+        keys = ['b', 'h'];
+        break;
+      case FormulaType.cubeVolume:
+        keys = ['a'];
+        break;
+      case FormulaType.cuboidVolume:
+        keys = ['l', 'w', 'h'];
+        break;
+      case FormulaType.speedDistanceTime:
+        keys = ['d', 't'];
+        break;
+      case FormulaType.fahrenheitToCelsius:
+        keys = ['F'];
+        break;
+      case FormulaType.celsiusToFahrenheit:
+        keys = ['C'];
+        break;
+      case FormulaType.triangleAreaTrig:
+        keys = ['a', 'b', 'C (deg)'];
+        break;
+      case FormulaType.compoundInterest:
+        keys = ['P', 'R', 'T'];
+        break;
+      case FormulaType.percentage:
+        keys = ['Value', 'Total'];
+        break;
+      case FormulaType.average:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.profitPercent:
+        keys = ['CP', 'SP'];
+        break;
+      case FormulaType.lossPercent:
+        keys = ['CP', 'SP'];
+        break;
+      case FormulaType.aPlusBSquared:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.aMinusBSquared:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.aSquaredMinusBSquared:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.aPlusBCubed:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.aMinusBCubed:
+        keys = ['a', 'b'];
+        break;
+      case FormulaType.apNthTerm:
+        keys = ['a', 'd', 'n'];
+        break;
+      case FormulaType.apSum:
+        keys = ['a', 'd', 'n'];
+        break;
+      case FormulaType.sinRatio:
+        keys = ['θ (deg)'];
+        break;
+      case FormulaType.cosRatio:
+        keys = ['θ (deg)'];
+        break;
+      case FormulaType.tanRatio:
+        keys = ['θ (deg)'];
+        break;
+      case FormulaType.lawOfCosines:
+        keys = ['a', 'b', 'C (deg)'];
+        break;
+      case FormulaType.lawOfSines:
+        keys = ['a', 'A (deg)', 'B (deg)'];
+        break;
+      case FormulaType.arcLength:
+        keys = ['r', 'θ (deg)'];
+        break;
     }
     for (var key in keys) {
       _controllers[key] = TextEditingController();
@@ -1070,7 +1196,8 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final p = double.tryParse(_controllers['P']!.text);
             final r = double.tryParse(_controllers['R']!.text);
             final t = double.tryParse(_controllers['T']!.text);
-            if (p != null && r != null && t != null) _result = 'SI = ${((p * r * t) / 100).toStringAsFixed(2)}';
+            if (p != null && r != null && t != null)
+              _result = 'SI = ${((p * r * t) / 100).toStringAsFixed(2)}';
             break;
           case FormulaType.circleArea:
             final r = double.tryParse(_controllers['r']!.text);
@@ -1083,12 +1210,14 @@ class _CalculatorPageState extends State<_CalculatorPage> {
           case FormulaType.pythagoras:
             final a = double.tryParse(_controllers['a']!.text);
             final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) _result = 'c = ${sqrt((a * a) + (b * b)).toStringAsFixed(4)}';
+            if (a != null && b != null)
+              _result = 'c = ${sqrt((a * a) + (b * b)).toStringAsFixed(4)}';
             break;
           case FormulaType.cylinderVolume:
             final r = double.tryParse(_controllers['r']!.text);
             final h = double.tryParse(_controllers['h']!.text);
-            if (r != null && h != null) _result = 'V = ${(pi * r * r * h).toStringAsFixed(4)}';
+            if (r != null && h != null)
+              _result = 'V = ${(pi * r * r * h).toStringAsFixed(4)}';
             break;
           case FormulaType.quadratic:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1103,25 +1232,29 @@ class _CalculatorPageState extends State<_CalculatorPage> {
               if (d > 0) {
                 final r1 = (-b + sqrt(d)) / (2 * a);
                 final r2 = (-b - sqrt(d)) / (2 * a);
-                _result = 'x = ${r1.toStringAsFixed(4)} or x = ${r2.toStringAsFixed(4)}';
+                _result =
+                    'x = ${r1.toStringAsFixed(4)} or x = ${r2.toStringAsFixed(4)}';
               } else if (d == 0) {
                 _result = 'x = ${(-b / (2 * a)).toStringAsFixed(4)}';
               } else {
                 final real = -b / (2 * a);
                 final imag = sqrt(-d) / (2 * a);
-                _result = 'x = ${real.toStringAsFixed(4)} ± ${imag.toStringAsFixed(4)}i';
+                _result =
+                    'x = ${real.toStringAsFixed(4)} ± ${imag.toStringAsFixed(4)}i';
               }
             }
             break;
           case FormulaType.rectanglePerimeter:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
-            if (l != null && w != null) _result = 'P = ${(2 * (l + w)).toStringAsFixed(2)}';
+            if (l != null && w != null)
+              _result = 'P = ${(2 * (l + w)).toStringAsFixed(2)}';
             break;
           case FormulaType.rectangleArea:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
-            if (l != null && w != null) _result = 'A = ${(l * w).toStringAsFixed(2)}';
+            if (l != null && w != null)
+              _result = 'A = ${(l * w).toStringAsFixed(2)}';
             break;
           case FormulaType.squarePerimeter:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1134,7 +1267,8 @@ class _CalculatorPageState extends State<_CalculatorPage> {
           case FormulaType.triangleArea:
             final b = double.tryParse(_controllers['b']!.text);
             final h = double.tryParse(_controllers['h']!.text);
-            if (b != null && h != null) _result = 'A = ${(0.5 * b * h).toStringAsFixed(2)}';
+            if (b != null && h != null)
+              _result = 'A = ${(0.5 * b * h).toStringAsFixed(2)}';
             break;
           case FormulaType.cubeVolume:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1144,20 +1278,24 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
             final h = double.tryParse(_controllers['h']!.text);
-            if (l != null && w != null && h != null) _result = 'V = ${(l * w * h).toStringAsFixed(2)}';
+            if (l != null && w != null && h != null)
+              _result = 'V = ${(l * w * h).toStringAsFixed(2)}';
             break;
           case FormulaType.speedDistanceTime:
             final d = double.tryParse(_controllers['d']!.text);
             final t = double.tryParse(_controllers['t']!.text);
-            if (d != null && t != null && t != 0) _result = 's = ${(d / t).toStringAsFixed(2)}';
+            if (d != null && t != null && t != 0)
+              _result = 's = ${(d / t).toStringAsFixed(2)}';
             break;
           case FormulaType.fahrenheitToCelsius:
             final f = double.tryParse(_controllers['F']!.text);
-            if (f != null) _result = 'C = ${((f - 32) * 5 / 9).toStringAsFixed(2)}°C';
+            if (f != null)
+              _result = 'C = ${((f - 32) * 5 / 9).toStringAsFixed(2)}°C';
             break;
           case FormulaType.celsiusToFahrenheit:
             final c = double.tryParse(_controllers['C']!.text);
-            if (c != null) _result = 'F = ${((c * 9 / 5) + 32).toStringAsFixed(2)}°F';
+            if (c != null)
+              _result = 'F = ${((c * 9 / 5) + 32).toStringAsFixed(2)}°F';
             break;
           case FormulaType.triangleAreaTrig:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1165,7 +1303,8 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final angleDeg = double.tryParse(_controllers['C (deg)']!.text);
             if (a != null && b != null && angleDeg != null) {
               final angleRad = angleDeg * pi / 180;
-              _result = 'A = ${(0.5 * a * b * sin(angleRad)).toStringAsFixed(4)}';
+              _result =
+                  'A = ${(0.5 * a * b * sin(angleRad)).toStringAsFixed(4)}';
             }
             break;
           case FormulaType.compoundInterest:
@@ -1196,14 +1335,16 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final cp = double.tryParse(_controllers['CP']!.text);
             final sp = double.tryParse(_controllers['SP']!.text);
             if (cp != null && sp != null && cp != 0) {
-              _result = 'Profit % = ${((sp - cp) / cp * 100).toStringAsFixed(2)}%';
+              _result =
+                  'Profit % = ${((sp - cp) / cp * 100).toStringAsFixed(2)}%';
             }
             break;
           case FormulaType.lossPercent:
             final cp = double.tryParse(_controllers['CP']!.text);
             final sp = double.tryParse(_controllers['SP']!.text);
             if (cp != null && sp != null && cp != 0) {
-              _result = 'Loss % = ${((cp - sp) / cp * 100).toStringAsFixed(2)}%';
+              _result =
+                  'Loss % = ${((cp - sp) / cp * 100).toStringAsFixed(2)}%';
             }
             break;
           case FormulaType.aPlusBSquared:
@@ -1254,7 +1395,8 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final d = double.tryParse(_controllers['d']!.text);
             final n = double.tryParse(_controllers['n']!.text);
             if (a != null && d != null && n != null) {
-              _result = 'Sₙ = ${(n / 2 * (2 * a + (n - 1) * d)).toStringAsFixed(2)}';
+              _result =
+                  'Sₙ = ${(n / 2 * (2 * a + (n - 1) * d)).toStringAsFixed(2)}';
             }
             break;
           case FormulaType.sinRatio:
@@ -1280,7 +1422,9 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final b = double.tryParse(_controllers['b']!.text);
             final angleDeg = double.tryParse(_controllers['C (deg)']!.text);
             if (a != null && b != null && angleDeg != null) {
-              final c = sqrt(a * a + b * b - 2 * a * b * cos(angleDeg * pi / 180));
+              final c = sqrt(
+                a * a + b * b - 2 * a * b * cos(angleDeg * pi / 180),
+              );
               _result = 'c = ${c.toStringAsFixed(4)}';
             }
             break;
@@ -1446,9 +1590,9 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             Text(
               widget.formulaData.regionalTitle(widget.lang),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textMuted,
-                    fontWeight: AppFontWeight.semibold,
-                  ),
+                color: AppColors.textMuted,
+                fontWeight: AppFontWeight.semibold,
+              ),
             ),
           ],
         ),
@@ -1477,7 +1621,8 @@ class _CalculatorPageState extends State<_CalculatorPage> {
                           : cs.surfaceContainerHighest.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.5)),
+                        color: cs.outlineVariant.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1485,14 +1630,16 @@ class _CalculatorPageState extends State<_CalculatorPage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.info_outline, size: 18, color: cs.primary),
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: cs.primary,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 widget.formulaData.descEn,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: cs.onSurface),
                               ),
                             ),
@@ -1510,10 +1657,11 @@ class _CalculatorPageState extends State<_CalculatorPage> {
                             Expanded(
                               child: Text(
                                 widget.formulaData.regionalDesc(widget.lang),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(color: cs.onSurface, height: 1.5),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: cs.onSurface,
+                                      height: 1.5,
+                                    ),
                               ),
                             ),
                           ],
@@ -1526,12 +1674,15 @@ class _CalculatorPageState extends State<_CalculatorPage> {
 
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: cs.primaryContainer.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: cs.primary.withValues(alpha: 0.2)),
+                        color: cs.primary.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Text(
                       widget.formulaData.formula,
@@ -1586,8 +1737,10 @@ class _InputField extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
-      keyboardType:
-          const TextInputType.numberWithOptions(decimal: true, signed: true),
+      keyboardType: const TextInputType.numberWithOptions(
+        decimal: true,
+        signed: true,
+      ),
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         isDense: true,
@@ -1605,9 +1758,7 @@ class _InputField extends StatelessWidget {
           ),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -1668,37 +1819,37 @@ class _ResultBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-          child: Row(
-            children: [
-              Text(
-                'RESULT',
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+        child: Row(
+          children: [
+            Text(
+              'RESULT',
+              style: TextStyle(
+                color: hasResult
+                    ? cs.onPrimary.withValues(alpha: 0.8)
+                    : AppColors.textMuted,
+                fontSize: AppFontSize.small,
+                fontWeight: AppFontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                result ?? 'Enter values to calculate',
+                textAlign: TextAlign.right,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: hasResult
-                      ? cs.onPrimary.withValues(alpha: 0.8)
-                      : AppColors.textMuted,
-                  fontSize: AppFontSize.small,
+                  fontSize: hasResult ? AppFontSize.title : AppFontSize.content,
                   fontWeight: AppFontWeight.bold,
-                  letterSpacing: 1.2,
+                  color: hasResult ? cs.onPrimary : AppColors.textMuted,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  result ?? 'Enter values to calculate',
-                  textAlign: TextAlign.right,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: hasResult ? AppFontSize.title : AppFontSize.content,
-                    fontWeight: AppFontWeight.bold,
-                    color: hasResult ? cs.onPrimary : AppColors.textMuted,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }
@@ -1800,8 +1951,13 @@ class FormulaDiagramPainter extends CustomPainter {
     }
   }
 
-  void _label(Canvas canvas, String text, Offset at,
-      {bool italic = true, double fontSize = 15}) {
+  void _label(
+    Canvas canvas,
+    String text,
+    Offset at, {
+    bool italic = true,
+    double fontSize = 15,
+  }) {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
@@ -1859,7 +2015,11 @@ class FormulaDiagramPainter extends CustomPainter {
     );
     _label(canvas, 'b', Offset((p1.dx + p2.dx) / 2, bottom + 12));
     _label(canvas, 'a', Offset(left - 12, (p1.dy + p3.dy) / 2));
-    _label(canvas, 'c', Offset((p2.dx + p3.dx) / 2 + 6, (p2.dy + p3.dy) / 2 - 6));
+    _label(
+      canvas,
+      'c',
+      Offset((p2.dx + p3.dx) / 2 + 6, (p2.dy + p3.dy) / 2 - 6),
+    );
   }
 
   void _drawTriangle(Canvas canvas, Size size, Paint s, Paint f, Paint dash) {
@@ -1907,14 +2067,28 @@ class FormulaDiagramPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
-    _label(canvas, 'C', Offset(p1.dx + 32, bottom - 14), italic: false, fontSize: AppFontSize.body);
+    _label(
+      canvas,
+      'C',
+      Offset(p1.dx + 32, bottom - 14),
+      italic: false,
+      fontSize: AppFontSize.body,
+    );
     _label(canvas, 'b', Offset((p1.dx + p2.dx) / 2, bottom + 12));
-    _label(canvas, 'a', Offset((p1.dx + apex.dx) / 2 - 12, (p1.dy + apex.dy) / 2));
+    _label(
+      canvas,
+      'a',
+      Offset((p1.dx + apex.dx) / 2 - 12, (p1.dy + apex.dy) / 2),
+    );
   }
 
   void _drawRectangle(Canvas canvas, Size size, Paint s, Paint f) {
     final rect = Rect.fromLTWH(
-        24, size.height * 0.28, size.width - 48, size.height * 0.44);
+      24,
+      size.height * 0.28,
+      size.width - 48,
+      size.height * 0.44,
+    );
     canvas.drawRect(rect, f);
     canvas.drawRect(rect, s);
     _label(canvas, 'l', Offset(rect.center.dx, rect.bottom + 12));
@@ -1924,9 +2098,10 @@ class FormulaDiagramPainter extends CustomPainter {
   void _drawSquare(Canvas canvas, Size size, Paint s, Paint f) {
     final side = min(size.width, size.height) - 48;
     final rect = Rect.fromCenter(
-        center: Offset(size.width / 2, size.height / 2),
-        width: side,
-        height: side);
+      center: Offset(size.width / 2, size.height / 2),
+      width: side,
+      height: side,
+    );
     canvas.drawRect(rect, f);
     canvas.drawRect(rect, s);
     _label(canvas, 'a', Offset(rect.center.dx, rect.bottom + 12));
@@ -1958,7 +2133,14 @@ class FormulaDiagramPainter extends CustomPainter {
   }
 
   /// Shared helper: an isometric-ish box from a [front] face with depth [d].
-  void _drawBox(Canvas canvas, Rect front, double d, Paint s, Paint f, Paint dash) {
+  void _drawBox(
+    Canvas canvas,
+    Rect front,
+    double d,
+    Paint s,
+    Paint f,
+    Paint dash,
+  ) {
     final off = Offset(d, -d);
     // back (dashed, hidden edges)
     final back = front.shift(off);
@@ -1994,9 +2176,15 @@ class FormulaDiagramPainter extends CustomPainter {
     final topY = 24.0;
     final botY = size.height - 28;
     final topRect = Rect.fromCenter(
-        center: Offset(cx, topY), width: rx * 2, height: ry * 2);
+      center: Offset(cx, topY),
+      width: rx * 2,
+      height: ry * 2,
+    );
     final botRect = Rect.fromCenter(
-        center: Offset(cx, botY), width: rx * 2, height: ry * 2);
+      center: Offset(cx, botY),
+      width: rx * 2,
+      height: ry * 2,
+    );
     // body fill
     final body = Path()
       ..moveTo(cx - rx, topY)
