@@ -362,8 +362,8 @@ class _RecentQuestionCard extends StatelessWidget {
                       : formatSubject(subject, board: board, classNo: classNo))
                   .toUpperCase(),
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+                fontSize: AppFontSize.caption,
+                fontWeight: AppFontWeight.bold,
                 letterSpacing: 0.8,
                 color: accent,
               ),
@@ -375,9 +375,9 @@ class _RecentQuestionCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 12.5,
+                  fontSize: AppFontSize.small,
                   height: 1.35,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: AppFontWeight.medium,
                 ),
               ),
             ),
@@ -385,8 +385,8 @@ class _RecentQuestionCard extends StatelessWidget {
             Text(
               _ago(question.askedAt),
               style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w500,
+                fontSize: AppFontSize.caption,
+                fontWeight: AppFontWeight.medium,
                 color: isDark ? AppColors.ink3Dark : AppColors.ink3,
               ),
             ),
@@ -443,14 +443,14 @@ class _HubRow extends StatelessWidget {
                     title,
                     style: Theme.of(
                       context,
-                    ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                    ).textTheme.titleMedium?.copyWith(fontSize: AppFontSize.content),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     sub,
                     style: Theme.of(
                       context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
+                    ).textTheme.bodySmall?.copyWith(fontSize: AppFontSize.small),
                   ),
                 ],
               ),
@@ -516,8 +516,8 @@ class _SubjectTile extends ConsumerWidget {
                 formatSubject(subject, board: board, classNo: classNo),
                 maxLines: 1,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.caption,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ),
@@ -556,7 +556,7 @@ class _StarterRow extends StatelessWidget {
                 text,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(fontSize: 13.5),
+                ).textTheme.bodyMedium?.copyWith(fontSize: AppFontSize.body),
               ),
             ),
             const SizedBox(width: 10),
@@ -615,14 +615,14 @@ class _TutorRow extends StatelessWidget {
                         'AI Tutor',
                         style: Theme.of(
                           context,
-                        ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                        ).textTheme.titleMedium?.copyWith(fontSize: AppFontSize.content),
                       ),
                       const SizedBox(width: 7),
                       Text(
                         'Preview',
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontSize: AppFontSize.caption,
+                          fontWeight: AppFontWeight.semibold,
                           color: accent,
                         ),
                       ),
@@ -633,7 +633,7 @@ class _TutorRow extends StatelessWidget {
                     'Step-by-step guided lessons, subject by subject',
                     style: Theme.of(
                       context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
+                    ).textTheme.bodySmall?.copyWith(fontSize: AppFontSize.small),
                   ),
                 ],
               ),

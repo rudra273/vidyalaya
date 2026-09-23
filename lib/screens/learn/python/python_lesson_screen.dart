@@ -149,7 +149,7 @@ class _TextBlockView extends StatelessWidget {
       if (m.start > last) spans.add(TextSpan(text: src.substring(last, m.start)));
       spans.add(TextSpan(
         text: m.group(1),
-        style: const TextStyle(fontWeight: FontWeight.w700),
+        style: const TextStyle(fontWeight: AppFontWeight.bold),
       ));
       last = m.end;
     }
@@ -271,7 +271,7 @@ class _ChallengeBlockViewState extends ConsumerState<_ChallengeBlockView> {
                 child: Text(
                   widget.block.prompt,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: AppFontWeight.semibold,
                         height: 1.4,
                       ),
                 ),
@@ -366,7 +366,7 @@ class _MatchBanner extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               'Output matches — well done!',
-              style: TextStyle(fontWeight: FontWeight.w700, color: accent),
+              style: TextStyle(fontWeight: AppFontWeight.bold, color: accent),
             ),
           ],
         ),

@@ -92,7 +92,7 @@ class SubjectGlyph extends StatelessWidget {
           style: TextStyle(
             // Devanagari/Odia need more of the box than Latin to read clearly.
             fontSize: size * (glyph == 'A' ? 0.82 : 0.92),
-            fontWeight: FontWeight.w700,
+            fontWeight: AppFontWeight.bold,
             height: 1,
             color: color,
             fontFamilyFallback: fallback,
@@ -234,8 +234,8 @@ class BookCover extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontSize: big ? 15 : 12.5,
-                      fontWeight: FontWeight.w600,
+                      fontSize: big ? AppFontSize.content : AppFontSize.small,
+                      fontWeight: AppFontWeight.semibold,
                       height: 1.15,
                       color: Color.alphaBlend(
                         col.withValues(alpha: 0.72),
@@ -280,8 +280,8 @@ class SectionHead extends StatelessWidget {
                 action!,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: cs.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontWeight: AppFontWeight.semibold,
+                      fontSize: AppFontSize.body,
                     ),
               ),
             ),
@@ -293,8 +293,8 @@ class SectionHead extends StatelessWidget {
 
 TextStyle kEyebrow(BuildContext context) =>
     Theme.of(context).textTheme.labelSmall?.copyWith(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
+          fontSize: AppFontSize.small,
+          fontWeight: AppFontWeight.bold,
           letterSpacing: 1.4,
           color: Theme.of(context).brightness == Brightness.dark
               ? AppColors.ink3Dark
@@ -353,8 +353,8 @@ class ListRow extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            fontSize: AppFontSize.content,
+                            fontWeight: AppFontWeight.semibold,
                             color: cs.onSurface,
                           ),
                     ),
@@ -432,14 +432,14 @@ class PageTitle extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .displayMedium
-                      ?.copyWith(fontSize: 24),
+                      ?.copyWith(fontSize: AppFontSize.headingLarge),
                 ),
                 if (sub != null) ...[
                   const SizedBox(height: 5),
                   Text(
                     sub!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
+                          fontWeight: AppFontWeight.medium,
                         ),
                   ),
                 ],

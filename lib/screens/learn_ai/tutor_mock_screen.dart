@@ -124,7 +124,7 @@ class _PreviewBanner extends StatelessWidget {
               'AI Tutor preview — full step-by-step tutoring is coming soon.',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: cs.tertiary,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
               ),
             ),
           ),

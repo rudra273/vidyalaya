@@ -60,7 +60,7 @@ class _PyCodeCardState extends ConsumerState<PyCodeCard> {
   @override
   Widget build(BuildContext context) {
     final mono = GoogleFonts.jetBrainsMono(
-      fontSize: 13.5,
+      fontSize: AppFontSize.body,
       height: 1.55,
       color: const Color(0xFFE6EDE8),
     );

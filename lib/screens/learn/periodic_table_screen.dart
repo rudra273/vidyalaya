@@ -243,7 +243,7 @@ class _CategoryLegend extends StatelessWidget {
                 const SizedBox(width: 6),
                 Text(
                   entry.value.label,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontSize: AppFontSize.small, fontWeight: AppFontWeight.semibold),
                 ),
               ],
             ),
@@ -289,7 +289,7 @@ class _SearchResultsOverlay extends StatelessWidget {
                       child: Center(
                         child: Text(
                           e.symbol,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.content),
                         ),
                       ),
                     ),
@@ -347,17 +347,17 @@ class _ElementCell extends StatelessWidget {
             Text(
               '${element.atomicNumber}',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: AppFontSize.caption,
                 color: textColor.withValues(alpha: 0.7),
-                fontWeight: FontWeight.bold,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
             Center(
               child: Text(
                 element.symbol,
                 style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                  fontSize: AppFontSize.heading,
+                  fontWeight: AppFontWeight.bold,
                   color: textColor,
                   height: 1.0,
                 ),
@@ -367,7 +367,7 @@ class _ElementCell extends StatelessWidget {
               child: Text(
                 element.name,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 9, color: textColor.withValues(alpha: 0.9)),
+                style: TextStyle(fontSize: AppFontSize.caption, color: textColor.withValues(alpha: 0.9)),
               ),
             ),
           ],
@@ -429,7 +429,7 @@ class _ElementDetailSheet extends StatelessWidget {
                 children: [
                   Text(
                     'Atomic Number: ${element.atomicNumber}',
-                    style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: AppColors.textMuted, fontWeight: AppFontWeight.semibold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -453,8 +453,8 @@ class _ElementDetailSheet extends StatelessWidget {
                     child: Text(
                       element.symbol,
                       style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
+                        fontSize: AppFontSize.hero,
+                        fontWeight: AppFontWeight.bold,
                         color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
@@ -464,7 +464,7 @@ class _ElementDetailSheet extends StatelessWidget {
               Center(
                 child: Text(
                   element.name,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: AppFontWeight.bold),
                 ),
               ),
               const SizedBox(height: 4),
@@ -486,7 +486,7 @@ class _ElementDetailSheet extends StatelessWidget {
                   ),
                   child: Text(
                     _categoryLabel(element.category),
-                    style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 13),
+                    style: TextStyle(color: color, fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body),
                   ),
                 ),
               ),
@@ -547,7 +547,7 @@ class _ElementDetailSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Fun fact',
-                              style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 13)),
+                              style: TextStyle(fontWeight: AppFontWeight.bold, color: color, fontSize: AppFontSize.body)),
                           const SizedBox(height: 4),
                           Text(element.funFact, style: Theme.of(context).textTheme.bodyMedium),
                         ],
@@ -595,7 +595,7 @@ class _ElementDetailSheet extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.textMuted),
+          style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body, color: AppColors.textMuted),
         ),
       ],
     );
@@ -629,14 +629,14 @@ class _ElementDetailSheet extends StatelessWidget {
                 children: [
                   Text(
                     s[0],
-                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                    style: const TextStyle(fontSize: AppFontSize.caption, color: AppColors.textMuted, fontWeight: AppFontWeight.semibold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     s[1],
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body),
                   ),
                 ],
               ),
@@ -661,9 +661,9 @@ class _ElementDetailSheet extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Text('Shell ${i + 1}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+              Text('Shell ${i + 1}', style: const TextStyle(fontSize: AppFontSize.caption, color: AppColors.textMuted)),
               const SizedBox(height: 2),
-              Text('${element.shells[i]} e⁻', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('${element.shells[i]} e⁻', style: const TextStyle(fontWeight: AppFontWeight.bold)),
             ],
           ),
         );
@@ -691,11 +691,11 @@ class _ElementDetailSheet extends StatelessWidget {
               child: Column(
                 children: [
                   Text(items[i][0],
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(fontSize: AppFontSize.caption, color: AppColors.textMuted, fontWeight: AppFontWeight.semibold)),
                   const SizedBox(height: 4),
                   Text(items[i][1],
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      style: const TextStyle(fontWeight: AppFontWeight.bold, fontSize: AppFontSize.body)),
                 ],
               ),
             ),

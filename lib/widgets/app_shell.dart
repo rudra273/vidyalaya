@@ -167,8 +167,8 @@ class _NavBarItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                fontSize: AppFontSize.caption,
+                fontWeight: isActive ? AppFontWeight.bold : AppFontWeight.medium,
                 color: isActive ? activeColor : inactiveColor,
                 letterSpacing: 0.1,
               ),

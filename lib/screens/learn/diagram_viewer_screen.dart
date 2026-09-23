@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../app/theme.dart';
 import '../../data/seed/diagrams_data.dart';
 import '../../providers/regional_language_provider.dart';
 
@@ -16,7 +18,7 @@ class DiagramViewerScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           '${diagram.titleEn} / ${isHi ? diagram.titleHi : diagram.titleOr}',
-          style: const TextStyle(color: Colors.white, fontSize: 16),
+          style: const TextStyle(color: Colors.white, fontSize: AppFontSize.content),
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),

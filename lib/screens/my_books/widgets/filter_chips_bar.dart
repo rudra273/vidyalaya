@@ -57,11 +57,11 @@ class FilterChipsBar extends ConsumerWidget {
               child: Text(
                 label,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontSize: 13.5,
+                  fontSize: AppFontSize.body,
                   color: isSelected
                       ? cs.onPrimary
                       : (isDark ? AppColors.ink2Dark : AppColors.ink2),
-                  fontWeight: FontWeight.w600,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ),

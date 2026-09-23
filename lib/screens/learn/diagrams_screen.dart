@@ -73,7 +73,7 @@ class DiagramsScreen extends ConsumerWidget {
                         Text(
                           category.titleEn,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: AppFontWeight.bold,
                               ),
                         ),
                         Text(
@@ -82,7 +82,7 @@ class DiagramsScreen extends ConsumerWidget {
                               : category.titleOr,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.textMuted,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: AppFontWeight.semibold,
                               ),
                         ),
                         const SizedBox(height: 2),
@@ -164,7 +164,7 @@ class DiagramCategoryScreen extends ConsumerWidget {
                           Text(
                             '${diagram.titleEn} / ${isHi ? diagram.titleHi : diagram.titleOr}',
                             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: AppFontWeight.bold,
                                 ),
                           ),
                           const SizedBox(height: 8),
@@ -209,7 +209,7 @@ class DiagramCategoryScreen extends ConsumerWidget {
                   'More diagrams coming soon...',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppColors.textMuted,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: AppFontWeight.bold,
                       ),
                   textAlign: TextAlign.center,
                 ),

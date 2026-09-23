@@ -541,7 +541,7 @@ class _LetterHeaderDelegate extends SliverPersistentHeaderDelegate {
             letter,
             style: theme.textTheme.titleMedium?.copyWith(
               color: accent,
-              fontWeight: FontWeight.w800,
+              fontWeight: AppFontWeight.extraBold,
             ),
           ),
           const SizedBox(width: 8),
@@ -639,8 +639,8 @@ class _AlphabetSliderState extends State<_AlphabetSlider> {
                     letter,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                      fontSize: AppFontSize.caption,
+                      fontWeight: isActive ? AppFontWeight.extraBold : AppFontWeight.semibold,
                       color: !isAvailable
                           ? AppColors.textMuted.withValues(alpha: 0.35)
                           : isActive
@@ -680,8 +680,8 @@ class _JumpLetterBadge extends StatelessWidget {
         letter,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 32,
-          fontWeight: FontWeight.w700,
+          fontSize: AppFontSize.display,
+          fontWeight: AppFontWeight.bold,
         ),
       ),
     );
@@ -776,7 +776,7 @@ class _WordCardStyles {
       quoteBackground: accent.withValues(alpha: isDark ? 0.12 : 0.07),
       word: tt.headlineMedium?.copyWith(
         color: accent,
-        fontWeight: FontWeight.w700,
+        fontWeight: AppFontWeight.bold,
       ),
       partOfSpeech: tt.labelSmall?.copyWith(
         color: AppColors.textMuted,
@@ -849,7 +849,7 @@ class _ShuffleCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: tt.titleLarge?.copyWith(
                       color: styles.accent,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: AppFontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 2),

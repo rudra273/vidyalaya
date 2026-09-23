@@ -65,7 +65,6 @@ const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.read(userPrefsRepositoryProvider);
   final booksEnabled = ref.read(booksEnabledProvider);
-  final labsEnabled = ref.read(labsEnabledProvider);
   late final GoRouter router;
   router = GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -86,9 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isBookRoute) return '/';
       }
       final labsAvailable = labAvailableForSelection(
-        enabled: labsEnabled,
-        board: ref.read(userBoardProvider),
-        selectedClasses: ref.read(userSelectionProvider),
+        ref.read(userSelectionProvider),
       );
       if (!labsAvailable && state.matchedLocation == '/labs') return '/explore';
       return null;

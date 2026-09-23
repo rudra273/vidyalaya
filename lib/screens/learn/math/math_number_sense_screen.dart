@@ -134,7 +134,7 @@ class _MathNumberSenseScreenState
               'Score $_correct',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: accent,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: AppFontWeight.bold,
                   ),
             ),
           ],
@@ -145,7 +145,7 @@ class _MathNumberSenseScreenState
           style: Theme.of(context)
               .textTheme
               .titleLarge
-              ?.copyWith(fontWeight: FontWeight.w700, height: 1.35),
+              ?.copyWith(fontWeight: AppFontWeight.bold, height: 1.35),
         ),
         const SizedBox(height: 22),
         if (useGrid)

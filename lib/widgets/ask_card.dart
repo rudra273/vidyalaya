@@ -97,7 +97,7 @@ class _AiAskHeroState extends State<AiAskHero> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontSize: 16.5, height: 1.2),
+                                ?.copyWith(fontSize: AppFontSize.title, height: 1.2),
                           ),
                           const SizedBox(height: 3),
                           Text(
@@ -105,7 +105,7 @@ class _AiAskHeroState extends State<AiAskHero> {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontSize: 11.5, color: muted),
+                                ?.copyWith(fontSize: AppFontSize.small, color: muted),
                           ),
                         ],
                       ),
@@ -190,8 +190,8 @@ class _StyleSwitch extends StatelessWidget {
                       style.label,
                       maxLines: 1,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontSize: AppFontSize.small,
+                        fontWeight: AppFontWeight.bold,
                         color: style == selected ? cs.onSurface : idleInk,
                       ),
                     ),
@@ -389,8 +389,8 @@ class _AskButtonState extends State<_AskButton>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: AppFontSize.content,
+                    fontWeight: AppFontWeight.bold,
                     color: onGreen,
                   ),
                 ),

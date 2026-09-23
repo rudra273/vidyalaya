@@ -176,7 +176,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: Text('Downloaded (${downloadedBooks.length})', 
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold)),
               ),
             ),
             ..._buildBookGroups(downloadedBooks, true, isDark, cs),
@@ -186,7 +186,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
               sliver: SliverToBoxAdapter(
                 child: Text('Available for Download (${notDownloadedBooks.length})', 
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold)),
               ),
             ),
             ..._buildBookGroups(notDownloadedBooks, false, isDark, cs),
@@ -216,7 +216,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
             child: Text('Class $classNum', 
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: cs.onSurface,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
               )),
           ),
         ),
@@ -255,7 +255,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text(book.coverEmoji, style: const TextStyle(fontSize: 24)),
+              child: Text(book.coverEmoji, style: const TextStyle(fontSize: AppFontSize.headingLarge)),
             ),
           ),
           const SizedBox(width: 12),

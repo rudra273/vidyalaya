@@ -124,7 +124,7 @@ class _MathFractionsScreenState extends ConsumerState<MathFractionsScreen> {
               'Score $_correct',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: accent,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: AppFontWeight.bold,
                   ),
             ),
           ],
@@ -135,7 +135,7 @@ class _MathFractionsScreenState extends ConsumerState<MathFractionsScreen> {
           style: Theme.of(context)
               .textTheme
               .titleLarge
-              ?.copyWith(fontWeight: FontWeight.w700, height: 1.35),
+              ?.copyWith(fontWeight: AppFontWeight.bold, height: 1.35),
         ),
         const SizedBox(height: 20),
 
@@ -216,7 +216,7 @@ class _FractionBar extends StatelessWidget {
           child: Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: AppFontWeight.extraBold,
                   color: accent,
                 ),
           ),

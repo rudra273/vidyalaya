@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
+
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -28,7 +30,7 @@ class AboutScreen extends StatelessWidget {
               'Vidyālaya',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: cs.primary,
-                fontWeight: FontWeight.bold,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
@@ -107,7 +109,7 @@ class AboutScreen extends StatelessWidget {
                         'Disclaimer',
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: cs.error,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: AppFontWeight.bold,
                         ),
                       ),
                     ],
@@ -148,7 +150,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
             ),
           ),
           const SizedBox(height: 12),

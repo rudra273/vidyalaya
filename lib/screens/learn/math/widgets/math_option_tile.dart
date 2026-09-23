@@ -104,7 +104,7 @@ class MathOptionTile extends StatelessWidget {
         label,
         textAlign: centered ? TextAlign.center : TextAlign.start,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
               color: fg,
             ),
       );
@@ -200,7 +200,7 @@ class MathScorePage extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(
@@ -239,7 +239,7 @@ class MathScorePage extends StatelessWidget {
                 'Best so far: $best',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: accent,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: AppFontWeight.bold,
                     ),
               ),
             ],

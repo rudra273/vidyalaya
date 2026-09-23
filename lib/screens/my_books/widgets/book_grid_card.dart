@@ -57,8 +57,8 @@ class _BookGridCardState extends State<BookGridCard> {
                 Text(
                   meta.label,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
+                        fontSize: AppFontSize.small,
+                        fontWeight: AppFontWeight.semibold,
                         color: col,
                       ),
                 ),

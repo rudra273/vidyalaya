@@ -131,7 +131,7 @@ class _CosmulatorErrorState extends StatelessWidget {
               'Cosmulator could not load',
               style: Theme.of(
                 context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),

@@ -752,14 +752,14 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
                     Text(
                       category.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: AppFontWeight.bold,
                           ),
                     ),
                     Text(
                       category.regionalTitle(lang),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppColors.textMuted,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: AppFontWeight.semibold,
                           ),
                     ),
                     const SizedBox(height: 4),
@@ -935,7 +935,7 @@ class _FormulaCard extends StatelessWidget {
                       Text(
                         formulaData.titleEn,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                              fontWeight: AppFontWeight.bold,
                             ),
                       ),
                       const SizedBox(height: 2),
@@ -943,7 +943,7 @@ class _FormulaCard extends StatelessWidget {
                         formulaData.regionalTitle(lang),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppColors.textMuted,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: AppFontWeight.semibold,
                             ),
                       ),
                       const SizedBox(height: 8),
@@ -963,7 +963,7 @@ class _FormulaCard extends StatelessWidget {
                               style: TextStyle(
                                 fontFamily: 'monospace',
                                 color: cs.onSecondaryContainer,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: AppFontWeight.semibold,
                               ),
                             ),
                           ),
@@ -1439,15 +1439,15 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             Text(
               widget.formulaData.titleEn,
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
+                fontWeight: AppFontWeight.bold,
+                fontSize: AppFontSize.title,
               ),
             ),
             Text(
               widget.formulaData.regionalTitle(widget.lang),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: AppFontWeight.semibold,
                   ),
             ),
           ],
@@ -1538,9 +1538,9 @@ class _CalculatorPageState extends State<_CalculatorPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'monospace',
-                        fontSize: 18,
+                        fontSize: AppFontSize.title,
                         color: cs.primary,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: AppFontWeight.bold,
                       ),
                     ),
                   ),
@@ -1598,9 +1598,9 @@ class _InputField extends StatelessWidget {
             '$varKey =',
             style: TextStyle(
               fontFamily: 'monospace',
-              fontWeight: FontWeight.bold,
+              fontWeight: AppFontWeight.bold,
               color: cs.primary,
-              fontSize: 16,
+              fontSize: AppFontSize.content,
             ),
           ),
         ),
@@ -1677,8 +1677,8 @@ class _ResultBar extends StatelessWidget {
                   color: hasResult
                       ? cs.onPrimary.withValues(alpha: 0.8)
                       : AppColors.textMuted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontSize: AppFontSize.small,
+                  fontWeight: AppFontWeight.bold,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -1690,8 +1690,8 @@ class _ResultBar extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: hasResult ? 18 : 16,
-                    fontWeight: FontWeight.bold,
+                    fontSize: hasResult ? AppFontSize.title : AppFontSize.content,
+                    fontWeight: AppFontWeight.bold,
                     color: hasResult ? cs.onPrimary : AppColors.textMuted,
                   ),
                 ),
@@ -1808,7 +1808,7 @@ class FormulaDiagramPainter extends CustomPainter {
         style: TextStyle(
           color: labelColor,
           fontSize: fontSize,
-          fontWeight: FontWeight.w600,
+          fontWeight: AppFontWeight.semibold,
           fontStyle: italic ? FontStyle.italic : FontStyle.normal,
           fontFamily: 'serif',
         ),
@@ -1907,7 +1907,7 @@ class FormulaDiagramPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5,
     );
-    _label(canvas, 'C', Offset(p1.dx + 32, bottom - 14), italic: false, fontSize: 13);
+    _label(canvas, 'C', Offset(p1.dx + 32, bottom - 14), italic: false, fontSize: AppFontSize.body);
     _label(canvas, 'b', Offset((p1.dx + p2.dx) / 2, bottom + 12));
     _label(canvas, 'a', Offset((p1.dx + apex.dx) / 2 - 12, (p1.dy + apex.dy) / 2));
   }

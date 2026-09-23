@@ -196,7 +196,7 @@ class _SectionLabel extends StatelessWidget {
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: AppColors.textMuted,
             letterSpacing: 0.8,
-            fontWeight: FontWeight.w600,
+            fontWeight: AppFontWeight.semibold,
           ),
     );
   }
@@ -252,7 +252,7 @@ class _NoteCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Text('📝', style: TextStyle(fontSize: 22)),
+                child: Text('📝', style: TextStyle(fontSize: AppFontSize.heading)),
               ),
             ),
             const SizedBox(width: 14),
@@ -334,7 +334,7 @@ class _SubjectCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                child: Text(emoji, style: const TextStyle(fontSize: AppFontSize.headingLarge)),
               ),
             ),
             const SizedBox(width: 14),
@@ -367,8 +367,8 @@ class _SubjectCard extends StatelessWidget {
               child: Text(
                 '$highlightCount',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.body,
+                  fontWeight: AppFontWeight.semibold,
                   color: textColor,
                 ),
               ),

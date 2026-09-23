@@ -71,7 +71,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   Text(
                     'Welcome to Vidyālaya',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: AppFontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -123,7 +123,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                   Text(
                                     '(coming soon)',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: AppFontSize.small,
                                       color: AppColors.textMuted.withValues(
                                         alpha: 0.5,
                                       ),
@@ -199,10 +199,10 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                 child: AnimatedDefaultTextStyle(
                                   duration: const Duration(milliseconds: 200),
                                   style: TextStyle(
-                                    fontSize: isSelected ? 28 : 22,
+                                    fontSize: isSelected ? AppFontSize.displaySmall : AppFontSize.heading,
                                     fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.w500,
+                                        ? AppFontWeight.bold
+                                        : AppFontWeight.medium,
                                     color: isSelected
                                         ? cs.primary
                                         : (available
@@ -245,7 +245,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           'Class $_selectedClass books are coming soon!',
                           style: TextStyle(
                             color: Colors.orange.shade800,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: AppFontWeight.semibold,
                           ),
                         ),
                       ),
@@ -295,8 +295,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         child: const Text(
                           'Continue',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: AppFontSize.title,
+                            fontWeight: AppFontWeight.bold,
                           ),
                         ),
                       ),

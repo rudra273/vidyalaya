@@ -1114,7 +1114,7 @@ class _PlanUsageBadge extends StatelessWidget {
               'Sign in',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: cs.primary,
-                fontWeight: FontWeight.w700,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
           ],
@@ -1167,7 +1167,7 @@ class _PlanUsageBadge extends StatelessWidget {
             usageLabel,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: cs.onSurface,
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
             ),
           ),
         ],
@@ -1297,8 +1297,8 @@ class _MenuChip<T> extends StatelessWidget {
               optionLabel,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: optionValue == value
-                    ? FontWeight.w700
-                    : FontWeight.w400,
+                    ? AppFontWeight.bold
+                    : AppFontWeight.regular,
                 color: optionValue == value ? cs.primary : cs.onSurface,
               ),
             ),
@@ -1320,7 +1320,7 @@ class _MenuChip<T> extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
                 color: cs.onSurface,
               ),
             ),
@@ -1438,7 +1438,7 @@ class _EmptyChat extends StatelessWidget {
                               ? AppColors.ink2Dark
                               : AppColors.ink2,
                           textStyle: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
+                              ?.copyWith(fontWeight: AppFontWeight.semibold),
                         ),
                         icon: const Icon(Icons.history_rounded, size: 16),
                         label: const Text('Load previous chat'),
@@ -1643,7 +1643,7 @@ class _MessageView extends StatelessWidget {
                     ).textTheme.bodyMedium?.copyWith(height: 1.45),
                     strong: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       height: 1.45,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: AppFontWeight.bold,
                     ),
                     listBullet: Theme.of(
                       context,
@@ -1799,9 +1799,9 @@ class _CitationChip extends StatelessWidget {
                 : '${citation.label} $book · $page',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: cs.primary,
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
               letterSpacing: 0,
-              fontSize: 11,
+              fontSize: AppFontSize.caption,
             ),
           ),
         ],

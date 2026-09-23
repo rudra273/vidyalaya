@@ -52,7 +52,7 @@ class _BookCardState extends State<BookCard> {
                 child: Center(
                   child: Text(
                     widget.book.coverEmoji,
-                    style: const TextStyle(fontSize: 26),
+                    style: const TextStyle(fontSize: AppFontSize.displaySmall),
                   ),
                 ),
               ),
@@ -81,8 +81,8 @@ class _BookCardState extends State<BookCard> {
                         subjectLabel,
                         style: TextStyle(
                           color: subjectText,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          fontSize: AppFontSize.caption,
+                          fontWeight: AppFontWeight.medium,
                         ),
                       ),
                     ),

@@ -78,7 +78,7 @@ class SubjectNotesScreen extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(book?.coverEmoji ?? '📖',
-                              style: const TextStyle(fontSize: 20)),
+                              style: const TextStyle(fontSize: AppFontSize.headingSmall)),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -92,8 +92,8 @@ class SubjectNotesScreen extends ConsumerWidget {
                           Text(
                             '${highlights.length}',
                             style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontSize: AppFontSize.body,
+                              fontWeight: AppFontWeight.semibold,
                               color: textColor,
                             ),
                           ),

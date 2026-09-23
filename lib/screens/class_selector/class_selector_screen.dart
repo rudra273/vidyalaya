@@ -287,8 +287,8 @@ class _ClassTile extends StatelessWidget {
                 child: Text(
                   '$classNumber',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: AppFontSize.content,
+                    fontWeight: AppFontWeight.semibold,
                     color: isChecked ? cs.primary : cs.onSurface,
                   ),
                 ),
@@ -312,7 +312,7 @@ class _ClassTile extends StatelessWidget {
                       'Coming soon',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: mutedColor,
-                        fontSize: 11,
+                        fontSize: AppFontSize.caption,
                       ),
                     ),
                 ],

@@ -106,7 +106,7 @@ class _FormulasCard extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall
-                        ?.copyWith(fontSize: 22, height: 1.1),
+                        ?.copyWith(fontSize: AppFontSize.heading, height: 1.1),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -116,7 +116,7 @@ class _FormulasCard extends ConsumerWidget {
                           'Look up any formula, then calculate with it',
                           style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontSize: 13,
+                            fontSize: AppFontSize.body,
                           ),
                         ),
                       ),
@@ -179,14 +179,14 @@ class _ToolRow extends ConsumerWidget {
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                          ?.copyWith(fontWeight: AppFontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       tool.sub,
                       style: TextStyle(
                         color: AppColors.textMuted,
-                        fontSize: 13,
+                        fontSize: AppFontSize.body,
                       ),
                       maxLines: 2,
                     ),
@@ -204,7 +204,7 @@ class _ToolRow extends ConsumerWidget {
                                 .labelMedium
                                 ?.copyWith(
                                   color: accent,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: AppFontWeight.bold,
                                 ),
                           ),
                         ],

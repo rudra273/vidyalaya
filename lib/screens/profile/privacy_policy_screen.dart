@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
+
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
@@ -28,7 +30,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               'Vidyālaya',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: cs.primary,
-                fontWeight: FontWeight.bold,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
@@ -170,7 +172,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
             ),
           ),
           const SizedBox(height: 12),

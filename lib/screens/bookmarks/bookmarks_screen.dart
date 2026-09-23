@@ -80,7 +80,7 @@ class BookmarksScreen extends ConsumerWidget {
                           children: [
                             Text(
                               entries.first.emoji,
-                              style: const TextStyle(fontSize: 20),
+                              style: const TextStyle(fontSize: AppFontSize.headingSmall),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -95,8 +95,8 @@ class BookmarksScreen extends ConsumerWidget {
                             Text(
                               '${entries.length}',
                               style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                                fontSize: AppFontSize.body,
+                                fontWeight: AppFontWeight.semibold,
                                 color: textColor,
                               ),
                             ),
@@ -123,7 +123,7 @@ class BookmarksScreen extends ConsumerWidget {
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(fontWeight: FontWeight.w500),
+                                      ?.copyWith(fontWeight: AppFontWeight.medium),
                                 ),
                               ),
                             ...bookmarks.map((bm) => Padding(

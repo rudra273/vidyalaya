@@ -333,8 +333,8 @@ class _StreakChip extends StatelessWidget {
             Text(
               '$streak',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: AppFontSize.body,
+                fontWeight: AppFontWeight.bold,
                 color: accent,
               ),
             ),
@@ -386,8 +386,8 @@ class _Avatar extends StatelessWidget {
                   fontFamily: Theme.of(
                     context,
                   ).textTheme.displaySmall?.fontFamily,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.title,
+                  fontWeight: AppFontWeight.semibold,
                   color: cs.primary,
                 ),
               ),
@@ -439,13 +439,13 @@ class _WordOfDayCard extends StatelessWidget {
                     Text(
                       word.word,
                       style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontSize: 20, height: 1.05),
+                          ?.copyWith(fontSize: AppFontSize.headingSmall, height: 1.05),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '/${word.pronunciation}/ · ${word.partOfSpeech}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
+                        fontSize: AppFontSize.small,
                         color: muted,
                         fontStyle: FontStyle.italic,
                       ),
@@ -473,8 +473,8 @@ class _WordOfDayCard extends StatelessWidget {
                       Text(
                         'More',
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontSize: AppFontSize.small,
+                          fontWeight: AppFontWeight.bold,
                           color: accent,
                         ),
                       ),
@@ -546,7 +546,7 @@ class _ExampleSentence extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).textTheme.bodySmall?.copyWith(
-      fontSize: 13.5,
+      fontSize: AppFontSize.body,
       height: 1.45,
       fontStyle: FontStyle.italic,
     );
@@ -565,7 +565,7 @@ class _ExampleSentence extends StatelessWidget {
           TextSpan(
             text: sentence.substring(idx, idx + word.length),
             style: TextStyle(
-              fontWeight: FontWeight.w700,
+              fontWeight: AppFontWeight.bold,
               color: accent,
               fontStyle: FontStyle.italic,
             ),
@@ -614,8 +614,8 @@ class _MiniTool extends StatelessWidget {
                   label,
                   maxLines: 1,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+                    fontSize: AppFontSize.small,
+                    fontWeight: AppFontWeight.semibold,
                   ),
                 ),
               ),
@@ -652,8 +652,8 @@ class _RecentBookCard extends ConsumerWidget {
             Text(
               meta.label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontSize: AppFontSize.small,
+                fontWeight: AppFontWeight.semibold,
                 color: Theme.of(context).brightness == Brightness.dark
                     ? AppColors.ink2Dark
                     : AppColors.ink2,

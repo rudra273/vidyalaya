@@ -107,7 +107,7 @@ class FeatureCard extends StatelessWidget {
           data.title,
           style: Theme.of(
             context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ).textTheme.titleMedium?.copyWith(fontWeight: AppFontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
@@ -135,7 +135,7 @@ class FeatureCard extends StatelessWidget {
                     child: Text(
                       data.title,
                       style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                          ?.copyWith(fontWeight: AppFontWeight.bold),
                     ),
                   ),
                   if (_isComingSoon) ...[
@@ -180,7 +180,7 @@ class _ComingSoonBadge extends StatelessWidget {
         'Soon',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
           color: cs.onSecondaryContainer,
-          fontWeight: FontWeight.bold,
+          fontWeight: AppFontWeight.bold,
         ),
       ),
     );

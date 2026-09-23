@@ -194,7 +194,7 @@ class SettingsScreen extends ConsumerWidget {
                   Text('Vidyālaya',
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontSize: 17,
+                                fontSize: AppFontSize.title,
                                 color: isDark
                                     ? AppColors.ink2Dark
                                     : AppColors.ink2,
@@ -203,7 +203,7 @@ class SettingsScreen extends ConsumerWidget {
                   Text(
                     'Version 1.0.3',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 12.5,
+                          fontSize: AppFontSize.small,
                         ),
                   ),
                 ],
@@ -303,8 +303,8 @@ class _Segment extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.body,
+                  fontWeight: AppFontWeight.semibold,
                   color: active
                       ? cs.onPrimary
                       : (isDark ? AppColors.ink2Dark : AppColors.ink2),

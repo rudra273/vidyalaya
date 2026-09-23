@@ -118,8 +118,8 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
                 child: Text(
                   '1 MIN · ${meta.label.toUpperCase()}',
                   style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
+                    fontSize: AppFontSize.caption,
+                    fontWeight: AppFontWeight.bold,
                     letterSpacing: 0.9,
                     color: accent,
                   ),
@@ -139,8 +139,8 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
                     Text(
                       _wasCorrect ? 'Correct' : 'Answer below',
                       style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
+                        fontSize: AppFontSize.small,
+                        fontWeight: AppFontWeight.semibold,
                         color: _wasCorrect ? cs.primary : muted,
                       ),
                     ),
@@ -154,7 +154,7 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
             question.question,
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(fontSize: 17, height: 1.28),
+            ).textTheme.headlineSmall?.copyWith(fontSize: AppFontSize.title, height: 1.28),
           ),
           const SizedBox(height: 12),
 
@@ -186,7 +186,7 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
                   child: Text(
                     question.explanation,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 12.5,
+                      fontSize: AppFontSize.small,
                       height: 1.45,
                       color: muted,
                     ),
@@ -220,8 +220,8 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
                           child: Text(
                             'Ask the AI to explain this',
                             style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontSize: AppFontSize.body,
+                              fontWeight: AppFontWeight.semibold,
                               color: cs.primary,
                             ),
                           ),
@@ -250,8 +250,8 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
                         Text(
                           'Next',
                           style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
+                            fontSize: AppFontSize.small,
+                            fontWeight: AppFontWeight.bold,
                             color: accent,
                           ),
                         ),
@@ -350,8 +350,8 @@ class _OptionChip extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontSize: AppFontSize.small,
+                fontWeight: AppFontWeight.semibold,
                 color: ink,
               ),
             ),

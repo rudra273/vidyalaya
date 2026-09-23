@@ -273,10 +273,10 @@ class _RegionChip extends StatelessWidget {
                   label,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppFontSize.body,
                     color:
                         selected ? Colors.amber.shade800 : AppColors.textMuted,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: selected ? AppFontWeight.bold : AppFontWeight.regular,
                   ),
                 ),
               ),
@@ -377,8 +377,8 @@ class _StatePickerSheetState extends State<_StatePickerSheet> {
                               state,
                               style: TextStyle(
                                 fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
+                                    ? AppFontWeight.bold
+                                    : AppFontWeight.regular,
                               ),
                             ),
                             trailing: isSelected
@@ -447,8 +447,8 @@ class _EventCard extends StatelessWidget {
               Text(
                 event.year,
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
+                  fontSize: AppFontSize.title,
+                  fontWeight: AppFontWeight.black,
                   color: Colors.amber.shade700,
                   letterSpacing: 1.2,
                 ),
@@ -463,8 +463,8 @@ class _EventCard extends StatelessWidget {
                 child: Text(
                   event.era,
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    fontSize: AppFontSize.caption,
+                    fontWeight: AppFontWeight.bold,
                     color: isDark ? eraColor.shade200 : eraColor.shade700,
                   ),
                 ),
@@ -477,7 +477,7 @@ class _EventCard extends StatelessWidget {
           Text(
             event.title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: AppFontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
           ),
@@ -499,7 +499,7 @@ class _EventCard extends StatelessWidget {
           Text(
             lang == RegionalLanguage.hindi ? event.titleHindi : event.titleOdia,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: AppFontWeight.semibold,
                   color: isDark ? Colors.white70 : Colors.black87,
                 ),
           ),

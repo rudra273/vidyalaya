@@ -47,7 +47,7 @@ class _PyConsoleState extends State<PyConsole> {
   @override
   Widget build(BuildContext context) {
     final mono = GoogleFonts.jetBrainsMono(
-      fontSize: 13.5,
+      fontSize: AppFontSize.body,
       height: 1.5,
       color: const Color(0xFFE6EDE8),
     );
@@ -75,7 +75,7 @@ class _PyConsoleState extends State<PyConsole> {
               Text(
                 'Output',
                 style: mono.copyWith(
-                  fontSize: 11,
+                  fontSize: AppFontSize.caption,
                   color: const Color(0xFF6D7E75),
                   letterSpacing: 0.5,
                 ),
@@ -141,7 +141,7 @@ class _PyConsoleState extends State<PyConsole> {
                               Text('Stopped',
                                   style: mono.copyWith(
                                     color: const Color(0xFFE6B95A),
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: AppFontWeight.bold,
                                   )),
                             ],
                           ),
@@ -186,8 +186,8 @@ class _ErrorView extends StatelessWidget {
                   error.line != null ? 'Line ${error.line}' : 'Oops!',
                   style: mono.copyWith(
                     color: const Color(0xFFF0A79D),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                    fontWeight: AppFontWeight.bold,
+                    fontSize: AppFontSize.small,
                   ),
                 ),
               ),
@@ -207,7 +207,7 @@ class _ErrorView extends StatelessWidget {
                 Expanded(
                   child: Text(error.hint!,
                       style: mono.copyWith(
-                          color: const Color(0xFFCBB98A), fontSize: 12)),
+                          color: const Color(0xFFCBB98A), fontSize: AppFontSize.small)),
                 ),
               ],
             ),

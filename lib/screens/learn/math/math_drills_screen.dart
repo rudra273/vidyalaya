@@ -256,15 +256,15 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                            ?.copyWith(fontWeight: AppFontWeight.bold),
                       ),
                     ),
                     Text(
                       set.symbols,
                       style: TextStyle(
                         color: AppColors.textMuted,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontSize: AppFontSize.content,
+                        fontWeight: AppFontWeight.bold,
                       ),
                     ),
                   ],
@@ -286,7 +286,7 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text(
                 'Start drill',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.bold),
               ),
             ),
           ),
@@ -322,7 +322,7 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
                       '${_secondsLeft}s',
                       style:
                           Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: AppFontWeight.extraBold,
                                 color: urgent
                                     ? const Color(0xFFC0483C)
                                     : cs.onSurface,
@@ -334,7 +334,7 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
                   'Correct $_correct / $_attempts',
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: accent,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: AppFontWeight.bold,
                       ),
                 ),
               ],
@@ -353,8 +353,8 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
             Text(
               fact.prompt,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w800,
+                    fontSize: AppFontSize.hero,
+                    fontWeight: AppFontWeight.extraBold,
                     color: _lastWasRight == null
                         ? cs.onSurface
                         : (_lastWasRight!
@@ -399,7 +399,7 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 18),
             Row(
@@ -420,7 +420,7 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
                     : 'Your best is $best.',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: accent,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: AppFontWeight.bold,
                     ),
               ),
             ],
@@ -474,7 +474,7 @@ class _Stat extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: AppFontWeight.extraBold,
                     color: accent,
                   ),
             ),
@@ -482,7 +482,7 @@ class _Stat extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: AppColors.textMuted, fontSize: AppFontSize.small),
             ),
           ],
         ),

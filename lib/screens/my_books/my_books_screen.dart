@@ -234,7 +234,7 @@ class _AddClassBanner extends StatelessWidget {
               'Add another class',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: cs.primary,
-                fontWeight: FontWeight.w700,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
           ],

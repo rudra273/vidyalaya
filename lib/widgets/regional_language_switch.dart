@@ -43,7 +43,7 @@ class RegionalLanguageSwitch extends ConsumerWidget {
                 Text(
                   '${lang.labelNative}  (${lang.labelEn})',
                   style: TextStyle(
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: selected ? AppFontWeight.bold : AppFontWeight.regular,
                     color: selected ? cs.primary : null,
                   ),
                 ),
@@ -68,8 +68,8 @@ class RegionalLanguageSwitch extends ConsumerWidget {
               Text(
                 current.labelNative,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.body,
+                  fontWeight: AppFontWeight.semibold,
                   color: cs.onSurface,
                 ),
               ),
