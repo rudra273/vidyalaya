@@ -195,7 +195,9 @@ class AiHubScreen extends ConsumerWidget {
                   // shadows want room to fall before the next card starts.
                   mainAxisSpacing: 14,
                   crossAxisSpacing: 14,
-                  childAspectRatio: 1.5,
+                  // Leave room for the glyph and label on compact displays,
+                  // whose font metrics can otherwise overflow by a pixel.
+                  childAspectRatio: 1.4,
                 ),
                 itemCount: subjects.length,
                 itemBuilder: (context, index) {
