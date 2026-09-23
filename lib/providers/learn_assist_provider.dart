@@ -26,11 +26,12 @@ const int learnAssistMinClass = 6;
 const int learnAssistDefaultClass = 8;
 
 int resolveLearnAssistClass(Set<int> selectedClasses, {int? primaryClass}) {
-  final options = learnAssistClassOptions(selectedClasses);
-  if (primaryClass != null && options.contains(primaryClass)) {
+  // LearnAssist follows the student's profile class. Explore's independent
+  // class filter must not change which textbook chapters the chatbot shows.
+  if (primaryClass != null) {
     return primaryClass;
   }
-  return options.first;
+  return learnAssistClassOptions(selectedClasses).first;
 }
 
 List<int> learnAssistClassOptions(Set<int> selectedClasses) {

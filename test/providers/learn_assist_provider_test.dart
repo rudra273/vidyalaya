@@ -37,9 +37,9 @@ void main() {
       expect(learnAssistClassOptions({8, 6, 7}), [6, 7, 8]);
     });
 
-    test('prefers the primary class when all classes are available', () {
+    test('uses the profile class independently of Explore selection', () {
       expect(resolveLearnAssistClass({7, 8, 9}, primaryClass: 8), 8);
-      expect(resolveLearnAssistClass({7, 9}, primaryClass: 8), 7);
+      expect(resolveLearnAssistClass({7, 9}, primaryClass: 8), 8);
     });
 
     test('ignores classes below the LearnAssist minimum', () {
