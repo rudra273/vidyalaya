@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../utils/haptics.dart';
 import '../../data/seed/seed_data.dart';
 import '../../data/models/book.dart';
+import '../../data/services/secure_http_client.dart';
 
 class ManageDownloadsScreen extends ConsumerStatefulWidget {
   const ManageDownloadsScreen({super.key});
@@ -94,9 +95,10 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
       _downloadingProgress[book.id] = 0.01; // Indicate start
     });
 
+    final client = SecureHttpClient(http.Client());
     try {
       final request = http.Request('GET', Uri.parse(book.pdfUrl));
-      final response = await http.Client().send(request);
+      final response = await client.send(request);
 
       if (response.statusCode != 200) {
         throw Exception('Failed to download');
@@ -139,6 +141,8 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
           backgroundColor: Theme.of(context).colorScheme.error,
         ));
       }
+    } finally {
+      client.close();
     }
   }
 

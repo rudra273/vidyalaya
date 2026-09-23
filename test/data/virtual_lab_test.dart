@@ -45,6 +45,22 @@ void main() {
     expect(acidic.values['color'], 'red');
     expect(acidic.values['approx_ph'], 2);
     expect(acidic.correct, isTrue);
+    final basic = evaluateLab('indicator', {'sample': 'soap'}, 'blue');
+    expect(basic.values['nature'], 'basic');
+    final weak = evaluateLab('circuit', {
+      'cells': 1,
+      'resistance_ohms': 9,
+      'closed': true,
+    }, 'dim');
+    final stronger = evaluateLab('circuit', {
+      'cells': 3,
+      'resistance_ohms': 9,
+      'closed': true,
+    }, 'dim');
+    expect(
+      stronger.values['current_a'] as double,
+      greaterThan(weak.values['current_a'] as double),
+    );
   });
 
   test('device history preserves an attempt across restart', () async {
@@ -55,6 +71,7 @@ void main() {
       labId: 'indicator',
       prediction: 'blue',
       controls: {'sample': 'soap'},
+      clientSessionId: newLabSessionId(),
     );
     expect(
       attempt.clientAttemptId,
@@ -68,9 +85,7 @@ void main() {
     await repository.saveLabAttempt(attempt);
     final restored = UserPrefsRepository(prefs).getLabAttempts().single;
     expect(restored.clientAttemptId, attempt.clientAttemptId);
-    expect(restored.synced, isFalse);
-    await repository.saveLabAttempt(restored.copyWith(synced: true));
+    expect(restored.clientSessionId, attempt.clientSessionId);
     expect(repository.getLabAttempts(), hasLength(1));
-    expect(repository.getLabAttempts().single.synced, isTrue);
   });
 }

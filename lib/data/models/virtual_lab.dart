@@ -38,7 +38,7 @@ LabObservation evaluateLab(
       correct: prediction == brightness,
       explanation: !closed
           ? 'The open switch breaks the circuit, so no current flows.'
-          : 'With the switch closed, current is voltage divided by resistance. More cells raise voltage; more resistance lowers current.',
+          : 'In this simplified model, current is voltage divided by the selected total resistance. More cells raise voltage; more resistance lowers current.',
     );
   }
   if (labId == 'indicator') {
@@ -61,6 +61,7 @@ LabObservation evaluateLab(
 
 class LabAttempt {
   final String clientAttemptId;
+  final String? clientSessionId;
   final String labId;
   final int labVersion;
   final String prediction;
@@ -68,10 +69,10 @@ class LabAttempt {
   final Map<String, Object> observation;
   final bool correct;
   final DateTime createdAt;
-  final bool synced;
 
   const LabAttempt({
     required this.clientAttemptId,
+    this.clientSessionId,
     required this.labId,
     required this.labVersion,
     required this.prediction,
@@ -79,17 +80,18 @@ class LabAttempt {
     required this.observation,
     required this.correct,
     required this.createdAt,
-    this.synced = false,
   });
 
   factory LabAttempt.create({
     required String labId,
     required String prediction,
     required Map<String, Object> controls,
+    String? clientSessionId,
   }) {
     final result = evaluateLab(labId, controls, prediction);
     return LabAttempt(
       clientAttemptId: _uuidV4(),
+      clientSessionId: clientSessionId,
       labId: labId,
       labVersion: 1,
       prediction: prediction,
@@ -100,20 +102,9 @@ class LabAttempt {
     );
   }
 
-  LabAttempt copyWith({bool? synced}) => LabAttempt(
-    clientAttemptId: clientAttemptId,
-    labId: labId,
-    labVersion: labVersion,
-    prediction: prediction,
-    controls: controls,
-    observation: observation,
-    correct: correct,
-    createdAt: createdAt,
-    synced: synced ?? this.synced,
-  );
-
   Map<String, Object?> toJson() => {
     'client_attempt_id': clientAttemptId,
+    if (clientSessionId != null) 'client_session_id': clientSessionId,
     'lab_id': labId,
     'lab_version': labVersion,
     'prediction': prediction,
@@ -121,19 +112,11 @@ class LabAttempt {
     'observation': observation,
     'correct': correct,
     'created_at': createdAt.toIso8601String(),
-    'synced': synced,
-  };
-
-  Map<String, Object?> toRequestJson() => {
-    'client_attempt_id': clientAttemptId,
-    'lab_id': labId,
-    'lab_version': labVersion,
-    'prediction': prediction,
-    'controls': controls,
   };
 
   factory LabAttempt.fromJson(Map<String, dynamic> json) => LabAttempt(
     clientAttemptId: json['client_attempt_id'] as String,
+    clientSessionId: json['client_session_id'] as String?,
     labId: json['lab_id'] as String,
     labVersion: json['lab_version'] as int,
     prediction: json['prediction'] as String,
@@ -141,9 +124,10 @@ class LabAttempt {
     observation: Map<String, Object>.from(json['observation'] as Map),
     correct: json['correct'] as bool,
     createdAt: DateTime.parse(json['created_at'] as String),
-    synced: json['synced'] as bool? ?? false,
   );
 }
+
+String newLabSessionId() => _uuidV4();
 
 String _uuidV4() {
   final random = Random.secure();

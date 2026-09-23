@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/learn_assist.dart';
+import 'secure_http_client.dart';
 
 typedef FirebaseIdTokenProvider =
     Future<String?> Function({required bool forceRefresh});
@@ -21,7 +22,7 @@ class LearnAssistService {
     required http.Client client,
     required FirebaseIdTokenProvider idTokenProvider,
     Uri? baseUrl,
-  }) : _client = client,
+  }) : _client = SecureHttpClient(client),
        _idTokenProvider = idTokenProvider,
        _baseUrl = baseUrl ?? defaultBaseUrl;
 

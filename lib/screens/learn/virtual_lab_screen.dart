@@ -1,14 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../data/models/virtual_lab.dart';
-import '../../data/repositories/user_prefs_repository.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/core_providers.dart';
-import '../../providers/lab_provider.dart';
 import '../../widgets/calm_widgets.dart';
 
 class VirtualLabScreen extends ConsumerStatefulWidget {
@@ -28,28 +24,47 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
   LabAttempt? _result;
   List<LabAttempt> _history = [];
   bool _saving = false;
+  late String _sessionId;
 
   @override
   void initState() {
     super.initState();
     _history = ref.read(userPrefsRepositoryProvider).getLabAttempts();
+    _sessionId = newLabSessionId();
+    ref.listenManual(userPrefsRepositoryProvider, (previous, next) {
+      setState(() {
+        _clearExperiment();
+        _sessionId = newLabSessionId();
+        _history = next.getLabAttempts();
+        _saving = false;
+      });
+    });
+  }
+
+  void _clearExperiment() {
+    _prediction = null;
+    _result = null;
+    _cells = 1;
+    _resistance = 6;
+    _closed = false;
+    _sample = 'water';
   }
 
   void _reset() {
+    if (_saving) return;
     setState(() {
-      _prediction = null;
-      _result = null;
-      _cells = 1;
-      _resistance = 6;
-      _closed = false;
-      _sample = 'water';
+      _clearExperiment();
+      _sessionId = newLabSessionId();
     });
   }
 
   void _selectLab(String labId) {
-    if (_labId == labId) return;
-    _reset();
-    setState(() => _labId = labId);
+    if (_labId == labId || _saving) return;
+    setState(() {
+      _clearExperiment();
+      _labId = labId;
+      _sessionId = newLabSessionId();
+    });
   }
 
   Future<void> _observe() async {
@@ -66,6 +81,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
       labId: _labId,
       prediction: prediction,
       controls: controls,
+      clientSessionId: _sessionId,
     );
     setState(() => _saving = true);
     final repository = ref.read(userPrefsRepositoryProvider);
@@ -78,8 +94,6 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
         _result = attempt;
         _history = repository.getLabAttempts();
       });
-      final user = ref.read(firebaseAuthProvider).currentUser;
-      if (user != null) await _submitAttempt(attempt, user, repository);
     } catch (_) {
       if (mounted && ref.read(userPrefsRepositoryProvider) == repository) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -98,36 +112,8 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
     }
   }
 
-  Future<void> _submitAttempt(
-    LabAttempt attempt,
-    User user,
-    UserPrefsRepository repository,
-  ) async {
-    try {
-      await ref
-          .read(labServiceProvider)
-          .submitAttempt(
-            attempt,
-            tokenProvider: ({required forceRefresh}) =>
-                user.getIdToken(forceRefresh),
-          );
-      if (ref.read(firebaseAuthProvider).currentUser?.uid != user.uid) return;
-      await repository.saveLabAttempt(attempt.copyWith(synced: true));
-    } catch (_) {
-      // The device keeps the attempt as a local result; it is not queued for a
-      // later account or device.
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    ref.listen(userPrefsRepositoryProvider, (previous, next) {
-      _reset();
-      setState(() {
-        _history = next.getLabAttempts();
-        _saving = false;
-      });
-    });
     final circuit = _labId == 'circuit';
     final observation = _result?.observation;
     final disabledMotion = MediaQuery.of(context).disableAnimations;
@@ -139,7 +125,8 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
         title: const Text('Virtual Science Lab'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/explore'),
         ),
       ),
       body: SafeArea(
@@ -152,7 +139,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
           ),
           children: [
             Text(
-              'CLASS 7 · SCIENCE BETA',
+              'CLASS 7 · SCIENCE · CHAPTER ${circuit ? 3 : 2} · BETA',
               style: Theme.of(context).textTheme.labelSmall,
             ),
             const SizedBox(height: 8),
@@ -162,12 +149,12 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                 ChoiceChip(
                   label: const Text('Circuit'),
                   selected: circuit,
-                  onSelected: (_) => _selectLab('circuit'),
+                  onSelected: _saving ? null : (_) => _selectLab('circuit'),
                 ),
                 ChoiceChip(
                   label: const Text('Indicator'),
                   selected: !circuit,
-                  onSelected: (_) => _selectLab('indicator'),
+                  onSelected: _saving ? null : (_) => _selectLab('indicator'),
                 ),
               ],
             ),
@@ -179,14 +166,14 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
             const SizedBox(height: 6),
             Text(
               circuit
-                  ? 'Predict how a switch, cells, and resistance affect a bulb.'
+                  ? 'Predict how a switch, cells, and total resistance affect a bulb in this simplified model.'
                   : 'Predict the colour of universal indicator in each sample.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
             Semantics(
               label: circuit
-                  ? 'Circuit diagram. The switch is ${_closed ? 'closed' : 'open'}. ${observation?['brightness'] ?? 'No observation yet'} bulb.'
+                  ? 'Circuit diagram with $_cells battery cell${_cells == 1 ? '' : 's'}, $_resistance ohm resistance, and an ${_closed ? 'closed' : 'open'} switch. ${observation?['brightness'] ?? 'No observation yet'} bulb.'
                   : 'Indicator beaker. ${observation?['color'] ?? 'Clear'} sample.',
               child: AnimatedContainer(
                 duration: disabledMotion
@@ -202,6 +189,8 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                       ? _CircuitPainter(
                           color: colorScheme.primary,
                           closed: _closed,
+                          cells: _cells,
+                          resistance: _resistance,
                           brightness:
                               observation?['brightness'] as String? ?? 'off',
                         )
@@ -225,13 +214,16 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
               SwitchListTile(
                 title: const Text('Switch closed'),
                 value: _closed,
-                onChanged: (value) => setState(() {
-                  _closed = value;
-                  _result = null;
-                }),
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() {
+                        _closed = value;
+                        _result = null;
+                      }),
               ),
               _ChoiceRow<int>(
                 label: 'Battery cells',
+                enabled: !_saving,
                 values: const [1, 2, 3],
                 selected: _cells,
                 format: (value) => '$value',
@@ -241,7 +233,8 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                 }),
               ),
               _ChoiceRow<int>(
-                label: 'Resistance',
+                label: 'Total resistance',
+                enabled: !_saving,
                 values: const [3, 6, 9],
                 selected: _resistance,
                 format: (value) => '$value Ω',
@@ -253,6 +246,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
             ] else
               _ChoiceRow<String>(
                 label: 'Sample',
+                enabled: !_saving,
                 values: const ['lemon', 'water', 'soap'],
                 selected: _sample,
                 format: (value) => switch (value) {
@@ -279,10 +273,12 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                             value[0].toUpperCase() + value.substring(1),
                           ),
                           selected: _prediction == value,
-                          onSelected: (_) => setState(() {
-                            _prediction = value;
-                            _result = null;
-                          }),
+                          onSelected: _saving
+                              ? null
+                              : (_) => setState(() {
+                                  _prediction = value;
+                                  _result = null;
+                                }),
                         ),
                       )
                       .toList(),
@@ -298,7 +294,10 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                TextButton(onPressed: _reset, child: const Text('Reset')),
+                TextButton(
+                  onPressed: _saving ? null : _reset,
+                  child: const Text('Reset'),
+                ),
               ],
             ),
             if (_result != null) ...[
@@ -318,8 +317,8 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                       const SizedBox(height: 8),
                       Text(
                         circuit
-                            ? 'Bulb: ${observation!['brightness']} · Current: ${observation['current_a']} A'
-                            : 'Colour: ${observation!['color']} · Approx. pH: ${observation['approx_ph']}',
+                            ? 'Bulb: ${observation!['brightness']}\nVoltage: ${observation['voltage_v']} V · Current: ${observation['current_a']} A'
+                            : 'Colour: ${observation!['color']} · Approx. pH: ${observation['approx_ph']}\nNature: ${observation['nature']}',
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -331,14 +330,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _history.any(
-                              (item) =>
-                                  item.clientAttemptId ==
-                                      _result!.clientAttemptId &&
-                                  item.synced,
-                            )
-                            ? 'Synced to your account'
-                            : 'Saved on this device; will sync when signed in and online',
+                        'Saved on this device only',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -362,6 +354,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
 
 class _ChoiceRow<T> extends StatelessWidget {
   final String label;
+  final bool enabled;
   final List<T> values;
   final T selected;
   final String Function(T) format;
@@ -369,6 +362,7 @@ class _ChoiceRow<T> extends StatelessWidget {
 
   const _ChoiceRow({
     required this.label,
+    required this.enabled,
     required this.values,
     required this.selected,
     required this.format,
@@ -387,7 +381,7 @@ class _ChoiceRow<T> extends StatelessWidget {
               (value) => ChoiceChip(
                 label: Text(format(value)),
                 selected: value == selected,
-                onSelected: (_) => onSelected(value),
+                onSelected: enabled ? (_) => onSelected(value) : null,
               ),
             )
             .toList(),
@@ -399,11 +393,15 @@ class _ChoiceRow<T> extends StatelessWidget {
 class _CircuitPainter extends CustomPainter {
   final Color color;
   final bool closed;
+  final int cells;
+  final int resistance;
   final String brightness;
 
   const _CircuitPainter({
     required this.color,
     required this.closed,
+    required this.cells,
+    required this.resistance,
     required this.brightness,
   });
 
@@ -415,20 +413,26 @@ class _CircuitPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     final left = size.width * .2;
     final right = size.width * .8;
-    final top = size.height * .25;
-    final bottom = size.height * .75;
-    canvas.drawLine(Offset(left, top), Offset(size.width * .45, top), wire);
-    canvas.drawLine(Offset(size.width * .55, top), Offset(right, top), wire);
-    canvas.drawLine(Offset(right, top), Offset(right, bottom), wire);
-    canvas.drawLine(Offset(right, bottom), Offset(left, bottom), wire);
-    canvas.drawLine(Offset(left, bottom), Offset(left, top), wire);
+    final top = size.height * .22;
+    final bottom = size.height * .76;
+    final middle = (top + bottom) / 2;
+    final switchLeft = size.width * .44;
+    final switchRight = size.width * .56;
+    canvas.drawLine(Offset(left, top), Offset(switchLeft, top), wire);
+    canvas.drawLine(Offset(switchRight, top), Offset(right, top), wire);
     canvas.drawLine(
-      Offset(size.width * .45, top),
-      Offset(size.width * .55, closed ? top : top - 20),
+      Offset(switchLeft, top),
+      Offset(switchRight, closed ? top : top - 18),
       wire,
     );
+    canvas.drawCircle(Offset(switchLeft, top), 3, Paint()..color = color);
+    canvas.drawCircle(Offset(switchRight, top), 3, Paint()..color = color);
+
+    // The bulb and resistor interrupt the wire rather than being bypassed.
+    canvas.drawLine(Offset(right, top), Offset(right, middle - 25), wire);
+    canvas.drawLine(Offset(right, middle + 25), Offset(right, bottom), wire);
     canvas.drawCircle(
-      Offset(right, size.height * .5),
+      Offset(right, middle),
       25,
       Paint()
         ..color = brightness == 'bright'
@@ -437,23 +441,76 @@ class _CircuitPainter extends CustomPainter {
             ? Colors.amber.shade100
             : Colors.grey.shade300,
     );
-    canvas.drawCircle(Offset(right, size.height * .5), 25, wire);
+    canvas.drawCircle(Offset(right, middle), 25, wire);
     canvas.drawLine(
-      Offset(left - 12, bottom - 18),
-      Offset(left + 12, bottom - 18),
+      Offset(right - 10, middle - 10),
+      Offset(right + 10, middle + 10),
       wire,
     );
     canvas.drawLine(
-      Offset(left - 7, bottom - 8),
-      Offset(left + 7, bottom - 8),
+      Offset(right + 10, middle - 10),
+      Offset(right - 10, middle + 10),
       wire,
     );
+
+    final resistorLeft = size.width * .42;
+    final resistorRight = size.width * .58;
+    canvas.drawLine(Offset(left, bottom), Offset(resistorLeft, bottom), wire);
+    canvas.drawLine(Offset(resistorRight, bottom), Offset(right, bottom), wire);
+    final zigzag = Path()..moveTo(resistorLeft, bottom);
+    for (var i = 1; i <= 7; i++) {
+      zigzag.lineTo(
+        resistorLeft + (resistorRight - resistorLeft) * i / 7,
+        i == 7 ? bottom : bottom + (i.isOdd ? -7 : 7),
+      );
+    }
+    canvas.drawPath(zigzag, wire);
+
+    final firstCell = middle - (cells - 1) * 13;
+    final lastCell = middle + (cells - 1) * 13;
+    canvas.drawLine(Offset(left, top), Offset(left, firstCell - 5), wire);
+    canvas.drawLine(Offset(left, lastCell + 5), Offset(left, bottom), wire);
+    for (var i = 0; i < cells; i++) {
+      final cellCenter = firstCell + i * 26;
+      canvas.drawLine(
+        Offset(left - 12, cellCenter - 5),
+        Offset(left + 12, cellCenter - 5),
+        wire,
+      );
+      canvas.drawLine(
+        Offset(left - 7, cellCenter + 5),
+        Offset(left + 7, cellCenter + 5),
+        wire,
+      );
+      if (i < cells - 1) {
+        canvas.drawLine(
+          Offset(left, cellCenter + 5),
+          Offset(left, cellCenter + 21),
+          wire,
+        );
+      }
+    }
+
+    final label = TextPainter(
+      text: TextSpan(
+        text: '$resistance Ω',
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    label.paint(canvas, Offset((size.width - label.width) / 2, bottom + 8));
   }
 
   @override
   bool shouldRepaint(_CircuitPainter old) =>
       old.color != color ||
       old.closed != closed ||
+      old.cells != cells ||
+      old.resistance != resistance ||
       old.brightness != brightness;
 }
 

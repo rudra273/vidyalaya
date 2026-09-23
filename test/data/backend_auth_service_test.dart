@@ -7,6 +7,40 @@ import 'package:vidyalaya/data/services/backend_auth_service.dart';
 import 'package:vidyalaya/data/models/learn_assist.dart';
 
 void main() {
+  test('learning event keeps its ID across an auth refresh', () async {
+    var requests = 0;
+    final service = BackendAuthService(
+      client: MockClient((request) async {
+        requests++;
+        expect(request.url.path, '/me/events');
+        expect(
+          jsonDecode(request.body)['event_id'],
+          '00000000-0000-4000-8000-000000000001',
+        );
+        if (requests == 1) return http.Response('{}', 401);
+        return http.Response(
+          jsonEncode({
+            'event_id': '00000000-0000-4000-8000-000000000001',
+            'recorded': true,
+          }),
+          200,
+        );
+      }),
+      idTokenProvider: ({required forceRefresh}) async =>
+          forceRefresh ? 'fresh-token' : 'old-token',
+      baseUrl: Uri.parse('https://example.test'),
+    );
+
+    await service.recordLearningEvent(
+      eventId: '00000000-0000-4000-8000-000000000001',
+      eventType: 'content_opened',
+      feature: 'book',
+      board: 'scert_odisha',
+      classNo: 8,
+    );
+    expect(requests, 2);
+  });
+
   test('loads account-owned Explore preferences', () async {
     final service = BackendAuthService(
       client: MockClient((request) async {

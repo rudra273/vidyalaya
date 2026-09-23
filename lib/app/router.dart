@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
 import '../providers/lab_provider.dart';
+import '../providers/user_selection_provider.dart';
 import '../data/seed/seed_data.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -62,11 +63,11 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final prefsRepo = ref.watch(userPrefsRepositoryProvider);
-  final booksEnabled = ref.watch(booksEnabledProvider);
-  final labsEnabled = ref.watch(labsEnabledProvider);
-
-  return GoRouter(
+  final prefsRepo = ref.read(userPrefsRepositoryProvider);
+  final booksEnabled = ref.read(booksEnabledProvider);
+  final labsEnabled = ref.read(labsEnabledProvider);
+  late final GoRouter router;
+  router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
@@ -84,7 +85,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
         if (isBookRoute) return '/';
       }
-      if (!labsEnabled && state.matchedLocation == '/labs') return '/explore';
+      final labsAvailable = labAvailableForSelection(
+        enabled: labsEnabled,
+        board: ref.read(userBoardProvider),
+        selectedClasses: ref.read(userSelectionProvider),
+      );
+      if (!labsAvailable && state.matchedLocation == '/labs') return '/explore';
       return null;
     },
     routes: [
@@ -377,4 +383,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  // The router must retain its Navigator while a route is active. Board and
+  // class changes only affect the lab-route guard, so refresh that guard
+  // instead of recreating GoRouter (which detaches live inherited dependents).
+  ref.listen(userBoardProvider, (_, _) => router.refresh());
+  ref.listen(userSelectionProvider, (_, _) => router.refresh());
+  ref.onDispose(router.dispose);
+  return router;
 });

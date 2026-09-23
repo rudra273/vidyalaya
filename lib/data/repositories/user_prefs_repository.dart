@@ -120,25 +120,29 @@ class UserPrefsRepository {
 
   // ─── Selected Classes ───────────────────────────────────────────────────
 
-  Set<int> getSelectedClasses() {
-    final jsonStr = _prefs.getString(_selectedClassesKey);
+  Set<int> getSelectedClasses({String? uid}) {
+    final key = uid == null ? _selectedClassesKey : '$uid:$_selectedClassesKey';
+    final jsonStr = _prefs.getString(key);
     if (jsonStr == null) return {};
     final list = jsonDecode(jsonStr) as List;
     return list.map((e) => e as int).toSet();
   }
 
-  Future<void> setSelectedClasses(Set<int> classes) async {
-    await _prefs.setString(_selectedClassesKey, jsonEncode(classes.toList()));
+  Future<void> setSelectedClasses(Set<int> classes, {String? uid}) async {
+    final key = uid == null ? _selectedClassesKey : '$uid:$_selectedClassesKey';
+    await _prefs.setString(key, jsonEncode(classes.toList()));
   }
 
   // ─── Selected Board ─────────────────────────────────────────────────────
 
-  String getSelectedBoard() {
-    return _prefs.getString(_selectedBoardKey) ?? 'scert_odisha';
+  String getSelectedBoard({String? uid}) {
+    final key = uid == null ? _selectedBoardKey : '$uid:$_selectedBoardKey';
+    return _prefs.getString(key) ?? 'scert_odisha';
   }
 
-  Future<void> setSelectedBoard(String board) async {
-    await _prefs.setString(_selectedBoardKey, board);
+  Future<void> setSelectedBoard(String board, {String? uid}) async {
+    final key = uid == null ? _selectedBoardKey : '$uid:$_selectedBoardKey';
+    await _prefs.setString(key, board);
   }
 
   // ─── Last Read Book ─────────────────────────────────────────────────────

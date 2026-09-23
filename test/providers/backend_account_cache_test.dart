@@ -21,6 +21,13 @@ class _PokeableAccountCache extends BackendAccountCache {
   void poke(BackendAccountState next) => state = next;
 }
 
+class _ActiveUid extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setUid(String? uid) => state = uid;
+}
+
 StudentProfile _profile({String? name, String? school}) => StudentProfile(
   board: 'scert_odisha',
   classNo: 8,
@@ -119,13 +126,22 @@ void main() {
   });
 
   group('UserSelectionNotifier.setClasses', () {
+    final activeUidProvider = NotifierProvider<_ActiveUid, String?>(
+      _ActiveUid.new,
+    );
+
     Future<ProviderContainer> containerWith(Set<int> classes) async {
       SharedPreferences.setMockInitialValues({
         'selected_classes': jsonEncode(classes.toList()),
       });
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          accountUidProvider.overrideWith(
+            (ref) => ref.watch(activeUidProvider),
+          ),
+        ],
       );
       addTearDown(container.dispose);
       return container;
@@ -154,6 +170,31 @@ void main() {
 
       expect(notifications, 1);
       expect(container.read(userSelectionProvider), {7});
+    });
+
+    test('account switches keep class and board mirrors isolated', () async {
+      final container = await containerWith({6});
+      final classes = container.read(userSelectionProvider.notifier);
+      final board = container.read(userBoardProvider.notifier);
+      expect(container.read(userSelectionProvider), {6});
+
+      container.read(activeUidProvider.notifier).setUid('student-a');
+      expect(container.read(userSelectionProvider), isEmpty);
+      classes.setClasses({7, 8});
+      board.setBoard('ncert');
+
+      container.read(activeUidProvider.notifier).setUid('student-b');
+      expect(container.read(userSelectionProvider), isEmpty);
+      expect(container.read(userBoardProvider), 'scert_odisha');
+      classes.setClasses({9});
+
+      container.read(activeUidProvider.notifier).setUid('student-a');
+      expect(container.read(userSelectionProvider), {7, 8});
+      expect(container.read(userBoardProvider), 'ncert');
+
+      container.read(activeUidProvider.notifier).setUid(null);
+      expect(container.read(userSelectionProvider), {6});
+      expect(container.read(userBoardProvider), 'scert_odisha');
     });
   });
 }

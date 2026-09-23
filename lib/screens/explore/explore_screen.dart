@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +26,19 @@ class ExploreScreen extends ConsumerWidget {
   void _open(BuildContext context, WidgetRef ref, _Tool tool) {
     Haptics.light(ref);
     ref.read(userPrefsRepositoryProvider).recordToolOpened(tool.id);
+    final selectedClasses = ref.read(userSelectionProvider);
+    unawaited(
+      ref
+          .read(learningEventServiceProvider)
+          .recordBestEffort(
+            eventType: 'content_opened',
+            feature: 'tool',
+            board: ref.read(userBoardProvider),
+            classNo: selectedClasses.length == 1
+                ? selectedClasses.single
+                : null,
+          ),
+    );
     ref.read(progressProvider.notifier).refresh();
     context.push(tool.route);
   }

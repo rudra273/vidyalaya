@@ -11,6 +11,7 @@ import '../data/models/learn_assist.dart';
 import '../data/seed/seed_data.dart' show availableClassNumbersForBoard;
 import '../data/repositories/auth_repository.dart';
 import '../data/services/backend_auth_service.dart';
+import '../data/services/learning_event_service.dart';
 import 'core_providers.dart';
 import 'ingested_books_provider.dart';
 import 'user_selection_provider.dart';
@@ -33,6 +34,13 @@ final backendAuthServiceProvider = Provider<BackendAuthService>((ref) {
       final user = ref.read(firebaseAuthProvider).currentUser;
       return user?.getIdToken(forceRefresh);
     },
+  );
+});
+
+final learningEventServiceProvider = Provider<LearningEventService>((ref) {
+  return LearningEventService(
+    backend: ref.watch(backendAuthServiceProvider),
+    auth: ref.watch(firebaseAuthProvider),
   );
 });
 
@@ -179,6 +187,8 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<ExplorePreferences?>? _explorePreferencesRequest;
   Future<LearnAssistUsage?>? _usageRequest;
   Future<ChatHistoryPage?>? _historyRequest;
+  // A profile fetch begun before a save must not replace the save response.
+  int _profileGeneration = 0;
   // Which conversation [_historyRequest] is fetching. A single shared request
   // slot is fine, but it must be keyed: otherwise a still-in-flight fetch for
   // one subject gets reused for another (returning the wrong conversation), or
@@ -224,6 +234,18 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
       if (previousUid != null) {
         unawaited(_cache.deleteNamespace(previousUid));
       }
+      final auth = ref.read(firebaseAuthProvider);
+      final events = ref.read(learningEventServiceProvider);
+      unawaited(
+        Future.microtask(() {
+          if (auth.currentUser?.uid == uid) {
+            return events.recordBestEffort(
+              eventType: 'session_started',
+              feature: 'session',
+            );
+          }
+        }),
+      );
       _resetRequests();
       return BackendAccountState(uid: uid);
     }
@@ -391,32 +413,64 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   Future<StudentProfile> saveProfile(StudentProfile profile) async {
     final uid = _requireUid();
     final previous = _asyncData(state.profile);
+    _profileGeneration++;
+    final saveGeneration = _profileGeneration;
     state = state.copyWith(uid: uid, profile: const AsyncLoading());
     try {
       final saved = await ref
           .read(backendAuthServiceProvider)
           .updateProfile(profile);
-      if (_currentUid == uid) {
-        await _cache.write<StudentProfile>(
-          _profileKey(uid),
-          saved,
-          (profile) => profile.toCacheJson(),
-        );
-        state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
-        // The PUT response *is* the authoritative profile — no follow-up GET.
-        _revalidated.add(_profileResource);
-        _mirrorProfileToPrefs(saved);
-      }
+      await _applySavedProfile(uid, saveGeneration, saved);
       return saved;
     } catch (error, stackTrace) {
-      if (_currentUid == uid) {
+      // A timeout can occur after Postgres commits. If the server already has
+      // these edits, use its revision instead of creating a false conflict on
+      // the student's next Retry.
+      if (error is LearnAssistApiException &&
+          error.code == 'network_error' &&
+          _currentUid == uid &&
+          _profileGeneration == saveGeneration) {
+        try {
+          final server = await ref.read(backendAuthServiceProvider).profile();
+          if (server != null && _sameProfileEdits(profile, server)) {
+            await _applySavedProfile(uid, saveGeneration, server);
+            return server;
+          }
+        } catch (_) {
+          // Offline remains a visible failure with the form edits intact.
+        }
+      }
+      if (_currentUid == uid && _profileGeneration == saveGeneration) {
         state = state.copyWith(profile: AsyncError(error, stackTrace));
       }
-      if (previous != null && _currentUid == uid) {
+      if (previous != null &&
+          _currentUid == uid &&
+          _profileGeneration == saveGeneration) {
         state = state.copyWith(profile: AsyncData(previous));
       }
       rethrow;
     }
+  }
+
+  Future<void> _applySavedProfile(
+    String uid,
+    int generation,
+    StudentProfile saved,
+  ) async {
+    if (_currentUid != uid || _profileGeneration != generation) return;
+    await _cache.write<StudentProfile>(
+      _profileKey(uid),
+      saved,
+      (value) => value.toCacheJson(),
+    );
+    if (_currentUid != uid || _profileGeneration != generation) {
+      await _cache.delete(_profileKey(uid));
+      return;
+    }
+    _profileGeneration++;
+    state = state.copyWith(profile: AsyncData(saved), profileLoaded: true);
+    _revalidated.add(_profileResource);
+    _mirrorProfileToPrefs(saved);
   }
 
   Future<ExplorePreferences> saveExplorePreferences(
@@ -552,9 +606,10 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
     String uid,
     StudentProfile? previous,
   ) async {
+    final generation = _profileGeneration;
     try {
       final profile = await ref.read(backendAuthServiceProvider).profile();
-      if (_currentUid == uid) {
+      if (_currentUid == uid && generation == _profileGeneration) {
         if (profile == null) {
           await _cache.delete(_profileKey(uid));
         } else {
@@ -567,19 +622,22 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
         // "Unchanged" may only skip the state write when the state already
         // holds data — a first fetch that returns null matches a null
         // `previous`, and skipping would leave AsyncLoading in place forever.
-        final changed =
-            state.profile is! AsyncData ||
-            !_jsonEquals(previous?.toCacheJson(), profile?.toCacheJson());
-        state = changed
-            ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
-            : state.copyWith(profileLoaded: true);
-        // Keep local prefs in sync on every load (incl. background revalidation
-        // and cross-device edits), not just when ProfileScreen is open.
-        _mirrorProfileToPrefs(profile);
+        if (_currentUid == uid && generation == _profileGeneration) {
+          final changed =
+              state.profile is! AsyncData ||
+              !_jsonEquals(previous?.toCacheJson(), profile?.toCacheJson());
+          state = changed
+              ? state.copyWith(profile: AsyncData(profile), profileLoaded: true)
+              : state.copyWith(profileLoaded: true);
+          // Keep local prefs in sync on every load (incl. cross-device edits).
+          _mirrorProfileToPrefs(profile);
+        }
       }
-      return profile;
+      return generation == _profileGeneration
+          ? profile
+          : _asyncData(state.profile);
     } catch (error, stackTrace) {
-      if (_currentUid == uid) {
+      if (_currentUid == uid && generation == _profileGeneration) {
         state = previous == null
             ? state.copyWith(
                 profile: AsyncError(error, stackTrace),
@@ -587,7 +645,9 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
               )
             : state.copyWith(profileLoaded: true);
       }
-      return previous;
+      return generation == _profileGeneration
+          ? previous
+          : _asyncData(state.profile);
     } finally {
       _settleRequest(_profileResource, uid);
     }
@@ -779,6 +839,7 @@ class BackendAccountCache extends Notifier<BackendAccountState> {
   }
 
   void _resetRequests() {
+    _profileGeneration++;
     _revalidated.clear();
     _userRequest = null;
     _profileRequest = null;
@@ -925,6 +986,20 @@ final backendAccountCacheProvider =
 
 T? _asyncData<T>(AsyncValue<T?> value) {
   return value.maybeWhen(data: (data) => data, orElse: () => null);
+}
+
+bool _sameProfileEdits(StudentProfile requested, StudentProfile stored) {
+  String? normalized(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  return requested.board == stored.board &&
+      requested.classNo == stored.classNo &&
+      requested.preferredLanguage == stored.preferredLanguage &&
+      normalized(requested.schoolName) == normalized(stored.schoolName) &&
+      (normalized(requested.name) == null ||
+          normalized(requested.name) == normalized(stored.name));
 }
 
 Map<String, dynamic> _jsonMap(Object json) {

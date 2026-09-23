@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'secure_http_client.dart';
 
 import '../models/learn_assist.dart';
 import 'learn_assist_service.dart';
@@ -228,7 +229,7 @@ class BackendAuthService {
     required http.Client client,
     required FirebaseIdTokenProvider idTokenProvider,
     Uri? baseUrl,
-  }) : _client = client,
+  }) : _client = SecureHttpClient(client),
        _idTokenProvider = idTokenProvider,
        _baseUrl = baseUrl ?? LearnAssistService.defaultBaseUrl;
 
@@ -246,6 +247,38 @@ class BackendAuthService {
     );
 
     return BackendUser.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<void> recordLearningEvent({
+    required String eventId,
+    required String eventType,
+    required String feature,
+    String? board,
+    int? classNo,
+  }) async {
+    final event = <String, Object?>{
+      'event_id': eventId,
+      'event_type': eventType,
+      'feature': feature,
+    };
+    if (board != null) event['board'] = board;
+    if (classNo != null) event['class_no'] = classNo;
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) => _client
+          .post(
+            _baseUrl.resolve('/me/events'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: jsonEncode(event),
+          )
+          .timeout(const Duration(seconds: 20)),
+    );
+    if (_decodeJsonObject(response.body)['event_id'] != eventId) {
+      throw const FormatException('Learning event ID mismatch.');
+    }
   }
 
   Future<StudentProfile?> profile() async {

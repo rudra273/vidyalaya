@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'auth_provider.dart';
 import 'core_providers.dart';
+import 'user_selection_provider.dart';
 
 // ─── Math progress ────────────────────────────────────────────────────────────
 //
@@ -37,6 +41,17 @@ class MathProgressNotifier extends Notifier<MathProgress> {
   Future<void> recordScore(String toolId, int score) async {
     await ref.read(userPrefsRepositoryProvider).recordMathScore(toolId, score);
     refresh();
+    final classes = ref.read(userSelectionProvider);
+    unawaited(
+      ref
+          .read(learningEventServiceProvider)
+          .recordBestEffort(
+            eventType: 'exercise_completed',
+            feature: 'practice',
+            board: ref.read(userBoardProvider),
+            classNo: classes.length == 1 ? classes.single : null,
+          ),
+    );
   }
 }
 

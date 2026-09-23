@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -95,9 +97,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() {
         _appliedProfileKey = null;
         _isEditing = false;
+        _nameController.clear();
+        _schoolController.clear();
+        _selectedClass = 8;
+        _board = 'scert_odisha';
+        _preferredLanguage = 'en';
         if (nextUid == null) {
-          _nameController.clear();
-          _schoolController.clear();
           _restoreFromLocalPrefs();
         }
       });
@@ -113,10 +118,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       orElse: () => false,
     );
     final user = authState.maybeWhen(data: (u) => u, orElse: () => null);
-    final cachedProfile = accountState.profile.maybeWhen(
-      data: (profile) => profile,
-      orElse: () => null,
-    );
+    final cachedProfile = accountState.uid == user?.uid
+        ? accountState.profile.maybeWhen(
+            data: (profile) => profile,
+            orElse: () => null,
+          )
+        : null;
     // Only a first load that is genuinely in flight blocks the form — until it
     // settles we don't know the student's saved name/school, so letting them
     // save would overwrite server data with blanks. Both halves matter: a
@@ -493,6 +500,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
         return;
+      }
+      if (submittedRevision == 0 && savedProfile.revision == 1) {
+        unawaited(
+          ref
+              .read(learningEventServiceProvider)
+              .recordBestEffort(
+                eventType: 'onboarding_completed',
+                feature: 'session',
+              ),
+        );
       }
       _syncLocalProfile(
         savedProfile.classNo,
