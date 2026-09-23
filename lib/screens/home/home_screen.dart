@@ -439,7 +439,10 @@ class _WordOfDayCard extends StatelessWidget {
                     Text(
                       word.word,
                       style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontSize: AppFontSize.headingSmall, height: 1.05),
+                          ?.copyWith(
+                            fontSize: AppFontSize.headingSmall,
+                            height: 1.05,
+                          ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -597,26 +600,22 @@ class _MiniTool extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
         radius: AppSpacing.tileRadius,
         blur: 13,
         distance: 4,
         child: Row(
           children: [
-            Tile(color: color, icon: icon, size: 26, radius: 8),
-            const SizedBox(width: 7),
+            Tile(color: color, icon: icon, size: 22, radius: 7),
+            const SizedBox(width: 4),
             Expanded(
-              // Scale the label down rather than clipping it on narrow screens.
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: AppFontSize.small,
-                    fontWeight: AppFontWeight.semibold,
-                  ),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: AppFontSize.small,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ),
