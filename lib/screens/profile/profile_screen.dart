@@ -165,6 +165,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
             ),
+            if (isInitialProfileLoad)
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screenPadding,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    SizedBox.square(
+                      dimension: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('Syncing your profile…')),
+                  ],
+                ),
+              ),
             if (profileSyncFailed)
               Padding(
                 padding: const EdgeInsets.fromLTRB(

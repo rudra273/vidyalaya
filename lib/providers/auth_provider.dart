@@ -48,7 +48,6 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(
     firebaseAuth: ref.watch(firebaseAuthProvider),
     googleSignIn: ref.watch(googleSignInProvider),
-    backendAuthService: ref.watch(backendAuthServiceProvider),
   );
 });
 
