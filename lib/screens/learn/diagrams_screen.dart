@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../app/theme.dart';
 import '../../data/seed/interactive_diagrams_data.dart';
-import '../../data/seed/diagrams_data.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../widgets/regional_language_switch.dart';
 
@@ -12,374 +12,79 @@ class DiagramsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lang = ref.watch(regionalLanguageProvider);
-
+    final selectedLanguage = ref.watch(regionalLanguageProvider);
+    final language = _diagramLanguage(selectedLanguage);
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Diagrams'),
-        actions: const [RegionalLanguageSwitch()],
-      ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                AppSpacing.screenPadding,
-                AppSpacing.screenPadding,
-                12,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'New interactive diagrams',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: AppFontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tap labels, switch language, zoom and use B&W mode.',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    height: 214,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: interactiveDiagrams.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final diagram = interactiveDiagrams[index];
-                        return SizedBox(
-                          width: 220,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.cardRadius,
-                            ),
-                            onTap: () {
-                              context.push(
-                                '/learn/diagrams/interactive/${diagram.id}',
-                                extra: diagram,
-                              );
-                            },
-                            child: Container(
-                              clipBehavior: Clip.antiAlias,
-                              decoration: BoxDecoration(
-                                color: isDark ? cs.surface : Colors.white,
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.cardRadius,
-                                ),
-                                border: Border.all(color: cs.outlineVariant),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Image.asset(
-                                      diagram.imagePath,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          diagram.title.en,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleMedium
-                                              ?.copyWith(
-                                                fontWeight: AppFontWeight.bold,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '3 languages • ${diagram.labels.length} labels',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: AppColors.textMuted,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  Text(
-                    'Old diagrams',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: AppFontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'The existing diagram collection is kept here.',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenPadding,
-              12,
-              AppSpacing.screenPadding,
-              AppSpacing.screenPadding,
-            ),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.95,
-              ),
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final category = diagramCategories[index];
-                return GestureDetector(
-                  onTap: () {
-                    context.push(
-                      '/learn/diagrams/category/${category.id}',
-                      extra: category,
-                    );
-                  },
-                  child: Container(
-                    clipBehavior: Clip.antiAlias,
-                    decoration: BoxDecoration(
-                      color: isDark ? cs.surface : Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.cardRadius,
-                      ),
-                      border: Border.all(color: cs.outlineVariant),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: category.diagrams.isNotEmpty
-                              ? Image.asset(
-                                  category.diagrams.first.imagePath,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                )
-                              : Container(
-                                  color: cs.surfaceContainerHighest,
-                                  child: Icon(
-                                    Icons.account_tree_rounded,
-                                    color: AppColors.textMuted.withValues(
-                                      alpha: 0.4,
-                                    ),
-                                    size: 40,
-                                  ),
-                                ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                category.titleEn,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: AppFontWeight.bold),
-                              ),
-                              Text(
-                                switch (lang) {
-                                  RegionalLanguage.english => category.titleEn,
-                                  RegionalLanguage.odia => category.titleOr,
-                                  RegionalLanguage.hindi => category.titleHi,
-                                },
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: AppColors.textMuted,
-                                      fontWeight: AppFontWeight.semibold,
-                                    ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${category.diagrams.length} diagram${category.diagrams.length == 1 ? '' : 's'}',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.textMuted),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }, childCount: diagramCategories.length),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DiagramCategoryScreen extends ConsumerWidget {
-  final DiagramCategory category;
-
-  const DiagramCategoryScreen({super.key, required this.category});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lang = ref.watch(regionalLanguageProvider);
-    String localized(String english, String odia, String hindi) =>
-        switch (lang) {
-          RegionalLanguage.english => english,
-          RegionalLanguage.odia => odia,
-          RegionalLanguage.hindi => hindi,
-        };
-
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          localized(category.titleEn, category.titleOr, category.titleHi),
-        ),
+        title: Text(_screenTitle.inLanguage(language)),
         actions: const [RegionalLanguageSwitch()],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+        padding: const EdgeInsets.only(bottom: AppSpacing.screenPadding),
         children: [
-          ...category.diagrams.map((diagram) {
-            return GestureDetector(
-              onTap: () {
-                context.push('/learn/diagrams/${diagram.id}', extra: diagram);
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: isDark ? cs.surface : Colors.white,
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                  border: Border.all(color: cs.outlineVariant),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Image.asset(
-                      diagram.imagePath,
-                      width: double.infinity,
-                      fit: BoxFit.fitWidth,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            localized(
-                              diagram.titleEn,
-                              diagram.titleOr,
-                              diagram.titleHi,
-                            ),
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: AppFontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            localized(
-                              diagram.descriptionEn,
-                              diagram.descriptionOr,
-                              diagram.descriptionHi,
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: AppColors.textMuted,
-                                  height: 1.5,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-
-          // Coming Soon Footer
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 24),
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? cs.surfaceContainerHighest.withValues(alpha: 0.5)
-                  : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cs.outlineVariant),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              AppSpacing.screenPadding,
+              AppSpacing.screenPadding,
+              8,
             ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.construction,
-                  color: AppColors.textMuted.withValues(alpha: 0.5),
-                  size: 40,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'More diagrams coming soon...',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.textMuted,
-                    fontWeight: AppFontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  localized(
-                    'More diagrams coming soon...',
-                    'ଅଧିକ ଚିତ୍ର ଶୀଘ୍ର ଆସୁଛି...',
-                    'और चित्र जल्द आ रहे हैं...',
-                  ),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            child: Text(
+              _screenDescription.inLanguage(language),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+            ),
+          ),
+          for (final section in DiagramSection.values)
+            _DiagramSectionRail(section: section, language: language),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiagramSectionRail extends StatelessWidget {
+  const _DiagramSectionRail({required this.section, required this.language});
+
+  final DiagramSection section;
+  final DiagramLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final diagrams = interactiveDiagrams
+        .where((diagram) => diagram.section == section)
+        .toList(growable: false);
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenPadding,
+            ),
+            child: Text(
+              _sectionTitle(section).inLanguage(language),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 224,
+            child: ListView.separated(
+              key: PageStorageKey('diagram-${section.name}-rail'),
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              itemCount: diagrams.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, index) =>
+                  _DiagramCard(diagram: diagrams[index], language: language),
             ),
           ),
         ],
@@ -387,3 +92,114 @@ class DiagramCategoryScreen extends ConsumerWidget {
     );
   }
 }
+
+class _DiagramCard extends StatelessWidget {
+  const _DiagramCard({required this.diagram, required this.language});
+
+  final InteractiveDiagram diagram;
+  final DiagramLanguage language;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SizedBox(
+      width: 228,
+      child: Card(
+        margin: EdgeInsets.zero,
+        color: isDark ? cs.surface : Colors.white,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          side: BorderSide(color: cs.outlineVariant),
+        ),
+        child: InkWell(
+          onTap: () => context.push('/learn/diagrams/${diagram.id}'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ColoredBox(
+                  color: cs.surfaceContainerLowest,
+                  child: Image.asset(
+                    diagram.imagePath,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      diagram.title.inLanguage(language),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: AppFontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _labelCount(diagram.labels.length, language),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+DiagramLanguage _diagramLanguage(RegionalLanguage language) =>
+    switch (language) {
+      RegionalLanguage.english => DiagramLanguage.english,
+      RegionalLanguage.hindi => DiagramLanguage.hindi,
+      RegionalLanguage.odia => DiagramLanguage.odia,
+    };
+
+DiagramText _sectionTitle(DiagramSection section) => switch (section) {
+  DiagramSection.biology => const DiagramText(
+    en: 'Biology',
+    hi: 'जीव विज्ञान',
+    or: 'ଜୀବବିଜ୍ଞାନ',
+  ),
+  DiagramSection.geography => const DiagramText(
+    en: 'Geography',
+    hi: 'भूगोल',
+    or: 'ଭୂଗୋଳ',
+  ),
+  DiagramSection.science => const DiagramText(
+    en: 'Science',
+    hi: 'विज्ञान',
+    or: 'ବିଜ୍ଞାନ',
+  ),
+};
+
+String _labelCount(int count, DiagramLanguage language) => switch (language) {
+  DiagramLanguage.english => '$count interactive labels',
+  DiagramLanguage.hindi => '$count इंटरैक्टिव लेबल',
+  DiagramLanguage.odia => '$count ଟି ଇଣ୍ଟରାକ୍ଟିଭ୍ ଲେବଲ୍',
+};
+
+const _screenTitle = DiagramText(en: 'Diagrams', hi: 'आरेख', or: 'ଚିତ୍ର');
+
+const _screenDescription = DiagramText(
+  en: 'Swipe through each subject and tap a diagram to explore it.',
+  hi: 'हर विषय में स्वाइप करें और समझने के लिए किसी आरेख पर टैप करें।',
+  or: 'ପ୍ରତ୍ୟେକ ବିଷୟରେ ସ୍ୱାଇପ୍ କରନ୍ତୁ ଏବଂ ଜାଣିବା ପାଇଁ ଚିତ୍ରକୁ ଟ୍ୟାପ୍ କରନ୍ତୁ।',
+);
