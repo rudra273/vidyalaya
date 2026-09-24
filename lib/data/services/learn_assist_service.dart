@@ -208,6 +208,7 @@ class LearnAssistService {
         if (line.isEmpty) {
           final event = finishFrame();
           if (event != null) yield event;
+          if (terminalReceived) return;
           eventName = 'message';
           dataLines.clear();
         } else if (line.startsWith(':')) {

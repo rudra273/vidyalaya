@@ -17,26 +17,12 @@ class DiagramsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(_screenTitle.inLanguage(language)),
+        title: const Text('Diagrams'),
         actions: const [RegionalLanguageSwitch()],
       ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.screenPadding),
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screenPadding,
-              AppSpacing.screenPadding,
-              AppSpacing.screenPadding,
-              8,
-            ),
-            child: Text(
-              _screenDescription.inLanguage(language),
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
-            ),
-          ),
           for (final section in DiagramSection.values)
             _DiagramSectionRail(section: section, language: language),
         ],
@@ -195,11 +181,3 @@ String _labelCount(int count, DiagramLanguage language) => switch (language) {
   DiagramLanguage.hindi => '$count इंटरैक्टिव लेबल',
   DiagramLanguage.odia => '$count ଟି ଇଣ୍ଟରାକ୍ଟିଭ୍ ଲେବଲ୍',
 };
-
-const _screenTitle = DiagramText(en: 'Diagrams', hi: 'आरेख', or: 'ଚିତ୍ର');
-
-const _screenDescription = DiagramText(
-  en: 'Swipe through each subject and tap a diagram to explore it.',
-  hi: 'हर विषय में स्वाइप करें और समझने के लिए किसी आरेख पर टैप करें।',
-  or: 'ପ୍ରତ୍ୟେକ ବିଷୟରେ ସ୍ୱାଇପ୍ କରନ୍ତୁ ଏବଂ ଜାଣିବା ପାଇଁ ଚିତ୍ରକୁ ଟ୍ୟାପ୍ କରନ୍ତୁ।',
-);

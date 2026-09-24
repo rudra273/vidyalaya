@@ -623,10 +623,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final answerBuffer = StringBuffer();
     var citations = const <LearnAssistCitation>[];
     LearnAssistUsage? usage;
-    // The complete answer from the terminal 'done' frame. Used as a fallback
-    // when a provider streamed no token frames (paid plans route through
-    // OpenRouter, which doesn't emit incremental chunks) so the bubble is never
-    // left empty.
+    // The terminal answer replaces the token preview, including partial text
+    // from earlier model attempts or tool phases.
     var doneAnswer = '';
 
     // Coalesce token frames: a full-list rebuild + scroll on every SSE token
@@ -731,10 +729,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         }
         return;
       }
-      // Prefer the text streamed token-by-token; fall back to the complete
-      // answer from the 'done' frame when a provider emitted no token frames.
+      // Older servers may omit answer; otherwise the terminal text is final.
       final streamed = answerBuffer.toString();
-      final answer = streamed.isNotEmpty ? streamed : doneAnswer;
+      final answer = doneAnswer.isNotEmpty ? doneAnswer : streamed;
       final finalUsage = usage;
       if (finalUsage != null) {
         ref.read(backendAccountCacheProvider.notifier).updateUsage(finalUsage);
