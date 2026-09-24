@@ -11,6 +11,29 @@ class RegionalLanguageSwitch extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(regionalLanguageProvider);
+    return RegionalLanguagePicker(
+      current: current,
+      languages: RegionalLanguage.values,
+      onSelected: ref.read(regionalLanguageProvider.notifier).set,
+    );
+  }
+}
+
+/// Language picker UI shared by tools that manage their own language state.
+class RegionalLanguagePicker extends StatelessWidget {
+  const RegionalLanguagePicker({
+    required this.current,
+    required this.languages,
+    required this.onSelected,
+    super.key,
+  });
+
+  final RegionalLanguage current;
+  final Iterable<RegionalLanguage> languages;
+  final ValueChanged<RegionalLanguage> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -20,8 +43,8 @@ class RegionalLanguageSwitch extends ConsumerWidget {
         tooltip: 'Change language',
         position: PopupMenuPosition.under,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onSelected: ref.read(regionalLanguageProvider.notifier).set,
-        itemBuilder: (context) => RegionalLanguage.values.map((language) {
+        onSelected: onSelected,
+        itemBuilder: (context) => languages.map((language) {
           final selected = language == current;
           return PopupMenuItem<RegionalLanguage>(
             value: language,

@@ -1,6 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/seed/vocabulary_data.dart';
+import 'auth_provider.dart';
+import 'core_providers.dart';
+import 'regional_language_provider.dart';
+
+/// The dictionary starts in the student's profile language, independently of
+/// the shared Explore-tool language. English cannot be the translation
+/// language because every entry already shows its English meaning, so an
+/// English (or missing/unknown) profile preference falls back to Hindi.
+final dictionaryDefaultLanguageProvider =
+    Provider.autoDispose<RegionalLanguage>((ref) {
+      final profile = ref
+          .watch(backendAccountCacheProvider)
+          .profile
+          .maybeWhen(data: (value) => value, orElse: () => null);
+      final preferredCode =
+          profile?.preferredLanguage ??
+          ref.read(userPrefsRepositoryProvider).getPreferredLanguage();
+
+      return preferredCode == RegionalLanguage.odia.code
+          ? RegionalLanguage.odia
+          : RegionalLanguage.hindi;
+    });
 
 /// A [VocabularyWord] with its sort and search keys precomputed.
 ///

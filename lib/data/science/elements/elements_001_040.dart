@@ -17,10 +17,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−259 °C',
     boilingPoint: '−253 °C',
     density: '0.00009 g/cm³',
-    description: 'The lightest and most abundant element in the universe.',
-    uses: 'Making ammonia, rocket fuel, and hydrogen fuel cells.',
-    funFact: 'Hydrogen makes up about 75% of all normal matter in the universe!',
-    discovery: 'Henry Cavendish, 1766',
+    description: LocalizedElementText(
+      english: 'The lightest and most abundant element in the universe.',
+      hindi: 'ब्रह्मांड में सबसे हल्का और सबसे प्रचुर तत्व।',
+      odia: 'ବ୍ରହ୍ମାଣ୍ଡର ହାଲୁକା ଏବଂ ପ୍ରଚୁର ଉପାଦାନ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making ammonia, rocket fuel, and hydrogen fuel cells.',
+      hindi: 'अमोनिया, रॉकेट ईंधन और हाइड्रोजन ईंधन सेल बनाना।',
+      odia: 'ଆମୋନିୟା, ରକେଟ୍ ଇନ୍ଧନ ଏବଂ ହାଇଡ୍ରୋଜେନ୍ ଇନ୍ଧନ କୋଷ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Hydrogen makes up about 75% of all normal matter in the universe!',
+      hindi:
+          'ब्रह्मांड में सभी सामान्य पदार्थ का लगभग 75% हिस्सा हाइड्रोजन है!',
+      odia:
+          'ହାଇଡ୍ରୋଜେନ୍ ବ୍ରହ୍ମାଣ୍ଡର ସମସ୍ତ ସାଧାରଣ ପଦାର୍ଥର ପ୍ରାୟ 75% ସୃଷ୍ଟି କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Henry Cavendish, 1766',
+      hindi: 'हेनरी कैवेंडिश, 1766',
+      odia: 'ହେନେରୀ କେଭେଣ୍ଡିଶ୍, 1766',
+    ),
   ),
   ElementData(
     atomicNumber: 2,
@@ -38,10 +57,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−272 °C',
     boilingPoint: '−269 °C',
     density: '0.00018 g/cm³',
-    description: 'A very light gas that does not burn and is lighter than air.',
-    uses: 'Filling balloons and airships, and cooling MRI machines.',
-    funFact: 'Breathing helium makes your voice sound high and squeaky!',
-    discovery: 'Pierre Janssen and Norman Lockyer, 1868',
+    description: LocalizedElementText(
+      english: 'A very light gas that does not burn and is lighter than air.',
+      hindi: 'एक बहुत हल्की गैस जो जलती नहीं है और हवा से भी हल्की होती है।',
+      odia: 'ଏକ ଅତି ହାଲୁକା ଗ୍ୟାସ୍ ଯାହା ଜଳି ନଥାଏ ଏବଂ ବାୟୁଠାରୁ ହାଲୁକା ଅଟେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Filling balloons and airships, and cooling MRI machines.',
+      hindi: 'गुब्बारे और हवाई जहाजों को भरना, और एमआरआई मशीनों को ठंडा करना।',
+      odia: 'ବେଲୁନ୍ ଏବଂ ଏୟାରସିପ୍ ଭରିବା, ଏବଂ ଏମଆରଆଇ ମେସିନ୍ କୁଲିଂ କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Breathing helium makes your voice sound high and squeaky!',
+      hindi: 'हीलियम में सांस लेने से आपकी आवाज़ ऊंची और कर्कश हो जाती है!',
+      odia: 'ହିଲିୟମ୍ ନିଶ୍ୱାସ ନେବା ତୁମର ସ୍ୱରକୁ ଉଚ୍ଚ ଏବଂ ଚିତ୍କାର କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Pierre Janssen and Norman Lockyer, 1868',
+      hindi: 'पियरे जानसेन और नॉर्मन लॉकयर, 1868',
+      odia: 'ପିଆର ଜାନସେନ୍ ଏବଂ ନରମାନ୍ ଲକିୟର, 1868',
+    ),
   ),
   ElementData(
     atomicNumber: 3,
@@ -59,10 +94,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '181 °C',
     boilingPoint: '1342 °C',
     density: '0.53 g/cm³',
-    description: 'The lightest metal, so soft it can be cut with a knife.',
-    uses: 'Making rechargeable batteries, greases, and some medicines.',
-    funFact: 'Lithium is so light that it can float on water!',
-    discovery: 'Johan August Arfwedson, 1817',
+    description: LocalizedElementText(
+      english: 'The lightest metal, so soft it can be cut with a knife.',
+      hindi: 'सबसे हल्की धातु, इतनी मुलायम कि इसे चाकू से भी काटा जा सकता है।',
+      odia: 'ହାଲୁକା ଧାତୁ, ଏତେ ନରମ ଏହାକୁ ଛୁରୀରେ କାଟି ଦିଆଯାଇପାରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making rechargeable batteries, greases, and some medicines.',
+      hindi: 'रिचार्जेबल बैटरी, ग्रीस और कुछ दवाएँ बनाना।',
+      odia: 'ରିଚାର୍ଜ ଯୋଗ୍ୟ ବ୍ୟାଟେରୀ, ଗ୍ରୀସ୍ ଏବଂ କିଛି medicines ଷଧ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Lithium is so light that it can float on water!',
+      hindi: 'लिथियम इतना हल्का है कि यह पानी पर तैर सकता है!',
+      odia: 'ଲିଥିୟମ୍ ଏତେ ହାଲୁକା ଯେ ଏହା ପାଣି ଉପରେ ଭାସିପାରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Johan August Arfwedson, 1817',
+      hindi: 'जोहान ऑगस्ट आरफ़वेडसन, 1817',
+      odia: 'ଜୋହାନ୍ ଅଗଷ୍ଟ ଆର୍ଫୱେଡସନ୍, 1817',
+    ),
   ),
   ElementData(
     atomicNumber: 4,
@@ -80,10 +131,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1287 °C',
     boilingPoint: '2469 °C',
     density: '1.85 g/cm³',
-    description: 'A light but very strong metal that is grey in colour.',
-    uses: 'Making aircraft parts, X-ray windows, and strong alloys.',
-    funFact: 'The gemstones emerald and aquamarine both contain beryllium!',
-    discovery: 'Louis Nicolas Vauquelin, 1798',
+    description: LocalizedElementText(
+      english: 'A light but very strong metal that is grey in colour.',
+      hindi: 'एक हल्की लेकिन बहुत मजबूत धातु जिसका रंग स्लेटी होता है।',
+      odia: 'ଏକ ହାଲୁକା କିନ୍ତୁ ବହୁତ ଶକ୍ତିଶାଳୀ ଧାତୁ ଯାହା ଧୂସର ରଙ୍ଗର।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making aircraft parts, X-ray windows, and strong alloys.',
+      hindi: 'विमान के पुर्जे, एक्स-रे खिड़कियाँ और मजबूत मिश्र धातुएँ बनाना।',
+      odia: 'ବିମାନର ଅଂଶ, ଏକ୍ସ-ରେ ୱିଣ୍ଡୋ, ଏବଂ ଶକ୍ତିଶାଳୀ ଆଲୁଅ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'The gemstones emerald and aquamarine both contain beryllium!',
+      hindi: 'रत्न पन्ना और एक्वामरीन दोनों में बेरिलियम होता है!',
+      odia: 'ରତ୍ନ ଭଣ୍ଡାର ଏମ୍ରାଲ୍ଡ ଏବଂ ଆକ୍ୱାମାରାଇନ୍ ଉଭୟ ବେରିଲିୟମ୍ ଧାରଣ କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Louis Nicolas Vauquelin, 1798',
+      hindi: 'लुई निकोलस वाउक्वेलिन, 1798',
+      odia: 'ଲୁଇ ନିକୋଲାସ୍ ଭାଉକେଲିନ୍, 1798',
+    ),
   ),
   ElementData(
     atomicNumber: 5,
@@ -101,10 +168,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '2077 °C',
     boilingPoint: '4000 °C',
     density: '2.34 g/cm³',
-    description: 'A hard element that is neither a full metal nor a nonmetal.',
-    uses: 'Making heat-resistant glass, detergents, and strong fibres.',
-    funFact: 'Boron gives fireworks and flames a bright green colour!',
-    discovery: 'Joseph Louis Gay-Lussac and Louis Thénard, 1808',
+    description: LocalizedElementText(
+      english: 'A hard element that is neither a full metal nor a nonmetal.',
+      hindi: 'एक कठोर तत्व जो न तो पूर्ण धातु है और न ही अधातु।',
+      odia: 'ଏକ କଠିନ ଉପାଦାନ ଯାହା ସମ୍ପୂର୍ଣ୍ଣ ଧାତୁ କିମ୍ବା ଅଣ ଧାତୁ ନୁହେଁ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making heat-resistant glass, detergents, and strong fibres.',
+      hindi: 'गर्मी प्रतिरोधी ग्लास, डिटर्जेंट और मजबूत फाइबर बनाना।',
+      odia:
+          'ଉତ୍ତାପ-ପ୍ରତିରୋଧକ ଗ୍ଲାସ, ଡିଟରଜେଣ୍ଟ ଏବଂ ଶକ୍ତିଶାଳୀ ତନ୍ତୁ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Boron gives fireworks and flames a bright green colour!',
+      hindi: 'बोरोन आतिशबाजी और लपटों को चमकीला हरा रंग देता है!',
+      odia: 'ବୋରନ୍ ଆତସବାଜି ଦେଇଥାଏ ଏବଂ ଏକ ଉଜ୍ଜ୍ୱଳ ସବୁଜ ରଙ୍ଗକୁ ଜାଳେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Joseph Louis Gay-Lussac and Louis Thénard, 1808',
+      hindi: 'जोसेफ लुई गे-लुसाक और लुई थेनार्ड, 1808',
+      odia: 'ଜୋସେଫ୍ ଲୁଇସ୍ ଗେ-ଲୁସାକ୍ ଏବଂ ଲୁଇସ୍ ଥେନାର୍ଡ, 1808',
+    ),
   ),
   ElementData(
     atomicNumber: 6,
@@ -122,10 +206,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '3550 °C',
     boilingPoint: '4027 °C',
     density: '2.27 g/cm³',
-    description: 'The element found in all living things and in many fuels.',
-    uses: 'Making steel, pencils, diamonds, and fuels like coal.',
-    funFact: 'Both soft pencil lead and hard diamonds are made of carbon!',
-    discovery: 'Known since ancient times',
+    description: LocalizedElementText(
+      english: 'The element found in all living things and in many fuels.',
+      hindi: 'यह तत्व सभी जीवित चीजों और कई ईंधनों में पाया जाता है।',
+      odia: 'ସମସ୍ତ ଜୀବ ଏବଂ ଅନେକ ଇନ୍ଧନରେ ଉପାଦାନ ମିଳିଲା।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making steel, pencils, diamonds, and fuels like coal.',
+      hindi: 'स्टील, पेंसिल, हीरे और कोयले जैसे ईंधन बनाना।',
+      odia: 'କୋଇଲା ପରି ଇସ୍ପାତ, ପେନ୍ସିଲ, ହୀରା ଏବଂ ଇନ୍ଧନ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Both soft pencil lead and hard diamonds are made of carbon!',
+      hindi: 'नरम पेंसिल सीसा और कठोर हीरे दोनों कार्बन से बने होते हैं!',
+      odia: 'ଉଭୟ ନରମ ପେନ୍ସିଲ୍ ସୀସା ଏବଂ କଠିନ ହୀରା ଅଙ୍ଗାରକାମ୍ଳରୁ ନିର୍ମିତ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Known since ancient times',
+      hindi: 'प्राचीन काल से जाना जाता है',
+      odia: 'ପ୍ରାଚୀନ କାଳରୁ ଜଣାଶୁଣା।',
+    ),
   ),
   ElementData(
     atomicNumber: 7,
@@ -143,10 +243,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−210 °C',
     boilingPoint: '−196 °C',
     density: '0.0013 g/cm³',
-    description: 'A gas that makes up about 78% of the air we breathe.',
-    uses: 'Making fertilizers, preserving food, and freezing things.',
-    funFact: 'Liquid nitrogen is so cold it can freeze a flower solid instantly!',
-    discovery: 'Daniel Rutherford, 1772',
+    description: LocalizedElementText(
+      english: 'A gas that makes up about 78% of the air we breathe.',
+      hindi:
+          'एक गैस जो हमारे द्वारा सांस ली जाने वाली हवा का लगभग 78% बनाती है।',
+      odia: 'ଏକ ଗ୍ୟାସ୍ ଯାହା ଆମେ ନିଶ୍ୱାସ ନେଉଥିବା ବାୟୁର ପ୍ରାୟ 78% କରିଥାଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making fertilizers, preserving food, and freezing things.',
+      hindi: 'उर्वरक बनाना, भोजन संरक्षित करना और चीज़ों को जमाना।',
+      odia: 'ସାର ତିଆରି, ଖାଦ୍ୟ ସଂରକ୍ଷଣ ଏବଂ ଜିନିଷ ଫ୍ରିଜ୍ କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Liquid nitrogen is so cold it can freeze a flower solid instantly!',
+      hindi:
+          'तरल नाइट्रोजन इतनी ठंडी होती है कि यह फूल को तुरंत ठोस रूप में जमा सकती है!',
+      odia: 'ତରଳ ନାଇଟ୍ରୋଜେନ ଏତେ ଥଣ୍ଡା ଯେ ଏହା ତୁରନ୍ତ ଏକ ଫୁଲକୁ କଠିନ କରିପାରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Daniel Rutherford, 1772',
+      hindi: 'डेनियल रदरफोर्ड, 1772',
+      odia: 'ଡାନିଏଲ୍ ରାଉଟରଫୋର୍ଡ, 1772',
+    ),
   ),
   ElementData(
     atomicNumber: 8,
@@ -164,10 +283,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−218 °C',
     boilingPoint: '−183 °C',
     density: '0.0014 g/cm³',
-    description: 'The gas that living things need to breathe and stay alive.',
-    uses: 'Breathing, hospitals, welding, and helping fuels burn.',
-    funFact: 'About one out of every five breaths of air is oxygen!',
-    discovery: 'Carl Wilhelm Scheele and Joseph Priestley, 1774',
+    description: LocalizedElementText(
+      english: 'The gas that living things need to breathe and stay alive.',
+      hindi:
+          'वह गैस जिसकी जीवित प्राणियों को साँस लेने और जीवित रहने के लिए आवश्यकता होती है।',
+      odia: 'ଗ୍ୟାସ ଯାହା ଜୀବଜନ୍ତୁ ନିଶ୍ୱାସ ନେବା ଏବଂ ଜୀବନ୍ତ ରହିବା ଆବଶ୍ୟକ କରନ୍ତି।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Breathing, hospitals, welding, and helping fuels burn.',
+      hindi: 'साँस लेना, अस्पताल, वेल्डिंग, और ईंधन जलाने में मदद करना।',
+      odia: 'ବ୍ରହ୍ମ, ଡାକ୍ତରଖାନା, ୱେଲଡିଂ ଏବଂ ଇନ୍ଧନ ଜାଳିବାରେ ସାହାଯ୍ୟ କରେ।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'About one out of every five breaths of air is oxygen!',
+      hindi: 'हवा की हर पाँच साँस में से एक ऑक्सीजन होती है!',
+      odia: 'ପ୍ରତ୍ୟେକ ପାଞ୍ଚଟି ନିଶ୍ୱାସ ମଧ୍ୟରୁ ଗୋଟିଏ ହେଉଛି ଅମ୍ଳଜାନ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Carl Wilhelm Scheele and Joseph Priestley, 1774',
+      hindi: 'कार्ल विल्हेम शीले और जोसेफ प्रीस्टली, 1774',
+      odia: '1774 କାର୍ଲ ୱିଲହେଲମ୍ ସ୍କିଲ୍ ଏବଂ ଜୋସେଫ୍ ପ୍ରିଷ୍ଟଲେ।, 1774',
+    ),
   ),
   ElementData(
     atomicNumber: 9,
@@ -185,10 +321,30 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−220 °C',
     boilingPoint: '−188 °C',
     density: '0.0017 g/cm³',
-    description: 'A pale yellow gas that is the most reactive of all elements.',
-    uses: 'Making toothpaste, non-stick pans, and refrigerants.',
-    funFact: 'A tiny amount of fluorine in toothpaste helps stop tooth decay!',
-    discovery: 'Henri Moissan, 1886',
+    description: LocalizedElementText(
+      english: 'A pale yellow gas that is the most reactive of all elements.',
+      hindi: 'एक हल्की पीली गैस जो सभी तत्वों में सबसे अधिक प्रतिक्रियाशील है।',
+      odia:
+          'ଏକ ହଳଦିଆ ହଳଦିଆ ଗ୍ୟାସ୍ ଯାହା ସମସ୍ତ ଉପାଦାନଗୁଡିକ ମଧ୍ୟରୁ ସବୁଠାରୁ ପ୍ରତିକ୍ରିୟାଶୀଳ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making toothpaste, non-stick pans, and refrigerants.',
+      hindi: 'टूथपेस्ट, नॉन-स्टिक पैन और रेफ्रिजरेंट बनाना।',
+      odia: 'ଟୁଥପେଷ୍ଟ, ଷ୍ଟିକ୍ ନଥିବା ପ୍ୟାନ ଏବଂ ରେଫ୍ରିଜରେଣ୍ଟ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'A tiny amount of fluorine in toothpaste helps stop tooth decay!',
+      hindi:
+          'टूथपेस्ट में फ्लोरीन की थोड़ी मात्रा दांतों की सड़न को रोकने में मदद करती है!',
+      odia:
+          'ଟୁଥପେଷ୍ଟରେ ଅଳ୍ପ ପରିମାଣର ଫ୍ଲୋରାଇନ୍ ଦାନ୍ତ କ୍ଷୟକୁ ବନ୍ଦ କରିବାରେ ସାହାଯ୍ୟ କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Henri Moissan, 1886',
+      hindi: 'हेनरी मोइसन, 1886',
+      odia: 'ହେନ୍ରି ମୋଇସାନ୍, 1886',
+    ),
   ),
   ElementData(
     atomicNumber: 10,
@@ -206,10 +362,30 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−249 °C',
     boilingPoint: '−246 °C',
     density: '0.0009 g/cm³',
-    description: 'A gas that glows bright orange-red when electricity passes through it.',
-    uses: 'Making glowing signs, lamps, and some lasers.',
-    funFact: 'The bright glowing signs in cities are often called neon lights!',
-    discovery: 'William Ramsay and Morris Travers, 1898',
+    description: LocalizedElementText(
+      english:
+          'A gas that glows bright orange-red when electricity passes through it.',
+      hindi:
+          'एक गैस जिसमें बिजली प्रवाहित करने पर चमकीला नारंगी-लाल रंग चमकता है।',
+      odia:
+          'ଏକ ଗ୍ୟାସ୍ ଯାହା ବିଦ୍ୟୁତ୍ ଏହା ଦେଇ ଗଲାବେଳେ ଉଜ୍ଜ୍ୱଳ କମଳା-ଲାଲ୍ ଆଲୋକିତ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making glowing signs, lamps, and some lasers.',
+      hindi: 'चमकते चिन्ह, लैंप और कुछ लेज़र बनाना।',
+      odia: 'ଉଜ୍ଜ୍ୱଳ ଚିହ୍ନ, ଦୀପ ଏବଂ କିଛି ଲେଜର ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'The bright glowing signs in cities are often called neon lights!',
+      hindi: 'शहरों में चमकीले चमकते चिन्हों को अक्सर नीयन रोशनी कहा जाता है!',
+      odia: 'ସହରଗୁଡ଼ିକରେ ଉଜ୍ଜ୍ୱଳ ଜ୍ୟୋତି ଚିହ୍ନକୁ ପ୍ରାୟତ ne ନିଓନ୍ ଲାଇଟ୍ କୁହାଯାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'William Ramsay and Morris Travers, 1898',
+      hindi: 'विलियम रैमसे और मॉरिस ट्रैवर्स, 1898',
+      odia: 'ୱିଲିୟମ୍ ରାମସେ ଏବଂ ମୋରିସ୍ ଟ୍ରାଭର୍ସ, 1898',
+    ),
   ),
   ElementData(
     atomicNumber: 11,
@@ -227,10 +403,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '98 °C',
     boilingPoint: '883 °C',
     density: '0.97 g/cm³',
-    description: 'A soft silvery metal that reacts strongly with water.',
-    uses: 'Making common salt, soap, and street lamps.',
-    funFact: 'Sodium reacts so fast with water that it fizzes and can catch fire!',
-    discovery: 'Humphry Davy, 1807',
+    description: LocalizedElementText(
+      english: 'A soft silvery metal that reacts strongly with water.',
+      hindi: 'एक नरम चांदी जैसी धातु जो पानी के साथ तीव्र प्रतिक्रिया करती है।',
+      odia: 'ଏକ ନରମ ରୂପା ଧାତୁ ଯାହା ଜଳ ସହିତ ଦୃ strongly ପ୍ରତିକ୍ରିୟା କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making common salt, soap, and street lamps.',
+      hindi: 'सामान्य नमक, साबुन और स्ट्रीट लैंप बनाना।',
+      odia: 'ସାଧାରଣ ଲୁଣ, ସାବୁନ୍, ଏବଂ ଷ୍ଟ୍ରିଟ୍ ଲ୍ୟାମ୍ପ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Sodium reacts so fast with water that it fizzes and can catch fire!',
+      hindi:
+          'सोडियम पानी के साथ इतनी तेजी से प्रतिक्रिया करता है कि वह जम जाता है और आग पकड़ सकता है!',
+      odia:
+          'ସୋଡିୟମ୍ ପାଣି ସହିତ ଏତେ ଶୀଘ୍ର ପ୍ରତିକ୍ରିୟା କରେ ଯେ ଏହା ଫିଜ୍ ହୋଇ ନିଆଁକୁ ଆୟତ୍ତ କରିପାରିବ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Humphry Davy, 1807',
+      hindi: 'हम्फ्री डेवी, 1807',
+      odia: 'ହମ୍ଫ୍ରି ଡେଭି, 1807',
+    ),
   ),
   ElementData(
     atomicNumber: 12,
@@ -248,10 +443,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '650 °C',
     boilingPoint: '1090 °C',
     density: '1.74 g/cm³',
-    description: 'A light silvery metal that burns with a bright white flame.',
-    uses: 'Making fireworks, light alloys, and antacid medicines.',
-    funFact: 'Burning magnesium gives such a bright light it was used in old cameras!',
-    discovery: 'Joseph Black, 1755',
+    description: LocalizedElementText(
+      english: 'A light silvery metal that burns with a bright white flame.',
+      hindi: 'एक हल्की चांदी जैसी धातु जो चमकदार सफेद लौ के साथ जलती है।',
+      odia: 'ଏକ ହାଲୁକା ରୂପା ଧାତୁ ଯାହା ଏକ ଉଜ୍ଜ୍ୱଳ ଧଳା ନିଆଁ ସହିତ ଜଳିଯାଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making fireworks, light alloys, and antacid medicines.',
+      hindi: 'आतिशबाज़ी, हल्की मिश्रधातुएँ और एंटासिड दवाएँ बनाना।',
+      odia: 'ଆତସବାଜି, ହାଲୁକା ଆଲୋଇସ୍ ଏବଂ ଆଣ୍ଟାସିଡ୍ medicines ଷଧ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Burning magnesium gives such a bright light it was used in old cameras!',
+      hindi:
+          'मैग्नीशियम को जलाने से इतनी तेज़ रोशनी मिलती है जिसका उपयोग पुराने कैमरों में किया जाता था!',
+      odia:
+          'ଜଳୁଥିବା ମ୍ୟାଗ୍ନେସିୟମ୍ ଏପରି ଉଜ୍ଜ୍ୱଳ ଆଲୋକ ଦେଇଥାଏ ଯାହା ପୁରୁଣା କ୍ୟାମେରାରେ ବ୍ୟବହୃତ ହୋଇଥିଲା!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Joseph Black, 1755',
+      hindi: 'जोसेफ़ ब्लैक, 1755',
+      odia: 'ଜୋସେଫ୍ ବ୍ଲାକ୍, 1755',
+    ),
   ),
   ElementData(
     atomicNumber: 13,
@@ -269,10 +483,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '660 °C',
     boilingPoint: '2470 °C',
     density: '2.70 g/cm³',
-    description: 'A light, silvery metal that does not rust easily.',
-    uses: 'Making foil, cans, aircraft bodies, and cooking pots.',
-    funFact: 'Aluminum is the most common metal in the Earth\'s crust!',
-    discovery: 'Hans Christian Ørsted, 1825',
+    description: LocalizedElementText(
+      english: 'A light, silvery metal that does not rust easily.',
+      hindi: 'एक हल्की, चांदी जैसी धातु जिस पर आसानी से जंग नहीं लगती।',
+      odia: 'ଏକ ହାଲୁକା, ରୂପା ଧାତୁ ଯାହା ସହଜରେ କଳଙ୍କିତ ହୁଏ ନାହିଁ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making foil, cans, aircraft bodies, and cooking pots.',
+      hindi: 'पन्नी, डिब्बे, विमान की बॉडी और खाना पकाने के बर्तन बनाना।',
+      odia: 'ଫଏଲ୍, ପାତ୍ର, ବିମାନ ଶରୀର, ଏବଂ ରନ୍ଧନ ହାଣ୍ଡି ତିଆରି।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Aluminum is the most common metal in the Earth\'s crust!',
+      hindi: 'एल्युमीनियम पृथ्वी की पपड़ी में सबसे आम धातु है!',
+      odia: 'ପୃଥିବୀର କ୍ରଷ୍ଟରେ ଆଲୁମିନିୟମ ହେଉଛି ସବୁଠାରୁ ସାଧାରଣ ଧାତୁ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Hans Christian Ørsted, 1825',
+      hindi: 'हंस क्रिश्चियन ओर्स्टेड, 1825',
+      odia: 'ହାନ୍ସ ଖ୍ରୀଷ୍ଟିଆନ Ørsted, 1825',
+    ),
   ),
   ElementData(
     atomicNumber: 14,
@@ -290,10 +520,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1414 °C',
     boilingPoint: '3265 °C',
     density: '2.33 g/cm³',
-    description: 'A hard element found in sand that is used in electronics.',
-    uses: 'Making computer chips, glass, and solar panels.',
-    funFact: 'The chips inside computers and phones are made from silicon!',
-    discovery: 'Jöns Jacob Berzelius, 1824',
+    description: LocalizedElementText(
+      english: 'A hard element found in sand that is used in electronics.',
+      hindi:
+          'रेत में पाया जाने वाला एक कठोर तत्व जिसका उपयोग इलेक्ट्रॉनिक्स में किया जाता है।',
+      odia: 'ବାଲିରେ ମିଳୁଥିବା ଏକ କଠିନ ଉପାଦାନ ଯାହା ଇଲେକ୍ଟ୍ରୋନିକ୍ସରେ ବ୍ୟବହୃତ ହୁଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making computer chips, glass, and solar panels.',
+      hindi: 'कंप्यूटर चिप्स, ग्लास और सोलर पैनल बनाना।',
+      odia: 'କମ୍ପ୍ୟୁଟର ଚିପ୍ସ, ଗ୍ଲାସ, ଏବଂ ସ ar ର ପ୍ୟାନେଲ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'The chips inside computers and phones are made from silicon!',
+      hindi: 'कंप्यूटर और फोन के अंदर के चिप्स सिलिकॉन से बने होते हैं!',
+      odia: 'କମ୍ପ୍ୟୁଟର ଏବଂ ଫୋନ୍ ଭିତରେ ଥିବା ଚିପ୍ସ ସିଲିକନ୍ ରୁ ତିଆରି!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Jöns Jacob Berzelius, 1824',
+      hindi: 'जॉन्स जैकब बर्ज़ेलियस, 1824',
+      odia: 'ଜୋନ୍ସ ଯାଦବ ବର୍ଜେଲିୟସ୍, 1824',
+    ),
   ),
   ElementData(
     atomicNumber: 15,
@@ -311,10 +558,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '44 °C',
     boilingPoint: '280 °C',
     density: '1.82 g/cm³',
-    description: 'A reactive nonmetal that is important for living things.',
-    uses: 'Making matches, fertilizers, and cleaning products.',
-    funFact: 'One form of phosphorus glows faintly in the dark!',
-    discovery: 'Hennig Brand, 1669',
+    description: LocalizedElementText(
+      english: 'A reactive nonmetal that is important for living things.',
+      hindi: 'एक प्रतिक्रियाशील अधातु जो जीवित चीजों के लिए महत्वपूर्ण है।',
+      odia: 'ଏକ ପ୍ରତିକ୍ରିୟାଶୀଳ ଅଣ ଧାତୁ ଯାହା ଜୀବଜନ୍ତୁ ପାଇଁ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making matches, fertilizers, and cleaning products.',
+      hindi: 'माचिस, उर्वरक और सफाई उत्पाद बनाना।',
+      odia: 'ମ୍ୟାଚ୍, ସାର, ଏବଂ ସଫେଇ ଦ୍ରବ୍ୟ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'One form of phosphorus glows faintly in the dark!',
+      hindi: 'फॉस्फोरस का एक रूप अंधेरे में फीकी चमक देता है!',
+      odia: 'ଅନ୍ଧାରରେ ଫସଫରସ୍ ର ଏକ ରୂପ ଦୁର୍ବଳ ହୋଇଯାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Hennig Brand, 1669',
+      hindi: 'हेनिग ब्रांड, 1669',
+      odia: 'ହେନିଗ ବ୍ରାଣ୍ଡ, 1669',
+    ),
   ),
   ElementData(
     atomicNumber: 16,
@@ -332,10 +595,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '115 °C',
     boilingPoint: '445 °C',
     density: '2.07 g/cm³',
-    description: 'A bright yellow nonmetal with a strong smell when burnt.',
-    uses: 'Making sulfuric acid, gunpowder, and rubber.',
-    funFact: 'The rotten-egg smell comes from a gas made with sulfur!',
-    discovery: 'Known since ancient times',
+    description: LocalizedElementText(
+      english: 'A bright yellow nonmetal with a strong smell when burnt.',
+      hindi: 'जलने पर तेज गंध वाली चमकीली पीली अधातु।',
+      odia: 'ଜଳିବା ସମୟରେ ଏକ ଶକ୍ତିଶାଳୀ ଗନ୍ଧ ସହିତ ଏକ ଉଜ୍ଜ୍ୱଳ ହଳଦିଆ ନନ୍ମେଟାଲ୍।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making sulfuric acid, gunpowder, and rubber.',
+      hindi: 'सल्फ्यूरिक एसिड, बारूद और रबर बनाना।',
+      odia: 'ସଲଫୁରିକ୍ ଏସିଡ୍, ବନ୍ଧୁକ, ଏବଂ ରବର ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'The rotten-egg smell comes from a gas made with sulfur!',
+      hindi: 'सड़े अंडे की गंध सल्फर से बनी गैस से आती है!',
+      odia: 'ପତଳା-ଅଣ୍ଡାର ଗନ୍ଧ ଗନ୍ଧକରୁ ନିର୍ମିତ ଗ୍ୟାସରୁ ଆସିଥାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Known since ancient times',
+      hindi: 'प्राचीन काल से जाना जाता है',
+      odia: 'ପ୍ରାଚୀନ କାଳରୁ ଜଣାଶୁଣା।',
+    ),
   ),
   ElementData(
     atomicNumber: 17,
@@ -353,10 +632,28 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−101 °C',
     boilingPoint: '−34 °C',
     density: '0.0032 g/cm³',
-    description: 'A greenish-yellow gas that kills germs in water.',
-    uses: 'Cleaning swimming pools, making bleach, and purifying water.',
-    funFact: 'Chlorine is added to drinking water to make it safe from germs!',
-    discovery: 'Carl Wilhelm Scheele, 1774',
+    description: LocalizedElementText(
+      english: 'A greenish-yellow gas that kills germs in water.',
+      hindi: 'एक हरी-पीली गैस जो पानी में कीटाणुओं को मार देती है।',
+      odia: 'ଏକ ସବୁଜ-ହଳଦିଆ ଗ୍ୟାସ୍ ଯାହା ପାଣିରେ ଜୀବାଣୁକୁ ମାରିଦିଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Cleaning swimming pools, making bleach, and purifying water.',
+      hindi: 'स्विमिंग पूल की सफाई करना, ब्लीच बनाना और पानी को शुद्ध करना।',
+      odia: 'ସୁଇମିଂ ପୁଲ ସଫା କରିବା, ବ୍ଲିଚ ତିଆରି କରିବା ଏବଂ ଜଳ ବିଶୁଦ୍ଧ କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Chlorine is added to drinking water to make it safe from germs!',
+      hindi:
+          'पीने के पानी को कीटाणुओं से सुरक्षित रखने के लिए उसमें क्लोरीन मिलाया जाता है!',
+      odia: 'କୀଟନାଶକରୁ ସୁରକ୍ଷିତ ରଖିବା ପାଇଁ ପାନୀୟ ଜଳରେ କ୍ଲୋରାଇନ୍ ମିଶାଯାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Carl Wilhelm Scheele, 1774',
+      hindi: 'कार्ल विल्हेम शीले, 1774',
+      odia: 'କାର୍ଲ ୱିଲହେଲମ୍ ସ୍କିଲ୍, 1774',
+    ),
   ),
   ElementData(
     atomicNumber: 18,
@@ -374,10 +671,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−189 °C',
     boilingPoint: '−186 °C',
     density: '0.0018 g/cm³',
-    description: 'A gas that does not react with other elements easily.',
-    uses: 'Filling light bulbs and protecting metals during welding.',
-    funFact: 'Argon fills ordinary light bulbs to stop them burning out fast!',
-    discovery: 'Lord Rayleigh and William Ramsay, 1894',
+    description: LocalizedElementText(
+      english: 'A gas that does not react with other elements easily.',
+      hindi: 'वह गैस जो अन्य तत्वों के साथ आसानी से प्रतिक्रिया नहीं करती।',
+      odia: 'ଏକ ଗ୍ୟାସ୍ ଯାହା ଅନ୍ୟ ଉପାଦାନ ସହିତ ସହଜରେ ପ୍ରତିକ୍ରିୟା କରେ ନାହିଁ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Filling light bulbs and protecting metals during welding.',
+      hindi: 'वेल्डिंग के दौरान प्रकाश बल्ब भरना और धातुओं की सुरक्षा करना।',
+      odia: 'ୱେଲଡିଂ ସମୟରେ ଆଲୋକ ବଲ୍ବ ଭରିବା ଏବଂ ଧାତୁକୁ ସୁରକ୍ଷା ଦେବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Argon fills ordinary light bulbs to stop them burning out fast!',
+      hindi:
+          'आर्गन सामान्य प्रकाश बल्बों को तेजी से जलने से रोकने के लिए भरता है!',
+      odia:
+          'ସେମାନଙ୍କୁ ଶୀଘ୍ର ଜଳିବା ବନ୍ଦ କରିବା ପାଇଁ ଆର୍ଗନ୍ ସାଧାରଣ ଲାଇଟ୍ ବଲ୍ବ ଭରିଦିଏ।',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Lord Rayleigh and William Ramsay, 1894',
+      hindi: 'लॉर्ड रेले और विलियम रैमसे, 1894',
+      odia: 'ଲର୍ଡ ରେଲି ଏବଂ ୱିଲିୟମ୍ ରାମସେ, 1894',
+    ),
   ),
   ElementData(
     atomicNumber: 19,
@@ -395,10 +711,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '64 °C',
     boilingPoint: '759 °C',
     density: '0.86 g/cm³',
-    description: 'A soft silvery metal that our bodies need in small amounts.',
-    uses: 'Making fertilizers, soaps, and glass.',
-    funFact: 'Bananas contain potassium, which helps keep our muscles working!',
-    discovery: 'Humphry Davy, 1807',
+    description: LocalizedElementText(
+      english: 'A soft silvery metal that our bodies need in small amounts.',
+      hindi:
+          'एक नरम चांदी जैसी धातु जिसकी हमारे शरीर को कम मात्रा में आवश्यकता होती है।',
+      odia: 'ଏକ କୋମଳ ରୂପା ଧାତୁ ଯାହା ଆମ ଶରୀରକୁ ଅଳ୍ପ ପରିମାଣରେ ଆବଶ୍ୟକ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making fertilizers, soaps, and glass.',
+      hindi: 'उर्वरक, साबुन और कांच बनाना।',
+      odia: 'ସାର, ସାବୁନ ଏବଂ ଗ୍ଲାସ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Bananas contain potassium, which helps keep our muscles working!',
+      hindi:
+          'केले में पोटैशियम होता है, जो हमारी मांसपेशियों को काम करने में मदद करता है!',
+      odia: 'କଦଳୀରେ ପୋଟାସିୟମ୍ ଥାଏ, ଯାହା ଆମ ମାଂସପେଶୀକୁ କାମ କରିବାରେ ସାହାଯ୍ୟ କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Humphry Davy, 1807',
+      hindi: 'हम्फ्री डेवी, 1807',
+      odia: 'ହମ୍ଫ୍ରି ଡେଭି, 1807',
+    ),
   ),
   ElementData(
     atomicNumber: 20,
@@ -416,10 +751,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '842 °C',
     boilingPoint: '1484 °C',
     density: '1.55 g/cm³',
-    description: 'A metal that helps build strong bones and teeth.',
-    uses: 'Making cement, chalk, and building strong bones.',
-    funFact: 'Your bones and teeth are strong because they contain calcium!',
-    discovery: 'Humphry Davy, 1808',
+    description: LocalizedElementText(
+      english: 'A metal that helps build strong bones and teeth.',
+      hindi: 'एक धातु जो हड्डियों और दांतों को मजबूत बनाने में मदद करती है।',
+      odia: 'ଏକ ଧାତୁ ଯାହା ଦୃ strong ହାଡ ଏବଂ ଦାନ୍ତ ନିର୍ମାଣ କରିବାରେ ସାହାଯ୍ୟ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making cement, chalk, and building strong bones.',
+      hindi: 'सीमेंट, चाक बनाना और मजबूत हड्डियाँ बनाना।',
+      odia: 'ସିମେଣ୍ଟ, ଚକ ତିଆରି କରିବା, ଏବଂ ଶକ୍ତିଶାଳୀ ଅସ୍ଥି ନିର୍ମାଣ କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Your bones and teeth are strong because they contain calcium!',
+      hindi: 'आपकी हड्डियाँ और दाँत मजबूत हैं क्योंकि उनमें कैल्शियम होता है!',
+      odia: 'ତୁମର ହାଡ ଏବଂ ଦାନ୍ତ ଶକ୍ତିଶାଳୀ କାରଣ ଏଥିରେ କ୍ୟାଲସିୟମ ଥାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Humphry Davy, 1808',
+      hindi: 'हम्फ्री डेवी, 1808',
+      odia: 'ହମ୍ଫ୍ରି ଡେଭି, 1808',
+    ),
   ),
   ElementData(
     atomicNumber: 21,
@@ -437,10 +788,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1541 °C',
     boilingPoint: '2836 °C',
     density: '2.99 g/cm³',
-    description: 'A light silvery metal that is quite rare on Earth.',
-    uses: 'Making light strong alloys for aircraft and sports gear.',
-    funFact: 'Scandium is added to metal to make very strong baseball bats and bicycles!',
-    discovery: 'Lars Fredrik Nilson, 1879',
+    description: LocalizedElementText(
+      english: 'A light silvery metal that is quite rare on Earth.',
+      hindi: 'एक हल्की चांदी जैसी धातु जो पृथ्वी पर काफी दुर्लभ है।',
+      odia: 'ଏକ ହାଲୁକା ରୂପା ଧାତୁ ଯାହା ପୃଥିବୀରେ ବହୁତ କ୍ୱଚିତ୍।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making light strong alloys for aircraft and sports gear.',
+      hindi: 'विमान और खेल गियर के लिए हल्के मजबूत मिश्रधातु बनाना।',
+      odia: 'ବିମାନ ଏବଂ କ୍ରୀଡା ଗିଅର୍ ପାଇଁ ହାଲୁକା ଶକ୍ତିଶାଳୀ ମିଶ୍ରଣ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Scandium is added to metal to make very strong baseball bats and bicycles!',
+      hindi:
+          'बहुत मजबूत बेसबॉल बैट और साइकिल बनाने के लिए धातु में स्कैंडियम मिलाया जाता है!',
+      odia:
+          'ବହୁତ ଶକ୍ତିଶାଳୀ ବେସବଲ୍ ବ୍ୟାଟ୍ ଏବଂ ସାଇକେଲ୍ ତିଆରି କରିବା ପାଇଁ ସ୍କାଣ୍ଡିୟମ୍ ଧାତୁରେ ଯୋଗ କରାଯାଇଥାଏ।',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Lars Fredrik Nilson, 1879',
+      hindi: 'लार्स फ्रेड्रिक निल्सन, 1879',
+      odia: 'ଲାର୍ସ ଫ୍ରେଡ୍ରିକ୍ ନିଲସନ, 1879',
+    ),
   ),
   ElementData(
     atomicNumber: 22,
@@ -458,10 +828,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1668 °C',
     boilingPoint: '3287 °C',
     density: '4.51 g/cm³',
-    description: 'A strong but light metal that does not rust easily.',
-    uses: 'Making aircraft, spacecraft, and artificial joints.',
-    funFact: 'Titanium is so body-friendly that it is used to make artificial hips!',
-    discovery: 'William Gregor, 1791',
+    description: LocalizedElementText(
+      english: 'A strong but light metal that does not rust easily.',
+      hindi: 'एक मजबूत लेकिन हल्की धातु जिसमें आसानी से जंग नहीं लगती।',
+      odia: 'ଏକ ଶକ୍ତିଶାଳୀ କିନ୍ତୁ ହାଲୁକା ଧାତୁ ଯାହା ସହଜରେ କଳଙ୍କିତ ହୁଏ ନାହିଁ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making aircraft, spacecraft, and artificial joints.',
+      hindi: 'विमान, अंतरिक्ष यान और कृत्रिम जोड़ बनाना।',
+      odia: 'ବିମାନ, ମହାକାଶଯାନ ଏବଂ କୃତ୍ରିମ ଗଣ୍ଠି ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Titanium is so body-friendly that it is used to make artificial hips!',
+      hindi:
+          'टाइटेनियम शरीर के लिए इतना अनुकूल है कि इसका उपयोग कृत्रिम कूल्हे बनाने में किया जाता है!',
+      odia:
+          'ଟାଇଟାନିୟମ୍ ଶରୀର ପାଇଁ ଅନୁକୂଳ ଯେ ଏହା କୃତ୍ରିମ ବାଣ୍ଡ ତିଆରିରେ ବ୍ୟବହୃତ ହୁଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'William Gregor, 1791',
+      hindi: 'विलियम ग्रेगर, 1791',
+      odia: 'ୱିଲିୟମ୍ ଗ୍ରେଗର୍, 1791',
+    ),
   ),
   ElementData(
     atomicNumber: 23,
@@ -479,10 +868,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1910 °C',
     boilingPoint: '3407 °C',
     density: '6.11 g/cm³',
-    description: 'A hard silvery metal that makes steel stronger.',
-    uses: 'Making strong steel for tools, springs, and pipes.',
-    funFact: 'Vanadium can form compounds in many bright colours!',
-    discovery: 'Andrés Manuel del Río, 1801',
+    description: LocalizedElementText(
+      english: 'A hard silvery metal that makes steel stronger.',
+      hindi: 'एक कठोर चांदी जैसी धातु जो स्टील को मजबूत बनाती है।',
+      odia: 'ଏକ କଠିନ ରୂପା ଧାତୁ ଯାହା ଇସ୍ପାତକୁ ଅଧିକ ଶକ୍ତିଶାଳୀ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making strong steel for tools, springs, and pipes.',
+      hindi: 'औजारों, स्प्रिंग्स और पाइपों के लिए मजबूत स्टील बनाना।',
+      odia: 'ସାଧନ, ings ରଣା, ଏବଂ ପାଇପ୍ ପାଇଁ ଦୃ strong ଇସ୍ପାତ ତିଆରି।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Vanadium can form compounds in many bright colours!',
+      hindi: 'वैनेडियम कई चमकीले रंगों में यौगिक बना सकता है!',
+      odia: 'ଭାନାଡିୟମ୍ ଅନେକ ଉଜ୍ଜ୍ୱଳ ରଙ୍ଗରେ ଯ ounds ଗିକ ସୃଷ୍ଟି କରିପାରିବ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Andrés Manuel del Río, 1801',
+      hindi: 'एन्ड्रेस मैनुअल डेल रियो, 1801',
+      odia: 'ଆଣ୍ଡ୍ରେସ୍ ମାନୁଏଲ୍ ଡେଲ୍ ରିଓ, 1801',
+    ),
   ),
   ElementData(
     atomicNumber: 24,
@@ -500,10 +905,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1907 °C',
     boilingPoint: '2671 °C',
     density: '7.15 g/cm³',
-    description: 'A shiny hard metal that gives a bright mirror-like finish.',
-    uses: 'Making stainless steel and shiny chrome coatings.',
-    funFact: 'The shiny coating on cars and taps is often made of chromium!',
-    discovery: 'Louis Nicolas Vauquelin, 1797',
+    description: LocalizedElementText(
+      english: 'A shiny hard metal that gives a bright mirror-like finish.',
+      hindi: 'एक चमकदार कठोर धातु जो चमकदार दर्पण जैसी फिनिश देती है।',
+      odia: 'ଏକ ଚକଚକିଆ କଠିନ ଧାତୁ ଯାହା ଏକ ଉଜ୍ଜ୍ୱଳ ଦର୍ପଣ ପରି ସମାପ୍ତ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making stainless steel and shiny chrome coatings.',
+      hindi: 'स्टेनलेस स्टील और चमकदार क्रोम कोटिंग बनाना।',
+      odia: 'ଷ୍ଟେନଲେସ୍ ଷ୍ଟିଲ୍ ଏବଂ ଚକଚକିଆ କ୍ରୋମ୍ ଆବରଣ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'The shiny coating on cars and taps is often made of chromium!',
+      hindi: 'कारों और नलों पर चमकदार कोटिंग अक्सर क्रोमियम से बनी होती है!',
+      odia:
+          'କାର ଏବଂ ଟ୍ୟାପ୍ ଉପରେ ଚକଚକିଆ ଆବରଣ ପ୍ରାୟତ ch କ୍ରୋମିୟମରେ ତିଆରି ହୋଇଥାଏ।',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Louis Nicolas Vauquelin, 1797',
+      hindi: 'लुई निकोलस वाउक्वेलिन, 1797',
+      odia: 'ଲୁଇ ନିକୋଲାସ୍ ଭାଉକେଲିନ୍, 1797',
+    ),
   ),
   ElementData(
     atomicNumber: 25,
@@ -521,10 +943,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1246 °C',
     boilingPoint: '2061 °C',
     density: '7.44 g/cm³',
-    description: 'A hard, brittle metal that makes steel tougher.',
-    uses: 'Making strong steel, batteries, and glass.',
-    funFact: 'India is one of the world\'s big producers of manganese ore!',
-    discovery: 'Johan Gottlieb Gahn, 1774',
+    description: LocalizedElementText(
+      english: 'A hard, brittle metal that makes steel tougher.',
+      hindi: 'एक कठोर, भंगुर धातु जो स्टील को कठोर बनाती है।',
+      odia: 'ଏକ କଠିନ, ଭଗ୍ନ ଧାତୁ ଯାହା ଇସ୍ପାତକୁ କଠିନ କରିଥାଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making strong steel, batteries, and glass.',
+      hindi: 'मजबूत स्टील, बैटरी और ग्लास बनाना।',
+      odia: 'ଶକ୍ତିଶାଳୀ ଇସ୍ପାତ, ବ୍ୟାଟେରୀ ଏବଂ କାଚ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'India is one of the world\'s big producers of manganese ore!',
+      hindi: 'भारत मैंगनीज अयस्क के विश्व के बड़े उत्पादकों में से एक है!',
+      odia: 'ମାଙ୍ଗାନିଜ୍ ଖଣି ଉତ୍ପାଦନ କରୁଥିବା ଭାରତ ହେଉଛି ବିଶ୍ୱର ଅନ୍ୟତମ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Johan Gottlieb Gahn, 1774',
+      hindi: 'जोहान गोटलिब गाहन, 1774',
+      odia: 'ଜୋହାନ ଗଟଲିଏବ ଗାହ, 1774',
+    ),
   ),
   ElementData(
     atomicNumber: 26,
@@ -542,10 +980,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1538 °C',
     boilingPoint: '2861 °C',
     density: '7.87 g/cm³',
-    description: 'A strong, common metal used to build many things.',
-    uses: 'Making steel, tools, machines, and buildings.',
-    funFact: 'The centre of the Earth is mostly made of iron!',
-    discovery: 'Known since ancient times',
+    description: LocalizedElementText(
+      english: 'A strong, common metal used to build many things.',
+      hindi:
+          'एक मजबूत, सामान्य धातु जिसका उपयोग कई चीज़ें बनाने में किया जाता है।',
+      odia: 'ଏକ ଶକ୍ତିଶାଳୀ, ସାଧାରଣ ଧାତୁ ଅନେକ ଜିନିଷ ନିର୍ମାଣରେ ବ୍ୟବହୃତ ହେଉଥିଲା।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making steel, tools, machines, and buildings.',
+      hindi: 'इस्पात, उपकरण, मशीनें और भवन बनाना।',
+      odia: 'ଇସ୍ପାତ, ଉପକରଣ, ଯନ୍ତ୍ର ଏବଂ କୋଠା ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'The centre of the Earth is mostly made of iron!',
+      hindi: 'पृथ्वी का केंद्र अधिकतर लोहे से बना है!',
+      odia: 'ପୃଥିବୀର କେନ୍ଦ୍ର ମୁଖ୍ୟତ iron ଲୁହାରେ ନିର୍ମିତ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Known since ancient times',
+      hindi: 'प्राचीन काल से जाना जाता है',
+      odia: 'ପ୍ରାଚୀନ କାଳରୁ ଜଣାଶୁଣା।',
+    ),
   ),
   ElementData(
     atomicNumber: 27,
@@ -563,10 +1018,28 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1495 °C',
     boilingPoint: '2927 °C',
     density: '8.90 g/cm³',
-    description: 'A hard magnetic metal that gives a deep blue colour.',
-    uses: 'Making batteries, magnets, and blue paint or glass.',
-    funFact: 'Cobalt has been used for thousands of years to colour glass blue!',
-    discovery: 'Georg Brandt, 1735',
+    description: LocalizedElementText(
+      english: 'A hard magnetic metal that gives a deep blue colour.',
+      hindi: 'एक कठोर चुंबकीय धातु जो गहरा नीला रंग देती है।',
+      odia: 'ଏକ କଠିନ ଚୁମ୍ବକୀୟ ଧାତୁ ଯାହା ଏକ ଗଭୀର ନୀଳ ରଙ୍ଗ ଦେଇଥାଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making batteries, magnets, and blue paint or glass.',
+      hindi: 'बैटरी, चुम्बक और नीला पेंट या कांच बनाना।',
+      odia: 'ବ୍ୟାଟେରୀ, ଚୁମ୍ବକ, ଏବଂ ନୀଳ ରଙ୍ଗ କିମ୍ବା କାଚ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Cobalt has been used for thousands of years to colour glass blue!',
+      hindi:
+          'कांच को नीला रंग देने के लिए हजारों वर्षों से कोबाल्ट का उपयोग किया जाता रहा है!',
+      odia: 'କୋବାଲ୍ଟ ହଜାରେ ବର୍ଷ ଧରି ଗ୍ଲାସ୍ ନୀଳ ରଙ୍ଗ ପାଇଁ ବ୍ୟବହୃତ ହୋଇଆସୁଛି!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Georg Brandt, 1735',
+      hindi: 'जॉर्ज ब्रांट, 1735',
+      odia: 'ଜର୍ଜ ବ୍ରାଣ୍ଡ୍ଟ, 1735',
+    ),
   ),
   ElementData(
     atomicNumber: 28,
@@ -584,10 +1057,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1455 °C',
     boilingPoint: '2913 °C',
     density: '8.91 g/cm³',
-    description: 'A shiny silvery metal that resists rust and is magnetic.',
-    uses: 'Making coins, stainless steel, and rechargeable batteries.',
-    funFact: 'Many shiny coins around the world contain nickel!',
-    discovery: 'Axel Fredrik Cronstedt, 1751',
+    description: LocalizedElementText(
+      english: 'A shiny silvery metal that resists rust and is magnetic.',
+      hindi:
+          'एक चमकदार चांदी जैसी धातु जो जंग का प्रतिरोध करती है और चुंबकीय होती है।',
+      odia: 'ଏକ ଚକଚକିଆ ରୂପା ଧାତୁ ଯାହା କଳଙ୍କ ପ୍ରତିରୋଧ କରେ ଏବଂ ଚୁମ୍ବକୀୟ ଅଟେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making coins, stainless steel, and rechargeable batteries.',
+      hindi: 'सिक्के, स्टेनलेस स्टील और रिचार्जेबल बैटरी बनाना।',
+      odia: 'ମୁଦ୍ରା, ଷ୍ଟେନଲେସ୍ ଷ୍ଟିଲ୍ ଏବଂ ରିଚାର୍ଜ ଯୋଗ୍ୟ ବ୍ୟାଟେରୀ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Many shiny coins around the world contain nickel!',
+      hindi: 'दुनिया भर में कई चमकदार सिक्कों में निकेल होता है!',
+      odia: 'ବିଶ୍ world ର ଅନେକ ଚକଚକିଆ ମୁଦ୍ରାରେ ନିକେଲ୍ ଥାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Axel Fredrik Cronstedt, 1751',
+      hindi: 'एक्सल फ्रेड्रिक क्रोनस्टेड, 1751',
+      odia: 'ଆକ୍ସେଲ୍ ଫ୍ରେଡ୍ରିକ୍ କ୍ରୋନଷ୍ଟେଡ୍, 1751',
+    ),
   ),
   ElementData(
     atomicNumber: 29,
@@ -605,10 +1095,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1085 °C',
     boilingPoint: '2562 °C',
     density: '8.96 g/cm³',
-    description: 'A reddish metal that carries electricity very well.',
-    uses: 'Making electrical wires, coins, and water pipes.',
-    funFact: 'Copper turns green over many years, like the Statue of Liberty!',
-    discovery: 'Known since ancient times',
+    description: LocalizedElementText(
+      english: 'A reddish metal that carries electricity very well.',
+      hindi: 'एक लाल रंग की धातु जो बिजली को बहुत अच्छी तरह से ले जाती है।',
+      odia: 'ଏକ ଲାଲ ରଙ୍ଗର ଧାତୁ ଯାହା ବିଦ୍ୟୁତ୍ ବହୁତ ଭଲ ଭାବରେ ବହନ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making electrical wires, coins, and water pipes.',
+      hindi: 'बिजली के तार, सिक्के और पानी के पाइप बनाना।',
+      odia: 'ବ electrical ଦୁତିକ ତାର, ମୁଦ୍ରା ଏବଂ ଜଳ ପାଇପ୍ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Copper turns green over many years, like the Statue of Liberty!',
+      hindi: 'स्टैच्यू ऑफ लिबर्टी की तरह, तांबा कई वर्षों में हरा हो जाता है!',
+      odia: 'ଷ୍ଟାଚ୍ୟୁ ଅଫ୍ ଲିବର୍ଟି ପରି ତମ୍ବା ଅନେକ ବର୍ଷ ମଧ୍ୟରେ ସବୁଜ ହୋଇଯାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Known since ancient times',
+      hindi: 'प्राचीन काल से जाना जाता है',
+      odia: 'ପ୍ରାଚୀନ କାଳରୁ ଜଣାଶୁଣା।',
+    ),
   ),
   ElementData(
     atomicNumber: 30,
@@ -626,10 +1133,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '420 °C',
     boilingPoint: '907 °C',
     density: '7.14 g/cm³',
-    description: 'A bluish-white metal used to protect iron from rusting.',
-    uses: 'Coating iron, making batteries, and health supplements.',
-    funFact: 'A thin layer of zinc keeps iron sheets from rusting!',
-    discovery: 'Andreas Sigismund Marggraf, 1746',
+    description: LocalizedElementText(
+      english: 'A bluish-white metal used to protect iron from rusting.',
+      hindi:
+          'एक नीली-सफ़ेद धातु जिसका उपयोग लोहे को जंग लगने से बचाने के लिए किया जाता है।',
+      odia: 'ଲୁହାକୁ କଳଙ୍କରୁ ରକ୍ଷା କରିବା ପାଇଁ ଏକ ନୀଳ-ଧଳା ଧାତୁ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Coating iron, making batteries, and health supplements.',
+      hindi: 'लोहे पर कोटिंग करना, बैटरियां बनाना और स्वास्थ्य पूरक बनाना।',
+      odia: 'ଲୁହା ଆବରଣ, ବ୍ୟାଟେରୀ ତିଆରି, ଏବଂ ସ୍ୱାସ୍ଥ୍ୟ ସପ୍ଲିମେଣ୍ଟ।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'A thin layer of zinc keeps iron sheets from rusting!',
+      hindi: 'जिंक की एक पतली परत लोहे की चादरों को जंग लगने से बचाती है!',
+      odia: 'ଜିଙ୍କର ଏକ ପତଳା ସ୍ତର ଲୁହା ସିଟ୍ କୁ କଳଙ୍କରୁ ରକ୍ଷା କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Andreas Sigismund Marggraf, 1746',
+      hindi: 'एंड्रियास सिगिस्मंड मार्गग्राफ, 1746',
+      odia: 'ଆଣ୍ଡ୍ରିଆସ୍ ସିଗିସମୁଣ୍ଡ ମାର୍ଗ୍ରାଫ୍, 1746',
+    ),
   ),
   ElementData(
     atomicNumber: 31,
@@ -647,10 +1171,28 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '30 °C',
     boilingPoint: '2400 °C',
     density: '5.91 g/cm³',
-    description: 'A soft silvery metal that melts in the warmth of your hand.',
-    uses: 'Making LED lights, computer chips, and solar cells.',
-    funFact: 'Gallium melts at just 30 °C, so it can melt in your palm!',
-    discovery: 'Paul-Émile Lecoq de Boisbaudran, 1875',
+    description: LocalizedElementText(
+      english: 'A soft silvery metal that melts in the warmth of your hand.',
+      hindi: 'एक नरम चांदी जैसी धातु जो आपके हाथ की गर्मी से पिघल जाती है।',
+      odia: 'ଏକ ନରମ ରୂପା ଧାତୁ ଯାହା ଆପଣଙ୍କ ହାତର ଉଷ୍ମତାରେ ତରଳିଯାଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making LED lights, computer chips, and solar cells.',
+      hindi: 'एलईडी लाइटें, कंप्यूटर चिप्स और सौर सेल बनाना।',
+      odia: 'ଏଲଇଡି ଲାଇଟ୍, କମ୍ପ୍ୟୁଟର ଚିପ୍ସ ଏବଂ ସ ar ର କୋଷ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Gallium melts at just 30 °C, so it can melt in your palm!',
+      hindi:
+          'गैलियम केवल 30 डिग्री सेल्सियस पर पिघलता है, इसलिए यह आपकी हथेली में पिघल सकता है!',
+      odia:
+          'ଗାଲିୟମ୍ ମାତ୍ର 30 ° C ରେ ତରଳିଯାଏ, ତେଣୁ ଏହା ଆପଣଙ୍କ ପାପୁଲିରେ ତରଳିପାରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Paul-Émile Lecoq de Boisbaudran, 1875',
+      hindi: 'पॉल-एमिल लेकोक डी बोइसबौड्रन, 1875',
+      odia: 'ପଲ୍-ମାଇଲ୍ ଲେକ୍କ୍ ଡି ବୋଇସବାଡ୍ରାନ୍, 1875',
+    ),
   ),
   ElementData(
     atomicNumber: 32,
@@ -668,10 +1210,30 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '938 °C',
     boilingPoint: '2833 °C',
     density: '5.32 g/cm³',
-    description: 'A grey-white element used in electronics and fibre optics.',
-    uses: 'Making transistors, cameras, and fibre-optic cables.',
-    funFact: 'Germanium was predicted to exist before it was even discovered!',
-    discovery: 'Clemens Winkler, 1886',
+    description: LocalizedElementText(
+      english: 'A grey-white element used in electronics and fibre optics.',
+      hindi:
+          'इलेक्ट्रॉनिक्स और फाइबर ऑप्टिक्स में उपयोग किया जाने वाला एक ग्रे-सफ़ेद तत्व।',
+      odia: 'ଇଲେକ୍ଟ୍ରୋନିକ୍ସ ଏବଂ ଫାଇବର ଅପ୍ଟିକ୍ସରେ ବ୍ୟବହୃତ ଏକ ଧୂସର-ଧଳା ଉପାଦାନ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making transistors, cameras, and fibre-optic cables.',
+      hindi: 'ट्रांजिस्टर, कैमरा और फाइबर-ऑप्टिक केबल बनाना।',
+      odia: 'ଟ୍ରାନଜିଷ୍ଟର, କ୍ୟାମେରା ଏବଂ ଫାଇବର-ଅପ୍ଟିକ୍ କେବୁଲ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Germanium was predicted to exist before it was even discovered!',
+      hindi:
+          'जर्मेनियम की खोज से पहले ही इसके अस्तित्व की भविष्यवाणी की गई थी!',
+      odia:
+          'ଏହା ଆବିଷ୍କୃତ ହେବା ପୂର୍ବରୁ ଜର୍ମାନି ବିଦ୍ୟମାନ ବୋଲି ପୂର୍ବାନୁମାନ କରାଯାଇଥିଲା!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Clemens Winkler, 1886',
+      hindi: 'क्लेमेंस विंकलर, 1886',
+      odia: 'କ୍ଲେମେନ୍ସ ୱିଙ୍କଲର, 1886',
+    ),
   ),
   ElementData(
     atomicNumber: 33,
@@ -689,10 +1251,30 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '817 °C',
     boilingPoint: '614 °C',
     density: '5.73 g/cm³',
-    description: 'A grey element that is poisonous and must be handled carefully.',
-    uses: 'Making some semiconductors, alloys, and wood preservatives.',
-    funFact: 'Arsenic is poisonous, so its water levels are carefully checked!',
-    discovery: 'Albertus Magnus, 1250',
+    description: LocalizedElementText(
+      english:
+          'A grey element that is poisonous and must be handled carefully.',
+      hindi: 'एक धूसर तत्व जो जहरीला होता है और उसे सावधानी से संभालना चाहिए।',
+      odia:
+          'ଏକ ଧୂସର ଉପାଦାନ ଯାହା ବିଷାକ୍ତ ଏବଂ ଏହାକୁ ଯତ୍ନର ସହିତ ପରିଚାଳନା କରିବା ଆବଶ୍ୟକ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making some semiconductors, alloys, and wood preservatives.',
+      hindi: 'कुछ अर्धचालक, मिश्रधातु और लकड़ी परिरक्षक बनाना।',
+      odia: 'କିଛି ସେମିକଣ୍ଡକ୍ଟର, ଆଲୋଇ, ଏବଂ କାଠ ସଂରକ୍ଷଣକାରୀ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Arsenic is poisonous, so its water levels are carefully checked!',
+      hindi:
+          'आर्सेनिक जहरीला होता है, इसलिए इसके जल स्तर की सावधानीपूर्वक जाँच की जाती है!',
+      odia: 'ଆର୍ସେନିକ୍ ବିଷାକ୍ତ, ତେଣୁ ଏହାର ଜଳ ସ୍ତର ଯତ୍ନର ସହ ଯାଞ୍ଚ କରାଯାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Albertus Magnus, 1250',
+      hindi: 'अल्बर्टस मैग्नस, 1250',
+      odia: 'ଆଲବର୍ଟସ୍ ମାଗ୍ନସ୍, 1250',
+    ),
   ),
   ElementData(
     atomicNumber: 34,
@@ -710,10 +1292,32 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '221 °C',
     boilingPoint: '685 °C',
     density: '4.81 g/cm³',
-    description: 'A nonmetal that conducts more electricity when light shines on it.',
-    uses: 'Making photocopiers, glass, and solar cells.',
-    funFact: 'Selenium reacts to light, which is why it was used in old photocopiers!',
-    discovery: 'Jöns Jacob Berzelius, 1817',
+    description: LocalizedElementText(
+      english:
+          'A nonmetal that conducts more electricity when light shines on it.',
+      hindi:
+          'एक अधातु जिस पर प्रकाश पड़ने पर वह अधिक विद्युत का संचालन करती है।',
+      odia:
+          'ଏକ ଅଣମେଟାଲ୍ ଯାହା ଆଲୋକ ଉପରେ ଆଲୋକିତ କଲାବେଳେ ଅଧିକ ବିଦ୍ୟୁତ୍ ପରିଚାଳନା କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making photocopiers, glass, and solar cells.',
+      hindi: 'फोटोकॉपियर, ग्लास और सौर सेल बनाना।',
+      odia: 'ଫଟୋଗ୍ରାଫି, ଗ୍ଲାସ ଏବଂ ସ ar ର କୋଷ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Selenium reacts to light, which is why it was used in old photocopiers!',
+      hindi:
+          'सेलेनियम प्रकाश पर प्रतिक्रिया करता है, यही कारण है कि इसका उपयोग पुराने फोटोकॉपियर में किया जाता था!',
+      odia:
+          'ସେଲେନିୟମ୍ ଆଲୋକ ଉପରେ ପ୍ରତିକ୍ରିୟା କରେ, ଯେଉଁଥିପାଇଁ ଏହା ପୁରୁଣା ଫଟୋଗ୍ରାଫିରେ ବ୍ୟବହୃତ ହେଉଥିଲା!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Jöns Jacob Berzelius, 1817',
+      hindi: 'जॉन्स जैकब बर्ज़ेलियस, 1817',
+      odia: 'ଜୋନ୍ସ ଯାଦବ ବର୍ଜେଲିୟସ୍, 1817',
+    ),
   ),
   ElementData(
     atomicNumber: 35,
@@ -731,10 +1335,29 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−7 °C',
     boilingPoint: '59 °C',
     density: '3.12 g/cm³',
-    description: 'A reddish-brown liquid with a strong, sharp smell.',
-    uses: 'Making dyes, medicines, and flame-resistant materials.',
-    funFact: 'Bromine is one of only two elements that are liquid at room temperature!',
-    discovery: 'Antoine Jérôme Balard, 1826',
+    description: LocalizedElementText(
+      english: 'A reddish-brown liquid with a strong, sharp smell.',
+      hindi: 'तेज़, तीखी गंध वाला लाल-भूरे रंग का तरल पदार्थ।',
+      odia: 'ଏକ ଶକ୍ତିଶାଳୀ, ତୀକ୍ଷ୍ଣ ଗନ୍ଧ ସହିତ ଏକ ଲାଲ ରଙ୍ଗର ବାଦାମୀ ତରଳ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making dyes, medicines, and flame-resistant materials.',
+      hindi: 'रंग, औषधियाँ और ज्वाला प्रतिरोधी सामग्री बनाना।',
+      odia: 'ରଙ୍ଗ, medicines ଷଧ ଏବଂ ଅଗ୍ନି-ପ୍ରତିରୋଧୀ ସାମଗ୍ରୀ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Bromine is one of only two elements that are liquid at room temperature!',
+      hindi:
+          'ब्रोमीन केवल दो तत्वों में से एक है जो कमरे के तापमान पर तरल होते हैं!',
+      odia:
+          'ବ୍ରୋମାଇନ୍ କେବଳ ଦୁଇଟି ଉପାଦାନ ମଧ୍ୟରୁ ଗୋଟିଏ ଯାହା କୋଠରୀ ତାପମାତ୍ରାରେ ତରଳ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Antoine Jérôme Balard, 1826',
+      hindi: 'एंटोनी जेरोम बालार्ड, 1826',
+      odia: 'ଆଣ୍ଟୋଏନ୍ ଜେରୋମ ବାଲାର୍ଡ, 1826',
+    ),
   ),
   ElementData(
     atomicNumber: 36,
@@ -752,10 +1375,31 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '−157 °C',
     boilingPoint: '−153 °C',
     density: '0.0037 g/cm³',
-    description: 'A colourless gas that barely reacts with anything.',
-    uses: 'Making bright lamps, photography flashes, and lasers.',
-    funFact: 'Krypton is a real gas, but it has nothing to do with Superman\'s home!',
-    discovery: 'William Ramsay and Morris Travers, 1898',
+    description: LocalizedElementText(
+      english: 'A colourless gas that barely reacts with anything.',
+      hindi:
+          'एक रंगहीन गैस जो किसी भी चीज़ के साथ बमुश्किल प्रतिक्रिया करती है।',
+      odia:
+          'ଏକ ରଙ୍ଗହୀନ ଗ୍ୟାସ୍ ଯାହାକି କ anything ଣସି ଜିନିଷ ସହିତ ପ୍ରତିକ୍ରିୟା କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making bright lamps, photography flashes, and lasers.',
+      hindi: 'चमकीले लैंप, फोटोग्राफी फ्लैश और लेजर बनाना।',
+      odia: 'ଉଜ୍ଜ୍ୱଳ ଦୀପ, ଫଟୋଗ୍ରାଫି ଫ୍ଲାସ୍ ଏବଂ ଲେଜର ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english:
+          'Krypton is a real gas, but it has nothing to do with Superman\'s home!',
+      hindi:
+          'क्रिप्टन एक वास्तविक गैस है, लेकिन इसका सुपरमैन के घर से कोई लेना-देना नहीं है!',
+      odia:
+          'କ୍ରିପଟନ୍ ଏକ ପ୍ରକୃତ ଗ୍ୟାସ୍, କିନ୍ତୁ ସୁପରମ୍ୟାନ୍ଙ୍କ ଘର ସହିତ ଏହାର କ to ଣସି ସମ୍ପର୍କ ନାହିଁ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'William Ramsay and Morris Travers, 1898',
+      hindi: 'विलियम रैमसे और मॉरिस ट्रैवर्स, 1898',
+      odia: 'ୱିଲିୟମ୍ ରାମସେ ଏବଂ ମୋରିସ୍ ଟ୍ରାଭର୍ସ, 1898',
+    ),
   ),
   ElementData(
     atomicNumber: 37,
@@ -773,10 +1417,27 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '39 °C',
     boilingPoint: '688 °C',
     density: '1.53 g/cm³',
-    description: 'A very soft silvery metal that reacts violently with water.',
-    uses: 'Making atomic clocks and special research glass.',
-    funFact: 'Rubidium is used in super-accurate atomic clocks!',
-    discovery: 'Robert Bunsen and Gustav Kirchhoff, 1861',
+    description: LocalizedElementText(
+      english: 'A very soft silvery metal that reacts violently with water.',
+      hindi:
+          'एक बहुत नरम चांदी जैसी धातु जो पानी के साथ तीव्र प्रतिक्रिया करती है।',
+      odia: 'ଏକ ଅତି ନରମ ରୂପା ଧାତୁ ଯାହା ଜଳ ସହିତ ହିଂସାତ୍ମକ ପ୍ରତିକ୍ରିୟା କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making atomic clocks and special research glass.',
+      hindi: 'परमाणु घड़ियाँ और विशेष अनुसंधान कांच बनाना।',
+      odia: 'ପରମାଣୁ ଘଣ୍ଟା ଏବଂ ସ୍ୱତନ୍ତ୍ର ଗବେଷଣା ଗ୍ଲାସ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Rubidium is used in super-accurate atomic clocks!',
+      hindi: 'रुबिडियम का उपयोग अति-सटीक परमाणु घड़ियों में किया जाता है!',
+      odia: 'ସୁପର-ସଠିକ୍ ପରମାଣୁ ଘଣ୍ଟାରେ ରୁବିଡିୟମ୍ ବ୍ୟବହୃତ ହୁଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Robert Bunsen and Gustav Kirchhoff, 1861',
+      hindi: 'रॉबर्ट बुन्सन और गुस्ताव किरचॉफ, 1861',
+      odia: 'ରୋବର୍ଟ ବନ୍ସେନ୍ ଏବଂ ଗୁସ୍ତାଭ କିର୍ଚଫ୍, 1861',
+    ),
   ),
   ElementData(
     atomicNumber: 38,
@@ -794,10 +1455,26 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '777 °C',
     boilingPoint: '1382 °C',
     density: '2.64 g/cm³',
-    description: 'A soft metal that burns with a bright red flame.',
-    uses: 'Making red fireworks, flares, and glow-in-the-dark paint.',
-    funFact: 'The brilliant red colour in fireworks comes from strontium!',
-    discovery: 'William Cruickshank, 1790',
+    description: LocalizedElementText(
+      english: 'A soft metal that burns with a bright red flame.',
+      hindi: 'एक नरम धातु जो चमकदार लाल लौ के साथ जलती है।',
+      odia: 'ଏକ ନରମ ଧାତୁ ଯାହା ଏକ ଉଜ୍ଜ୍ୱଳ ଲାଲ୍ ନିଆଁ ସହିତ ଜଳିଯାଏ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making red fireworks, flares, and glow-in-the-dark paint.',
+      hindi: 'लाल आतिशबाज़ी, फ़्लेयर और अंधेरे में चमकने वाला पेंट बनाना।',
+      odia: 'ଲାଲ୍ ଆତସବାଜି, ଅଗ୍ନିକାଣ୍ଡ, ଏବଂ ଗ୍ଲୋ-ଇନ୍-ଅନ୍ଧାର ରଙ୍ଗ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'The brilliant red colour in fireworks comes from strontium!',
+      hindi: 'आतिशबाजी में चमकीला लाल रंग स्ट्रोंटियम से आता है!',
+      odia: 'ଆତସବାଜିରେ ଉଜ୍ଜ୍ୱଳ ଲାଲ ରଙ୍ଗ ଷ୍ଟ୍ରୋଣ୍ଟିଅମରୁ ଆସିଥାଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'William Cruickshank, 1790',
+      hindi: 'विलियम क्रुइकशैंक, 1790',
+      odia: 'ୱିଲିୟମ୍ କ୍ରୁଇସ୍କାନ୍, 1790',
+    ),
   ),
   ElementData(
     atomicNumber: 39,
@@ -815,10 +1492,28 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1522 °C',
     boilingPoint: '3345 °C',
     density: '4.47 g/cm³',
-    description: 'A silvery metal used to make bright colours in screens.',
-    uses: 'Making LED lights, TV screens, and strong ceramics.',
-    funFact: 'Yttrium helps make the red colour glow on older TV screens!',
-    discovery: 'Johan Gadolin, 1794',
+    description: LocalizedElementText(
+      english: 'A silvery metal used to make bright colours in screens.',
+      hindi:
+          'एक चांदी जैसी धातु जिसका उपयोग स्क्रीन में चमकीले रंग बनाने के लिए किया जाता है।',
+      odia: 'ପରଦାରେ ଉଜ୍ଜ୍ୱଳ ରଙ୍ଗ ତିଆରି ପାଇଁ ବ୍ୟବହୃତ ଏକ ରୂପା ଧାତୁ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making LED lights, TV screens, and strong ceramics.',
+      hindi: 'एलईडी लाइटें, टीवी स्क्रीन और मजबूत सिरेमिक बनाना।',
+      odia: 'ଏଲଇଡି ଲାଇଟ୍, ଟିଭି ପରଦା, ଏବଂ ଶକ୍ତିଶାଳୀ ସିରାମିକ୍ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Yttrium helps make the red colour glow on older TV screens!',
+      hindi:
+          'येट्रियम पुराने टीवी स्क्रीन पर लाल रंग को चमकाने में मदद करता है!',
+      odia: 'Yttrium ପୁରୁଣା ଟିଭି ପରଦାରେ ଲାଲ ରଙ୍ଗର ଚମକ ଆଣିବାରେ ସାହାଯ୍ୟ କରେ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Johan Gadolin, 1794',
+      hindi: 'जोहान गैडोलिन, 1794',
+      odia: 'ଜୋହାନ୍ ଗାଡୋଲିନ୍, 1794',
+    ),
   ),
   ElementData(
     atomicNumber: 40,
@@ -836,9 +1531,30 @@ const List<ElementData> elements001to040 = [
     meltingPoint: '1855 °C',
     boilingPoint: '4409 °C',
     density: '6.52 g/cm³',
-    description: 'A strong metal that resists heat and corrosion very well.',
-    uses: 'Making nuclear reactor parts, fake diamonds, and ceramics.',
-    funFact: 'Sparkling cubic zirconia gems are made using zirconium!',
-    discovery: 'Martin Heinrich Klaproth, 1789',
+    description: LocalizedElementText(
+      english: 'A strong metal that resists heat and corrosion very well.',
+      hindi:
+          'एक मजबूत धातु जो गर्मी और संक्षारण का बहुत अच्छी तरह से प्रतिरोध करती है।',
+      odia:
+          'ଏକ ଶକ୍ତିଶାଳୀ ଧାତୁ ଯାହା ଉତ୍ତାପ ଏବଂ କ୍ଷୟକୁ ବହୁତ ଭଲ ଭାବରେ ପ୍ରତିରୋଧ କରେ।',
+    ),
+    uses: LocalizedElementText(
+      english: 'Making nuclear reactor parts, fake diamonds, and ceramics.',
+      hindi:
+          'परमाणु रिएक्टर के पुर्जे, नकली हीरे और चीनी मिट्टी की चीज़ें बनाना।',
+      odia: 'ଆଣବିକ ରିଆକ୍ଟର ଅଂଶ, ନକଲି ହୀରା, ଏବଂ ସେରାମିକ୍ସ ତିଆରି କରିବା।',
+    ),
+    funFact: LocalizedElementText(
+      english: 'Sparkling cubic zirconia gems are made using zirconium!',
+      hindi:
+          'स्पार्कलिंग क्यूबिक ज़िरकोनिया रत्न ज़िरकोनियम का उपयोग करके बनाए जाते हैं!',
+      odia:
+          'ଚମତ୍କାର କ୍ୟୁବିକ୍ ଜିର୍କୋନିଆ ରତ୍ନ ଜିର୍କୋନିୟମ୍ ବ୍ୟବହାର କରି ତିଆରି ହୁଏ!',
+    ),
+    discovery: LocalizedElementText(
+      english: 'Martin Heinrich Klaproth, 1789',
+      hindi: 'मार्टिन हेनरिक क्लैप्रोथ, 1789',
+      odia: 'ମାର୍ଟିନ ହେନ୍ରିଚ୍ କ୍ଲାପ୍ରୋଟ୍, 1789',
+    ),
   ),
 ];

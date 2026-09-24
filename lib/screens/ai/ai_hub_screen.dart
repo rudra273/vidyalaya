@@ -17,6 +17,7 @@ import '../../utils/haptics.dart';
 import '../../widgets/ask_card.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
+import '../../widgets/ncert_ai_notice.dart';
 import '../../widgets/pressable.dart';
 
 /// Haptic tap → push, shared by every row on this page.
@@ -90,6 +91,16 @@ class AiHubScreen extends ConsumerWidget {
             sub: _statusLine(isSignedIn, account),
           ),
           const SizedBox(height: AppSpacing.sectionGap - 14),
+
+          if (board == 'ncert') ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              child: NcertAiNotice(),
+            ),
+            const SizedBox(height: AppSpacing.sectionGap - 14),
+          ],
 
           // ── Ask ──────────────────────────────────────────────────────
           Padding(

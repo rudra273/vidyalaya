@@ -198,6 +198,19 @@ void main() {
     });
   });
 
+  group('language picker', () {
+    testWidgets('offers only Odia and Hindi', (tester) async {
+      await pumpScreen(tester);
+
+      await tester.tap(find.text('हिंदी'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('English  (English)'), findsNothing);
+      expect(find.text('ଓଡ଼ିଆ  (Odia)'), findsOneWidget);
+      expect(find.text('हिंदी  (Hindi)'), findsOneWidget);
+    });
+  });
+
   group('letter headers', () {
     testWidgets('a sticky header is shown for the current section',
         (tester) async {

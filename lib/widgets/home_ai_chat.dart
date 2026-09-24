@@ -87,7 +87,7 @@ class _HomeAiChatState extends State<HomeAiChat>
                         ),
                         const SizedBox(width: 13),
                         Text(
-                          'Q&A AI',
+                          'Q&A Assist',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: AppFontWeight.extraBold,
                             letterSpacing: -0.5,

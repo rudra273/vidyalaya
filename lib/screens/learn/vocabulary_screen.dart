@@ -91,6 +91,10 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
 
   final _random = Random();
 
+  /// A dictionary-only choice. Null means to follow the profile-derived
+  /// default; it deliberately never reads or writes the Explore preference.
+  RegionalLanguage? _selectedLanguage;
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -318,7 +322,8 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lang = ref.watch(regionalLanguageProvider);
+    final defaultLanguage = ref.watch(dictionaryDefaultLanguageProvider);
+    final lang = _selectedLanguage ?? defaultLanguage;
     final index = ref.watch(vocabularyIndexProvider);
 
     // First build: show everything.
@@ -338,7 +343,15 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Vocabulary'),
-        actions: const [RegionalLanguageSwitch()],
+        actions: [
+          RegionalLanguagePicker(
+            current: lang,
+            languages: const [RegionalLanguage.odia, RegionalLanguage.hindi],
+            onSelected: (language) {
+              setState(() => _selectedLanguage = language);
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

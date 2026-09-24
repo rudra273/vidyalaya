@@ -70,6 +70,7 @@ class StudentProfile {
   final int classNo;
   final String preferredLanguage;
   final String? schoolName;
+  final String? avatarId;
 
   /// Student display name (custom if edited, else the Google account name).
   final String? name;
@@ -85,6 +86,7 @@ class StudentProfile {
     required this.classNo,
     required this.preferredLanguage,
     this.schoolName,
+    this.avatarId,
     this.name,
     this.onboardingCompleted = false,
     this.revision = 0,
@@ -98,6 +100,7 @@ class StudentProfile {
       classNo: json['class_no'] as int? ?? 8,
       preferredLanguage: json['preferred_language'] as String? ?? 'en',
       schoolName: json['school_name'] as String?,
+      avatarId: json['avatar_id'] as String?,
       name: json['name'] as String?,
       onboardingCompleted: json['onboarding_completed'] as bool? ?? false,
       revision: json['revision'] as int? ?? 0,
@@ -118,6 +121,7 @@ class StudentProfile {
           : trimmedSchoolName,
       // Omitted (null) means "leave the stored name unchanged" server-side.
       'name': trimmedName == null || trimmedName.isEmpty ? null : trimmedName,
+      'avatar_id': avatarId,
       'revision': revision,
     };
   }
@@ -127,6 +131,7 @@ class StudentProfile {
     'class_no': classNo,
     'preferred_language': preferredLanguage,
     'school_name': schoolName,
+    'avatar_id': avatarId,
     'name': name,
     'onboarding_completed': onboardingCompleted,
     'revision': revision,

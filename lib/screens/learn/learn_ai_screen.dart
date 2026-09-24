@@ -24,6 +24,7 @@ import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
+import '../../widgets/ncert_ai_notice.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
@@ -894,6 +895,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   @override
   Widget build(BuildContext context) {
     final profileClass = ref.watch(primaryClassProvider);
+    final isNcert = ref.watch(userBoardProvider) == 'ncert';
     final authState = ref.watch(authStateProvider);
     final accountState = ref.watch(backendAccountCacheProvider);
     final isSignedIn = authState.maybeWhen(
@@ -973,6 +975,16 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                 setState(() => _languageMode = value);
               },
             ),
+            if (isNcert)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  0,
+                  AppSpacing.screenPadding,
+                  8,
+                ),
+                child: NcertAiNotice(),
+              ),
             if (_isLoadingHistory)
               const LinearProgressIndicator(minHeight: 2)
             else if (_isRevalidating)

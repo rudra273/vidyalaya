@@ -60,7 +60,7 @@ class _DiagramSectionRail extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: 224,
+            height: 188,
             child: ListView.separated(
               key: PageStorageKey('diagram-${section.name}-rail'),
               scrollDirection: Axis.horizontal,
@@ -90,7 +90,7 @@ class _DiagramCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
-      width: 228,
+      width: 184,
       child: Card(
         margin: EdgeInsets.zero,
         color: isDark ? cs.surface : Colors.white,
@@ -122,25 +122,13 @@ class _DiagramCard extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      diagram.title.inLanguage(language),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: AppFontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _labelCount(diagram.labels.length, language),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  diagram.title.inLanguage(language),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: AppFontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -174,10 +162,4 @@ DiagramText _sectionTitle(DiagramSection section) => switch (section) {
     hi: 'विज्ञान',
     or: 'ବିଜ୍ଞାନ',
   ),
-};
-
-String _labelCount(int count, DiagramLanguage language) => switch (language) {
-  DiagramLanguage.english => '$count interactive labels',
-  DiagramLanguage.hindi => '$count इंटरैक्टिव लेबल',
-  DiagramLanguage.odia => '$count ଟି ଇଣ୍ଟରାକ୍ଟିଭ୍ ଲେବଲ୍',
 };

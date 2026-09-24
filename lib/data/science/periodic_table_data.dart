@@ -3,6 +3,24 @@ import 'elements/elements_001_040.dart';
 import 'elements/elements_041_080.dart';
 import 'elements/elements_081_118.dart';
 
+class LocalizedElementText {
+  const LocalizedElementText({
+    required this.english,
+    required this.hindi,
+    required this.odia,
+  });
+
+  final String english;
+  final String hindi;
+  final String odia;
+
+  String inLanguage(RegionalLanguage language) => switch (language) {
+    RegionalLanguage.english => english,
+    RegionalLanguage.hindi => hindi,
+    RegionalLanguage.odia => odia,
+  };
+}
+
 // ─── Element model ───
 // Plain immutable const data (no codegen / serialization) — this is static
 // display-only seed content, mirroring the rest of lib/data/science.
@@ -33,12 +51,12 @@ class ElementData {
   final String? density;
 
   // Student-friendly (classes 6–8 level)
-  final String description;
-  final String uses;
-  final String funFact;
+  final LocalizedElementText description;
+  final LocalizedElementText uses;
+  final LocalizedElementText funFact;
 
   // Discovery — e.g. 'Henry Cavendish, 1766' or 'Known since ancient times'
-  final String discovery;
+  final LocalizedElementText discovery;
 
   const ElementData({
     required this.atomicNumber,
