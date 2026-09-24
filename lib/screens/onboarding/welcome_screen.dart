@@ -69,7 +69,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Welcome to Vidyālaya',
+                    'Welcome to Vidya AI',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: AppFontWeight.bold,
                     ),

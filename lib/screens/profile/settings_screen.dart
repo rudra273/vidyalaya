@@ -175,7 +175,7 @@ class SettingsScreen extends ConsumerWidget {
                     ListRow(
                       color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
                       icon: Icons.info_outline_rounded,
-                      title: 'About Vidyālaya',
+                      title: 'About Vidya AI',
                       sub: 'Learn more about the app',
                       onTap: () => context.push('/about'),
                       last: true,
@@ -191,7 +191,7 @@ class SettingsScreen extends ConsumerWidget {
                   AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
               child: Column(
                 children: [
-                  Text('Vidyālaya',
+                  Text('Vidya AI',
                       style:
                           Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontSize: AppFontSize.title,

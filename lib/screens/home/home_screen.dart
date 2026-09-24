@@ -79,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
           // Shares PageTitle's metrics so the wordmark sits at exactly the
           // same height as the "AI Learning" / "Explore" / "Profile" titles.
           PageTitle(
-            title: 'Vidyālaya',
+            title: 'Vidya AI',
             sub: _greetingLine(firstName),
             // Nudged down to centre against the title's line rather than
             // constrained to its height — the 40px avatar and the streak chip

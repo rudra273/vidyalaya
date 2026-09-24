@@ -12,7 +12,7 @@ import 'pressable.dart';
 // ─── ShareFeedbackBanner: sticky share card at Home bottom ───────────────
 
 /// Permanent banner at the bottom of Home for sharing the app on WhatsApp.
-/// Until dismissed, it also shows an "Enjoying Vidyālaya?" header with a
+/// Until dismissed, it also shows an "Enjoying Vidya AI?" header with a
 /// Rate-us button; the close icon hides only that part, collapsing the
 /// banner into a compact share-only card. Rating stays reachable in
 /// Settings → Support.
@@ -71,7 +71,7 @@ class _FullBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Enjoying Vidyālaya?',
+                    'Enjoying Vidya AI?',
                     style: Theme.of(context).textTheme.headlineSmall
                         ?.copyWith(fontSize: AppFontSize.title, height: 1.1),
                   ),
@@ -169,7 +169,7 @@ class _CompactShareRow extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Share Vidyālaya',
+                'Share Vidya AI',
                 style: Theme.of(context).textTheme.headlineSmall
                     ?.copyWith(fontSize: AppFontSize.content, height: 1.1),
               ),
