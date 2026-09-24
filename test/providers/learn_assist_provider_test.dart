@@ -21,6 +21,18 @@ void main() {
     });
   });
 
+  group('defaultLearnAssistLanguage', () {
+    test('uses the profile language when it is supported', () {
+      expect(defaultLearnAssistLanguage('or'), 'or');
+      expect(defaultLearnAssistLanguage('HI'), 'hi');
+    });
+
+    test('falls back to English for a missing or unsupported language', () {
+      expect(defaultLearnAssistLanguage(null), 'en');
+      expect(defaultLearnAssistLanguage('auto'), 'en');
+    });
+  });
+
   group('learnAssistSubjects', () {
     final ingestedBooks = IngestedBooks.fromJson({
       'boards': [

@@ -80,7 +80,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
   late int _selectedClass;
   String? _selectedSubject;
-  String _languageMode = 'auto';
+  String _languageMode = 'en';
+  bool _languageSelectedManually = false;
   bool _isSending = false;
 
   /// The answer-style hint rides along with the first message only — after that
@@ -156,6 +157,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void initState() {
     super.initState();
     _selectedClass = ref.read(primaryClassProvider);
+    _languageMode = defaultLearnAssistLanguage(
+      ref.read(userPrefsRepositoryProvider).getPreferredLanguage(),
+    );
     // A subject from the route (AI hub chip). build() drops it again if it
     // isn't one of the ingested subjects for this board/class.
     final subject = widget.initialSubject?.trim();
@@ -909,6 +913,23 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             !accountState.profileLoaded)) {
       _ensureAccountSummary();
     }
+    // The local preference gives the picker an immediate profile-based value.
+    // Once the latest profile arrives, use it too unless the student has
+    // already chosen a language for this chat themselves.
+    final profileLanguage = accountState.profile.maybeWhen(
+      data: (profile) => profile?.preferredLanguage,
+      orElse: () => null,
+    );
+    final preferredLanguage = defaultLearnAssistLanguage(
+      profileLanguage ??
+          ref.read(userPrefsRepositoryProvider).getPreferredLanguage(),
+    );
+    if (!_languageSelectedManually && preferredLanguage != _languageMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _languageSelectedManually) return;
+        setState(() => _languageMode = preferredLanguage);
+      });
+    }
     // Derive the effective class from profile selection (not user-choosable in UI).
     final effectiveClass = profileClass;
     if (effectiveClass != _selectedClass) {
@@ -972,7 +993,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
               },
               languageMode: _languageMode,
               onLanguageChanged: (value) {
-                setState(() => _languageMode = value);
+                setState(() {
+                  _languageMode = value;
+                  _languageSelectedManually = true;
+                });
               },
             ),
             if (isNcert)
