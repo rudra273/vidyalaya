@@ -232,11 +232,8 @@ class LearnAssistTokenEvent extends LearnAssistStreamEvent {
 }
 
 /// `event: done` — terminal frame with the final metadata (citations, usage)
-/// plus the complete [answer]. Providers that stream token-by-token (free plan /
-/// Gemini direct) let the client build the answer from [LearnAssistTokenEvent]
-/// frames; providers that don't emit incremental chunks (the OpenRouter path
-/// used by paid plans) send zero token frames, so [answer] is the fallback the
-/// client renders when nothing was streamed.
+/// plus the authoritative [answer], which replaces the token preview. This
+/// also handles providers that deliver their answer without incremental tokens.
 class LearnAssistDoneEvent extends LearnAssistStreamEvent {
   final String answer;
   final List<LearnAssistCitation> citations;

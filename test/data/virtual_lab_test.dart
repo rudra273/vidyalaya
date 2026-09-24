@@ -5,31 +5,13 @@ import 'package:vidyalaya/data/repositories/user_prefs_repository.dart';
 import 'package:vidyalaya/providers/lab_provider.dart';
 
 void main() {
-  test('lab beta is visible only for its mapped board and class', () {
-    expect(
-      labAvailableForSelection(
-        enabled: true,
-        board: 'scert_odisha',
-        selectedClasses: {7, 8},
-      ),
-      isTrue,
-    );
-    expect(
-      labAvailableForSelection(
-        enabled: true,
-        board: 'scert_odisha',
-        selectedClasses: {8},
-      ),
-      isFalse,
-    );
-    expect(
-      labAvailableForSelection(
-        enabled: false,
-        board: 'scert_odisha',
-        selectedClasses: {7},
-      ),
-      isFalse,
-    );
+  test('lab is visible for Classes 7 through 12 on every board', () {
+    expect(labAvailableForSelection({6}), isFalse);
+    expect(labAvailableForSelection({7}), isTrue);
+    expect(labAvailableForSelection({10}), isTrue);
+    expect(labAvailableForSelection({12}), isTrue);
+    expect(labAvailableForSelection({13}), isFalse);
+    expect(labAvailableForSelection({6, 7}), isTrue);
   });
 
   test('circuit and indicator observations are deterministic', () {

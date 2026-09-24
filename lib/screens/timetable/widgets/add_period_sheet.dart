@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme.dart';
 import '../../../data/seed/seed_data.dart';
 import '../../../data/models/timetable_period.dart';
 
@@ -222,7 +223,7 @@ class _AddPeriodSheetState extends State<AddPeriodSheet> {
                 foregroundColor: cs.onPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Save Period', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text('Save Period', style: TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.bold)),
             ),
           ),
         ],

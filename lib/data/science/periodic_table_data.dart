@@ -62,10 +62,12 @@ class ElementData {
     required this.discovery,
   });
 
-  /// The element's name in the chosen regional language (one at a time),
-  /// shown alongside the always-present English [name].
-  String regionalName(RegionalLanguage lang) =>
-      lang == RegionalLanguage.hindi ? nameHindi : nameOdia;
+  /// The element's name in the chosen app language.
+  String regionalName(RegionalLanguage lang) => switch (lang) {
+    RegionalLanguage.english => name,
+    RegionalLanguage.odia => nameOdia,
+    RegionalLanguage.hindi => nameHindi,
+  };
 }
 
 // ─── Full table ───

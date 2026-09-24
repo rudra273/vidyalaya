@@ -23,10 +23,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   void initState() {
     super.initState();
     _selectedBoard = ref.read(userBoardProvider);
-    final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
-    if (selectedClasses.isNotEmpty) {
-      _selectedClass = selectedClasses.first;
-    }
+    _selectedClass = ref.read(primaryClassProvider);
     _scrollController = FixedExtentScrollController(
       initialItem: _selectedClass - 1,
     );
@@ -69,9 +66,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Welcome to Vidyālaya',
+                    'Welcome to Vidya AI',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: AppFontWeight.bold,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -123,7 +120,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                   Text(
                                     '(coming soon)',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: AppFontSize.small,
                                       color: AppColors.textMuted.withValues(
                                         alpha: 0.5,
                                       ),
@@ -199,10 +196,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                 child: AnimatedDefaultTextStyle(
                                   duration: const Duration(milliseconds: 200),
                                   style: TextStyle(
-                                    fontSize: isSelected ? 28 : 22,
+                                    fontSize: isSelected
+                                        ? AppFontSize.displaySmall
+                                        : AppFontSize.heading,
                                     fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.w500,
+                                        ? AppFontWeight.bold
+                                        : AppFontWeight.medium,
                                     color: isSelected
                                         ? cs.primary
                                         : (available
@@ -245,7 +244,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           'Class $_selectedClass books are coming soon!',
                           style: TextStyle(
                             color: Colors.orange.shade800,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: AppFontWeight.semibold,
                           ),
                         ),
                       ),
@@ -277,7 +276,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             ? () {
                                 // Save selection
                                 ref
-                                    .read(userSelectionProvider.notifier)
+                                    .read(primaryClassProvider.notifier)
+                                    .setClass(_selectedClass);
+                                ref
+                                    .read(
+                                      exploreClassSelectionProvider.notifier,
+                                    )
+                                    .setClasses({_selectedClass});
+                                ref
+                                    .read(
+                                      libraryClassSelectionProvider.notifier,
+                                    )
                                     .setClasses({_selectedClass});
                                 ref
                                     .read(userBoardProvider.notifier)
@@ -295,8 +304,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         child: const Text(
                           'Continue',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: AppFontSize.title,
+                            fontWeight: AppFontWeight.bold,
                           ),
                         ),
                       ),

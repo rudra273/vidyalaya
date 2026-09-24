@@ -163,6 +163,30 @@ class ExplorePreferences {
   };
 }
 
+class LibraryPreferences {
+  final String selectionMode;
+  final List<int> selectedClasses;
+
+  const LibraryPreferences({
+    required this.selectionMode,
+    required this.selectedClasses,
+  });
+
+  factory LibraryPreferences.fromJson(Map<String, dynamic> json) {
+    return LibraryPreferences(
+      selectionMode: json['selection_mode'] as String? ?? 'primary',
+      selectedClasses: (json['selected_classes'] as List? ?? const [])
+          .whereType<int>()
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'selection_mode': selectionMode,
+    'selected_classes': selectedClasses,
+  };
+}
+
 class ChatHistoryPage {
   final List<ChatHistoryMessage> messages;
   final int? nextBefore;
@@ -355,6 +379,42 @@ class BackendAuthService {
       },
     );
     return ExplorePreferences.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<LibraryPreferences> libraryPreferences() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/me/library-preferences'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+    return LibraryPreferences.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<LibraryPreferences> updateLibraryPreferences(
+    LibraryPreferences preferences,
+  ) async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .put(
+              _baseUrl.resolve('/me/library-preferences'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+              body: jsonEncode(preferences.toJson()),
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+    return LibraryPreferences.fromJson(_decodeJsonObject(response.body));
   }
 
   Future<LearnAssistUsage> usage() async {

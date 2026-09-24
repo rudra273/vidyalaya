@@ -12,7 +12,7 @@ class AppShare {
       'https://play.google.com/store/apps/details?id=com.vidyalaya.ai';
 
   static const shareMessage =
-      'Study smarter with Vidyālaya — free SCERT Odisha books and an AI tutor, '
+      'Study smarter with Vidya AI — free SCERT Odisha books and an AI tutor, '
       'right on your phone!\n$playStoreUrl';
 
   /// Opens WhatsApp with the share message pre-filled.

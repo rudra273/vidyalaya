@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../../app/theme.dart';
 import '../../../data/models/highlight.dart';
 
 /// Semi-transparent amber — visible on white (light), inverted (dark), and sepia backgrounds.
@@ -136,7 +138,7 @@ class _HighlightOverlayState extends State<HighlightOverlay> {
                             child: const Text(
                               'Drag to highlight an area',
                               style:
-                                  TextStyle(color: Colors.white, fontSize: 13),
+                                  TextStyle(color: Colors.white, fontSize: AppFontSize.body),
                             ),
                           ),
                         ),

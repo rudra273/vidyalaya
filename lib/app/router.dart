@@ -8,7 +8,6 @@ import '../data/seed/seed_data.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
-import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
@@ -31,7 +30,7 @@ import '../screens/learn/math_formulas_screen.dart';
 import '../screens/learn/periodic_table_screen.dart';
 import '../screens/learn/timeline_screen.dart';
 import '../screens/learn/diagrams_screen.dart';
-import '../screens/learn/diagram_viewer_screen.dart';
+import '../screens/learn/interactive_diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
 import '../screens/learn/vocabulary_screen.dart';
 import '../screens/learn/python/python_home_screen.dart';
@@ -47,7 +46,7 @@ import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
 import '../screens/learn/virtual_lab_screen.dart';
-import '../data/seed/diagrams_data.dart';
+import '../data/seed/interactive_diagrams_data.dart';
 import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
 
@@ -65,7 +64,6 @@ const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.read(userPrefsRepositoryProvider);
   final booksEnabled = ref.read(booksEnabledProvider);
-  final labsEnabled = ref.read(labsEnabledProvider);
   late final GoRouter router;
   router = GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -86,9 +84,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isBookRoute) return '/';
       }
       final labsAvailable = labAvailableForSelection(
-        enabled: labsEnabled,
-        board: ref.read(userBoardProvider),
-        selectedClasses: ref.read(userSelectionProvider),
+        ref.read(exploreClassSelectionProvider),
       );
       if (!labsAvailable && state.matchedLocation == '/labs') return '/explore';
       return null;
@@ -237,19 +233,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DiagramsScreen(),
       ),
       GoRoute(
-        path: '/learn/diagrams/category/:id',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          final category = state.extra as DiagramCategory;
-          return DiagramCategoryScreen(category: category);
-        },
-      ),
-      GoRoute(
         path: '/learn/diagrams/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final diagram = state.extra as Diagram;
-          return DiagramViewerScreen(diagram: diagram);
+          final id = state.pathParameters['id']!;
+          final diagram = interactiveDiagramById(id);
+          if (diagram == null) {
+            return const Scaffold(
+              body: Center(child: Text('Diagram not found.')),
+            );
+          }
+          return InteractiveDiagramViewerScreen(diagram: diagram);
         },
       ),
       // ── Python programming course ──
@@ -320,11 +314,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MathFractionsScreen(),
       ),
       GoRoute(
-        path: '/class-selector',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ClassSelectorScreen(),
-      ),
-      GoRoute(
         path: '/labs',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const VirtualLabScreen(),
@@ -388,7 +377,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // class changes only affect the lab-route guard, so refresh that guard
   // instead of recreating GoRouter (which detaches live inherited dependents).
   ref.listen(userBoardProvider, (_, _) => router.refresh());
-  ref.listen(userSelectionProvider, (_, _) => router.refresh());
+  ref.listen(exploreClassSelectionProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
   return router;
 });

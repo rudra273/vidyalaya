@@ -54,7 +54,7 @@ Future<String> _askInput(BuildContext context, String prompt) async {
                   child: Text(
                     prompt.trim().isEmpty ? 'The program needs your input' : prompt,
                     style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: AppFontWeight.bold,
                         ),
                   ),
                 ),

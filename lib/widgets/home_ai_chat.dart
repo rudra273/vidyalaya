@@ -89,7 +89,7 @@ class _HomeAiChatState extends State<HomeAiChat>
                         Text(
                           'Q&A AI',
                           style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: AppFontWeight.extraBold,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -134,7 +134,7 @@ class _HomeAiChatState extends State<HomeAiChat>
                                 color: dark
                                     ? AppColors.heroInk
                                     : AppColors.green700,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: AppFontWeight.semibold,
                                 height: 1.35,
                               ),
                             ),
@@ -164,7 +164,7 @@ class _HomeAiChatState extends State<HomeAiChat>
                         children: [
                           Text(
                             'Chat',
-                            style: TextStyle(fontWeight: FontWeight.w700),
+                            style: TextStyle(fontWeight: AppFontWeight.bold),
                           ),
                           SizedBox(width: 18),
                           Icon(Icons.north_east_rounded, size: 19),
@@ -327,8 +327,8 @@ class _TextbookArtwork extends CustomPainter {
         text: '?',
         style: TextStyle(
           color: dark ? AppColors.heroDark : Colors.white,
-          fontSize: 23,
-          fontWeight: FontWeight.w800,
+          fontSize: AppFontSize.headingLarge,
+          fontWeight: AppFontWeight.extraBold,
         ),
       ),
       textDirection: TextDirection.ltr,

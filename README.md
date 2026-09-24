@@ -1,6 +1,6 @@
-# Vidyālaya
+# Vidya AI
 
-**Vidyālaya** is a modern, feature-rich educational platform designed specifically for Indian school students. Focused on accessibility and ease of use, it serves as a digital companion for students to access textbooks, manage their study schedules, and organize their learning materials—all in one place.
+**Vidya AI** is a modern, feature-rich educational platform designed specifically for Indian school students. Focused on accessibility and ease of use, it serves as a digital companion for students to access textbooks, manage their study schedules, and organize their learning materials—all in one place.
 
 ---
 
@@ -58,7 +58,7 @@
 
 ## 🔒 Privacy Policy
 
-We value student privacy. Vidyālaya is designed to be a safe educational environment.
+We value student privacy. Vidya AI is designed to be a safe educational environment.
 - **No Data Collection**: We do not store or transmit any personal data to external servers.
 - **Local Storage**: All your preferences and bookmarks stay on your device.
 

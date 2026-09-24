@@ -628,7 +628,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   Text(
                     widget.book.title,
                     style: TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w600,
+                      fontSize: AppFontSize.content, fontWeight: AppFontWeight.semibold,
                       color: isDark ? Colors.white : AppColors.navy,
                     ),
                     maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -636,7 +636,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   if (_totalPages > 0)
                     Text(
                       'Page ${_currentPage + 1} of $_totalPages',
-                      style: TextStyle(fontSize: 11, color: isDark ? Colors.white54 : AppColors.textMuted),
+                      style: TextStyle(fontSize: AppFontSize.caption, color: isDark ? Colors.white54 : AppColors.textMuted),
                     ),
                 ],
               ),
@@ -741,7 +741,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   child: Text(
                     '${_currentPage + 1}',
                     style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600,
+                      fontSize: AppFontSize.body, fontWeight: AppFontWeight.semibold,
                       color: isDark ? Colors.white70 : AppColors.navy,
                     ),
                   ),
@@ -787,7 +787,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Reader Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor)),
+                  Text('Reader Settings', style: TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.semibold, color: textColor)),
                   GestureDetector(
                     onTap: () => setState(() => _showControls = false),
                     child: Icon(Icons.close, size: 20, color: mutedColor),
@@ -795,7 +795,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              Text('Display', style: TextStyle(fontSize: 12, color: mutedColor, fontWeight: FontWeight.w500)),
+              Text('Display', style: TextStyle(fontSize: AppFontSize.small, color: mutedColor, fontWeight: AppFontWeight.medium)),
               const SizedBox(height: 10),
               Row(children: [
                 _filterOpt('none', 'Normal', Icons.wb_sunny_outlined, mutedColor),
@@ -823,7 +823,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 Icon(Icons.brightness_high, size: 18, color: mutedColor),
               ]),
               const SizedBox(height: 16),
-              Text('View Mode', style: TextStyle(fontSize: 12, color: mutedColor, fontWeight: FontWeight.w500)),
+              Text('View Mode', style: TextStyle(fontSize: AppFontSize.small, color: mutedColor, fontWeight: AppFontWeight.medium)),
               const SizedBox(height: 10),
               Row(children: [
                 _viewOpt('paginated', 'Page', Icons.insert_drive_file_outlined, mutedColor),
@@ -853,7 +853,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           child: Column(children: [
             Icon(icon, size: 20, color: isActive ? AppColors.teal : mutedColor),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? AppColors.teal : mutedColor)),
+            Text(label, style: TextStyle(fontSize: AppFontSize.caption, fontWeight: isActive ? AppFontWeight.semibold : AppFontWeight.regular, color: isActive ? AppColors.teal : mutedColor)),
           ]),
         ),
       ),
@@ -876,7 +876,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(icon, size: 18, color: isActive ? AppColors.teal : mutedColor),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: isActive ? FontWeight.w600 : FontWeight.w400, color: isActive ? AppColors.teal : mutedColor)),
+            Text(label, style: TextStyle(fontSize: AppFontSize.small, fontWeight: isActive ? AppFontWeight.semibold : AppFontWeight.regular, color: isActive ? AppColors.teal : mutedColor)),
           ]),
         ),
       ),
@@ -903,7 +903,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Bookmarks', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textColor)),
+                  Text('Bookmarks', style: TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.semibold, color: textColor)),
                   GestureDetector(
                     onTap: () => setState(() => _showBookmarks = false),
                     child: Icon(Icons.close, size: 18, color: mutedColor),
@@ -920,9 +920,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                         child: Column(mainAxisSize: MainAxisSize.min, children: [
                           Icon(Icons.bookmark_border, size: 32, color: mutedColor),
                           const SizedBox(height: 8),
-                          Text('No bookmarks yet', style: TextStyle(fontSize: 13, color: mutedColor)),
+                          Text('No bookmarks yet', style: TextStyle(fontSize: AppFontSize.body, color: mutedColor)),
                           const SizedBox(height: 4),
-                          Text('Tap the bookmark icon to\nsave a page', style: TextStyle(fontSize: 11, color: mutedColor), textAlign: TextAlign.center),
+                          Text('Tap the bookmark icon to\nsave a page', style: TextStyle(fontSize: AppFontSize.caption, color: mutedColor), textAlign: TextAlign.center),
                         ]),
                       ),
                     )
@@ -937,7 +937,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                           dense: true,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                           leading: Icon(Icons.bookmark, size: 18, color: isCurrent ? AppColors.teal : mutedColor),
-                          title: Text('Page ${page + 1}', style: TextStyle(fontSize: 13, fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400, color: isCurrent ? AppColors.teal : textColor)),
+                          title: Text('Page ${page + 1}', style: TextStyle(fontSize: AppFontSize.body, fontWeight: isCurrent ? AppFontWeight.semibold : AppFontWeight.regular, color: isCurrent ? AppColors.teal : textColor)),
                           onTap: () { _goToPage(page); setState(() => _showBookmarks = false); },
                           trailing: GestureDetector(
                             onTap: () {
@@ -1019,7 +1019,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(widget.book.coverEmoji, style: const TextStyle(fontSize: 48)),
+          Text(widget.book.coverEmoji, style: const TextStyle(fontSize: AppFontSize.hero)),
           const SizedBox(height: 24),
           Text(_downloadProgress > 0 ? 'Downloading...' : 'Connecting...', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
@@ -1045,7 +1045,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       child: Padding(
         padding: const EdgeInsets.all(40),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('⚠️', style: TextStyle(fontSize: 48)),
+          const Text('⚠️', style: TextStyle(fontSize: AppFontSize.hero)),
           const SizedBox(height: 24),
           Text('Failed to load PDF', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),

@@ -1,6 +1,6 @@
 {
-    "name": "vidyalaya",
-    "short_name": "vidyalaya",
+    "name": "Vidya AI",
+    "short_name": "Vidya AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

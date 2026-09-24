@@ -4,11 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/theme.dart';
 import '../providers/regional_language_provider.dart';
 
-/// A compact language switcher for the Explore tools' app bars.
-///
-/// English is always shown in those screens; this toggles the *second*
-/// language between Odia and Hindi. Place it in [AppBar.actions]. The choice
-/// is read from and written to [regionalLanguageProvider] (persisted).
+/// The shared app-wide language selector for Explore tool app bars.
 class RegionalLanguageSwitch extends ConsumerWidget {
   const RegionalLanguageSwitch({super.key});
 
@@ -23,15 +19,12 @@ class RegionalLanguageSwitch extends ConsumerWidget {
       child: PopupMenuButton<RegionalLanguage>(
         tooltip: 'Change language',
         position: PopupMenuPosition.under,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        onSelected: (lang) =>
-            ref.read(regionalLanguageProvider.notifier).set(lang),
-        itemBuilder: (context) => RegionalLanguage.values.map((lang) {
-          final selected = lang == current;
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onSelected: ref.read(regionalLanguageProvider.notifier).set,
+        itemBuilder: (context) => RegionalLanguage.values.map((language) {
+          final selected = language == current;
           return PopupMenuItem<RegionalLanguage>(
-            value: lang,
+            value: language,
             child: Row(
               children: [
                 Icon(
@@ -41,9 +34,11 @@ class RegionalLanguageSwitch extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  '${lang.labelNative}  (${lang.labelEn})',
+                  '${language.labelNative}  (${language.labelEn})',
                   style: TextStyle(
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: selected
+                        ? AppFontWeight.bold
+                        : AppFontWeight.regular,
                     color: selected ? cs.primary : null,
                   ),
                 ),
@@ -68,14 +63,17 @@ class RegionalLanguageSwitch extends ConsumerWidget {
               Text(
                 current.labelNative,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.body,
+                  fontWeight: AppFontWeight.semibold,
                   color: cs.onSurface,
                 ),
               ),
               const SizedBox(width: 2),
-              Icon(Icons.arrow_drop_down_rounded,
-                  size: 18, color: AppColors.textMuted),
+              Icon(
+                Icons.arrow_drop_down_rounded,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),

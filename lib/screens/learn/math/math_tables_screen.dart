@@ -75,7 +75,7 @@ class _MathTablesScreenState extends ConsumerState<MathTablesScreen> {
                       '$t',
                       style:
                           Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: AppFontWeight.bold,
                                 color: on ? Colors.white : cs.onSurface,
                               ),
                     ),
@@ -153,7 +153,7 @@ class _MathTablesScreenState extends ConsumerState<MathTablesScreen> {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyLarge
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                                ?.copyWith(fontWeight: AppFontWeight.semibold),
                           ),
                         ),
                         Text(
@@ -162,7 +162,7 @@ class _MathTablesScreenState extends ConsumerState<MathTablesScreen> {
                               .textTheme
                               .titleMedium
                               ?.copyWith(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: AppFontWeight.extraBold,
                                 color: accent,
                               ),
                         ),
@@ -196,7 +196,7 @@ class _MathTablesScreenState extends ConsumerState<MathTablesScreen> {
                 label: Text(
                   'Practise the $_selected× table',
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700),
+                      fontSize: AppFontSize.content, fontWeight: AppFontWeight.bold),
                 ),
               ),
             ),
@@ -310,7 +310,7 @@ class _TablePracticeScreenState extends ConsumerState<_TablePracticeScreen> {
                               .labelMedium
                               ?.copyWith(
                                 color: accent,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: AppFontWeight.bold,
                               ),
                         ),
                       ],
@@ -328,8 +328,8 @@ class _TablePracticeScreenState extends ConsumerState<_TablePracticeScreen> {
                       _facts[_index].prompt,
                       style:
                           Theme.of(context).textTheme.displayMedium?.copyWith(
-                                fontSize: 48,
-                                fontWeight: FontWeight.w800,
+                                fontSize: AppFontSize.hero,
+                                fontWeight: AppFontWeight.extraBold,
                                 color: _lastWasRight == null
                                     ? cs.onSurface
                                     : (_lastWasRight!
@@ -379,7 +379,7 @@ class _TablePracticeScreenState extends ConsumerState<_TablePracticeScreen> {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -395,7 +395,7 @@ class _TablePracticeScreenState extends ConsumerState<_TablePracticeScreen> {
                 'Best: $best',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: accent,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: AppFontWeight.bold,
                     ),
               ),
             ],

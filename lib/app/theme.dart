@@ -186,6 +186,40 @@ class AppSpacing {
   static const double inputRadius = 14.0;
 }
 
+// ─── Typography tokens ───────────────────────────────────────────────────
+//
+// All fixed text measurements and weights in the app should use these tokens.
+// The names intentionally follow the design scale rather than individual
+// screens, so a typography adjustment is made once and stays consistent.
+class AppFontSize {
+  AppFontSize._();
+
+  static const double caption = 10;
+  static const double small = 12;
+  static const double body = 14;
+  static const double content = 16;
+  static const double title = 18;
+  static const double headingSmall = 20;
+  static const double heading = 22;
+  static const double headingLarge = 24;
+  static const double displaySmall = 28;
+  static const double display = 32;
+  static const double displayLarge = 40;
+  static const double hero = 48;
+  static const double banner = 72;
+}
+
+class AppFontWeight {
+  AppFontWeight._();
+
+  static const FontWeight regular = FontWeight.w400;
+  static const FontWeight medium = FontWeight.w500;
+  static const FontWeight semibold = FontWeight.w600;
+  static const FontWeight bold = FontWeight.w700;
+  static const FontWeight extraBold = FontWeight.w800;
+  static const FontWeight black = FontWeight.w900;
+}
+
 // ─── Theme ────────────────────────────────────────────────────────────────
 
 class AppTheme {
@@ -201,92 +235,92 @@ class AppTheme {
     return TextTheme(
       // Spectral — serif display
       displayLarge: serif.copyWith(
-        fontSize: 32,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.hero,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
         letterSpacing: -0.3,
         height: 1.05,
       ),
       displayMedium: serif.copyWith(
-        fontSize: 30,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.displayLarge,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
         letterSpacing: -0.3,
         height: 1.05,
       ),
       displaySmall: serif.copyWith(
-        fontSize: 27,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.display,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
         letterSpacing: -0.3,
         height: 1.1,
       ),
       headlineLarge: serif.copyWith(
-        fontSize: 25,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.displaySmall,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
         height: 1.15,
       ),
       headlineMedium: serif.copyWith(
-        fontSize: 22,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.headingLarge,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
         height: 1.2,
       ),
       headlineSmall: serif.copyWith(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.headingSmall,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
         height: 1.2,
       ),
 
       // Hanken Grotesk — body & UI
       titleLarge: body.copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.title,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
       ),
       titleMedium: body.copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.content,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
       ),
       titleSmall: body.copyWith(
-        fontSize: 12.5,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.body,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
       ),
       bodyLarge: body.copyWith(
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
+        fontSize: AppFontSize.content,
+        fontWeight: AppFontWeight.regular,
         color: primary,
         height: 1.45,
       ),
       bodyMedium: body.copyWith(
-        fontSize: 13.5,
-        fontWeight: FontWeight.w400,
+        fontSize: AppFontSize.body,
+        fontWeight: AppFontWeight.regular,
         color: primary,
         height: 1.45,
       ),
       bodySmall: body.copyWith(
-        fontSize: 12.5,
-        fontWeight: FontWeight.w400,
+        fontSize: AppFontSize.small,
+        fontWeight: AppFontWeight.regular,
         color: muted,
         height: 1.45,
       ),
       labelLarge: body.copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontSize: AppFontSize.body,
+        fontWeight: AppFontWeight.semibold,
         color: primary,
       ),
       labelMedium: body.copyWith(
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
+        fontSize: AppFontSize.small,
+        fontWeight: AppFontWeight.medium,
         color: muted,
       ),
       labelSmall: body.copyWith(
-        fontSize: 11.5,
-        fontWeight: FontWeight.w700,
+        fontSize: AppFontSize.caption,
+        fontWeight: AppFontWeight.bold,
         color: muted,
         letterSpacing: 1.4,
       ),
@@ -340,7 +374,9 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         selectedColor: AppColors.green600,
         labelStyle: textTheme.labelLarge,
-        secondaryLabelStyle: textTheme.labelLarge?.copyWith(color: Colors.white),
+        secondaryLabelStyle: textTheme.labelLarge?.copyWith(
+          color: Colors.white,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
         ),
@@ -370,7 +406,9 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
           textStyle: textTheme.labelLarge?.copyWith(color: Colors.white),
         ),
       ),
@@ -447,8 +485,9 @@ class AppTheme {
         backgroundColor: AppColors.surfaceDark,
         selectedColor: AppColors.green500Dark,
         labelStyle: textTheme.labelLarge,
-        secondaryLabelStyle: textTheme.labelLarge
-            ?.copyWith(color: AppColors.onGreenDark),
+        secondaryLabelStyle: textTheme.labelLarge?.copyWith(
+          color: AppColors.onGreenDark,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
         ),
@@ -480,7 +519,9 @@ class AppTheme {
           foregroundColor: AppColors.onGreenDark,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
           textStyle: textTheme.labelLarge?.copyWith(
             color: AppColors.onGreenDark,
           ),

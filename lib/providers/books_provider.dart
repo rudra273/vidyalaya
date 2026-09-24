@@ -18,9 +18,9 @@ final subjectFilterProvider = NotifierProvider<SubjectFilterNotifier, String?>(
   SubjectFilterNotifier.new,
 );
 
-/// Books for the user's selected classes.
+/// Books for the classes selected in the Library filter.
 final selectedBooksProvider = Provider<List<Book>>((ref) {
-  final selectedClasses = ref.watch(userSelectionProvider);
+  final selectedClasses = ref.watch(libraryClassSelectionProvider);
   final selectedBoard = ref.watch(userBoardProvider);
   return getBooksForBoardAndClasses(selectedBoard, selectedClasses);
 });

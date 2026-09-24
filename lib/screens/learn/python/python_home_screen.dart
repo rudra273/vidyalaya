@@ -80,7 +80,7 @@ class _HeaderCard extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                      ?.copyWith(fontWeight: AppFontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -118,7 +118,7 @@ class _ProgressRing extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .labelLarge
-                ?.copyWith(fontWeight: FontWeight.w800, color: accent),
+                ?.copyWith(fontWeight: AppFontWeight.extraBold, color: accent),
           ),
         ),
       ),
@@ -206,7 +206,7 @@ class _PlaygroundCard extends ConsumerWidget {
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
+                            ?.copyWith(fontWeight: AppFontWeight.bold)),
                     Text('Write and run any code you like',
                         style: TextStyle(color: AppColors.textMuted)),
                   ],
@@ -318,7 +318,7 @@ class _ChapterCard extends ConsumerWidget {
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                          ?.copyWith(fontWeight: AppFontWeight.bold),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -337,7 +337,7 @@ class _ChapterCard extends ConsumerWidget {
                               .labelMedium
                               ?.copyWith(
                                 color: accent,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: AppFontWeight.bold,
                               ),
                         ),
                         const SizedBox(width: 10),

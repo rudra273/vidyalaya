@@ -61,7 +61,7 @@ class HomeScreen extends ConsumerWidget {
 
     // One warm-up a day, pitched at the lowest class the student has selected
     // (null = draw from the whole pool) so it never lands above their level.
-    final selectedClasses = ref.watch(userSelectionProvider);
+    final selectedClasses = ref.watch(exploreClassSelectionProvider);
     final warmupQuestion = warmupForDate(
       DateTime.now(),
       classNo: selectedClasses.isEmpty
@@ -79,7 +79,7 @@ class HomeScreen extends ConsumerWidget {
           // Shares PageTitle's metrics so the wordmark sits at exactly the
           // same height as the "AI Learning" / "Explore" / "Profile" titles.
           PageTitle(
-            title: 'Vidyālaya',
+            title: 'Vidya AI',
             sub: _greetingLine(firstName),
             // Nudged down to centre against the title's line rather than
             // constrained to its height — the 40px avatar and the streak chip
@@ -176,8 +176,7 @@ class HomeScreen extends ConsumerWidget {
                               : AppColors.cAi,
                           icon: Icons.menu_book_rounded,
                           label: 'Books',
-                          onTap: () =>
-                              _navTap(ref, context, '/library', replace: true),
+                          onTap: () => _navTap(ref, context, '/library'),
                         ),
                       ),
                     SizedBox(
@@ -333,8 +332,8 @@ class _StreakChip extends StatelessWidget {
             Text(
               '$streak',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+                fontSize: AppFontSize.body,
+                fontWeight: AppFontWeight.bold,
                 color: accent,
               ),
             ),
@@ -386,8 +385,8 @@ class _Avatar extends StatelessWidget {
                   fontFamily: Theme.of(
                     context,
                   ).textTheme.displaySmall?.fontFamily,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.title,
+                  fontWeight: AppFontWeight.semibold,
                   color: cs.primary,
                 ),
               ),
@@ -439,13 +438,16 @@ class _WordOfDayCard extends StatelessWidget {
                     Text(
                       word.word,
                       style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontSize: 20, height: 1.05),
+                          ?.copyWith(
+                            fontSize: AppFontSize.headingSmall,
+                            height: 1.05,
+                          ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '/${word.pronunciation}/ · ${word.partOfSpeech}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
+                        fontSize: AppFontSize.small,
                         color: muted,
                         fontStyle: FontStyle.italic,
                       ),
@@ -473,8 +475,8 @@ class _WordOfDayCard extends StatelessWidget {
                       Text(
                         'More',
                         style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                          fontSize: AppFontSize.small,
+                          fontWeight: AppFontWeight.bold,
                           color: accent,
                         ),
                       ),
@@ -546,7 +548,7 @@ class _ExampleSentence extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).textTheme.bodySmall?.copyWith(
-      fontSize: 13.5,
+      fontSize: AppFontSize.body,
       height: 1.45,
       fontStyle: FontStyle.italic,
     );
@@ -565,7 +567,7 @@ class _ExampleSentence extends StatelessWidget {
           TextSpan(
             text: sentence.substring(idx, idx + word.length),
             style: TextStyle(
-              fontWeight: FontWeight.w700,
+              fontWeight: AppFontWeight.bold,
               color: accent,
               fontStyle: FontStyle.italic,
             ),
@@ -597,26 +599,22 @@ class _MiniTool extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
         radius: AppSpacing.tileRadius,
         blur: 13,
         distance: 4,
         child: Row(
           children: [
-            Tile(color: color, icon: icon, size: 26, radius: 8),
-            const SizedBox(width: 7),
+            Tile(color: color, icon: icon, size: 22, radius: 7),
+            const SizedBox(width: 4),
             Expanded(
-              // Scale the label down rather than clipping it on narrow screens.
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                  ),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: AppFontSize.small,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ),
@@ -652,8 +650,8 @@ class _RecentBookCard extends ConsumerWidget {
             Text(
               meta.label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+                fontSize: AppFontSize.small,
+                fontWeight: AppFontWeight.semibold,
                 color: Theme.of(context).brightness == Brightness.dark
                     ? AppColors.ink2Dark
                     : AppColors.ink2,

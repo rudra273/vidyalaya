@@ -353,7 +353,7 @@ class _SetupView extends StatelessWidget {
               onChanged: onCheckpoints,
               title: const Text(
                 'Checkpoints',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: TextStyle(fontWeight: AppFontWeight.bold),
               ),
               subtitle: Text(
                 'Also ask for the total part-way through',
@@ -376,7 +376,7 @@ class _SetupView extends StatelessWidget {
               icon: const Icon(Icons.play_arrow_rounded),
               label: const Text(
                 'Start round',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.bold),
               ),
             ),
           ),
@@ -440,7 +440,7 @@ class _PresetRow extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                        ?.copyWith(fontWeight: AppFontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -519,7 +519,7 @@ class _CustomRow extends ConsumerWidget {
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                        ?.copyWith(fontWeight: AppFontWeight.bold),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -607,8 +607,8 @@ class _FlashView extends StatelessWidget {
                     child: Text(
                       text,
                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 72,
-                            fontWeight: FontWeight.w800,
+                            fontSize: AppFontSize.banner,
+                            fontWeight: AppFontWeight.extraBold,
                             color: showingStart ? cs.onSurface : accent,
                           ),
                     ),
@@ -661,7 +661,7 @@ class _AnswerView extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 4),
             Text(
@@ -754,7 +754,7 @@ class _ResultView extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
+                ?.copyWith(fontWeight: AppFontWeight.bold),
           ),
         ),
         const SizedBox(height: 6),
@@ -785,7 +785,7 @@ class _ResultView extends StatelessWidget {
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                    ?.copyWith(fontWeight: AppFontWeight.bold),
               ),
               const SizedBox(height: 10),
               _RecapRow(label: 'Start', value: '${chain.start}', accent: accent),
@@ -816,7 +816,7 @@ class _ResultView extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                      ?.copyWith(fontWeight: AppFontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 for (final m in mistakes)
@@ -878,7 +878,7 @@ class _RecapRow extends StatelessWidget {
             width: 64,
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: const TextStyle(fontWeight: AppFontWeight.semibold),
             ),
           ),
           Expanded(

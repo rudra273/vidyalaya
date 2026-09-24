@@ -103,7 +103,7 @@ class _PyEditorState extends State<PyEditor> {
     // the resolved TextStyle rather than relying on the merge keeping it.
     const codeColor = Color(0xFFE6EDE8);
     final mono = GoogleFonts.jetBrainsMono(
-      fontSize: 14,
+      fontSize: AppFontSize.body,
       height: 1.5,
       color: codeColor,
     );
@@ -347,7 +347,7 @@ class _RowLabel extends StatelessWidget {
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
             letterSpacing: 0.8,
-            fontWeight: FontWeight.w700,
+            fontWeight: AppFontWeight.bold,
           ),
     );
   }
@@ -374,8 +374,8 @@ class _KeyChip extends StatelessWidget {
           child: Text(
             label,
             style: GoogleFonts.jetBrainsMono(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontSize: AppFontSize.content,
+              fontWeight: AppFontWeight.semibold,
               color: cs.onSurface,
             ),
           ),

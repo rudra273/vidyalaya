@@ -1,5 +1,5 @@
 name: vidyalaya
-description: "Vidyālaya. A book reading app for Indian school students."
+description: "Vidya AI. A book reading app for Indian school students."
 publish_to: 'none'
 version: 1.0.3+4
 
@@ -28,6 +28,8 @@ dependencies:
   flutter_svg: ^2.3.0
   share_plus: ^12.0.1
   url_launcher: ^6.3.1
+  printing: ^5.15.1
+  pdf: ^3.13.1
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +44,7 @@ flutter:
     - assets/icon/
     - assets/icons/
     - assets/diagrams/
+    - assets/diagrams/interactive/
     - assets/avatars/
     - assets/data/
 

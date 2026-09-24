@@ -78,7 +78,7 @@ class _PythonQuizScreenState extends ConsumerState<PythonQuizScreen> {
           style: Theme.of(context)
               .textTheme
               .titleLarge
-              ?.copyWith(fontWeight: FontWeight.w700, height: 1.35),
+              ?.copyWith(fontWeight: AppFontWeight.bold, height: 1.35),
         ),
         if (q.code != null) ...[
           const SizedBox(height: 14),
@@ -93,7 +93,7 @@ class _PythonQuizScreenState extends ConsumerState<PythonQuizScreen> {
             child: Text(
               q.code!,
               style: GoogleFonts.jetBrainsMono(
-                fontSize: 13.5,
+                fontSize: AppFontSize.body,
                 height: 1.55,
                 color: const Color(0xFFE6EDE8),
               ),
@@ -240,7 +240,7 @@ class _OptionTile extends StatelessWidget {
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: AppFontWeight.semibold,
                         color: fg,
                       ),
                 ),
@@ -305,7 +305,7 @@ class _ScorePage extends ConsumerWidget {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(

@@ -64,11 +64,14 @@ class AppShell extends ConsumerWidget {
         .maybeWhen(data: (user) => user != null, orElse: () => false);
     if (signedIn) {
       // The shell stays mounted across all main tabs, so it is the earliest
-      // stable place to hydrate account-owned browsing preferences. The cache
-      // deduplicates this call for the rest of the signed-in session.
-      Future.microtask(
-        ref.read(backendAccountCacheProvider.notifier).ensureExplorePreferences,
-      );
+      // stable place to hydrate the profile and both account-owned browsing
+      // preferences. The cache deduplicates these calls for the session.
+      Future.microtask(() {
+        final account = ref.read(backendAccountCacheProvider.notifier);
+        account.ensureProfile();
+        account.ensureExplorePreferences();
+        account.ensureLibraryPreferences();
+      });
     }
 
     final currentIndex = _currentIndex(context);
@@ -167,8 +170,10 @@ class _NavBarItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                fontSize: AppFontSize.caption,
+                fontWeight: isActive
+                    ? AppFontWeight.bold
+                    : AppFontWeight.medium,
                 color: isActive ? activeColor : inactiveColor,
                 letterSpacing: 0.1,
               ),

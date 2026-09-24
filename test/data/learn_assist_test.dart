@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -230,6 +231,45 @@ void main() {
   });
 
   group('LearnAssistService', () {
+    test(
+      'done completes before HTTP EOF with fragmented UTF-8 and CRLF',
+      () async {
+        final body = StreamController<List<int>>();
+        final service = LearnAssistService(
+          idTokenProvider: ({required forceRefresh}) async => 'test-token',
+          client: MockClient.streaming(
+            (_, _) async => http.StreamedResponse(body.stream, 200),
+          ),
+        );
+        final result = service
+            .chatStream(
+              const LearnAssistRequest(
+                message: 'Question',
+                board: 'scert_odisha',
+                classNo: 8,
+              ),
+            )
+            .toList();
+        // Split inside Unicode code points, JSON fields, and CRLF delimiters.
+        for (final byte in utf8.encode(
+          'event: token\r\ndata: {"text":"ଓଡ଼ିଆ"}\r\n\r\n'
+          'event: done\r\ndata: {"answer":"ଓଡ଼ିଆ complete","citations":[]}\r\n\r\n',
+        )) {
+          body.add([byte]);
+        }
+        try {
+          final events = await result.timeout(const Duration(seconds: 2));
+          expect((events.first as LearnAssistTokenEvent).text, 'ଓଡ଼ିଆ');
+          expect(
+            (events.last as LearnAssistDoneEvent).answer,
+            'ଓଡ଼ିଆ complete',
+          );
+        } finally {
+          await body.close();
+        }
+      },
+    );
+
     test('throws API exception for error responses', () async {
       final service = LearnAssistService(
         idTokenProvider: ({required forceRefresh}) async => 'firebase-token',

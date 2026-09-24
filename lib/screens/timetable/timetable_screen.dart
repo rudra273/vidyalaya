@@ -306,8 +306,8 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                         child: Text(
                           '${index + 1}',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontSize: AppFontSize.title,
+                            fontWeight: AppFontWeight.bold,
                             color: AppColors.getSubjectColor(period.subject).$2,
                           ),
                         ),

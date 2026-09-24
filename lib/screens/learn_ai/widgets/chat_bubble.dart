@@ -59,7 +59,7 @@ class AssistantChatBubble extends StatelessWidget {
           p: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
           strong: Theme.of(context).textTheme.bodyMedium?.copyWith(
             height: 1.45,
-            fontWeight: FontWeight.w700,
+            fontWeight: AppFontWeight.bold,
           ),
           listBullet: Theme.of(
             context,

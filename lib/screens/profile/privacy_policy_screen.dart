@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
+
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
 
@@ -25,10 +27,10 @@ class PrivacyPolicyScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Vidyālaya',
+              'Vidya AI',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: cs.primary,
-                fontWeight: FontWeight.bold,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
@@ -43,13 +45,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '1. Introduction',
-              content: 'Welcome to Vidyālaya ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience on our mobile application. Vidyālaya is an educational platform for Indian school students that combines offline textbook reading with AI-assisted learning tools.\n\nThis Privacy Policy explains what information we collect, how we use it, and the choices you have when you use the Vidyālaya app. Please read it carefully. If you are under 18, please review this policy together with a parent or guardian.',
+              content: 'Welcome to Vidya AI ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you have a positive experience on our mobile application. Vidya AI is an educational platform for Indian school students that combines offline textbook reading with AI-assisted learning tools.\n\nThis Privacy Policy explains what information we collect, how we use it, and the choices you have when you use the Vidya AI app. Please read it carefully. If you are under 18, please review this policy together with a parent or guardian.',
             ),
 
             _buildSection(
               theme,
               title: '2. What You Can Use Without an Account',
-              content: 'Core reading and study features work without signing in. When you use Vidyālaya without an account:\n\n'
+              content: 'Core reading and study features work without signing in. When you use Vidya AI without an account:\n\n'
                        '• Local Storage Only: Your class selection, board, preferred language, chosen avatar, theme (light/sepia/dark), bookmarks, highlights, notes, timetable, and reading progress are stored entirely on your device.\n'
                        '• Downloaded Books: The textbooks and study materials you download are saved directly to your device for offline viewing.\n'
                        '• No Sign-In Required for Reading: You are not required to provide any identifying information to read books, take notes, or use the offline Learn modules.',
@@ -88,7 +90,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '6. Permissions We Request',
-              content: 'Vidyālaya requests only the permissions needed for its features:\n\n'
+              content: 'Vidya AI requests only the permissions needed for its features:\n\n'
                        '• Internet: To download textbooks, sign in, and use AI features.\n'
                        '• Camera & Photos: Used only when you choose to attach a photo to an AI question. We do not access your camera or gallery in the background, and we do not browse or upload your photo library.',
             ),
@@ -107,7 +109,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '8. Third-Party Services',
-              content: 'We rely on a small number of trusted service providers to operate Vidyālaya:\n\n'
+              content: 'We rely on a small number of trusted service providers to operate Vidya AI:\n\n'
                        '• Google / Firebase: for sign-in and authentication.\n'
                        '• Our AI backend and AI model provider: to process and answer your questions.\n\n'
                        'These providers process data only to deliver these services on our behalf and are subject to their own privacy and security commitments. We do not integrate advertising networks or data brokers.',
@@ -116,13 +118,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '9. Cookies and Tracking Technologies',
-              content: 'Vidyālaya is a native mobile application and does not use cookies, web beacons, or third-party advertising or analytics trackers to follow you across apps or websites. The app is ad-free.',
+              content: 'Vidya AI is a native mobile application and does not use cookies, web beacons, or third-party advertising or analytics trackers to follow you across apps or websites. The app is ad-free.',
             ),
 
             _buildSection(
               theme,
               title: '10. Children\'s Privacy',
-              content: 'Vidyālaya is intended for school students, and some users may be under the age of 13. We collect only the limited information needed to provide the service, as described above. Because signing in and AI features involve collecting personal information (such as name and email), we ask that a parent or guardian set up and supervise the use of these features for younger children, and provide consent where required by law (including COPPA and applicable Indian data protection rules).\n\nIf you believe a child has provided us personal information without appropriate consent, please contact us and we will delete it.',
+              content: 'Vidya AI is intended for school students, and some users may be under the age of 13. We collect only the limited information needed to provide the service, as described above. Because signing in and AI features involve collecting personal information (such as name and email), we ask that a parent or guardian set up and supervise the use of these features for younger children, and provide consent where required by law (including COPPA and applicable Indian data protection rules).\n\nIf you believe a child has provided us personal information without appropriate consent, please contact us and we will delete it.',
             ),
 
             _buildSection(
@@ -137,7 +139,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '12. Changes to This Policy',
-              content: 'As Vidyālaya evolves, we may update this Privacy Policy to reflect new features or legal requirements. When we make material changes, we will update the effective date above. You are advised to review this page periodically.',
+              content: 'As Vidya AI evolves, we may update this Privacy Policy to reflect new features or legal requirements. When we make material changes, we will update the effective date above. You are advised to review this page periodically.',
             ),
 
             _buildSection(
@@ -149,7 +151,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Center(
               child: Text(
-                 '© 2026 Vidyālaya. All rights reserved.',
+                 '© 2026 Vidya AI. All rights reserved.',
                  style: theme.textTheme.labelMedium?.copyWith(
                    color: cs.onSurface.withValues(alpha: 0.5),
                  ),
@@ -170,7 +172,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
             ),
           ),
           const SizedBox(height: 12),

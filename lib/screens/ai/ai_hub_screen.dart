@@ -60,14 +60,7 @@ class AiHubScreen extends ConsumerWidget {
 
     // Same board/class the chat resolves to, so the subjects offered here are
     // exactly the conversations the chat can open.
-    final primaryClass = account.profile.maybeWhen(
-      data: (profile) => profile?.classNo,
-      orElse: () => null,
-    );
-    final classNo = resolveLearnAssistClass(
-      ref.watch(userSelectionProvider),
-      primaryClass: primaryClass,
-    );
+    final classNo = ref.watch(primaryClassProvider);
     final board = ref.watch(userBoardProvider);
     final subjects = learnAssistSubjects(
       ref.watch(activeIngestedBooksProvider),
@@ -195,7 +188,9 @@ class AiHubScreen extends ConsumerWidget {
                   // shadows want room to fall before the next card starts.
                   mainAxisSpacing: 14,
                   crossAxisSpacing: 14,
-                  childAspectRatio: 1.5,
+                  // Leave room for the glyph and label on compact displays,
+                  // whose font metrics can otherwise overflow by a pixel.
+                  childAspectRatio: 1.4,
                 ),
                 itemCount: subjects.length,
                 itemBuilder: (context, index) {
@@ -360,8 +355,8 @@ class _RecentQuestionCard extends StatelessWidget {
                       : formatSubject(subject, board: board, classNo: classNo))
                   .toUpperCase(),
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+                fontSize: AppFontSize.caption,
+                fontWeight: AppFontWeight.bold,
                 letterSpacing: 0.8,
                 color: accent,
               ),
@@ -373,9 +368,9 @@ class _RecentQuestionCard extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 12.5,
+                  fontSize: AppFontSize.small,
                   height: 1.35,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: AppFontWeight.medium,
                 ),
               ),
             ),
@@ -383,8 +378,8 @@ class _RecentQuestionCard extends StatelessWidget {
             Text(
               _ago(question.askedAt),
               style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w500,
+                fontSize: AppFontSize.caption,
+                fontWeight: AppFontWeight.medium,
                 color: isDark ? AppColors.ink3Dark : AppColors.ink3,
               ),
             ),
@@ -439,16 +434,16 @@ class _HubRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: AppFontSize.content,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     sub,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: AppFontSize.small,
+                    ),
                   ),
                 ],
               ),
@@ -514,8 +509,8 @@ class _SubjectTile extends ConsumerWidget {
                 formatSubject(subject, board: board, classNo: classNo),
                 maxLines: 1,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.caption,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ),
@@ -554,7 +549,7 @@ class _StarterRow extends StatelessWidget {
                 text,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(fontSize: 13.5),
+                ).textTheme.bodyMedium?.copyWith(fontSize: AppFontSize.body),
               ),
             ),
             const SizedBox(width: 10),
@@ -611,16 +606,15 @@ class _TutorRow extends StatelessWidget {
                     children: [
                       Text(
                         'AI Tutor',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(fontSize: 15),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontSize: AppFontSize.content),
                       ),
                       const SizedBox(width: 7),
                       Text(
                         'Preview',
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontSize: AppFontSize.caption,
+                          fontWeight: AppFontWeight.semibold,
                           color: accent,
                         ),
                       ),
@@ -629,9 +623,9 @@ class _TutorRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Step-by-step guided lessons, subject by subject',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: 12.5),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: AppFontSize.small,
+                    ),
                   ),
                 ],
               ),

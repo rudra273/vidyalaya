@@ -42,8 +42,8 @@ class MathAnswerDisplay extends StatelessWidget {
         empty ? placeholder : value,
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.displaySmall?.copyWith(
-              fontSize: 34,
-              fontWeight: FontWeight.w700,
+              fontSize: AppFontSize.display,
+              fontWeight: AppFontWeight.bold,
               color: empty ? cs.onSurfaceVariant : accent,
               letterSpacing: 1,
             ),
@@ -151,7 +151,7 @@ class MathNumpad extends ConsumerWidget {
             onPressed: onSubmit,
             child: Text(
               submitLabel,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: const TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.bold),
             ),
           ),
         ),
@@ -187,8 +187,8 @@ class _Key extends StatelessWidget {
             : Text(
                 label!,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 22,
+                      fontWeight: AppFontWeight.bold,
+                      fontSize: AppFontSize.heading,
                     ),
               ),
       ),

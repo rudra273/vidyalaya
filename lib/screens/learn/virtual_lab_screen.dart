@@ -496,8 +496,8 @@ class _CircuitPainter extends CustomPainter {
         text: '$resistance Ω',
         style: TextStyle(
           color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontSize: AppFontSize.small,
+          fontWeight: AppFontWeight.semibold,
         ),
       ),
       textDirection: TextDirection.ltr,

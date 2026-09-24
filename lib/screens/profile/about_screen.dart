@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme.dart';
+
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -11,7 +13,7 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'About Vidyālaya',
+          'About Vidya AI',
           style: theme.textTheme.headlineSmall,
         ),
         leading: IconButton(
@@ -25,10 +27,10 @@ class AboutScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Vidyālaya',
+              'Vidya AI',
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: cs.primary,
-                fontWeight: FontWeight.bold,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
             const SizedBox(height: 8),
@@ -42,14 +44,14 @@ class AboutScreen extends StatelessWidget {
 
             _buildSection(
               theme,
-              title: 'What is Vidyālaya?',
-              content: 'Vidyālaya is an AI-powered learning assistant for Indian school students. At its heart is a smart study companion that answers your questions and explains concepts in a way that fits your class, board, and syllabus — so help is always one question away.\n\nAround that, Vidyālaya gives you a set of interactive tools to explore subjects hands-on, plus a built-in library of books for whenever you need them.',
+              title: 'What is Vidya AI?',
+              content: 'Vidya AI is an AI-powered learning assistant for Indian school students. At its heart is a smart study companion that answers your questions and explains concepts in a way that fits your class, board, and syllabus — so help is always one question away.\n\nAround that, Vidya AI gives you a set of interactive tools to explore subjects hands-on, plus a built-in library of books for whenever you need them.',
             ),
 
             _buildSection(
               theme,
               title: 'Your AI Learning Assistant',
-              content: 'This is what Vidyālaya is built around.\n\n'
+              content: 'This is what Vidya AI is built around.\n\n'
                        '• Ask Anything: Type a question in your own words and get a clear, syllabus-aware explanation tailored to your class and subject.\n'
                        '• Snap & Ask: Stuck on a problem? Attach a photo of your notes, an assignment, or a page from a book and let the assistant help you work through it.\n'
                        '• Saved Conversations: Your chats are saved to your account, so you can return and pick up where you left off.\n'
@@ -71,7 +73,7 @@ class AboutScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: 'Library',
-              content: 'Vidyālaya also includes a library of books you can download and read offline, with comfortable reading modes (including Sepia and Dark Mode), bookmarks, highlights, and personal notes for quick revision — there whenever you need a reference.',
+              content: 'Vidya AI also includes a library of books you can download and read offline, with comfortable reading modes (including Sepia and Dark Mode), bookmarks, highlights, and personal notes for quick revision — there whenever you need a reference.',
             ),
 
             _buildSection(
@@ -107,14 +109,14 @@ class AboutScreen extends StatelessWidget {
                         'Disclaimer',
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: cs.error,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: AppFontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Vidyālaya is a private, independent platform and is NOT an official government application. While all the textbooks provided within the app are official, board-approved materials sourced directly from public government websites, our application itself is not affiliated with, endorsed by, or connected to any government entity.',
+                    'Vidya AI is a private, independent platform and is NOT an official government application. While all the textbooks provided within the app are official, board-approved materials sourced directly from public government websites, our application itself is not affiliated with, endorsed by, or connected to any government entity.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       height: 1.5,
                       color: cs.onSurface.withValues(alpha: 0.8),
@@ -127,7 +129,7 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Center(
               child: Text(
-                 '© 2026 Vidyālaya.',
+                 '© 2026 Vidya AI.',
                  style: theme.textTheme.labelMedium?.copyWith(
                    color: cs.onSurface.withValues(alpha: 0.5),
                  ),
@@ -148,7 +150,7 @@ class AboutScreen extends StatelessWidget {
           Text(
             title,
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
             ),
           ),
           const SizedBox(height: 12),

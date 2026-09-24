@@ -108,17 +108,17 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineSmall
-                                  ?.copyWith(fontSize: 22, height: 1.1),
+                                  ?.copyWith(fontSize: AppFontSize.heading, height: 1.1),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Vidyālaya is built for students like you — '
+                              'Vidya AI is built for students like you — '
                               'and your words decide what we build next.',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    fontSize: 13,
+                                    fontSize: AppFontSize.body,
                                     color: muted,
                                     height: 1.4,
                                   ),
@@ -156,11 +156,11 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                             'don\'t have yet? Tell us anything…',
                         hintStyle: TextStyle(
                           color: muted,
-                          fontSize: 14,
+                          fontSize: AppFontSize.body,
                           height: 1.45,
                         ),
                       ),
-                      style: const TextStyle(fontSize: 14.5, height: 1.45),
+                      style: const TextStyle(fontSize: AppFontSize.content, height: 1.45),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -185,7 +185,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
-                                ?.copyWith(fontSize: 13, color: muted),
+                                ?.copyWith(fontSize: AppFontSize.body, color: muted),
                           ),
                         ),
                         for (var star = 1; star <= 5; star++)
@@ -241,7 +241,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                     'and feature requests all welcome.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: 11.5,
+                          fontSize: AppFontSize.small,
                           color: muted,
                         ),
                   ),
@@ -283,7 +283,7 @@ class _ThankYou extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontSize: 22),
+                  ?.copyWith(fontSize: AppFontSize.heading),
             ),
             const SizedBox(height: 8),
             Text(
@@ -291,7 +291,7 @@ class _ThankYou extends StatelessWidget {
               'We read every single message.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 13.5,
+                    fontSize: AppFontSize.body,
                     color: muted,
                     height: 1.45,
                   ),

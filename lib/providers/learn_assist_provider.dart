@@ -21,28 +21,6 @@ final learnAssistServiceProvider = Provider<LearnAssistService>((ref) {
 /// generic agent and must never drive this channel's class/subject selection.
 const int learnAssistMinClass = 6;
 
-/// Default class used when the student has no LearnAssist-eligible class
-/// selected, so the channel still has a sensible conversation to open.
-const int learnAssistDefaultClass = 8;
-
-int resolveLearnAssistClass(Set<int> selectedClasses, {int? primaryClass}) {
-  final options = learnAssistClassOptions(selectedClasses);
-  if (primaryClass != null && options.contains(primaryClass)) {
-    return primaryClass;
-  }
-  return options.first;
-}
-
-List<int> learnAssistClassOptions(Set<int> selectedClasses) {
-  final supported =
-      selectedClasses
-          .where((classNo) => classNo >= learnAssistMinClass)
-          .toList()
-        ..sort();
-  if (supported.isEmpty) return const [learnAssistDefaultClass];
-  return supported;
-}
-
 /// Subjects the AI can retrieve textbook content for, per board + class.
 /// Strictly reflects the ingested vector DB — empty when nothing is ingested.
 List<String> learnAssistSubjects(

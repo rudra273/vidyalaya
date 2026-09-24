@@ -20,8 +20,8 @@ class MathHomeScreen extends ConsumerWidget {
 
   static Color accentOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? AppColors.cMathHubDark
-          : AppColors.cMathHub;
+      ? AppColors.cMathHubDark
+      : AppColors.cMathHub;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,7 +40,11 @@ class MathHomeScreen extends ConsumerWidget {
           if (formulas != null) _FormulasCard(tool: formulas, accent: accent),
           const Padding(
             padding: EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding, 22, AppSpacing.screenPadding, 4),
+              AppSpacing.screenPadding,
+              22,
+              AppSpacing.screenPadding,
+              4,
+            ),
             child: SectionHead(label: 'Practise & play'),
           ),
           for (final tool in practice)
@@ -68,15 +72,15 @@ class _FormulasCard extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
 
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
       child: Pressable(
         onTap: () {
           Haptics.light(ref);
           context.push(tool.route);
         },
         child: Container(
-          height: 150,
+          // Leaves room for the full text line at the current type scale.
+          height: 154,
           padding: const EdgeInsets.all(AppSpacing.cardPad),
           decoration: BoxDecoration(
             color: accent.withValues(alpha: 0.10),
@@ -103,10 +107,10 @@ class _FormulasCard extends ConsumerWidget {
                   const Spacer(),
                   Text(
                     tool.title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontSize: 22, height: 1.1),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: AppFontSize.heading,
+                      height: 1.1,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -116,12 +120,15 @@ class _FormulasCard extends ConsumerWidget {
                           'Look up any formula, then calculate with it',
                           style: TextStyle(
                             color: cs.onSurfaceVariant,
-                            fontSize: 13,
+                            fontSize: AppFontSize.body,
                           ),
                         ),
                       ),
-                      Icon(Icons.arrow_forward_rounded,
-                          size: 20, color: accent),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 20,
+                        color: accent,
+                      ),
                     ],
                   ),
                 ],
@@ -139,7 +146,11 @@ class _ToolRow extends ConsumerWidget {
   final int? best;
   final Color accent;
 
-  const _ToolRow({required this.tool, required this.best, required this.accent});
+  const _ToolRow({
+    required this.tool,
+    required this.best,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -148,7 +159,11 @@ class _ToolRow extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screenPadding, 6, AppSpacing.screenPadding, 6),
+        AppSpacing.screenPadding,
+        6,
+        AppSpacing.screenPadding,
+        6,
+      ),
       child: Pressable(
         onTap: () {
           Haptics.light(ref);
@@ -176,17 +191,16 @@ class _ToolRow extends ConsumerWidget {
                   children: [
                     Text(
                       tool.title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: AppFontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       tool.sub,
                       style: TextStyle(
                         color: AppColors.textMuted,
-                        fontSize: 13,
+                        fontSize: AppFontSize.body,
                       ),
                       maxLines: 2,
                     ),
@@ -194,17 +208,18 @@ class _ToolRow extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.emoji_events_rounded,
-                              size: 14, color: accent),
+                          Icon(
+                            Icons.emoji_events_rounded,
+                            size: 14,
+                            color: accent,
+                          ),
                           const SizedBox(width: 5),
                           Text(
                             'Best: $best',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
+                            style: Theme.of(context).textTheme.labelMedium
                                 ?.copyWith(
                                   color: accent,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: AppFontWeight.bold,
                                 ),
                           ),
                         ],

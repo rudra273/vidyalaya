@@ -12,7 +12,7 @@ import 'pressable.dart';
 // ─── ShareFeedbackBanner: sticky share card at Home bottom ───────────────
 
 /// Permanent banner at the bottom of Home for sharing the app on WhatsApp.
-/// Until dismissed, it also shows an "Enjoying Vidyālaya?" header with a
+/// Until dismissed, it also shows an "Enjoying Vidya AI?" header with a
 /// Rate-us button; the close icon hides only that part, collapsing the
 /// banner into a compact share-only card. Rating stays reachable in
 /// Settings → Support.
@@ -71,15 +71,15 @@ class _FullBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Enjoying Vidyālaya?',
+                    'Enjoying Vidya AI?',
                     style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(fontSize: 18, height: 1.1),
+                        ?.copyWith(fontSize: AppFontSize.title, height: 1.1),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     'Share it with friends or rate it on the Play Store.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 12.5,
+                      fontSize: AppFontSize.small,
                       color: muted,
                       height: 1.35,
                     ),
@@ -130,8 +130,8 @@ class _FullBanner extends ConsumerWidget {
                         'Rate us',
                         style: TextStyle(
                           color: cs.primary,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
+                          fontSize: AppFontSize.body,
+                          fontWeight: AppFontWeight.bold,
                         ),
                       ),
                     ],
@@ -169,15 +169,15 @@ class _CompactShareRow extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Share Vidyālaya',
+                'Share Vidya AI',
                 style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontSize: 16, height: 1.1),
+                    ?.copyWith(fontSize: AppFontSize.content, height: 1.1),
               ),
               const SizedBox(height: 2),
               Text(
                 'Invite your friends to study together.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 12,
+                  fontSize: AppFontSize.small,
                   color: muted,
                 ),
               ),
@@ -224,8 +224,8 @@ class _WhatsAppButton extends ConsumerWidget {
               'Share',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w700,
+                fontSize: AppFontSize.body,
+                fontWeight: AppFontWeight.bold,
               ),
             ),
           ],

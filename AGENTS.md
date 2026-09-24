@@ -4,7 +4,13 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project
 
-Vidyālaya is a Flutter book-reading + AI tutoring app for Indian school students (SCERT Odisha, classes 1–8). Cross-platform (Android primary; iOS/web/desktop scaffolding present).
+Vidya AI is a Flutter book-reading + AI tutoring app for Indian school students (SCERT Odisha, classes 1–8). Cross-platform (Android primary; iOS/web/desktop scaffolding present).
+
+## Brand identity
+
+- The current user-facing brand name is **Vidya AI**. The former brand name was **Vidyalaya** (also previously rendered as **Vidyālaya**).
+- Use **Vidya AI** in all user-visible UI, copy, platform display labels, launcher/splash artwork, store-facing text, and new documentation that refers to the product brand.
+- This is a display-brand change only. Do **not** rename technical identifiers that still use `vidyalaya`, including the Dart package, `package:vidyalaya/...` imports, application/bundle IDs such as `com.vidyalaya.ai`, Kotlin packages, repository/directory/file names, asset filenames, backend URLs, API paths, database names, deployment names, or other integration identifiers unless a separate migration is explicitly requested.
 
 ## Commands
 

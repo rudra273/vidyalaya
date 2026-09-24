@@ -121,14 +121,14 @@ class _LessonRow extends StatelessWidget {
                   child: done
                       ? Icon(Icons.check_rounded, size: 20, color: accent)
                       : Text('$number',
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                          style: const TextStyle(fontWeight: AppFontWeight.bold)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                          fontWeight: AppFontWeight.semibold,
                         ),
                   ),
                 ),
@@ -182,7 +182,7 @@ class _QuizRow extends StatelessWidget {
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
+                            ?.copyWith(fontWeight: AppFontWeight.bold)),
                     Text('$questions questions',
                         style: TextStyle(color: AppColors.textMuted)),
                   ],

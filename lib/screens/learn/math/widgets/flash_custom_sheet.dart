@@ -85,12 +85,12 @@ class _FlashCustomSheetState extends ConsumerState<_FlashCustomSheet> {
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
-                  ?.copyWith(fontSize: 22),
+                  ?.copyWith(fontSize: AppFontSize.heading),
             ),
             const SizedBox(height: 4),
             Text(
               describeFlashSettings(_steps, _seconds, _ops.toList()),
-              style: TextStyle(color: accent, fontWeight: FontWeight.w700),
+              style: TextStyle(color: accent, fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 22),
 
@@ -143,7 +143,7 @@ class _FlashCustomSheetState extends ConsumerState<_FlashCustomSheet> {
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+                  ?.copyWith(fontWeight: AppFontWeight.bold),
             ),
             const SizedBox(height: 10),
             Row(
@@ -169,8 +169,8 @@ class _FlashCustomSheetState extends ConsumerState<_FlashCustomSheet> {
                     : 'Division needs another operation to work with.',
                 style: const TextStyle(
                   color: Color(0xFFC0483C),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSize.body,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ],
@@ -202,7 +202,7 @@ class _FlashCustomSheetState extends ConsumerState<_FlashCustomSheet> {
                     : null,
                 child: const Text(
                   'Use these settings',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: AppFontSize.content, fontWeight: AppFontWeight.bold),
                 ),
               ),
             ),
@@ -232,13 +232,13 @@ class _Label extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
+              ?.copyWith(fontWeight: AppFontWeight.bold),
         ),
         Text(
           value,
           style: TextStyle(
             color: AppColors.textMuted,
-            fontWeight: FontWeight.w700,
+            fontWeight: AppFontWeight.bold,
           ),
         ),
       ],
@@ -285,8 +285,8 @@ class _OpChip extends StatelessWidget {
           child: Text(
             op.symbol,
             style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
+              fontSize: AppFontSize.heading,
+              fontWeight: AppFontWeight.extraBold,
               color: selected ? accent : cs.onSurface,
             ),
           ),

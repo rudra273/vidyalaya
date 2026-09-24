@@ -146,16 +146,16 @@ class LearningSummary extends ConsumerWidget {
                                 .textTheme
                                 .headlineSmall
                                 ?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: AppFontWeight.bold,
                                   color: cs.primary,
                                 ),
                           ),
                           Text(
                             'pages',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: AppFontSize.caption,
                               color: AppColors.textMuted,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: AppFontWeight.bold,
                             ),
                           ),
                         ],
@@ -174,7 +174,7 @@ class LearningSummary extends ConsumerWidget {
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                          ?.copyWith(fontWeight: AppFontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -199,7 +199,7 @@ class LearningSummary extends ConsumerWidget {
           'SUBJECT FOCUS',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 letterSpacing: 1.2,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
                 color: AppColors.textMuted,
               ),
         ),
@@ -310,28 +310,28 @@ class _StatCard extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  fontSize: AppFontSize.small,
+                  fontWeight: AppFontWeight.bold,
                   color: color,
                 ),
               ),
-              Text(icon, style: const TextStyle(fontSize: 14)),
+              Text(icon, style: const TextStyle(fontSize: AppFontSize.body)),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
+                  fontWeight: AppFontWeight.black,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
           ),
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: AppFontSize.caption,
               color: AppColors.textMuted,
-              fontWeight: FontWeight.w600,
+              fontWeight: AppFontWeight.semibold,
             ),
           ),
         ],
@@ -366,13 +366,13 @@ class _SubjectProgressBar extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w600),
+                  ?.copyWith(fontWeight: AppFontWeight.semibold),
             ),
             Text(
               '${(progress * 100).toInt()}%',
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+                fontSize: AppFontSize.small,
+                fontWeight: AppFontWeight.bold,
                 color: color,
               ),
             ),

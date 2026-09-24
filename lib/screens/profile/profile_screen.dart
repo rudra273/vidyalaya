@@ -62,10 +62,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   /// Seeds the form from local prefs — the source of truth while signed out,
   /// and the placeholder until the backend profile lands.
   void _restoreFromLocalPrefs() {
-    final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
-    if (selectedClasses.isNotEmpty) {
-      _selectedClass = selectedClasses.first;
-    }
+    _selectedClass = ref.read(primaryClassProvider);
     _board = ref.read(userBoardProvider);
     _preferredLanguage =
         ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
@@ -205,9 +202,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 10),
                     Text(
                       displayName,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(fontSize: 21),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontSize: AppFontSize.heading),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -415,9 +411,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     Text(
                       'Choose your avatar',
-                      style: Theme.of(
-                        ctx,
-                      ).textTheme.headlineMedium?.copyWith(fontSize: 18),
+                      style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
+                        fontSize: AppFontSize.title,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -621,8 +617,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     bool syncExploreClass = false,
   }) {
     ref.read(userBoardProvider.notifier).setBoard(board);
+    ref.read(primaryClassProvider.notifier).setClass(classNo);
     if (syncExploreClass) {
-      ref.read(userSelectionProvider.notifier).setClasses({classNo});
+      final prefs = ref.read(userPrefsRepositoryProvider);
+      if (prefs.getExploreSelectionMode() == 'primary') {
+        ref.read(exploreClassSelectionProvider.notifier).setClasses({classNo});
+      }
+      if (prefs.getLibrarySelectionMode() == 'primary') {
+        ref.read(libraryClassSelectionProvider.notifier).setClasses({classNo});
+      }
     }
     ref.read(subjectFilterProvider.notifier).setFilter(null);
     ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
@@ -818,7 +821,7 @@ class _BigAvatar extends StatelessWidget {
                 : Text(
                     letter,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: 38,
+                      fontSize: AppFontSize.displayLarge,
                       color: cs.primary,
                     ),
                   ),
@@ -894,7 +897,7 @@ class _AvatarChoice extends StatelessWidget {
                 : Text(
                     letter,
                     style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: 24,
+                      fontSize: AppFontSize.headingLarge,
                       color: cs.primary,
                     ),
                   ),
@@ -974,8 +977,8 @@ class _StatsStripState extends State<_StatsStrip> {
                         'View details',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: cs.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontWeight: AppFontWeight.semibold,
+                          fontSize: AppFontSize.body,
                         ),
                       ),
                       Icon(
@@ -1052,9 +1055,10 @@ class _Stat extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontSize: 21, height: 1),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontSize: AppFontSize.heading,
+                height: 1,
+              ),
             ),
           ],
         ),
@@ -1062,8 +1066,8 @@ class _Stat extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w500,
+            fontSize: AppFontSize.small,
+            fontWeight: AppFontWeight.medium,
           ),
         ),
       ],
@@ -1145,7 +1149,7 @@ class _AuthButton extends StatelessWidget {
               isSignedIn ? 'Sign out' : 'Sign in with Google',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: accent,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
               ),
             ),
           ],
@@ -1309,8 +1313,8 @@ class _SummaryRow extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
+                fontSize: AppFontSize.small,
+                fontWeight: AppFontWeight.medium,
               ),
             ),
           ),
@@ -1320,7 +1324,7 @@ class _SummaryRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontWeight: AppFontWeight.semibold,
                 color: muted
                     ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
                     : cs.onSurface,
@@ -1659,8 +1663,8 @@ class _Field<T> extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontSize: AppFontSize.small,
+            fontWeight: AppFontWeight.semibold,
             color: isDark ? AppColors.ink3Dark : AppColors.ink3,
           ),
         ),
@@ -1682,8 +1686,8 @@ class _Field<T> extends StatelessWidget {
                   child: Text(
                     value,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
+                      fontSize: AppFontSize.content,
+                      fontWeight: AppFontWeight.medium,
                       color: cs.onSurface,
                     ),
                   ),
@@ -1729,8 +1733,8 @@ class _TextInput extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontSize: AppFontSize.small,
+            fontWeight: AppFontWeight.semibold,
             color: isDark ? AppColors.ink3Dark : AppColors.ink3,
           ),
         ),
