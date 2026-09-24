@@ -201,10 +201,10 @@ const _allFormulas = [
     type: FormulaType.average,
     category: 'Arithmetic',
     descEn:
-        'Finds the average of two numbers by dividing their sum by the count.',
+        'Finds the average of a set of numbers by dividing their sum by how many numbers there are.',
     descOr:
-        'ଦୁଇଟି ସଂଖ୍ୟାର ଯୋଗଫଳକୁ ସଂଖ୍ୟା ଦ୍ୱାରା ଭାଗ କରି ହାରାହାରି ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'दो संख्याओं के योग को उनकी संख्या से भाग देकर औसत ज्ञात करता है।',
+        'ସଂଖ୍ୟାଗୁଡ଼ିକର ଯୋଗଫଳକୁ ସେଗୁଡ଼ିକର ସଂଖ୍ୟା ଦ୍ୱାରା ଭାଗ କରି ହାରାହାରି ନିର୍ଣ୍ଣୟ କରେ।',
+    descHi: 'संख्याओं के योग को उनकी कुल संख्या से भाग देकर औसत ज्ञात करता है।',
   ),
   FormulaData(
     titleEn: 'Profit Percentage',
@@ -929,23 +929,8 @@ class _FormulaCategoryScreenState extends ConsumerState<FormulaCategoryScreen> {
                       AppSpacing.screenPadding,
                       16,
                     ),
-                    itemCount: formulas.length + 1,
+                    itemCount: formulas.length,
                     itemBuilder: (context, index) {
-                      if (index == formulas.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Center(
-                            child: Text(
-                              'More formulas coming soon...',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: AppColors.textMuted,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                            ),
-                          ),
-                        );
-                      }
                       return _FormulaCard(
                         formulaData: formulas[index],
                         lang: lang,
@@ -1205,8 +1190,9 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final p = double.tryParse(_controllers['P']!.text);
             final r = double.tryParse(_controllers['R']!.text);
             final t = double.tryParse(_controllers['T']!.text);
-            if (p != null && r != null && t != null)
+            if (p != null && r != null && t != null) {
               _result = 'SI = ${((p * r * t) / 100).toStringAsFixed(2)}';
+            }
             break;
           case FormulaType.circleArea:
             final r = double.tryParse(_controllers['r']!.text);
@@ -1219,14 +1205,16 @@ class _CalculatorPageState extends State<_CalculatorPage> {
           case FormulaType.pythagoras:
             final a = double.tryParse(_controllers['a']!.text);
             final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null)
+            if (a != null && b != null) {
               _result = 'c = ${sqrt((a * a) + (b * b)).toStringAsFixed(4)}';
+            }
             break;
           case FormulaType.cylinderVolume:
             final r = double.tryParse(_controllers['r']!.text);
             final h = double.tryParse(_controllers['h']!.text);
-            if (r != null && h != null)
+            if (r != null && h != null) {
               _result = 'V = ${(pi * r * r * h).toStringAsFixed(4)}';
+            }
             break;
           case FormulaType.quadratic:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1256,14 +1244,16 @@ class _CalculatorPageState extends State<_CalculatorPage> {
           case FormulaType.rectanglePerimeter:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
-            if (l != null && w != null)
+            if (l != null && w != null) {
               _result = 'P = ${(2 * (l + w)).toStringAsFixed(2)}';
+            }
             break;
           case FormulaType.rectangleArea:
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
-            if (l != null && w != null)
+            if (l != null && w != null) {
               _result = 'A = ${(l * w).toStringAsFixed(2)}';
+            }
             break;
           case FormulaType.squarePerimeter:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1276,8 +1266,9 @@ class _CalculatorPageState extends State<_CalculatorPage> {
           case FormulaType.triangleArea:
             final b = double.tryParse(_controllers['b']!.text);
             final h = double.tryParse(_controllers['h']!.text);
-            if (b != null && h != null)
+            if (b != null && h != null) {
               _result = 'A = ${(0.5 * b * h).toStringAsFixed(2)}';
+            }
             break;
           case FormulaType.cubeVolume:
             final a = double.tryParse(_controllers['a']!.text);
@@ -1287,24 +1278,28 @@ class _CalculatorPageState extends State<_CalculatorPage> {
             final l = double.tryParse(_controllers['l']!.text);
             final w = double.tryParse(_controllers['w']!.text);
             final h = double.tryParse(_controllers['h']!.text);
-            if (l != null && w != null && h != null)
+            if (l != null && w != null && h != null) {
               _result = 'V = ${(l * w * h).toStringAsFixed(2)}';
+            }
             break;
           case FormulaType.speedDistanceTime:
             final d = double.tryParse(_controllers['d']!.text);
             final t = double.tryParse(_controllers['t']!.text);
-            if (d != null && t != null && t != 0)
+            if (d != null && t != null && t != 0) {
               _result = 's = ${(d / t).toStringAsFixed(2)}';
+            }
             break;
           case FormulaType.fahrenheitToCelsius:
             final f = double.tryParse(_controllers['F']!.text);
-            if (f != null)
+            if (f != null) {
               _result = 'C = ${((f - 32) * 5 / 9).toStringAsFixed(2)}°C';
+            }
             break;
           case FormulaType.celsiusToFahrenheit:
             final c = double.tryParse(_controllers['C']!.text);
-            if (c != null)
+            if (c != null) {
               _result = 'F = ${((c * 9 / 5) + 32).toStringAsFixed(2)}°F';
+            }
             break;
           case FormulaType.triangleAreaTrig:
             final a = double.tryParse(_controllers['a']!.text);

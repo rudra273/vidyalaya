@@ -624,6 +624,9 @@ class _ElementCell extends StatelessWidget {
 
 // ─── Detail sheet ───
 class _ElementDetailSheet extends StatelessWidget {
+  /// Ask AI stays off until Explore Assist can answer it (plan.md Phase 8).
+  static const _showAskAi = false;
+
   final ElementData element;
   final Color color;
   final RegionalLanguage lang;
@@ -840,33 +843,34 @@ class _ElementDetailSheet extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
 
-              const SizedBox(height: 24),
-
-              // Ask AI placeholder
-              // TODO: wire to the AI tutor chat, pre-filled with a question about this element.
-              OutlinedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(switch (lang) {
-                        RegionalLanguage.english =>
-                          'AI tutor for elements is coming soon!',
-                        RegionalLanguage.hindi =>
-                          'तत्वों के लिए AI ट्यूटर जल्द आ रहा है!',
-                        RegionalLanguage.odia =>
-                          'ମୌଳଗୁଡ଼ିକ ପାଇଁ AI ଶିକ୍ଷକ ଶୀଘ୍ର ଆସୁଛି!',
-                      }),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.auto_awesome),
-                label: Text(copy.askAi(element.regionalName(lang))),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  side: BorderSide(color: color.withValues(alpha: 0.6)),
-                  foregroundColor: color,
+              // Ask AI — hidden until the Explore Assist agent lands (plan.md Phase 8).
+              // TODO: wire to Explore Assist, pre-filled with a question about this element.
+              if (_showAskAi) ...[
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(switch (lang) {
+                          RegionalLanguage.english =>
+                            'AI tutor for elements is coming soon!',
+                          RegionalLanguage.hindi =>
+                            'तत्वों के लिए AI ट्यूटर जल्द आ रहा है!',
+                          RegionalLanguage.odia =>
+                            'ମୌଳଗୁଡ଼ିକ ପାଇଁ AI ଶିକ୍ଷକ ଶୀଘ୍ର ଆସୁଛି!',
+                        }),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.auto_awesome),
+                  label: Text(copy.askAi(element.regionalName(lang))),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    side: BorderSide(color: color.withValues(alpha: 0.6)),
+                    foregroundColor: color,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         );

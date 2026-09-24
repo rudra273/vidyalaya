@@ -19,8 +19,7 @@ import '../../widgets/calm_widgets.dart';
 import '../../widgets/pressable.dart';
 
 /// The **Explore** tab — interactive learning tools, presented as a tasteful
-/// duotone grid (faint glyph backdrop, tinted tile, serif title) plus a
-/// "Coming soon" group.
+/// duotone grid (faint glyph backdrop, tinted tile, serif title).
 class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
@@ -458,7 +457,7 @@ List<_Tool> _tools(bool isDark, bool labsAvailable) => [
   _Tool(
     id: 'math',
     title: 'Math',
-    sub: 'Tables and drills',
+    sub: 'Formulas, tables & practice',
     icon: Icons.calculate_rounded,
     color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
     route: '/learn/math',

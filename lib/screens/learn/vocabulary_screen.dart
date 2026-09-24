@@ -37,7 +37,7 @@ const _kLetterHeaderExtent = 40.0;
 
 /// Extra pre-built area above and below the viewport. The default (250) is
 /// barely one card tall, so fast scrolls build cards just-in-time.
-const _kCacheExtent = 600.0;
+const _kCacheExtent = ScrollCacheExtent.pixels(600);
 
 /// How many re-aim passes a jump may take before giving up.
 ///
@@ -397,7 +397,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 else
                   CustomScrollView(
                     controller: _scrollController,
-                    cacheExtent: _kCacheExtent,
+                    scrollCacheExtent: _kCacheExtent,
                     slivers: searching
                         ? _buildFlatSlivers(_results, lang, styles)
                         : _buildSectionedSlivers(index, lang, styles),
