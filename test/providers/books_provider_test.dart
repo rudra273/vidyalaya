@@ -57,24 +57,23 @@ void main() {
     expect(books.every((book) => book.classNumber == 8), isTrue);
   });
 
-  test(
-    'a board without library books has an empty selected-book list',
-    () async {
-      final container = await _container(board: 'ncert', classes: {8});
+  test('NCERT temporarily shares the SCERT Odisha library content', () async {
+    final container = await _container(board: 'ncert', classes: {8});
 
-      expect(container.read(selectedBooksProvider), isEmpty);
-    },
-  );
+    final books = container.read(selectedBooksProvider);
+    expect(books, isNotEmpty);
+    expect(books.every((book) => book.boardId == 'scert_odisha'), isTrue);
+  });
 
   test(
-    'switching boards refreshes selected books without leaking SCERT books',
+    'switching to NCERT keeps the shared library content available',
     () async {
       final container = await _container(board: 'scert_odisha', classes: {8});
       expect(container.read(selectedBooksProvider), isNotEmpty);
 
       container.read(userBoardProvider.notifier).setBoard('ncert');
 
-      expect(container.read(selectedBooksProvider), isEmpty);
+      expect(container.read(selectedBooksProvider), isNotEmpty);
     },
   );
 }

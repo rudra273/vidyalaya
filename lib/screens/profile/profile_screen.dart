@@ -1608,7 +1608,19 @@ class _StudentForm extends StatelessWidget {
             children: boards.map((b) {
               final isAvailable = availableBoardIds.contains(b.id);
               return ListTile(
-                title: Text(b.name),
+                title: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: b.name),
+                      TextSpan(
+                        text: b.id == 'scert_odisha'
+                            ? ' (Odia Medium)'
+                            : ' (CBSE)',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
                 subtitle: Text(
                   isAvailable ? b.state : '${b.state} · Coming soon',
                 ),

@@ -92,6 +92,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       child: DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: _selectedBoard,
+                        selectedItemBuilder: (context) => [
+                          for (final board in boards)
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(
+                                board.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
                         decoration: InputDecoration(
                           labelText: 'Select Board',
                           border: OutlineInputBorder(
@@ -108,10 +118,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             DropdownMenuItem(
                               value: board.id,
                               enabled: availableBoardIds.contains(board.id),
-                              child: Text(
-                                availableBoardIds.contains(board.id)
-                                    ? board.name
-                                    : '${board.name} (coming soon)',
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(text: board.name),
+                                    TextSpan(
+                                      text: board.id == 'scert_odisha'
+                                          ? ' (Odia Medium)'
+                                          : ' (CBSE)',
+                                      style: TextStyle(
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: availableBoardIds.contains(board.id)

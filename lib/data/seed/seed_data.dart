@@ -64,28 +64,36 @@ const List<Book> allBooks = [
 Set<int> get availableClassNumbers =>
     allBooks.map((b) => b.classNumber).toSet();
 
+/// NCERT is enabled while its own textbook catalog is being prepared. Until
+/// then it shares the available SCERT Odisha library content.
+const _sharedContentBoardIds = {'ncert'};
+
+String _contentBoardId(String boardId) =>
+    _sharedContentBoardIds.contains(boardId) ? 'scert_odisha' : boardId;
+
 /// Classes that have books for a specific board.
 Set<int> availableClassNumbersForBoard(String boardId) => allBooks
-    .where((b) => b.boardId == boardId)
+    .where((b) => b.boardId == _contentBoardId(boardId))
     .map((b) => b.classNumber)
     .toSet();
 
 /// Books for selected classes in one board.
 ///
-/// A class number is not sufficient once multiple boards are available: Class
-/// 8 SCERT Odisha and Class 8 NCERT are separate textbook collections.
+/// NCERT temporarily uses the SCERT Odisha collection while its own catalog is
+/// being prepared.
 List<Book> getBooksForBoardAndClasses(
   String boardId,
   Set<int> selectedClasses,
 ) => allBooks
     .where(
       (book) =>
-          book.boardId == boardId && selectedClasses.contains(book.classNumber),
+          book.boardId == _contentBoardId(boardId) &&
+          selectedClasses.contains(book.classNumber),
     )
     .toList();
 
-/// Board ids that have at least one book in the database.
-Set<String> get availableBoardIds => allBooks.map((b) => b.boardId).toSet();
+/// Boards currently available to students.
+Set<String> get availableBoardIds => boards.map((board) => board.id).toSet();
 
 /// Get books for a specific class number.
 List<Book> getBooksByClass(int classNumber) =>
