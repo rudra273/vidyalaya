@@ -23,7 +23,10 @@ class VocabularyWord {
     required this.sentence,
   });
 
-  /// Meaning in the chosen regional language.
-  String regionalMeaning(RegionalLanguage lang) =>
-      lang == RegionalLanguage.hindi ? meaningHi : meaningOr;
+  /// Meaning in the chosen app language.
+  String regionalMeaning(RegionalLanguage lang) => switch (lang) {
+    RegionalLanguage.english => meaningEn,
+    RegionalLanguage.odia => meaningOr,
+    RegionalLanguage.hindi => meaningHi,
+  };
 }

@@ -31,6 +31,7 @@ import '../screens/learn/periodic_table_screen.dart';
 import '../screens/learn/timeline_screen.dart';
 import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/diagram_viewer_screen.dart';
+import '../screens/learn/interactive_diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
 import '../screens/learn/vocabulary_screen.dart';
 import '../screens/learn/python/python_home_screen.dart';
@@ -47,6 +48,7 @@ import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
 import '../screens/learn/virtual_lab_screen.dart';
 import '../data/seed/diagrams_data.dart';
+import '../data/seed/interactive_diagrams_data.dart';
 import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
 
@@ -238,6 +240,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final category = state.extra as DiagramCategory;
           return DiagramCategoryScreen(category: category);
+        },
+      ),
+      GoRoute(
+        path: '/learn/diagrams/interactive/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final diagram = state.extra as InteractiveDiagram;
+          return InteractiveDiagramViewerScreen(diagram: diagram);
         },
       ),
       GoRoute(

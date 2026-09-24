@@ -29,13 +29,19 @@ class FormulaData {
     required this.descHi,
   });
 
-  /// Title in the chosen regional language.
-  String regionalTitle(RegionalLanguage lang) =>
-      lang == RegionalLanguage.hindi ? titleHi : titleOr;
+  /// Title in the chosen app language.
+  String regionalTitle(RegionalLanguage lang) => switch (lang) {
+    RegionalLanguage.english => titleEn,
+    RegionalLanguage.odia => titleOr,
+    RegionalLanguage.hindi => titleHi,
+  };
 
-  /// Description in the chosen regional language.
-  String regionalDesc(RegionalLanguage lang) =>
-      lang == RegionalLanguage.hindi ? descHi : descOr;
+  /// Description in the chosen app language.
+  String regionalDesc(RegionalLanguage lang) => switch (lang) {
+    RegionalLanguage.english => descEn,
+    RegionalLanguage.odia => descOr,
+    RegionalLanguage.hindi => descHi,
+  };
 
   /// The geometric figure that illustrates this formula, or `null` for purely
   /// numeric formulas (interest, quadratic, temperature, speed) where no
@@ -598,8 +604,11 @@ class FormulaCategory {
     required this.color,
   });
 
-  String regionalTitle(RegionalLanguage lang) =>
-      lang == RegionalLanguage.hindi ? titleHi : titleOr;
+  String regionalTitle(RegionalLanguage lang) => switch (lang) {
+    RegionalLanguage.english => name,
+    RegionalLanguage.odia => titleOr,
+    RegionalLanguage.hindi => titleHi,
+  };
 
   /// Formulas belonging to this category.
   List<FormulaData> get formulas =>

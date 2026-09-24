@@ -5,15 +5,15 @@ import 'auth_provider.dart';
 import 'core_providers.dart';
 import 'user_selection_provider.dart';
 
-/// The second language shown alongside English in the Explore tools
-/// (diagrams, timeline, math formulas).
+/// The selected content language in the Explore tools.
 enum RegionalLanguage {
+  english('en', 'English', 'English'),
   odia('or', 'Odia', 'ଓଡ଼ିଆ'),
   hindi('hi', 'Hindi', 'हिंदी');
 
   const RegionalLanguage(this.code, this.labelEn, this.labelNative);
 
-  /// Persisted code: `'or'` or `'hi'`.
+  /// Persisted code: `'en'`, `'or'`, or `'hi'`.
   final String code;
 
   /// English name, e.g. for accessibility.
@@ -30,16 +30,13 @@ enum RegionalLanguage {
   }
 }
 
-/// The active regional language for the Explore tools.
+/// The active content language for the Explore tools.
 ///
 /// Resolves to, in order: an explicit switch the student made (persisted in
 /// [UserPrefsRepository.getRegionalLanguage]); otherwise the profile's
-/// preferred language when it names a regional language (`hi` → Hindi,
-/// `or` → Odia; `en` falls through since English is always shown anyway);
-/// otherwise the locally-picked preferred language (signed-out students save
-/// their Profile choice into `preferred_language`); otherwise the selected
-/// board's default language (SCERT Odisha → Odia, NCERT → Hindi); otherwise
-/// Odia.
+/// preferred language; otherwise the locally-picked preferred language
+/// (signed-out students save their Profile choice into `preferred_language`);
+/// otherwise the selected board's default language; otherwise Odia.
 class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
   @override
   RegionalLanguage build() {
@@ -58,14 +55,13 @@ class RegionalLanguageNotifier extends Notifier<RegionalLanguage> {
         .watch(backendAccountCacheProvider)
         .profile
         .maybeWhen(data: (p) => p, orElse: () => null);
-    if (profile?.preferredLanguage == 'hi') return RegionalLanguage.hindi;
-    if (profile?.preferredLanguage == 'or') return RegionalLanguage.odia;
+    if (profile?.preferredLanguage != null) {
+      return RegionalLanguage.fromCode(profile!.preferredLanguage);
+    }
 
-    // Locally-picked preferred language (signed-out students). `en` falls
-    // through since English is always shown alongside the regional language.
+    // Locally-picked preferred language for signed-out students.
     final local = prefs.getPreferredLanguage();
-    if (local == 'hi') return RegionalLanguage.hindi;
-    if (local == 'or') return RegionalLanguage.odia;
+    if (local != null) return RegionalLanguage.fromCode(local);
 
     // fromCode falls back to Odia for unknown/future board ids.
     return RegionalLanguage.fromCode(

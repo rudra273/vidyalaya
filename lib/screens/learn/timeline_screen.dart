@@ -95,7 +95,11 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
           // Region scope selector: World / India / State (multi-select).
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 12),
+              AppSpacing.screenPadding,
+              12,
+              AppSpacing.screenPadding,
+              12,
+            ),
             child: Row(
               children: [
                 _RegionChip(
@@ -150,7 +154,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.screenPadding, vertical: 16),
+                      horizontal: AppSpacing.screenPadding,
+                      vertical: 16,
+                    ),
                     itemCount: events.length,
                     itemBuilder: (context, index) {
                       final event = events[index];
@@ -170,7 +176,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                   Container(
                                     width: 2,
                                     height: 24,
-                                    color: isFirst ? Colors.transparent : Colors.amber.withValues(alpha: 0.5),
+                                    color: isFirst
+                                        ? Colors.transparent
+                                        : Colors.amber.withValues(alpha: 0.5),
                                   ),
                                   // Timeline Dot
                                   Container(
@@ -185,7 +193,9 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.amber.withValues(alpha: 0.4),
+                                          color: Colors.amber.withValues(
+                                            alpha: 0.4,
+                                          ),
                                           blurRadius: 4,
                                           spreadRadius: 2,
                                         ),
@@ -196,17 +206,22 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                                   Expanded(
                                     child: Container(
                                       width: 2,
-                                      color: isLast ? Colors.transparent : Colors.amber.withValues(alpha: 0.5),
+                                      color: isLast
+                                          ? Colors.transparent
+                                          : Colors.amber.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            
+
                             // Right Content Card
                             Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.only(left: 8, bottom: 24),
+                                padding: const EdgeInsets.only(
+                                  left: 8,
+                                  bottom: 24,
+                                ),
                                 child: _EventCard(event: event, lang: lang),
                               ),
                             ),
@@ -274,9 +289,12 @@ class _RegionChip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: AppFontSize.body,
-                    color:
-                        selected ? Colors.amber.shade800 : AppColors.textMuted,
-                    fontWeight: selected ? AppFontWeight.bold : AppFontWeight.regular,
+                    color: selected
+                        ? Colors.amber.shade800
+                        : AppColors.textMuted,
+                    fontWeight: selected
+                        ? AppFontWeight.bold
+                        : AppFontWeight.regular,
                   ),
                 ),
               ),
@@ -286,8 +304,9 @@ class _RegionChip extends StatelessWidget {
                   child: Icon(
                     trailing,
                     size: 18,
-                    color:
-                        selected ? Colors.amber.shade800 : AppColors.textMuted,
+                    color: selected
+                        ? Colors.amber.shade800
+                        : AppColors.textMuted,
                   ),
                 ),
             ],
@@ -382,8 +401,10 @@ class _StatePickerSheetState extends State<_StatePickerSheet> {
                               ),
                             ),
                             trailing: isSelected
-                                ? Icon(Icons.check_rounded,
-                                    color: Colors.amber.shade700)
+                                ? Icon(
+                                    Icons.check_rounded,
+                                    color: Colors.amber.shade700,
+                                  )
                                 : null,
                             onTap: () => Navigator.of(context).pop(state),
                           );
@@ -472,46 +493,50 @@ class _EventCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // English Title and Description
           Text(
             event.title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: AppFontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
+              fontWeight: AppFontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             event.description,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurface,
-                  height: 1.4,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: cs.onSurface, height: 1.4),
           ),
-          
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Divider(height: 1),
           ),
-          
-          // Regional Title and Description (Odia or Hindi)
+
+          // Translation in the selected app language.
           Text(
-            lang == RegionalLanguage.hindi ? event.titleHindi : event.titleOdia,
+            switch (lang) {
+              RegionalLanguage.english => event.title,
+              RegionalLanguage.odia => event.titleOdia,
+              RegionalLanguage.hindi => event.titleHindi,
+            },
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: AppFontWeight.semibold,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                ),
+              fontWeight: AppFontWeight.semibold,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
-            lang == RegionalLanguage.hindi
-                ? event.descriptionHindi
-                : event.descriptionOdia,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurface,
-                  height: 1.5,
-                ),
+            switch (lang) {
+              RegionalLanguage.english => event.description,
+              RegionalLanguage.odia => event.descriptionOdia,
+              RegionalLanguage.hindi => event.descriptionHindi,
+            },
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: cs.onSurface, height: 1.5),
           ),
         ],
       ),

@@ -12,13 +12,21 @@ class DiagramViewerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isHi = ref.watch(regionalLanguageProvider) == RegionalLanguage.hindi;
+    final lang = ref.watch(regionalLanguageProvider);
+    final localizedTitle = switch (lang) {
+      RegionalLanguage.english => diagram.titleEn,
+      RegionalLanguage.odia => diagram.titleOr,
+      RegionalLanguage.hindi => diagram.titleHi,
+    };
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
-          '${diagram.titleEn} / ${isHi ? diagram.titleHi : diagram.titleOr}',
-          style: const TextStyle(color: Colors.white, fontSize: AppFontSize.content),
+          localizedTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: AppFontSize.content,
+          ),
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),

@@ -19,10 +19,10 @@ class _StubAccountCache extends BackendAccountCache {
 }
 
 StudentProfile _profile(String preferredLanguage) => StudentProfile(
-      board: 'scert_odisha',
-      classNo: 8,
-      preferredLanguage: preferredLanguage,
-    );
+  board: 'scert_odisha',
+  classNo: 8,
+  preferredLanguage: preferredLanguage,
+);
 
 Future<ProviderContainer> _container({
   Map<String, Object> prefs = const {},
@@ -34,9 +34,8 @@ Future<ProviderContainer> _container({
     overrides: [
       sharedPreferencesProvider.overrideWithValue(sharedPrefs),
       backendAccountCacheProvider.overrideWith(
-        () => _StubAccountCache(
-          BackendAccountState(profile: AsyncData(profile)),
-        ),
+        () =>
+            _StubAccountCache(BackendAccountState(profile: AsyncData(profile))),
       ),
     ],
   );
@@ -52,43 +51,26 @@ void main() {
       final container = await _container(
         prefs: {'selected_board': 'scert_odisha'},
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.odia);
     });
 
     test('defaults to Hindi for the NCERT board', () async {
-      final container = await _container(
-        prefs: {'selected_board': 'ncert'},
-      );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.hindi,
-      );
+      final container = await _container(prefs: {'selected_board': 'ncert'});
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.hindi);
     });
 
     test('falls back to Odia for an unknown board id', () async {
       final container = await _container(
         prefs: {'selected_board': 'future_board'},
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.odia);
     });
 
     test('manual override beats the board default', () async {
       final container = await _container(
-        prefs: {
-          'selected_board': 'scert_odisha',
-          'regional_language': 'hi',
-        },
+        prefs: {'selected_board': 'scert_odisha', 'regional_language': 'hi'},
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.hindi,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.hindi);
     });
 
     test("profile 'or' beats the NCERT board default", () async {
@@ -96,20 +78,17 @@ void main() {
         prefs: {'selected_board': 'ncert'},
         profile: _profile('or'),
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.odia);
     });
 
-    test("profile 'en' falls through to the board default", () async {
+    test("profile 'en' selects English", () async {
       final container = await _container(
         prefs: {'selected_board': 'ncert'},
         profile: _profile('en'),
       );
       expect(
         container.read(regionalLanguageProvider),
-        RegionalLanguage.hindi,
+        RegionalLanguage.english,
       );
     });
 
@@ -117,42 +96,27 @@ void main() {
       // Signed-out student who picked Hindi in Profile (saved to
       // preferred_language) on an Odia-default board.
       final container = await _container(
-        prefs: {
-          'selected_board': 'scert_odisha',
-          'preferred_language': 'hi',
-        },
+        prefs: {'selected_board': 'scert_odisha', 'preferred_language': 'hi'},
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.hindi,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.hindi);
     });
 
-    test("locally-picked 'en' falls through to the board default", () async {
+    test("locally-picked 'en' selects English", () async {
       final container = await _container(
-        prefs: {
-          'selected_board': 'scert_odisha',
-          'preferred_language': 'en',
-        },
+        prefs: {'selected_board': 'scert_odisha', 'preferred_language': 'en'},
       );
       expect(
         container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
+        RegionalLanguage.english,
       );
     });
 
     test('profile preferred language beats the local pref', () async {
       final container = await _container(
-        prefs: {
-          'selected_board': 'ncert',
-          'preferred_language': 'hi',
-        },
+        prefs: {'selected_board': 'ncert', 'preferred_language': 'hi'},
         profile: _profile('or'),
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.odia);
     });
 
     test('manual override beats the local pref', () async {
@@ -163,25 +127,16 @@ void main() {
           'regional_language': 'or',
         },
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.odia);
     });
   });
 
   group('board changes', () {
     test('setBoard clears the manual override and re-resolves', () async {
       final container = await _container(
-        prefs: {
-          'selected_board': 'scert_odisha',
-          'regional_language': 'or',
-        },
+        prefs: {'selected_board': 'scert_odisha', 'regional_language': 'or'},
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.odia,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.odia);
 
       container.read(userBoardProvider.notifier).setBoard('ncert');
 
@@ -189,18 +144,12 @@ void main() {
         container.read(userPrefsRepositoryProvider).getRegionalLanguage(),
         isNull,
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.hindi,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.hindi);
     });
 
     test('setBoard with the same board keeps the override', () async {
       final container = await _container(
-        prefs: {
-          'selected_board': 'scert_odisha',
-          'regional_language': 'hi',
-        },
+        prefs: {'selected_board': 'scert_odisha', 'regional_language': 'hi'},
       );
 
       container.read(userBoardProvider.notifier).setBoard('scert_odisha');
@@ -209,10 +158,7 @@ void main() {
         container.read(userPrefsRepositoryProvider).getRegionalLanguage(),
         'hi',
       );
-      expect(
-        container.read(regionalLanguageProvider),
-        RegionalLanguage.hindi,
-      );
+      expect(container.read(regionalLanguageProvider), RegionalLanguage.hindi);
     });
   });
 }
