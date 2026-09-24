@@ -31,12 +31,206 @@ const Map<String, _CategoryInfo> _categoryInfo = {
 Color _categoryColor(String category) =>
     _categoryInfo[category]?.color ?? Colors.grey;
 
-String _categoryLabel(String category) =>
-    _categoryInfo[category]?.label ??
-    category
-        .split('_')
-        .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
-        .join(' ');
+String _categoryLabel(String category, RegionalLanguage language) {
+  final labels = switch (language) {
+    RegionalLanguage.english => const {
+      'alkali_metal': 'Alkali Metal',
+      'alkaline_earth': 'Alkaline Earth',
+      'transition_metal': 'Transition Metal',
+      'post_transition': 'Post-transition Metal',
+      'metalloid': 'Metalloid',
+      'nonmetal': 'Nonmetal',
+      'halogen': 'Halogen',
+      'noble_gas': 'Noble Gas',
+      'lanthanide': 'Lanthanide',
+      'actinide': 'Actinide',
+      'unknown': 'Unknown',
+    },
+    RegionalLanguage.hindi => const {
+      'alkali_metal': 'क्षार धातु',
+      'alkaline_earth': 'क्षारीय मृदा धातु',
+      'transition_metal': 'संक्रमण धातु',
+      'post_transition': 'संक्रमण-पश्च धातु',
+      'metalloid': 'उपधातु',
+      'nonmetal': 'अधातु',
+      'halogen': 'हैलोजन',
+      'noble_gas': 'उत्कृष्ट गैस',
+      'lanthanide': 'लैंथेनाइड',
+      'actinide': 'ऐक्टिनाइड',
+      'unknown': 'अज्ञात',
+    },
+    RegionalLanguage.odia => const {
+      'alkali_metal': 'କ୍ଷାର ଧାତୁ',
+      'alkaline_earth': 'କ୍ଷାରୀୟ ମୃତ୍ତିକା ଧାତୁ',
+      'transition_metal': 'ସଂକ୍ରମଣ ଧାତୁ',
+      'post_transition': 'ସଂକ୍ରମଣ-ପର ଧାତୁ',
+      'metalloid': 'ଉପଧାତୁ',
+      'nonmetal': 'ଅଧାତୁ',
+      'halogen': 'ହାଲୋଜେନ୍',
+      'noble_gas': 'ନିଷ୍କ୍ରିୟ ଗ୍ୟାସ',
+      'lanthanide': 'ଲାନ୍ଥାନାଇଡ୍',
+      'actinide': 'ଆକ୍ଟିନାଇଡ୍',
+      'unknown': 'ଅଜଣା',
+    },
+  };
+  return labels[category] ?? _categoryInfo[category]?.label ?? category;
+}
+
+String _stateLabel(String state, RegionalLanguage language) {
+  final labels = switch (language) {
+    RegionalLanguage.english => const {
+      'Gas': 'Gas',
+      'Liquid': 'Liquid',
+      'Solid': 'Solid',
+      'Unknown': 'Unknown',
+    },
+    RegionalLanguage.hindi => const {
+      'Gas': 'गैस',
+      'Liquid': 'द्रव',
+      'Solid': 'ठोस',
+      'Unknown': 'अज्ञात',
+    },
+    RegionalLanguage.odia => const {
+      'Gas': 'ଗ୍ୟାସ',
+      'Liquid': 'ତରଳ',
+      'Solid': 'କଠିନ',
+      'Unknown': 'ଅଜଣା',
+    },
+  };
+  return labels[state] ?? state;
+}
+
+class _PeriodicTableCopy {
+  const _PeriodicTableCopy(this.language);
+
+  final RegionalLanguage language;
+
+  String get searchHint => switch (language) {
+    RegionalLanguage.english => 'Search name, symbol or number…',
+    RegionalLanguage.hindi => 'नाम, प्रतीक या संख्या खोजें…',
+    RegionalLanguage.odia => 'ନାମ, ସଙ୍କେତ କିମ୍ବା ସଂଖ୍ୟା ଖୋଜନ୍ତୁ…',
+  };
+
+  String get closeSearch => switch (language) {
+    RegionalLanguage.english => 'Close search',
+    RegionalLanguage.hindi => 'खोज बंद करें',
+    RegionalLanguage.odia => 'ସନ୍ଧାନ ବନ୍ଦ କରନ୍ତୁ',
+  };
+
+  String get search => switch (language) {
+    RegionalLanguage.english => 'Search',
+    RegionalLanguage.hindi => 'खोजें',
+    RegionalLanguage.odia => 'ସନ୍ଧାନ',
+  };
+
+  String get noElementsFound => switch (language) {
+    RegionalLanguage.english => 'No elements found',
+    RegionalLanguage.hindi => 'कोई तत्व नहीं मिला',
+    RegionalLanguage.odia => 'କୌଣସି ମୌଳ ମିଳିଲା ନାହିଁ',
+  };
+
+  String atomicNumber(int number) => switch (language) {
+    RegionalLanguage.english => 'Atomic Number: $number',
+    RegionalLanguage.hindi => 'परमाणु क्रमांक: $number',
+    RegionalLanguage.odia => 'ପରମାଣୁ କ୍ରମାଙ୍କ: $number',
+  };
+
+  String get atomicMass => switch (language) {
+    RegionalLanguage.english => 'Atomic Mass',
+    RegionalLanguage.hindi => 'परमाणु द्रव्यमान',
+    RegionalLanguage.odia => 'ପରମାଣୁ ଭର',
+  };
+
+  String get state => switch (language) {
+    RegionalLanguage.english => 'State',
+    RegionalLanguage.hindi => 'अवस्था',
+    RegionalLanguage.odia => 'ଅବସ୍ଥା',
+  };
+
+  String get valency => switch (language) {
+    RegionalLanguage.english => 'Valency',
+    RegionalLanguage.hindi => 'संयोजकता',
+    RegionalLanguage.odia => 'ଯୋଜ୍ୟତା',
+  };
+
+  String get group => switch (language) {
+    RegionalLanguage.english => 'Group',
+    RegionalLanguage.hindi => 'समूह',
+    RegionalLanguage.odia => 'ଗୋଷ୍ଠୀ',
+  };
+
+  String get period => switch (language) {
+    RegionalLanguage.english => 'Period',
+    RegionalLanguage.hindi => 'आवर्त',
+    RegionalLanguage.odia => 'ପର୍ଯ୍ୟାୟ',
+  };
+
+  String get category => switch (language) {
+    RegionalLanguage.english => 'Category',
+    RegionalLanguage.hindi => 'श्रेणी',
+    RegionalLanguage.odia => 'ଶ୍ରେଣୀ',
+  };
+
+  String get electronsPerShell => switch (language) {
+    RegionalLanguage.english => 'Electrons per shell',
+    RegionalLanguage.hindi => 'प्रति कोश इलेक्ट्रॉन',
+    RegionalLanguage.odia => 'ପ୍ରତି କକ୍ଷରେ ଇଲେକ୍ଟ୍ରନ୍',
+  };
+
+  String shell(int number) => switch (language) {
+    RegionalLanguage.english => 'Shell $number',
+    RegionalLanguage.hindi => 'कोश $number',
+    RegionalLanguage.odia => 'କକ୍ଷ $number',
+  };
+
+  String get physicalProperties => switch (language) {
+    RegionalLanguage.english => 'Physical properties',
+    RegionalLanguage.hindi => 'भौतिक गुण',
+    RegionalLanguage.odia => 'ଭୌତିକ ଗୁଣଧର୍ମ',
+  };
+
+  String get melting => switch (language) {
+    RegionalLanguage.english => 'Melting',
+    RegionalLanguage.hindi => 'गलनांक',
+    RegionalLanguage.odia => 'ଗଳନାଙ୍କ',
+  };
+
+  String get boiling => switch (language) {
+    RegionalLanguage.english => 'Boiling',
+    RegionalLanguage.hindi => 'क्वथनांक',
+    RegionalLanguage.odia => 'ସ୍ଫୁଟନାଙ୍କ',
+  };
+
+  String get density => switch (language) {
+    RegionalLanguage.english => 'Density',
+    RegionalLanguage.hindi => 'घनत्व',
+    RegionalLanguage.odia => 'ଘନତ୍ୱ',
+  };
+
+  String get commonUses => switch (language) {
+    RegionalLanguage.english => 'Common uses',
+    RegionalLanguage.hindi => 'सामान्य उपयोग',
+    RegionalLanguage.odia => 'ସାଧାରଣ ବ୍ୟବହାର',
+  };
+
+  String get funFact => switch (language) {
+    RegionalLanguage.english => 'Fun fact',
+    RegionalLanguage.hindi => 'रोचक तथ्य',
+    RegionalLanguage.odia => 'ମଜାଦାର ତଥ୍ୟ',
+  };
+
+  String get discovery => switch (language) {
+    RegionalLanguage.english => 'Discovery',
+    RegionalLanguage.hindi => 'खोज',
+    RegionalLanguage.odia => 'ଆବିଷ୍କାର',
+  };
+
+  String askAi(String elementName) => switch (language) {
+    RegionalLanguage.english => 'Ask AI about $elementName',
+    RegionalLanguage.hindi => '$elementName के बारे में AI से पूछें',
+    RegionalLanguage.odia => '$elementName ବିଷୟରେ AIକୁ ପଚାରନ୍ତୁ',
+  };
+}
 
 class PeriodicTableScreen extends ConsumerStatefulWidget {
   const PeriodicTableScreen({super.key});
@@ -148,6 +342,7 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(regionalLanguageProvider);
+    final copy = _PeriodicTableCopy(lang);
     final double tableWidth = 18 * _colStride;
     final double tableHeight = 10 * _rowStride;
 
@@ -158,8 +353,8 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search name, symbol or number…',
+                decoration: InputDecoration(
+                  hintText: copy.searchHint,
                   border: InputBorder.none,
                 ),
                 onChanged: (v) => setState(() => _query = v),
@@ -168,7 +363,7 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
         actions: [
           IconButton(
             icon: Icon(_searching ? Icons.close : Icons.search),
-            tooltip: _searching ? 'Close search' : 'Search',
+            tooltip: _searching ? copy.closeSearch : copy.search,
             onPressed: _searching ? _closeSearch : _openSearch,
           ),
           if (!_searching) const RegionalLanguageSwitch(),
@@ -176,7 +371,7 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
       ),
       body: Column(
         children: [
-          const _CategoryLegend(),
+          _CategoryLegend(language: lang),
           Expanded(
             child: Stack(
               children: [
@@ -201,6 +396,7 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
                           child: _ElementCell(
                             element: e,
                             color: color,
+                            language: lang,
                             highlighted:
                                 _highlightedAtomicNumber == e.atomicNumber,
                             onTap: () => _showElementDetails(context, e),
@@ -227,7 +423,9 @@ class _PeriodicTableScreenState extends ConsumerState<PeriodicTableScreen> {
 
 // ─── Legend ───
 class _CategoryLegend extends StatelessWidget {
-  const _CategoryLegend();
+  const _CategoryLegend({required this.language});
+
+  final RegionalLanguage language;
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +458,7 @@ class _CategoryLegend extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  entry.value.label,
+                  _categoryLabel(entry.key, language),
                   style: const TextStyle(
                     fontSize: AppFontSize.small,
                     fontWeight: AppFontWeight.semibold,
@@ -293,9 +491,9 @@ class _SearchResultsOverlay extends StatelessWidget {
       child: Container(
         color: Theme.of(context).scaffoldBackgroundColor,
         child: results.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
-                  'No elements found',
+                  _PeriodicTableCopy(lang).noElementsFound,
                   style: TextStyle(color: AppColors.textMuted),
                 ),
               )
@@ -325,8 +523,7 @@ class _SearchResultsOverlay extends StatelessWidget {
                         ),
                       ),
                     ),
-                    title: Text(e.name),
-                    subtitle: Text(e.regionalName(lang)),
+                    title: Text(e.regionalName(lang)),
                     trailing: Text(
                       '#${e.atomicNumber}',
                       style: const TextStyle(color: AppColors.textMuted),
@@ -344,12 +541,14 @@ class _SearchResultsOverlay extends StatelessWidget {
 class _ElementCell extends StatelessWidget {
   final ElementData element;
   final Color color;
+  final RegionalLanguage language;
   final bool highlighted;
   final VoidCallback onTap;
 
   const _ElementCell({
     required this.element,
     required this.color,
+    required this.language,
     required this.highlighted,
     required this.onTap,
   });
@@ -408,7 +607,7 @@ class _ElementCell extends StatelessWidget {
             ),
             Center(
               child: Text(
-                element.name,
+                element.regionalName(language),
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: AppFontSize.caption,
@@ -439,6 +638,7 @@ class _ElementDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final copy = _PeriodicTableCopy(lang);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.65,
@@ -478,7 +678,7 @@ class _ElementDetailSheet extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Atomic Number: ${element.atomicNumber}',
+                    copy.atomicNumber(element.atomicNumber),
                     style: const TextStyle(
                       color: AppColors.textMuted,
                       fontWeight: AppFontWeight.semibold,
@@ -516,20 +716,10 @@ class _ElementDetailSheet extends StatelessWidget {
               ),
               Center(
                 child: Text(
-                  element.name,
+                  element.regionalName(lang),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: AppFontWeight.bold,
                   ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Center(
-                child: Text(
-                  element.regionalName(lang),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: AppColors.textMuted),
                 ),
               ),
               const SizedBox(height: 10),
@@ -545,7 +735,7 @@ class _ElementDetailSheet extends StatelessWidget {
                     border: Border.all(color: color.withValues(alpha: 0.5)),
                   ),
                   child: Text(
-                    _categoryLabel(element.category),
+                    _categoryLabel(element.category, lang),
                     style: TextStyle(
                       color: color,
                       fontWeight: AppFontWeight.bold,
@@ -559,7 +749,7 @@ class _ElementDetailSheet extends StatelessWidget {
 
               // Description
               Text(
-                element.description,
+                element.description.inLanguage(lang),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
@@ -575,7 +765,7 @@ class _ElementDetailSheet extends StatelessWidget {
               _sectionTitle(
                 context,
                 Icons.blur_circular,
-                'Electrons per shell',
+                copy.electronsPerShell,
               ),
               const SizedBox(height: 8),
               _shellChips(),
@@ -585,16 +775,23 @@ class _ElementDetailSheet extends StatelessWidget {
                   element.boilingPoint != null ||
                   element.density != null) ...[
                 const SizedBox(height: 20),
-                _sectionTitle(context, Icons.thermostat, 'Physical properties'),
+                _sectionTitle(
+                  context,
+                  Icons.thermostat,
+                  copy.physicalProperties,
+                ),
                 const SizedBox(height: 8),
                 _physicalRow(context, cs),
               ],
 
               // Uses
               const SizedBox(height: 20),
-              _sectionTitle(context, Icons.build_rounded, 'Common uses'),
+              _sectionTitle(context, Icons.build_rounded, copy.commonUses),
               const SizedBox(height: 6),
-              Text(element.uses, style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                element.uses.inLanguage(lang),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
 
               // Fun fact
               const SizedBox(height: 20),
@@ -615,7 +812,7 @@ class _ElementDetailSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Fun fact',
+                            copy.funFact,
                             style: TextStyle(
                               fontWeight: AppFontWeight.bold,
                               color: color,
@@ -624,7 +821,7 @@ class _ElementDetailSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            element.funFact,
+                            element.funFact.inLanguage(lang),
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
@@ -636,10 +833,10 @@ class _ElementDetailSheet extends StatelessWidget {
 
               // Discovery
               const SizedBox(height: 20),
-              _sectionTitle(context, Icons.history_edu, 'Discovery'),
+              _sectionTitle(context, Icons.history_edu, copy.discovery),
               const SizedBox(height: 6),
               Text(
-                element.discovery,
+                element.discovery.inLanguage(lang),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
 
@@ -650,13 +847,20 @@ class _ElementDetailSheet extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('AI tutor for elements is coming soon!'),
+                    SnackBar(
+                      content: Text(switch (lang) {
+                        RegionalLanguage.english =>
+                          'AI tutor for elements is coming soon!',
+                        RegionalLanguage.hindi =>
+                          'तत्वों के लिए AI ट्यूटर जल्द आ रहा है!',
+                        RegionalLanguage.odia =>
+                          'ମୌଳଗୁଡ଼ିକ ପାଇଁ AI ଶିକ୍ଷକ ଶୀଘ୍ର ଆସୁଛି!',
+                      }),
                     ),
                   );
                 },
                 icon: const Icon(Icons.auto_awesome),
-                label: Text('Ask AI about ${element.name}'),
+                label: Text(copy.askAi(element.regionalName(lang))),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                   side: BorderSide(color: color.withValues(alpha: 0.6)),
@@ -688,13 +892,14 @@ class _ElementDetailSheet extends StatelessWidget {
   }
 
   Widget _statGrid(BuildContext context, ColorScheme cs) {
+    final copy = _PeriodicTableCopy(lang);
     final stats = <List<String>>[
-      ['Atomic Mass', element.atomicMass],
-      ['State', element.state],
-      ['Valency', element.valency],
-      ['Group', element.group > 18 ? '—' : '${element.group}'],
-      ['Period', element.period > 7 ? '—' : '${element.period}'],
-      ['Category', _categoryLabel(element.category)],
+      [copy.atomicMass, element.atomicMass],
+      [copy.state, _stateLabel(element.state, lang)],
+      [copy.valency, element.valency],
+      [copy.group, element.group > 18 ? '—' : '${element.group}'],
+      [copy.period, element.period > 7 ? '—' : '${element.period}'],
+      [copy.category, _categoryLabel(element.category, lang)],
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -741,6 +946,7 @@ class _ElementDetailSheet extends StatelessWidget {
   }
 
   Widget _shellChips() {
+    final copy = _PeriodicTableCopy(lang);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -755,7 +961,7 @@ class _ElementDetailSheet extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'Shell ${i + 1}',
+                copy.shell(i + 1),
                 style: const TextStyle(
                   fontSize: AppFontSize.caption,
                   color: AppColors.textMuted,
@@ -774,10 +980,11 @@ class _ElementDetailSheet extends StatelessWidget {
   }
 
   Widget _physicalRow(BuildContext context, ColorScheme cs) {
+    final copy = _PeriodicTableCopy(lang);
     final items = <List<String>>[
-      if (element.meltingPoint != null) ['Melting', element.meltingPoint!],
-      if (element.boilingPoint != null) ['Boiling', element.boilingPoint!],
-      if (element.density != null) ['Density', element.density!],
+      if (element.meltingPoint != null) [copy.melting, element.meltingPoint!],
+      if (element.boilingPoint != null) [copy.boiling, element.boilingPoint!],
+      if (element.density != null) [copy.density, element.density!],
     ];
     return Container(
       padding: const EdgeInsets.all(14),
