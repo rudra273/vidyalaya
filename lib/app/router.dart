@@ -26,6 +26,7 @@ import '../widgets/app_shell.dart';
 import '../screens/explore/explore_screen.dart';
 import '../screens/learn_ai/tutor_mock_screen.dart';
 import '../screens/learn/learn_ai_screen.dart';
+import '../data/math/formulas/formulas.dart' show formulaCategoryByName;
 import '../screens/learn/math_formulas_screen.dart';
 import '../screens/learn/periodic_table_screen.dart';
 import '../screens/learn/timeline_screen.dart';

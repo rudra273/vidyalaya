@@ -91,37 +91,45 @@ Currently 35 formulas (roughly Class 6–7 level). Target: about 75, covering Cl
 Every new formula gets EN/OR/HI title and description, plus a working calculator (a new
 `FormulaType` and calculator branch), matching the existing entries.
 
-- [ ] **3.1 New category "Measurement" (Classes 3–6)**
+- [x] **3.1 New category "Measurement" (Classes 3–6)**
   - Length conversions (km ↔ m ↔ cm ↔ mm), mass (kg ↔ g), capacity (L ↔ mL),
     time (h ↔ min ↔ s), money (₹ ↔ paise), perimeter of a triangle.
-- [ ] **3.2 Arithmetic additions**
+- [x] **3.2 Arithmetic additions**
   - Discount & selling price, marked price after discount, ratio → share (divide ₹N in a:b),
     unitary method, HCF × LCM = product of two numbers, percentage increase and decrease.
-- [ ] **3.3 Algebra additions**
+- [x] **3.3 Algebra additions**
   - Laws of exponents (aᵐ·aⁿ, aᵐ/aⁿ, (aᵐ)ⁿ), (a+b+c)², a³+b³, a³−b³,
     discriminant D = b²−4ac (nature of roots), sum of the first n natural numbers, linear equation ax+b=0.
-- [ ] **3.4 Geometry / mensuration additions**
+- [x] **3.4 Geometry / mensuration additions**
   - Area of a parallelogram, trapezium, rhombus; Heron's formula; sector area;
     surface area of a cube, cuboid and cylinder (curved + total);
     cone (slant height, CSA, volume); sphere (surface area, volume); hemisphere (CSA, TSA, volume);
     angle sum of a polygon.
-- [ ] **3.5 New category "Coordinate Geometry" (Classes 9–10)**
+- [x] **3.5 New category "Coordinate Geometry" (Classes 9–10)**
   - Distance formula, midpoint, section formula, slope, area of a triangle from its vertices.
-- [ ] **3.6 Trigonometry additions**
+- [x] **3.6 Trigonometry additions**
   - Identities: sin²θ+cos²θ=1, 1+tan²θ=sec²θ, 1+cot²θ=cosec²θ; reciprocal ratios;
     a standard-angle table (0°, 30°, 45°, 60°, 90°) as a reference card with no calculator.
-- [ ] **3.7 New category "Statistics & Probability" (Classes 6–10)**
+- [x] **3.7 New category "Statistics & Probability" (Classes 6–10)**
   - Mean of a list of values, median, mode, range, grouped mean (assumed-mean method),
     probability of an event P(E) = favourable / total.
-- [ ] **3.8 Split "Science" into a proper "Physics" category** (keep the temperature conversions)
+- [x] **3.8 Split "Science" into a proper "Physics" category** (keep the temperature conversions)
   - Speed/velocity, acceleration, F = ma, momentum, weight W = mg, density, pressure,
     work, power, kinetic energy, potential energy, Ohm's law V = IR,
     series and parallel resistance, electric power P = VI.
-- [ ] **3.9 Tests** — one test per new calculator type, checking a known answer.
+- [x] **3.9 Tests** — one test per new calculator type, checking a known answer.
 
-> The calculator code is a ~2,200-line single file. Before adding 40 formulas, move the
-> formula data into `lib/data/math/formulas/` (per-category files, the same way vocabulary
-> is split). This is a data-only move that doesn't change behaviour.
+> ✅ Refactor done first: formula data now lives in `lib/data/math/formulas/` (one file per
+> category). Each `FormulaData` carries its own `inputs` and a `compute` function, so one
+> generic calculator replaced the three per-type `switch` blocks. The screen dropped from
+> 2,221 to about 1,080 lines.
+>
+> Notes from implementation:
+> - "Perimeter of triangle" went into Geometry rather than Measurement.
+> - "Mean of a list" (3.7) was folded into Arithmetic → Average, which now takes a list.
+> - New solids (cone, sphere, parallelogram, …) have no drawn figure yet; the painter only
+>   has the original 9 shapes.
+> - 🔸 The Odia and Hindi text for the new formulas needs a native-speaker review.
 
 ---
 

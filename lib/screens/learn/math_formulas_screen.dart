@@ -3,662 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../data/math/formulas/formulas.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../widgets/regional_language_switch.dart';
-
-class FormulaData {
-  final String titleEn;
-  final String titleOr;
-  final String titleHi;
-  final String formula;
-  final FormulaType type;
-  final String category;
-  final String descEn;
-  final String descOr;
-  final String descHi;
-
-  const FormulaData({
-    required this.titleEn,
-    required this.titleOr,
-    required this.titleHi,
-    required this.formula,
-    required this.type,
-    required this.category,
-    required this.descEn,
-    required this.descOr,
-    required this.descHi,
-  });
-
-  /// Title in the chosen app language.
-  String regionalTitle(RegionalLanguage lang) => switch (lang) {
-    RegionalLanguage.english => titleEn,
-    RegionalLanguage.odia => titleOr,
-    RegionalLanguage.hindi => titleHi,
-  };
-
-  /// Description in the chosen app language.
-  String regionalDesc(RegionalLanguage lang) => switch (lang) {
-    RegionalLanguage.english => descEn,
-    RegionalLanguage.odia => descOr,
-    RegionalLanguage.hindi => descHi,
-  };
-
-  /// The geometric figure that illustrates this formula, or `null` for purely
-  /// numeric formulas (interest, quadratic, temperature, speed) where no
-  /// figure is meaningful.
-  FormulaDiagram? get diagram {
-    switch (type) {
-      case FormulaType.circleArea:
-      case FormulaType.circleCircumference:
-        return FormulaDiagram.circle;
-      case FormulaType.pythagoras:
-        return FormulaDiagram.rightTriangle;
-      case FormulaType.cylinderVolume:
-        return FormulaDiagram.cylinder;
-      case FormulaType.rectanglePerimeter:
-      case FormulaType.rectangleArea:
-        return FormulaDiagram.rectangle;
-      case FormulaType.squarePerimeter:
-      case FormulaType.squareArea:
-        return FormulaDiagram.square;
-      case FormulaType.triangleArea:
-        return FormulaDiagram.triangle;
-      case FormulaType.triangleAreaTrig:
-        return FormulaDiagram.triangleTrig;
-      case FormulaType.cubeVolume:
-        return FormulaDiagram.cube;
-      case FormulaType.cuboidVolume:
-        return FormulaDiagram.cuboid;
-      case FormulaType.arcLength:
-        return FormulaDiagram.circle;
-      case FormulaType.simpleInterest:
-      case FormulaType.quadratic:
-      case FormulaType.speedDistanceTime:
-      case FormulaType.fahrenheitToCelsius:
-      case FormulaType.celsiusToFahrenheit:
-      case FormulaType.compoundInterest:
-      case FormulaType.percentage:
-      case FormulaType.average:
-      case FormulaType.profitPercent:
-      case FormulaType.lossPercent:
-      case FormulaType.aPlusBSquared:
-      case FormulaType.aMinusBSquared:
-      case FormulaType.aSquaredMinusBSquared:
-      case FormulaType.aPlusBCubed:
-      case FormulaType.aMinusBCubed:
-      case FormulaType.apNthTerm:
-      case FormulaType.apSum:
-      case FormulaType.sinRatio:
-      case FormulaType.cosRatio:
-      case FormulaType.tanRatio:
-      case FormulaType.lawOfCosines:
-      case FormulaType.lawOfSines:
-        return null;
-    }
-  }
-}
-
-/// Kinds of geometric figures drawn by [FormulaDiagramPainter].
-enum FormulaDiagram {
-  circle,
-  rightTriangle,
-  triangle,
-  triangleTrig,
-  rectangle,
-  square,
-  cube,
-  cuboid,
-  cylinder,
-}
-
-enum FormulaType {
-  simpleInterest,
-  circleArea,
-  circleCircumference,
-  pythagoras,
-  cylinderVolume,
-  quadratic,
-  rectanglePerimeter,
-  rectangleArea,
-  squarePerimeter,
-  squareArea,
-  triangleArea,
-  cubeVolume,
-  cuboidVolume,
-  speedDistanceTime,
-  fahrenheitToCelsius,
-  celsiusToFahrenheit,
-  triangleAreaTrig,
-  // Arithmetic
-  compoundInterest,
-  percentage,
-  average,
-  profitPercent,
-  lossPercent,
-  // Algebra
-  aPlusBSquared,
-  aMinusBSquared,
-  aSquaredMinusBSquared,
-  aPlusBCubed,
-  aMinusBCubed,
-  apNthTerm,
-  apSum,
-  // Trigonometry
-  sinRatio,
-  cosRatio,
-  tanRatio,
-  lawOfCosines,
-  lawOfSines,
-  arcLength,
-}
-
-const _allFormulas = [
-  // Arithmetic
-  FormulaData(
-    titleEn: 'Simple Interest',
-    titleOr: 'ସରଳ ସୁଧ',
-    titleHi: 'साधारण ब्याज',
-    formula: 'SI = (P × R × T) / 100',
-    type: FormulaType.simpleInterest,
-    category: 'Arithmetic',
-    descEn:
-        'Calculates the simple interest earned on a principal sum over a period of time.',
-    descOr: 'ଏକ ନିର୍ଦ୍ଦିଷ୍ଟ ସମୟ ପାଇଁ ମୂଳଧନ ଉପରେ ମିଳୁଥିବା ସରଳ ସୁଧ ହିସାବ କରେ।',
-    descHi:
-        'एक निश्चित अवधि के लिए मूलधन पर अर्जित साधारण ब्याज की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Compound Interest',
-    titleOr: 'ଚକ୍ରବୃଦ୍ଧି ସୁଧ',
-    titleHi: 'चक्रवृद्धि ब्याज',
-    formula: 'A = P(1 + R/100)^T',
-    type: FormulaType.compoundInterest,
-    category: 'Arithmetic',
-    descEn:
-        'Calculates the final amount when interest is compounded annually on a principal.',
-    descOr:
-        'ମୂଳଧନ ଉପରେ ବାର୍ଷିକ ଚକ୍ରବୃଦ୍ଧି ସୁଧ ଲାଗିଲେ ମିଳୁଥିବା ସମୁଦାୟ ରାଶି ହିସାବ କରେ।',
-    descHi:
-        'मूलधन पर वार्षिक चक्रवृद्धि होने पर प्राप्त कुल राशि की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Percentage',
-    titleOr: 'ଶତକଡ଼ା',
-    titleHi: 'प्रतिशत',
-    formula: '% = (Value / Total) × 100',
-    type: FormulaType.percentage,
-    category: 'Arithmetic',
-    descEn: 'Expresses a value as a fraction of a total, out of one hundred.',
-    descOr: 'ଏକ ମୂଲ୍ୟକୁ ସମୁଦାୟର ଅଂଶ ଭାବେ ଶହକୁ ହିସାବ କରି ପ୍ରକାଶ କରେ।',
-    descHi:
-        'किसी मान को कुल का अंश मानते हुए सौ में से प्रतिशत के रूप में दर्शाता है।',
-  ),
-  FormulaData(
-    titleEn: 'Average (Mean)',
-    titleOr: 'ହାରାହାରି',
-    titleHi: 'औसत (माध्य)',
-    formula: 'Mean = Sum / Count',
-    type: FormulaType.average,
-    category: 'Arithmetic',
-    descEn:
-        'Finds the average of a set of numbers by dividing their sum by how many numbers there are.',
-    descOr:
-        'ସଂଖ୍ୟାଗୁଡ଼ିକର ଯୋଗଫଳକୁ ସେଗୁଡ଼ିକର ସଂଖ୍ୟା ଦ୍ୱାରା ଭାଗ କରି ହାରାହାରି ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'संख्याओं के योग को उनकी कुल संख्या से भाग देकर औसत ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Profit Percentage',
-    titleOr: 'ଲାଭ ଶତକଡ଼ା',
-    titleHi: 'लाभ प्रतिशत',
-    formula: 'Profit % = ((SP - CP) / CP) × 100',
-    type: FormulaType.profitPercent,
-    category: 'Arithmetic',
-    descEn:
-        'Calculates the profit percentage from the cost price and selling price.',
-    descOr: 'କ୍ରୟ ମୂଲ୍ୟ ଓ ବିକ୍ରୟ ମୂଲ୍ୟରୁ ଲାଭ ଶତକଡ଼ା ହିସାବ କରେ।',
-    descHi: 'क्रय मूल्य और विक्रय मूल्य से लाभ प्रतिशत की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Loss Percentage',
-    titleOr: 'କ୍ଷତି ଶତକଡ଼ା',
-    titleHi: 'हानि प्रतिशत',
-    formula: 'Loss % = ((CP - SP) / CP) × 100',
-    type: FormulaType.lossPercent,
-    category: 'Arithmetic',
-    descEn:
-        'Calculates the loss percentage from the cost price and selling price.',
-    descOr: 'କ୍ରୟ ମୂଲ୍ୟ ଓ ବିକ୍ରୟ ମୂଲ୍ୟରୁ କ୍ଷତି ଶତକଡ଼ା ହିସାବ କରେ।',
-    descHi: 'क्रय मूल्य और विक्रय मूल्य से हानि प्रतिशत की गणना करता है।',
-  ),
-
-  // Algebra
-  FormulaData(
-    titleEn: 'Quadratic Equation',
-    titleOr: 'ଦ୍ୱିଘାତ ସମୀକରଣ',
-    titleHi: 'द्विघात समीकरण',
-    formula: 'x = (-b ± √(b² - 4ac)) / 2a',
-    type: FormulaType.quadratic,
-    category: 'Algebra',
-    descEn:
-        'Finds the unknown variable x (roots) in a second-degree polynomial equation.',
-    descOr: 'ଏକ ଦ୍ୱିଘାତ ସମୀକରଣରେ ଅଜ୍ଞାତ ରାଶି x ର ମୂଲ୍ୟ (ମୂଳ) ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'एक द्विघात समीकरण में अज्ञात राशि x का मान (मूल) ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Square of Sum',
-    titleOr: 'ଯୋଗର ବର୍ଗ',
-    titleHi: 'योग का वर्ग',
-    formula: '(a + b)² = a² + 2ab + b²',
-    type: FormulaType.aPlusBSquared,
-    category: 'Algebra',
-    descEn: 'Expands the square of the sum of two terms a and b.',
-    descOr: 'ଦୁଇଟି ପଦ a ଓ b ର ଯୋଗର ବର୍ଗକୁ ବିସ୍ତାର କରେ।',
-    descHi: 'दो पदों a और b के योग के वर्ग का प्रसार करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Square of Difference',
-    titleOr: 'ବିୟୋଗର ବର୍ଗ',
-    titleHi: 'अंतर का वर्ग',
-    formula: '(a - b)² = a² - 2ab + b²',
-    type: FormulaType.aMinusBSquared,
-    category: 'Algebra',
-    descEn: 'Expands the square of the difference of two terms a and b.',
-    descOr: 'ଦୁଇଟି ପଦ a ଓ b ର ବିୟୋଗର ବର୍ଗକୁ ବିସ୍ତାର କରେ।',
-    descHi: 'दो पदों a और b के अंतर के वर्ग का प्रसार करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Difference of Squares',
-    titleOr: 'ବର୍ଗର ଅନ୍ତର',
-    titleHi: 'वर्गों का अंतर',
-    formula: 'a² - b² = (a + b)(a - b)',
-    type: FormulaType.aSquaredMinusBSquared,
-    category: 'Algebra',
-    descEn: 'Factorises the difference of the squares of two terms a and b.',
-    descOr: 'ଦୁଇଟି ପଦ a ଓ b ର ବର୍ଗର ଅନ୍ତରକୁ ଗୁଣନୀୟକରେ ବିଭକ୍ତ କରେ।',
-    descHi: 'दो पदों a और b के वर्गों के अंतर का गुणनखंडन करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Cube of Sum',
-    titleOr: 'ଯୋଗର ଘନ',
-    titleHi: 'योग का घन',
-    formula: '(a + b)³ = a³ + 3a²b + 3ab² + b³',
-    type: FormulaType.aPlusBCubed,
-    category: 'Algebra',
-    descEn: 'Expands the cube of the sum of two terms a and b.',
-    descOr: 'ଦୁଇଟି ପଦ a ଓ b ର ଯୋଗର ଘନକୁ ବିସ୍ତାର କରେ।',
-    descHi: 'दो पदों a और b के योग के घन का प्रसार करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Cube of Difference',
-    titleOr: 'ବିୟୋଗର ଘନ',
-    titleHi: 'अंतर का घन',
-    formula: '(a - b)³ = a³ - 3a²b + 3ab² - b³',
-    type: FormulaType.aMinusBCubed,
-    category: 'Algebra',
-    descEn: 'Expands the cube of the difference of two terms a and b.',
-    descOr: 'ଦୁଇଟି ପଦ a ଓ b ର ବିୟୋଗର ଘନକୁ ବିସ୍ତାର କରେ।',
-    descHi: 'दो पदों a और b के अंतर के घन का प्रसार करता है।',
-  ),
-  FormulaData(
-    titleEn: 'nth Term of an AP',
-    titleOr: 'ସମାନ୍ତର ଶ୍ରେଣୀର nth ପଦ',
-    titleHi: 'समांतर श्रेणी का nवाँ पद',
-    formula: 'aₙ = a + (n - 1)d',
-    type: FormulaType.apNthTerm,
-    category: 'Algebra',
-    descEn:
-        'Finds the nth term of an arithmetic progression with first term a and common difference d.',
-    descOr:
-        'ପ୍ରଥମ ପଦ a ଓ ସାଧାରଣ ଅନ୍ତର d ବିଶିଷ୍ଟ ସମାନ୍ତର ଶ୍ରେଣୀର nth ପଦ ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi:
-        'प्रथम पद a और सार्व अंतर d वाली समांतर श्रेणी का nवाँ पद ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Sum of an AP',
-    titleOr: 'ସମାନ୍ତର ଶ୍ରେଣୀର ଯୋଗ',
-    titleHi: 'समांतर श्रेणी का योग',
-    formula: 'Sₙ = n/2 × [2a + (n - 1)d]',
-    type: FormulaType.apSum,
-    category: 'Algebra',
-    descEn: 'Finds the sum of the first n terms of an arithmetic progression.',
-    descOr: 'ସମାନ୍ତର ଶ୍ରେଣୀର ପ୍ରଥମ n ପଦର ଯୋଗଫଳ ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'समांतर श्रेणी के प्रथम n पदों के योग की गणना करता है।',
-  ),
-
-  // Geometry
-  FormulaData(
-    titleEn: 'Area of a Circle',
-    titleOr: 'ବୃତ୍ତର କ୍ଷେତ୍ରଫଳ',
-    titleHi: 'वृत्त का क्षेत्रफल',
-    formula: 'A = πr²',
-    type: FormulaType.circleArea,
-    category: 'Geometry',
-    descEn: 'Calculates the total 2D space enclosed within a circle.',
-    descOr: 'ଏକ ବୃତ୍ତ ମଧ୍ୟରେ ଥିବା ସମୁଦାୟ ସ୍ଥାନ ବା କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi: 'एक वृत्त के भीतर घिरे कुल द्वि-आयामी क्षेत्रफल की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Circumference of Circle',
-    titleOr: 'ବୃତ୍ତର ପରିଧି',
-    titleHi: 'वृत्त की परिधि',
-    formula: 'C = 2πr',
-    type: FormulaType.circleCircumference,
-    category: 'Geometry',
-    descEn: 'Calculates the total length of the outer boundary of a circle.',
-    descOr: 'ଏକ ବୃତ୍ତର ଚାରିପାଖର ସମୁଦାୟ ଦୈର୍ଘ୍ୟ ବା ପରିଧି ହିସାବ କରେ।',
-    descHi: 'एक वृत्त की बाहरी सीमा की कुल लंबाई या परिधि की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Pythagorean Theorem',
-    titleOr: 'ପିଥାଗୋରାସ୍ ଉପପାଦ୍ୟ',
-    titleHi: 'पाइथागोरस प्रमेय',
-    formula: 'c = √(a² + b²)',
-    type: FormulaType.pythagoras,
-    category: 'Geometry',
-    descEn: 'Finds the longest side (hypotenuse) of a right-angled triangle.',
-    descOr: 'ଏକ ସମକୋଣୀ ତ୍ରିଭୁଜର ସବୁଠାରୁ ବଡ଼ ବାହୁ (କର୍ଣ୍ଣ) ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi: 'एक समकोण त्रिभुज की सबसे लंबी भुजा (कर्ण) ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Volume of a Cylinder',
-    titleOr: 'ସିଲିଣ୍ଡରର ଆୟତନ',
-    titleHi: 'बेलन का आयतन',
-    formula: 'V = πr²h',
-    type: FormulaType.cylinderVolume,
-    category: 'Geometry',
-    descEn: 'Calculates the total 3D space occupied by a cylinder.',
-    descOr: 'ଏକ ସିଲିଣ୍ଡର ଦ୍ୱାରା ଅଧିକାର କରାଯାଇଥିବା ସମୁଦାୟ ଆୟତନ ହିସାବ କରେ।',
-    descHi: 'एक बेलन द्वारा घेरे गए कुल त्रि-आयामी आयतन की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Perimeter of Rectangle',
-    titleOr: 'ଆୟତକ୍ଷେତ୍ରର ପରିସୀମା',
-    titleHi: 'आयत की परिमिति',
-    formula: 'P = 2(l + w)',
-    type: FormulaType.rectanglePerimeter,
-    category: 'Geometry',
-    descEn: 'Calculates the total length of the outer boundary of a rectangle.',
-    descOr: 'ଏକ ଆୟତକ୍ଷେତ୍ରର ଚାରିପାଖର ସମୁଦାୟ ଦୈର୍ଘ୍ୟ ବା ପରିସୀମା ହିସାବ କରେ।',
-    descHi: 'एक आयत की बाहरी सीमा की कुल लंबाई या परिमिति की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Area of Rectangle',
-    titleOr: 'ଆୟତକ୍ଷେତ୍ରର କ୍ଷେତ୍ରଫଳ',
-    titleHi: 'आयत का क्षेत्रफल',
-    formula: 'A = l × w',
-    type: FormulaType.rectangleArea,
-    category: 'Geometry',
-    descEn: 'Calculates the 2D surface area of a rectangle.',
-    descOr: 'ଏକ ଆୟତକ୍ଷେତ୍ରର ପୃଷ୍ଠତଳର ସମୁଦାୟ କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi: 'एक आयत के द्वि-आयामी पृष्ठीय क्षेत्रफल की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Perimeter of Square',
-    titleOr: 'ବର୍ଗକ୍ଷେତ୍ରର ପରିସୀମା',
-    titleHi: 'वर्ग की परिमिति',
-    formula: 'P = 4a',
-    type: FormulaType.squarePerimeter,
-    category: 'Geometry',
-    descEn: 'Calculates the total boundary length of a square.',
-    descOr: 'ଏକ ବର୍ଗକ୍ଷେତ୍ରର ଚାରିପାଖର ସମୁଦାୟ ଦୈର୍ଘ୍ୟ ହିସାବ କରେ।',
-    descHi: 'एक वर्ग की कुल सीमा लंबाई की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Area of Square',
-    titleOr: 'ବର୍ଗକ୍ଷେତ୍ରର କ୍ଷେତ୍ରଫଳ',
-    titleHi: 'वर्ग का क्षेत्रफल',
-    formula: 'A = a²',
-    type: FormulaType.squareArea,
-    category: 'Geometry',
-    descEn: 'Calculates the surface area enclosed by a square.',
-    descOr: 'ଏକ ବର୍ଗକ୍ଷେତ୍ର ମଧ୍ୟରେ ଥିବା ସମୁଦାୟ କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi: 'एक वर्ग के भीतर घिरे क्षेत्रफल की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Area of Triangle',
-    titleOr: 'ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ',
-    titleHi: 'त्रिभुज का क्षेत्रफल',
-    formula: 'A = ½ × b × h',
-    type: FormulaType.triangleArea,
-    category: 'Geometry',
-    descEn:
-        'Calculates the space enclosed by a triangle using its base and height.',
-    descOr: 'ଭୂମି ଏବଂ ଉଚ୍ଚତା ବ୍ୟବହାର କରି ଏକ ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi:
-        'आधार और ऊँचाई का उपयोग करके एक त्रिभुज के क्षेत्रफल की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Volume of Cube',
-    titleOr: 'ଘନର ଆୟତନ',
-    titleHi: 'घन का आयतन',
-    formula: 'V = a³',
-    type: FormulaType.cubeVolume,
-    category: 'Geometry',
-    descEn: 'Calculates the total 3D space occupied by a cube.',
-    descOr: 'ଏକ ଘନ (Cube) ର ସମୁଦାୟ ଆୟତନ ହିସାବ କରେ।',
-    descHi: 'एक घन (Cube) द्वारा घेरे गए कुल आयतन की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Volume of Cuboid',
-    titleOr: 'ଆୟତଘନର ଆୟତନ',
-    titleHi: 'घनाभ का आयतन',
-    formula: 'V = l × w × h',
-    type: FormulaType.cuboidVolume,
-    category: 'Geometry',
-    descEn: 'Calculates the 3D space enclosed by a rectangular cuboid.',
-    descOr: 'ଏକ ଆୟତଘନ (Cuboid) ର ସମୁଦାୟ ଆୟତନ ହିସାବ କରେ।',
-    descHi: 'एक घनाभ (Cuboid) द्वारा घेरे गए कुल आयतन की गणना करता है।',
-  ),
-
-  // Trigonometry
-  FormulaData(
-    titleEn: 'Area of Triangle (Trig)',
-    titleOr: 'ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ',
-    titleHi: 'त्रिभुज का क्षेत्रफल (त्रिकोणमिति)',
-    formula: 'A = ½ ab sin(C)',
-    type: FormulaType.triangleAreaTrig,
-    category: 'Trigonometry',
-    descEn:
-        'Calculates the area of a triangle using two sides and the included angle.',
-    descOr:
-        'ଦୁଇଟି ବାହୁ ଏବଂ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣ ବ୍ୟବହାର କରି ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ହିସାବ କରେ।',
-    descHi:
-        'दो भुजाओं और उनके बीच के कोण का उपयोग करके त्रिभुज के क्षेत्रफल की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Sine Ratio',
-    titleOr: 'ସାଇନ୍ ଅନୁପାତ',
-    titleHi: 'ज्या (sin) अनुपात',
-    formula: 'sin(θ) = Opposite / Hypotenuse',
-    type: FormulaType.sinRatio,
-    category: 'Trigonometry',
-    descEn:
-        'Calculates the sine of an angle, the ratio of the opposite side to the hypotenuse.',
-    descOr: 'ଏକ କୋଣର ସାଇନ୍, ଅର୍ଥାତ୍ ସମ୍ମୁଖ ବାହୁ ଓ କର୍ଣ୍ଣର ଅନୁପାତ ହିସାବ କରେ।',
-    descHi:
-        'किसी कोण की ज्या, अर्थात् सम्मुख भुजा और कर्ण का अनुपात ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Cosine Ratio',
-    titleOr: 'କୋସାଇନ୍ ଅନୁପାତ',
-    titleHi: 'कोज्या (cos) अनुपात',
-    formula: 'cos(θ) = Adjacent / Hypotenuse',
-    type: FormulaType.cosRatio,
-    category: 'Trigonometry',
-    descEn:
-        'Calculates the cosine of an angle, the ratio of the adjacent side to the hypotenuse.',
-    descOr: 'ଏକ କୋଣର କୋସାଇନ୍, ଅର୍ଥାତ୍ ସଂଲଗ୍ନ ବାହୁ ଓ କର୍ଣ୍ଣର ଅନୁପାତ ହିସାବ କରେ।',
-    descHi:
-        'किसी कोण की कोज्या, अर्थात् आसन्न भुजा और कर्ण का अनुपात ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Tangent Ratio',
-    titleOr: 'ଟାଞ୍ଜେଣ୍ଟ ଅନୁପାତ',
-    titleHi: 'स्पर्शज्या (tan) अनुपात',
-    formula: 'tan(θ) = Opposite / Adjacent',
-    type: FormulaType.tanRatio,
-    category: 'Trigonometry',
-    descEn:
-        'Calculates the tangent of an angle, the ratio of the opposite side to the adjacent side.',
-    descOr:
-        'ଏକ କୋଣର ଟାଞ୍ଜେଣ୍ଟ, ଅର୍ଥାତ୍ ସମ୍ମୁଖ ବାହୁ ଓ ସଂଲଗ୍ନ ବାହୁର ଅନୁପାତ ହିସାବ କରେ।',
-    descHi:
-        'किसी कोण की स्पर्शज्या, अर्थात् सम्मुख भुजा और आसन्न भुजा का अनुपात ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Law of Cosines',
-    titleOr: 'କୋସାଇନ୍ ନିୟମ',
-    titleHi: 'कोसाइन नियम',
-    formula: 'c = √(a² + b² - 2ab·cos C)',
-    type: FormulaType.lawOfCosines,
-    category: 'Trigonometry',
-    descEn:
-        'Finds the third side of a triangle from two sides and the included angle.',
-    descOr:
-        'ଦୁଇଟି ବାହୁ ଓ ସେମାନଙ୍କ ମଧ୍ୟବର୍ତ୍ତୀ କୋଣରୁ ତ୍ରିଭୁଜର ତୃତୀୟ ବାହୁ ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi:
-        'दो भुजाओं और उनके बीच के कोण से त्रिभुज की तीसरी भुजा ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Law of Sines',
-    titleOr: 'ସାଇନ୍ ନିୟମ',
-    titleHi: 'साइन नियम',
-    formula: 'a / sin A = b / sin B',
-    type: FormulaType.lawOfSines,
-    category: 'Trigonometry',
-    descEn:
-        'Finds an unknown side b using a known side a and its opposite angles A and B.',
-    descOr:
-        'ଜଣା ବାହୁ a ଏବଂ ତାହାର ସମ୍ମୁଖ କୋଣ A ଓ B ବ୍ୟବହାର କରି ଅଜ୍ଞାତ ବାହୁ b ନିର୍ଣ୍ଣୟ କରେ।',
-    descHi:
-        'ज्ञात भुजा a और उसके सम्मुख कोणों A तथा B का उपयोग कर अज्ञात भुजा b ज्ञात करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Arc Length',
-    titleOr: 'ଚାପର ଦୈର୍ଘ୍ୟ',
-    titleHi: 'चाप की लंबाई',
-    formula: 'L = (θ / 360) × 2πr',
-    type: FormulaType.arcLength,
-    category: 'Trigonometry',
-    descEn:
-        'Calculates the length of an arc subtending an angle θ (in degrees) at the centre.',
-    descOr: 'କେନ୍ଦ୍ରରେ θ (ଡିଗ୍ରୀ) କୋଣ ସୃଷ୍ଟି କରୁଥିବା ଚାପର ଦୈର୍ଘ୍ୟ ହିସାବ କରେ।',
-    descHi: 'केंद्र पर θ (डिग्री) कोण बनाने वाले चाप की लंबाई की गणना करता है।',
-  ),
-
-  // Science
-  FormulaData(
-    titleEn: 'Speed, Distance, Time',
-    titleOr: 'ବେଗ, ଦୂରତା, ସମୟ',
-    titleHi: 'चाल, दूरी, समय',
-    formula: 's = d / t',
-    type: FormulaType.speedDistanceTime,
-    category: 'Science',
-    descEn:
-        'Calculates the speed of an object based on distance traveled over time.',
-    descOr: 'ଦୂରତା ଏବଂ ସମୟ ଉପରେ ଭିତ୍ତି କରି ଏକ ବସ୍ତୁର ବେଗ ହିସାବ କରେ।',
-    descHi: 'दूरी और समय के आधार पर किसी वस्तु की चाल की गणना करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Fahrenheit to Celsius',
-    titleOr: 'ଫାରେନହାଇଟରୁ ସେଲସିୟସ',
-    titleHi: 'फारेनहाइट से सेल्सियस',
-    formula: 'C = (F - 32) × 5/9',
-    type: FormulaType.fahrenheitToCelsius,
-    category: 'Science',
-    descEn:
-        'Converts temperature from the Fahrenheit scale to the Celsius scale.',
-    descOr: 'ତାପମାତ୍ରାକୁ ଫାରେନହାଇଟ୍ ରୁ ସେଲସିୟସ୍ ସ୍କେଲ୍ କୁ ପରିବର୍ତ୍ତନ କରେ।',
-    descHi:
-        'तापमान को फारेनहाइट पैमाने से सेल्सियस पैमाने में परिवर्तित करता है।',
-  ),
-  FormulaData(
-    titleEn: 'Celsius to Fahrenheit',
-    titleOr: 'ସେଲସିୟସରୁ ଫାରେନହାଇଟ',
-    titleHi: 'सेल्सियस से फारेनहाइट',
-    formula: 'F = (C × 9/5) + 32',
-    type: FormulaType.celsiusToFahrenheit,
-    category: 'Science',
-    descEn:
-        'Converts temperature from the Celsius scale to the Fahrenheit scale.',
-    descOr: 'ତାପମାତ୍ରାକୁ ସେଲସିୟସ୍ ରୁ ଫାରେନହାଇଟ୍ ସ୍କେଲ୍ କୁ ପରିବର୍ତ୍ତନ କରେ।',
-    descHi:
-        'तापमान को सेल्सियस पैमाने से फारेनहाइट पैमाने में परिवर्तित करता है।',
-  ),
-];
-
-/// A formula category shown as a card on the grid. The [name] matches the
-/// [FormulaData.category] string used to group the formulas.
-class FormulaCategory {
-  final String name;
-  final String titleOr;
-  final String titleHi;
-  final IconData icon;
-  final Color color;
-
-  const FormulaCategory({
-    required this.name,
-    required this.titleOr,
-    required this.titleHi,
-    required this.icon,
-    required this.color,
-  });
-
-  String regionalTitle(RegionalLanguage lang) => switch (lang) {
-    RegionalLanguage.english => name,
-    RegionalLanguage.odia => titleOr,
-    RegionalLanguage.hindi => titleHi,
-  };
-
-  /// Formulas belonging to this category.
-  List<FormulaData> get formulas =>
-      _allFormulas.where((f) => f.category == name).toList();
-}
-
-const _formulaCategories = [
-  FormulaCategory(
-    name: 'Arithmetic',
-    titleOr: 'ଗଣିତ',
-    titleHi: 'अंकगणित',
-    icon: Icons.calculate_rounded,
-    color: Color(0xFF3B82F6), // blue
-  ),
-  FormulaCategory(
-    name: 'Algebra',
-    titleOr: 'ବୀଜଗଣିତ',
-    titleHi: 'बीजगणित',
-    icon: Icons.functions_rounded,
-    color: Color(0xFF8B5CF6), // purple
-  ),
-  FormulaCategory(
-    name: 'Geometry',
-    titleOr: 'ଜ୍ୟାମିତି',
-    titleHi: 'ज्यामिति',
-    icon: Icons.category_rounded,
-    color: Color(0xFFF59E0B), // amber
-  ),
-  FormulaCategory(
-    name: 'Trigonometry',
-    titleOr: 'ତ୍ରିକୋଣମିତି',
-    titleHi: 'त्रिकोणमिति',
-    icon: Icons.change_history_rounded,
-    color: Color(0xFFEF4444), // red
-  ),
-  FormulaCategory(
-    name: 'Science',
-    titleOr: 'ବିଜ୍ଞାନ',
-    titleHi: 'विज्ञान',
-    icon: Icons.science_rounded,
-    color: Color(0xFF10B981), // green
-  ),
-];
-
-FormulaCategory? formulaCategoryByName(String name) {
-  for (final c in _formulaCategories) {
-    if (c.name == name) return c;
-  }
-  return null;
-}
 
 class MathFormulasScreen extends ConsumerStatefulWidget {
   const MathFormulasScreen({super.key});
@@ -685,7 +32,7 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
     super.dispose();
   }
 
-  List<FormulaData> get _matches => _allFormulas.where((f) {
+  List<FormulaData> get _matches => allFormulas.where((f) {
     return f.titleEn.toLowerCase().contains(_query) ||
         f.titleOr.contains(_query) ||
         f.titleHi.contains(_query) ||
@@ -764,22 +111,29 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return GridView.count(
+    return GridView.builder(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
         8,
         AppSpacing.screenPadding,
         16,
       ),
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.05,
-      children: _formulaCategories.map((category) {
+      // A fixed height (rather than an aspect ratio) leaves room for a
+      // two-line name such as "Statistics & Probability" on narrow phones.
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        mainAxisExtent: 178,
+      ),
+      itemCount: formulaCategories.length,
+      itemBuilder: (context, index) {
+        final category = formulaCategories[index];
         final count = category.formulas.length;
         return GestureDetector(
-          onTap: () =>
-              context.push('/learn/math-formulas/category/${category.name}'),
+          onTap: () => context.push(
+            '/learn/math-formulas/category/${Uri.encodeComponent(category.name)}',
+          ),
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? cs.surface : Colors.white,
@@ -813,12 +167,17 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
                   children: [
                     Text(
                       category.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: AppFontWeight.bold,
+                        height: 1.15,
                       ),
                     ),
                     Text(
                       category.regionalTitle(lang),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textMuted,
                         fontWeight: AppFontWeight.semibold,
@@ -837,7 +196,7 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 }
@@ -1067,508 +426,18 @@ class _CalculatorPageState extends State<_CalculatorPage> {
   }
 
   void _setupControllers() {
-    List<String> keys = [];
-    switch (widget.formulaData.type) {
-      case FormulaType.simpleInterest:
-        keys = ['P', 'R', 'T'];
-        break;
-      case FormulaType.circleArea:
-        keys = ['r'];
-        break;
-      case FormulaType.circleCircumference:
-        keys = ['r'];
-        break;
-      case FormulaType.pythagoras:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.cylinderVolume:
-        keys = ['r', 'h'];
-        break;
-      case FormulaType.quadratic:
-        keys = ['a', 'b', 'c'];
-        break;
-      case FormulaType.rectanglePerimeter:
-        keys = ['l', 'w'];
-        break;
-      case FormulaType.rectangleArea:
-        keys = ['l', 'w'];
-        break;
-      case FormulaType.squarePerimeter:
-        keys = ['a'];
-        break;
-      case FormulaType.squareArea:
-        keys = ['a'];
-        break;
-      case FormulaType.triangleArea:
-        keys = ['b', 'h'];
-        break;
-      case FormulaType.cubeVolume:
-        keys = ['a'];
-        break;
-      case FormulaType.cuboidVolume:
-        keys = ['l', 'w', 'h'];
-        break;
-      case FormulaType.speedDistanceTime:
-        keys = ['d', 't'];
-        break;
-      case FormulaType.fahrenheitToCelsius:
-        keys = ['F'];
-        break;
-      case FormulaType.celsiusToFahrenheit:
-        keys = ['C'];
-        break;
-      case FormulaType.triangleAreaTrig:
-        keys = ['a', 'b', 'C (deg)'];
-        break;
-      case FormulaType.compoundInterest:
-        keys = ['P', 'R', 'T'];
-        break;
-      case FormulaType.percentage:
-        keys = ['Value', 'Total'];
-        break;
-      case FormulaType.average:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.profitPercent:
-        keys = ['CP', 'SP'];
-        break;
-      case FormulaType.lossPercent:
-        keys = ['CP', 'SP'];
-        break;
-      case FormulaType.aPlusBSquared:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.aMinusBSquared:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.aSquaredMinusBSquared:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.aPlusBCubed:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.aMinusBCubed:
-        keys = ['a', 'b'];
-        break;
-      case FormulaType.apNthTerm:
-        keys = ['a', 'd', 'n'];
-        break;
-      case FormulaType.apSum:
-        keys = ['a', 'd', 'n'];
-        break;
-      case FormulaType.sinRatio:
-        keys = ['θ (deg)'];
-        break;
-      case FormulaType.cosRatio:
-        keys = ['θ (deg)'];
-        break;
-      case FormulaType.tanRatio:
-        keys = ['θ (deg)'];
-        break;
-      case FormulaType.lawOfCosines:
-        keys = ['a', 'b', 'C (deg)'];
-        break;
-      case FormulaType.lawOfSines:
-        keys = ['a', 'A (deg)', 'B (deg)'];
-        break;
-      case FormulaType.arcLength:
-        keys = ['r', 'θ (deg)'];
-        break;
-    }
-    for (var key in keys) {
-      _controllers[key] = TextEditingController();
-      _controllers[key]!.addListener(_calculate);
+    for (final input in widget.formulaData.inputs) {
+      _controllers[input.key] = TextEditingController()
+        ..addListener(_calculate);
     }
   }
 
   void _calculate() {
     setState(() {
-      _result = null;
-      try {
-        switch (widget.formulaData.type) {
-          case FormulaType.simpleInterest:
-            final p = double.tryParse(_controllers['P']!.text);
-            final r = double.tryParse(_controllers['R']!.text);
-            final t = double.tryParse(_controllers['T']!.text);
-            if (p != null && r != null && t != null) {
-              _result = 'SI = ${((p * r * t) / 100).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.circleArea:
-            final r = double.tryParse(_controllers['r']!.text);
-            if (r != null) _result = 'A = ${(pi * r * r).toStringAsFixed(4)}';
-            break;
-          case FormulaType.circleCircumference:
-            final r = double.tryParse(_controllers['r']!.text);
-            if (r != null) _result = 'C = ${(2 * pi * r).toStringAsFixed(4)}';
-            break;
-          case FormulaType.pythagoras:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = 'c = ${sqrt((a * a) + (b * b)).toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.cylinderVolume:
-            final r = double.tryParse(_controllers['r']!.text);
-            final h = double.tryParse(_controllers['h']!.text);
-            if (r != null && h != null) {
-              _result = 'V = ${(pi * r * r * h).toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.quadratic:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            final c = double.tryParse(_controllers['c']!.text);
-            if (a != null && b != null && c != null) {
-              if (a == 0) {
-                _result = 'Not a quadratic (a cannot be 0)';
-                return;
-              }
-              final d = (b * b) - (4 * a * c);
-              if (d > 0) {
-                final r1 = (-b + sqrt(d)) / (2 * a);
-                final r2 = (-b - sqrt(d)) / (2 * a);
-                _result =
-                    'x = ${r1.toStringAsFixed(4)} or x = ${r2.toStringAsFixed(4)}';
-              } else if (d == 0) {
-                _result = 'x = ${(-b / (2 * a)).toStringAsFixed(4)}';
-              } else {
-                final real = -b / (2 * a);
-                final imag = sqrt(-d) / (2 * a);
-                _result =
-                    'x = ${real.toStringAsFixed(4)} ± ${imag.toStringAsFixed(4)}i';
-              }
-            }
-            break;
-          case FormulaType.rectanglePerimeter:
-            final l = double.tryParse(_controllers['l']!.text);
-            final w = double.tryParse(_controllers['w']!.text);
-            if (l != null && w != null) {
-              _result = 'P = ${(2 * (l + w)).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.rectangleArea:
-            final l = double.tryParse(_controllers['l']!.text);
-            final w = double.tryParse(_controllers['w']!.text);
-            if (l != null && w != null) {
-              _result = 'A = ${(l * w).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.squarePerimeter:
-            final a = double.tryParse(_controllers['a']!.text);
-            if (a != null) _result = 'P = ${(4 * a).toStringAsFixed(2)}';
-            break;
-          case FormulaType.squareArea:
-            final a = double.tryParse(_controllers['a']!.text);
-            if (a != null) _result = 'A = ${(a * a).toStringAsFixed(2)}';
-            break;
-          case FormulaType.triangleArea:
-            final b = double.tryParse(_controllers['b']!.text);
-            final h = double.tryParse(_controllers['h']!.text);
-            if (b != null && h != null) {
-              _result = 'A = ${(0.5 * b * h).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.cubeVolume:
-            final a = double.tryParse(_controllers['a']!.text);
-            if (a != null) _result = 'V = ${(a * a * a).toStringAsFixed(2)}';
-            break;
-          case FormulaType.cuboidVolume:
-            final l = double.tryParse(_controllers['l']!.text);
-            final w = double.tryParse(_controllers['w']!.text);
-            final h = double.tryParse(_controllers['h']!.text);
-            if (l != null && w != null && h != null) {
-              _result = 'V = ${(l * w * h).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.speedDistanceTime:
-            final d = double.tryParse(_controllers['d']!.text);
-            final t = double.tryParse(_controllers['t']!.text);
-            if (d != null && t != null && t != 0) {
-              _result = 's = ${(d / t).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.fahrenheitToCelsius:
-            final f = double.tryParse(_controllers['F']!.text);
-            if (f != null) {
-              _result = 'C = ${((f - 32) * 5 / 9).toStringAsFixed(2)}°C';
-            }
-            break;
-          case FormulaType.celsiusToFahrenheit:
-            final c = double.tryParse(_controllers['C']!.text);
-            if (c != null) {
-              _result = 'F = ${((c * 9 / 5) + 32).toStringAsFixed(2)}°F';
-            }
-            break;
-          case FormulaType.triangleAreaTrig:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            final angleDeg = double.tryParse(_controllers['C (deg)']!.text);
-            if (a != null && b != null && angleDeg != null) {
-              final angleRad = angleDeg * pi / 180;
-              _result =
-                  'A = ${(0.5 * a * b * sin(angleRad)).toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.compoundInterest:
-            final p = double.tryParse(_controllers['P']!.text);
-            final r = double.tryParse(_controllers['R']!.text);
-            final t = double.tryParse(_controllers['T']!.text);
-            if (p != null && r != null && t != null) {
-              final amount = p * pow(1 + r / 100, t);
-              _result =
-                  'A = ${amount.toStringAsFixed(2)}, CI = ${(amount - p).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.percentage:
-            final value = double.tryParse(_controllers['Value']!.text);
-            final total = double.tryParse(_controllers['Total']!.text);
-            if (value != null && total != null && total != 0) {
-              _result = '${(value / total * 100).toStringAsFixed(2)}%';
-            }
-            break;
-          case FormulaType.average:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = 'Mean = ${((a + b) / 2).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.profitPercent:
-            final cp = double.tryParse(_controllers['CP']!.text);
-            final sp = double.tryParse(_controllers['SP']!.text);
-            if (cp != null && sp != null && cp != 0) {
-              _result =
-                  'Profit % = ${((sp - cp) / cp * 100).toStringAsFixed(2)}%';
-            }
-            break;
-          case FormulaType.lossPercent:
-            final cp = double.tryParse(_controllers['CP']!.text);
-            final sp = double.tryParse(_controllers['SP']!.text);
-            if (cp != null && sp != null && cp != 0) {
-              _result =
-                  'Loss % = ${((cp - sp) / cp * 100).toStringAsFixed(2)}%';
-            }
-            break;
-          case FormulaType.aPlusBSquared:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = '(a + b)² = ${((a + b) * (a + b)).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.aMinusBSquared:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = '(a - b)² = ${((a - b) * (a - b)).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.aSquaredMinusBSquared:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = 'a² - b² = ${(a * a - b * b).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.aPlusBCubed:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = '(a + b)³ = ${pow(a + b, 3).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.aMinusBCubed:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            if (a != null && b != null) {
-              _result = '(a - b)³ = ${pow(a - b, 3).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.apNthTerm:
-            final a = double.tryParse(_controllers['a']!.text);
-            final d = double.tryParse(_controllers['d']!.text);
-            final n = double.tryParse(_controllers['n']!.text);
-            if (a != null && d != null && n != null) {
-              _result = 'aₙ = ${(a + (n - 1) * d).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.apSum:
-            final a = double.tryParse(_controllers['a']!.text);
-            final d = double.tryParse(_controllers['d']!.text);
-            final n = double.tryParse(_controllers['n']!.text);
-            if (a != null && d != null && n != null) {
-              _result =
-                  'Sₙ = ${(n / 2 * (2 * a + (n - 1) * d)).toStringAsFixed(2)}';
-            }
-            break;
-          case FormulaType.sinRatio:
-            final deg = double.tryParse(_controllers['θ (deg)']!.text);
-            if (deg != null) {
-              _result = 'sin(θ) = ${sin(deg * pi / 180).toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.cosRatio:
-            final deg = double.tryParse(_controllers['θ (deg)']!.text);
-            if (deg != null) {
-              _result = 'cos(θ) = ${cos(deg * pi / 180).toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.tanRatio:
-            final deg = double.tryParse(_controllers['θ (deg)']!.text);
-            if (deg != null) {
-              _result = 'tan(θ) = ${tan(deg * pi / 180).toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.lawOfCosines:
-            final a = double.tryParse(_controllers['a']!.text);
-            final b = double.tryParse(_controllers['b']!.text);
-            final angleDeg = double.tryParse(_controllers['C (deg)']!.text);
-            if (a != null && b != null && angleDeg != null) {
-              final c = sqrt(
-                a * a + b * b - 2 * a * b * cos(angleDeg * pi / 180),
-              );
-              _result = 'c = ${c.toStringAsFixed(4)}';
-            }
-            break;
-          case FormulaType.lawOfSines:
-            final a = double.tryParse(_controllers['a']!.text);
-            final angleA = double.tryParse(_controllers['A (deg)']!.text);
-            final angleB = double.tryParse(_controllers['B (deg)']!.text);
-            if (a != null && angleA != null && angleB != null) {
-              final sinA = sin(angleA * pi / 180);
-              if (sinA != 0) {
-                final b = a * sin(angleB * pi / 180) / sinA;
-                _result = 'b = ${b.toStringAsFixed(4)}';
-              }
-            }
-            break;
-          case FormulaType.arcLength:
-            final r = double.tryParse(_controllers['r']!.text);
-            final deg = double.tryParse(_controllers['θ (deg)']!.text);
-            if (r != null && deg != null) {
-              _result = 'L = ${(deg / 360 * 2 * pi * r).toStringAsFixed(4)}';
-            }
-            break;
-        }
-      } catch (e) {
-        _result = 'Error in calculation';
-      }
+      _result = widget.formulaData.calculate({
+        for (final e in _controllers.entries) e.key: e.value.text,
+      });
     });
-  }
-
-  String _getHint(String key) {
-    switch (widget.formulaData.type) {
-      case FormulaType.simpleInterest:
-        if (key == 'P') return 'Principal (e.g. 1000)';
-        if (key == 'R') return 'Rate % (e.g. 5)';
-        if (key == 'T') return 'Time in years (e.g. 2)';
-        break;
-      case FormulaType.circleArea:
-      case FormulaType.circleCircumference:
-        if (key == 'r') return 'Radius (e.g. 5)';
-        break;
-      case FormulaType.pythagoras:
-        if (key == 'a') return 'Side a (e.g. 3)';
-        if (key == 'b') return 'Side b (e.g. 4)';
-        break;
-      case FormulaType.cylinderVolume:
-        if (key == 'r') return 'Radius (e.g. 3)';
-        if (key == 'h') return 'Height (e.g. 10)';
-        break;
-      case FormulaType.quadratic:
-        if (key == 'a') return 'Coefficient a';
-        if (key == 'b') return 'Coefficient b';
-        if (key == 'c') return 'Constant c';
-        break;
-      case FormulaType.rectanglePerimeter:
-      case FormulaType.rectangleArea:
-        if (key == 'l') return 'Length (e.g. 5)';
-        if (key == 'w') return 'Width (e.g. 3)';
-        break;
-      case FormulaType.squarePerimeter:
-      case FormulaType.squareArea:
-      case FormulaType.cubeVolume:
-        if (key == 'a') return 'Side length (e.g. 4)';
-        break;
-      case FormulaType.triangleArea:
-        if (key == 'b') return 'Base (e.g. 10)';
-        if (key == 'h') return 'Height (e.g. 5)';
-        break;
-      case FormulaType.cuboidVolume:
-        if (key == 'l') return 'Length (e.g. 5)';
-        if (key == 'w') return 'Width (e.g. 3)';
-        if (key == 'h') return 'Height (e.g. 2)';
-        break;
-      case FormulaType.speedDistanceTime:
-        if (key == 'd') return 'Distance (e.g. 100)';
-        if (key == 't') return 'Time (e.g. 2)';
-        break;
-      case FormulaType.fahrenheitToCelsius:
-        if (key == 'F') return 'Fahrenheit (e.g. 98.6)';
-        break;
-      case FormulaType.celsiusToFahrenheit:
-        if (key == 'C') return 'Celsius (e.g. 37)';
-        break;
-      case FormulaType.triangleAreaTrig:
-        if (key == 'a') return 'Side a (e.g. 10)';
-        if (key == 'b') return 'Side b (e.g. 12)';
-        if (key == 'C (deg)') return 'Included Angle (e.g. 30)';
-        break;
-      case FormulaType.compoundInterest:
-        if (key == 'P') return 'Principal (e.g. 1000)';
-        if (key == 'R') return 'Rate % (e.g. 5)';
-        if (key == 'T') return 'Time in years (e.g. 2)';
-        break;
-      case FormulaType.percentage:
-        if (key == 'Value') return 'Part value (e.g. 25)';
-        if (key == 'Total') return 'Total value (e.g. 200)';
-        break;
-      case FormulaType.average:
-        if (key == 'a') return 'First number (e.g. 10)';
-        if (key == 'b') return 'Second number (e.g. 20)';
-        break;
-      case FormulaType.profitPercent:
-      case FormulaType.lossPercent:
-        if (key == 'CP') return 'Cost Price (e.g. 100)';
-        if (key == 'SP') return 'Selling Price (e.g. 120)';
-        break;
-      case FormulaType.aPlusBSquared:
-      case FormulaType.aMinusBSquared:
-      case FormulaType.aSquaredMinusBSquared:
-      case FormulaType.aPlusBCubed:
-      case FormulaType.aMinusBCubed:
-        if (key == 'a') return 'Value of a (e.g. 3)';
-        if (key == 'b') return 'Value of b (e.g. 2)';
-        break;
-      case FormulaType.apNthTerm:
-      case FormulaType.apSum:
-        if (key == 'a') return 'First term (e.g. 2)';
-        if (key == 'd') return 'Common difference (e.g. 3)';
-        if (key == 'n') return 'Term count n (e.g. 10)';
-        break;
-      case FormulaType.sinRatio:
-      case FormulaType.cosRatio:
-      case FormulaType.tanRatio:
-        if (key == 'θ (deg)') return 'Angle in degrees (e.g. 30)';
-        break;
-      case FormulaType.lawOfCosines:
-        if (key == 'a') return 'Side a (e.g. 5)';
-        if (key == 'b') return 'Side b (e.g. 7)';
-        if (key == 'C (deg)') return 'Included Angle (e.g. 60)';
-        break;
-      case FormulaType.lawOfSines:
-        if (key == 'a') return 'Known side a (e.g. 5)';
-        if (key == 'A (deg)') return 'Angle A (e.g. 40)';
-        if (key == 'B (deg)') return 'Angle B (e.g. 60)';
-        break;
-      case FormulaType.arcLength:
-        if (key == 'r') return 'Radius (e.g. 5)';
-        if (key == 'θ (deg)') return 'Angle in degrees (e.g. 90)';
-        break;
-    }
-    return key;
   }
 
   @override
@@ -1707,17 +576,17 @@ class _CalculatorPageState extends State<_CalculatorPage> {
           // Fixed calculator dock: result sits directly above the inputs and
           // the whole block rides up above the keyboard, so the live result is
           // always visible right next to the fields being edited.
-          _CalculatorDock(
-            result: _result,
-            inputs: [
-              for (final e in _controllers.entries)
-                _InputField(
-                  varKey: e.key,
-                  hint: _getHint(e.key),
-                  controller: e.value,
-                ),
-            ],
-          ),
+          if (widget.formulaData.hasCalculator)
+            _CalculatorDock(
+              result: _result,
+              inputs: [
+                for (final input in widget.formulaData.inputs)
+                  _InputField(
+                    input: input,
+                    controller: _controllers[input.key]!,
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -1726,33 +595,28 @@ class _CalculatorPageState extends State<_CalculatorPage> {
 
 /// A single labeled numeric input used inside the calculator dock.
 class _InputField extends StatelessWidget {
-  final String varKey;
-  final String hint;
+  final FormulaInput input;
   final TextEditingController controller;
 
-  const _InputField({
-    required this.varKey,
-    required this.hint,
-    required this.controller,
-  });
+  const _InputField({required this.input, required this.controller});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return TextField(
       controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(
-        decimal: true,
-        signed: true,
-      ),
+      // Lists need a comma, which numeric keypads often lack.
+      keyboardType: input.isList
+          ? TextInputType.text
+          : const TextInputType.numberWithOptions(decimal: true, signed: true),
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         isDense: true,
-        labelText: hint,
+        labelText: input.hint,
         prefixIcon: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Text(
-            '$varKey =',
+            '${input.key} =',
             style: TextStyle(
               fontFamily: 'monospace',
               fontWeight: AppFontWeight.bold,
