@@ -1167,6 +1167,7 @@ bool _sameProfileEdits(StudentProfile requested, StudentProfile stored) {
 
   return requested.board == stored.board &&
       requested.classNo == stored.classNo &&
+      requested.avatarId == stored.avatarId &&
       requested.preferredLanguage == stored.preferredLanguage &&
       normalized(requested.schoolName) == normalized(stored.schoolName) &&
       (normalized(requested.name) == null ||

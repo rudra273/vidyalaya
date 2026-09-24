@@ -35,37 +35,14 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  final _schoolController = TextEditingController();
-  final _nameController = TextEditingController();
-  int _selectedClass = 8;
-  String _preferredLanguage = 'en';
-  String _board = 'scert_odisha';
   bool _isAuthBusy = false;
-  bool _isProfileSaving = false;
-  bool _isEditing = false;
-  String? _appliedProfileKey;
 
   @override
   void initState() {
     super.initState();
-    _restoreFromLocalPrefs();
-    // Revalidate once per screen open (the tab shell rebuilds this screen on
-    // each visit), off the build frame. Every other refresh is driven by an
-    // explicit event — account change, Retry, save — never by a rebuild: the
-    // load rebuilds this screen, so a fetch started from `build` re-triggers
-    // itself for as long as the tab is open.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _ensureProfile(forceRefresh: true);
     });
-  }
-
-  /// Seeds the form from local prefs — the source of truth while signed out,
-  /// and the placeholder until the backend profile lands.
-  void _restoreFromLocalPrefs() {
-    _selectedClass = ref.read(primaryClassProvider);
-    _board = ref.read(userBoardProvider);
-    _preferredLanguage =
-        ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
   }
 
   void _ensureProfile({bool forceRefresh = false}) {
@@ -75,35 +52,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   @override
-  void dispose() {
-    _schoolController.dispose();
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Re-sync only when the signed-in account actually changes. Signing in
-    // fetches the new student's profile; signing out drops the previous
-    // student's name and school so a shared phone doesn't show them to whoever
-    // signs in next.
     ref.listen(authStateProvider, (previous, next) {
-      final previousUid = previous?.value?.uid;
-      final nextUid = next.value?.uid;
-      if (previousUid == nextUid) return;
-      setState(() {
-        _appliedProfileKey = null;
-        _isEditing = false;
-        _nameController.clear();
-        _schoolController.clear();
-        _selectedClass = 8;
-        _board = 'scert_odisha';
-        _preferredLanguage = 'en';
-        if (nextUid == null) {
-          _restoreFromLocalPrefs();
-        }
-      });
-      if (nextUid != null) {
+      if (previous?.value?.uid != next.value?.uid && next.value != null) {
         _ensureProfile();
       }
     });
@@ -138,7 +89,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         isSignedIn &&
         accountState.profile is AsyncError &&
         cachedProfile == null;
-    _applyCachedProfile(cachedProfile);
+    final int selectedClass =
+        cachedProfile?.classNo ?? ref.watch(primaryClassProvider);
+    final String board = cachedProfile?.board ?? ref.watch(userBoardProvider);
+    final preferredLanguage =
+        cachedProfile?.preferredLanguage ??
+        ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ??
+        'en';
 
     // Prefer the backend name (student-editable) over the Google account name.
     final backendName = cachedProfile?.name?.trim() ?? '';
@@ -187,70 +144,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
-            // ── Identity (avatar, name, email, sign-out) ─────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-              child: Center(
-                child: Column(
-                  children: [
-                    _BigAvatar(
-                      letter: avatarLetter,
-                      avatar: ref.watch(selectedAvatarProvider),
-                      clay: ref.watch(clayEnabledProvider),
-                      onTap: _showAvatarPicker,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      displayName,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontSize: AppFontSize.heading),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      isSignedIn
-                          ? email
-                          : 'Class $_selectedClass · ${_languageLabel(_preferredLanguage)}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 12),
-                    authState.when(
-                      data: (u) => _AuthButton(
-                        isSignedIn: u != null,
-                        isBusy: _isAuthBusy,
-                        onTap: u != null ? _signOut : _signInWithGoogle,
-                        onLongPress: kDebugMode && u != null
-                            ? _copyFirebaseIdToken
-                            : null,
-                      ),
-                      loading: () => const _AuthButton.loading(),
-                      error: (_, _) => _AuthButton(
-                        isSignedIn: false,
-                        isBusy: _isAuthBusy,
-                        onTap: () => ref.invalidate(authStateProvider),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── My Learning (tappable summary → /progress) ───────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                14,
-                AppSpacing.screenPadding,
-                0,
-              ),
-              child: _StatsStrip(
-                streak: progress.currentStreak,
-                aiSessions: progress.aiSessions,
-                books: books.length,
-                onTap: () => context.push('/progress'),
-              ),
-            ),
-
-            // ── Student profile form ─────────────────────────────
+            // ── Student profile ─────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screenPadding,
@@ -258,7 +152,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 AppSpacing.screenPadding,
                 0,
               ),
-              child: const SectionHead(label: 'Student profile'),
+              child: Row(
+                children: [
+                  const Expanded(child: SectionHead(label: 'Student profile')),
+                  TextButton.icon(
+                    onPressed: isInitialProfileLoad
+                        ? null
+                        : () => _showProfileEditor(cachedProfile),
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Edit'),
+                  ),
+                ],
+              ),
             ),
             if (profileSyncFailed)
               Padding(
@@ -276,30 +181,94 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
-              child: _isEditing
-                  ? _StudentForm(
-                      isSignedIn: isSignedIn,
-                      isInitialLoad: isInitialProfileLoad,
-                      isSaving: _isProfileSaving,
-                      selectedClass: _selectedClass,
-                      preferredLanguage: _preferredLanguage,
-                      board: _board,
-                      nameController: _nameController,
-                      schoolController: _schoolController,
-                      onClassChanged: (v) => setState(() => _selectedClass = v),
-                      onLanguageChanged: (v) =>
-                          setState(() => _preferredLanguage = v),
-                      onBoardChanged: _selectBoardForEditing,
-                      onSave: _saveStudentProfile,
-                      onCancel: _cancelEditing,
-                    )
-                  : _ProfileSummary(
-                      classNo: _selectedClass,
-                      board: _board,
-                      language: _languageLabel(_preferredLanguage),
-                      school: _schoolController.text.trim(),
-                      onEdit: () => setState(() => _isEditing = true),
+              child: _ProfileSummary(
+                identity: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _BigAvatar(
+                      letter: avatarLetter,
+                      avatar: ref.watch(selectedAvatarProvider),
+                      clay: ref.watch(clayEnabledProvider),
                     ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(fontSize: AppFontSize.heading),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isSignedIn
+                                ? email
+                                : 'Class $selectedClass · ${_languageLabel(preferredLanguage)}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                classNo: selectedClass,
+                board: board,
+                language: _languageLabel(preferredLanguage),
+                school: cachedProfile?.schoolName?.trim() ?? '',
+              ),
+            ),
+
+            if (!isSignedIn)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  12,
+                  AppSpacing.screenPadding,
+                  0,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildAuthButton(authState),
+                ),
+              ),
+
+            // ── My Learning (tappable summary → /progress) ───────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                24,
+                AppSpacing.screenPadding,
+                0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(child: SectionHead(label: 'My learning')),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: TextButton.icon(
+                          onPressed: () => context.push('/progress'),
+                          iconAlignment: IconAlignment.end,
+                          icon: const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 18,
+                          ),
+                          label: const Text('View progress'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _StatsStrip(
+                    streak: progress.currentStreak,
+                    aiSessions: progress.aiSessions,
+                    books: books.length,
+                    onTap: () => context.push('/progress'),
+                  ),
+                ],
+              ),
             ),
 
             const SupportSection(
@@ -311,9 +280,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
 
+            if (isSignedIn)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  24,
+                  AppSpacing.screenPadding,
+                  0,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildAuthButton(authState),
+                ),
+              ),
+
             const SizedBox(height: 16),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAuthButton(AsyncValue<User?> authState) {
+    return authState.when(
+      data: (user) => _AuthButton(
+        isSignedIn: user != null,
+        isBusy: _isAuthBusy,
+        onTap: user != null ? _signOut : _signInWithGoogle,
+        onLongPress: kDebugMode && user != null ? _copyFirebaseIdToken : null,
+      ),
+      loading: () => const _AuthButton.loading(),
+      error: (_, _) => _AuthButton(
+        isSignedIn: false,
+        isBusy: _isAuthBusy,
+        onTap: () => ref.invalidate(authStateProvider),
       ),
     );
   }
@@ -332,317 +332,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  void _applyCachedProfile(StudentProfile? profile) {
-    if (profile == null) return;
-    final key = [
-      profile.classNo,
-      profile.preferredLanguage,
-      profile.schoolName ?? '',
-      profile.name ?? '',
-      profile.board,
-      profile.updatedAt?.toIso8601String() ?? '',
-    ].join('|');
-    if (_appliedProfileKey == key) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Never clobber in-progress edits with a background refresh.
-      if (!mounted ||
-          _appliedProfileKey == key ||
-          _isProfileSaving ||
-          _isEditing) {
-        return;
-      }
-      setState(() {
-        _appliedProfileKey = key;
-        _selectedClass = profile.classNo;
-        _preferredLanguage = profile.preferredLanguage;
-        _board = profile.board;
-        _schoolController.text = profile.schoolName ?? '';
-        _nameController.text = profile.name ?? '';
-      });
-      _syncLocalProfile(
-        profile.classNo,
-        profile.board,
-        profile.preferredLanguage,
-      );
-    });
-  }
-
-  /// Leave edit mode, restoring the last saved values.
-  void _cancelEditing() {
-    setState(() {
-      _isEditing = false;
-      _appliedProfileKey = null; // re-apply the cached profile on next build
-      // Signed out there is no cached profile to re-apply, so restore the
-      // local prefs values directly.
-      _restoreFromLocalPrefs();
-    });
-  }
-
-  static String _languageLabel(String code) =>
-      const {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'}[code] ?? 'English';
-
-  /// Avatar selection — preset illustrations only, no photo upload
-  /// (under-13 privacy). Tapping a choice saves it immediately.
-  void _showAvatarPicker() {
-    final letter = _nameController.text.trim().isNotEmpty
-        ? _nameController.text.trim()[0].toUpperCase()
-        : 'S';
-    showModalBottomSheet(
+  Future<void> _showProfileEditor(StudentProfile? profile) async {
+    await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+      ),
+      useSafeArea: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Consumer(
-            builder: (ctx, ref, _) {
-              final currentId = ref.watch(avatarIdProvider);
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding,
-                  18,
-                  AppSpacing.screenPadding,
-                  20,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Choose your avatar',
-                      style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
-                        fontSize: AppFontSize.title,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 18,
-                      runSpacing: 16,
-                      children: [
-                        _AvatarChoice(
-                          letter: letter,
-                          selected: currentId == null,
-                          onTap: () {
-                            ref
-                                .read(avatarIdProvider.notifier)
-                                .setAvatarId(null);
-                            Navigator.of(ctx).pop();
-                          },
-                        ),
-                        for (final avatar in kStudentAvatars)
-                          _AvatarChoice(
-                            avatar: avatar,
-                            selected: currentId == avatar.id,
-                            onTap: () {
-                              ref
-                                  .read(avatarIdProvider.notifier)
-                                  .setAvatarId(avatar.id);
-                              Navigator.of(ctx).pop();
-                            },
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
+      builder: (_) => _ProfileEditSheet(profile: profile),
     );
+    if (mounted) setState(() {});
   }
 
-  Future<void> _saveStudentProfile() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      // Class, board and language are local prefs, so a signed-out student
-      // can still change them — only name/school need the backend.
-      _syncLocalProfile(
-        _selectedClass,
-        _board,
-        _preferredLanguage,
-        syncExploreClass: true,
-      );
-      setState(() => _isEditing = false);
-      Haptics.medium(ref);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Profile updated.')));
-      return;
-    }
-
-    setState(() => _isProfileSaving = true);
-    var submittedRevision = 0;
-    try {
-      final currentProfile = ref
-          .read(backendAccountCacheProvider)
-          .profile
-          .maybeWhen(data: (profile) => profile, orElse: () => null);
-      submittedRevision = currentProfile?.revision ?? 0;
-      final savedProfile = await ref
-          .read(backendAccountCacheProvider.notifier)
-          .saveProfile(
-            StudentProfile(
-              board: _board,
-              classNo: _selectedClass,
-              preferredLanguage: _preferredLanguage,
-              schoolName: _schoolController.text,
-              name: _nameController.text,
-              revision: submittedRevision,
-            ),
-          );
-
-      if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
-        return;
-      }
-      if (submittedRevision == 0 && savedProfile.revision == 1) {
-        unawaited(
-          ref
-              .read(learningEventServiceProvider)
-              .recordBestEffort(
-                eventType: 'onboarding_completed',
-                feature: 'session',
-              ),
-        );
-      }
-      _syncLocalProfile(
-        savedProfile.classNo,
-        savedProfile.board,
-        savedProfile.preferredLanguage,
-      );
-      setState(() {
-        _selectedClass = savedProfile.classNo;
-        _preferredLanguage = savedProfile.preferredLanguage;
-        _board = savedProfile.board;
-        _schoolController.text = savedProfile.schoolName ?? '';
-        _nameController.text = savedProfile.name ?? '';
-        _isEditing = false;
-      });
-      Haptics.medium(ref);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully.')),
-      );
-    } catch (error) {
-      if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
-        return;
-      }
-      Haptics.error(ref);
-      if (error is LearnAssistApiException &&
-          error.code == 'profile_conflict') {
-        StudentProfile? latest;
-        try {
-          latest = await ref
-              .read(backendAccountCacheProvider.notifier)
-              .ensureProfile(forceRefresh: true);
-        } catch (_) {
-          // Keep the student's edits. A later retry will re-fetch the profile.
-        }
-        // AccountCache may return its stale cached profile when a refresh
-        // fails. A conflict guarantees the server has a newer revision.
-        if (latest != null && latest.revision <= submittedRevision) {
-          latest = null;
-        }
-        if (!mounted || FirebaseAuth.instance.currentUser?.uid != user.uid) {
-          return;
-        }
-        if (latest != null) {
-          final useLatest = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Profile changed elsewhere'),
-              content: Text(
-                'The latest saved profile is ${latest!.name ?? 'Student'}, '
-                'class ${latest.classNo} (${boardLabel(latest.board)}), '
-                'language ${latest.preferredLanguage}, '
-                'school ${latest.schoolName ?? 'none'}. '
-                'Your edits are still here. Use the latest profile or keep '
-                'editing and save your version?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Keep my edits'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Use latest'),
-                ),
-              ],
-            ),
-          );
-          if (mounted && useLatest == true) {
-            setState(() {
-              _selectedClass = latest!.classNo;
-              _preferredLanguage = latest.preferredLanguage;
-              _board = latest.board;
-              _schoolController.text = latest.schoolName ?? '';
-              _nameController.text = latest.name ?? '';
-              _isEditing = false;
-            });
-            _syncLocalProfile(
-              latest.classNo,
-              latest.board,
-              latest.preferredLanguage,
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Profile changed elsewhere. Your edits are kept; refresh and try again.',
-              ),
-            ),
-          );
-        }
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Couldn\'t save your profile. Please try again.'),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isProfileSaving = false);
-      }
-    }
-  }
-
-  void _syncLocalProfile(
-    int classNo,
-    String board,
-    String language, {
-    bool syncExploreClass = false,
-  }) {
-    ref.read(userBoardProvider.notifier).setBoard(board);
-    ref.read(primaryClassProvider.notifier).setClass(classNo);
-    if (syncExploreClass) {
-      final prefs = ref.read(userPrefsRepositoryProvider);
-      if (prefs.getExploreSelectionMode() == 'primary') {
-        ref.read(exploreClassSelectionProvider.notifier).setClasses({classNo});
-      }
-      if (prefs.getLibrarySelectionMode() == 'primary') {
-        ref.read(libraryClassSelectionProvider.notifier).setClasses({classNo});
-      }
-    }
-    ref.read(subjectFilterProvider.notifier).setFilter(null);
-    ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
-  }
-
-  void _selectBoardForEditing(String board) {
-    final availableClasses = availableClassNumbersForBoard(board).toList()
-      ..sort();
-    if (availableClasses.isEmpty) return;
-
-    setState(() {
-      _board = board;
-      if (!availableClasses.contains(_selectedClass)) {
-        _selectedClass = availableClasses.first;
-      }
-    });
-  }
+  static String _languageLabel(String code) =>
+      const {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'}[code] ?? 'English';
 
   Future<void> _copyFirebaseIdToken() async {
     await _runAuthAction(() async {
@@ -702,6 +412,426 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
+// ─── Profile editor ─────────────────────────────────────────────────────
+
+class _ProfileEditSheet extends ConsumerStatefulWidget {
+  final StudentProfile? profile;
+
+  const _ProfileEditSheet({this.profile});
+
+  @override
+  ConsumerState<_ProfileEditSheet> createState() => _ProfileEditSheetState();
+}
+
+class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
+  late final TextEditingController _schoolController;
+  late final TextEditingController _nameController;
+  late final String? _uid;
+  late int _selectedClass;
+  late String _board;
+  late String _preferredLanguage;
+  late String? _avatarId;
+  late int _revision;
+  bool _isProfileSaving = false;
+  String? _saveError;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.profile;
+    final user = ref.read(authStateProvider).value;
+    _uid = user?.uid;
+    _schoolController = TextEditingController(text: profile?.schoolName ?? '');
+    _nameController = TextEditingController(
+      text: profile?.name ?? user?.displayName ?? '',
+    );
+    _selectedClass = profile?.classNo ?? ref.read(primaryClassProvider);
+    _board = profile?.board ?? ref.read(userBoardProvider);
+    _preferredLanguage =
+        profile?.preferredLanguage ??
+        ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ??
+        'en';
+    _avatarId = ref.read(effectiveAvatarIdProvider);
+    _revision = profile?.revision ?? 0;
+  }
+
+  @override
+  void dispose() {
+    _schoolController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(authStateProvider, (previous, next) {
+      if (!next.isLoading && next.value?.uid != _uid && mounted) {
+        final editorRoute = ModalRoute.of(context);
+        final navigator = Navigator.of(context);
+        navigator.popUntil((route) => route == editorRoute);
+        navigator.pop();
+      }
+    });
+    final letter = _nameController.text.trim().isEmpty
+        ? 'S'
+        : _nameController.text.trim()[0].toUpperCase();
+    return BackButtonListener(
+      onBackButtonPressed: () async => _isProfileSaving,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.screenPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Edit profile',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Cancel editing',
+                      onPressed: _isProfileSaving
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Stack(
+                    children: [
+                      _BigAvatar(
+                        letter: letter,
+                        avatar: avatarById(_avatarId),
+                        clay: ref.watch(clayEnabledProvider),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: IconButton.filled(
+                          tooltip: 'Change avatar',
+                          onPressed: _isProfileSaving
+                              ? null
+                              : _showAvatarPicker,
+                          iconSize: 16,
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.edit_rounded),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (_saveError != null) ...[
+                  Text(
+                    _saveError!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                _StudentForm(
+                  isSignedIn: _uid != null,
+                  isSaving: _isProfileSaving,
+                  selectedClass: _selectedClass,
+                  preferredLanguage: _preferredLanguage,
+                  board: _board,
+                  nameController: _nameController,
+                  schoolController: _schoolController,
+                  onClassChanged: (value) =>
+                      setState(() => _selectedClass = value),
+                  onLanguageChanged: (value) =>
+                      setState(() => _preferredLanguage = value),
+                  onBoardChanged: _selectBoardForEditing,
+                  onSave: _saveStudentProfile,
+                  onCancel: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAvatarPicker() async {
+    FocusScope.of(context).unfocus();
+    final letter = _nameController.text.trim().isEmpty
+        ? 'S'
+        : _nameController.text.trim()[0].toUpperCase();
+    // A record distinguishes choosing the default (null ID) from dismissal.
+    final choice = await showModalBottomSheet<(String?,)>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (pickerContext) => SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.screenPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Choose your avatar',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close avatar picker',
+                    onPressed: () => Navigator.of(pickerContext).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  _AvatarChoice(
+                    letter: letter,
+                    selected: _avatarId == null,
+                    onTap: () => Navigator.of(pickerContext).pop((null,)),
+                  ),
+                  for (final avatar in kStudentAvatars)
+                    _AvatarChoice(
+                      avatar: avatar,
+                      selected: _avatarId == avatar.id,
+                      onTap: () =>
+                          Navigator.of(pickerContext).pop((avatar.id,)),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (mounted && choice != null) setState(() => _avatarId = choice.$1);
+  }
+
+  Future<void> _saveStudentProfile() async {
+    final user = ref.read(firebaseAuthProvider).currentUser;
+    if (user?.uid != _uid) return;
+    if (user == null) {
+      // Class, board and language are local prefs, so a signed-out student
+      // can still change them — only name/school need the backend.
+      _syncLocalProfile(
+        _selectedClass,
+        _board,
+        _preferredLanguage,
+        syncExploreClass: true,
+      );
+      ref.read(avatarIdProvider.notifier).setAvatarId(_avatarId);
+      Navigator.of(context).pop();
+      Haptics.medium(ref);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated.')));
+      return;
+    }
+
+    setState(() {
+      _isProfileSaving = true;
+      _saveError = null;
+    });
+    var submittedRevision = 0;
+    try {
+      submittedRevision = _revision;
+      final savedProfile = await ref
+          .read(backendAccountCacheProvider.notifier)
+          .saveProfile(
+            StudentProfile(
+              avatarId: _avatarId,
+              board: _board,
+              classNo: _selectedClass,
+              preferredLanguage: _preferredLanguage,
+              schoolName: _schoolController.text,
+              name: _nameController.text,
+              revision: submittedRevision,
+            ),
+          );
+
+      if (!mounted ||
+          ref.read(firebaseAuthProvider).currentUser?.uid != user.uid) {
+        return;
+      }
+      if (submittedRevision == 0 && savedProfile.revision == 1) {
+        unawaited(
+          ref
+              .read(learningEventServiceProvider)
+              .recordBestEffort(
+                eventType: 'onboarding_completed',
+                feature: 'session',
+              ),
+        );
+      }
+      _syncLocalProfile(
+        savedProfile.classNo,
+        savedProfile.board,
+        savedProfile.preferredLanguage,
+      );
+      setState(() {
+        _selectedClass = savedProfile.classNo;
+        _preferredLanguage = savedProfile.preferredLanguage;
+        _board = savedProfile.board;
+        _schoolController.text = savedProfile.schoolName ?? '';
+        _nameController.text = savedProfile.name ?? '';
+        _avatarId = savedProfile.avatarId;
+        _revision = savedProfile.revision;
+      });
+      Haptics.medium(ref);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully.')),
+      );
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted ||
+          ref.read(firebaseAuthProvider).currentUser?.uid != user.uid) {
+        return;
+      }
+      Haptics.error(ref);
+      if (error is LearnAssistApiException &&
+          error.code == 'profile_conflict') {
+        StudentProfile? latest;
+        try {
+          latest = await ref
+              .read(backendAccountCacheProvider.notifier)
+              .ensureProfile(forceRefresh: true);
+        } catch (_) {
+          // Keep the student's edits. A later retry will re-fetch the profile.
+        }
+        // AccountCache may return its stale cached profile when a refresh
+        // fails. A conflict guarantees the server has a newer revision.
+        if (latest != null && latest.revision <= submittedRevision) {
+          latest = null;
+        }
+        if (!mounted ||
+            ref.read(firebaseAuthProvider).currentUser?.uid != user.uid) {
+          return;
+        }
+        if (latest != null) {
+          final useLatest = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Profile changed elsewhere'),
+              content: Text(
+                'The latest saved profile is ${latest!.name ?? 'Student'}, '
+                'class ${latest.classNo} (${boardLabel(latest.board)}), '
+                'language ${latest.preferredLanguage}, '
+                'school ${latest.schoolName ?? 'none'}. '
+                'Your edits are still here. Use the latest profile or keep '
+                'editing and save your version?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Keep my edits'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Use latest'),
+                ),
+              ],
+            ),
+          );
+          if (!mounted ||
+              ref.read(firebaseAuthProvider).currentUser?.uid != _uid) {
+            return;
+          }
+          if (useLatest == true) {
+            setState(() {
+              _selectedClass = latest!.classNo;
+              _preferredLanguage = latest.preferredLanguage;
+              _board = latest.board;
+              _schoolController.text = latest.schoolName ?? '';
+              _nameController.text = latest.name ?? '';
+              _avatarId = latest.avatarId;
+              _revision = latest.revision;
+            });
+            _syncLocalProfile(
+              latest.classNo,
+              latest.board,
+              latest.preferredLanguage,
+            );
+            if (mounted) Navigator.of(context).pop();
+          } else if (mounted) {
+            // A deliberate retry applies this draft against the version the
+            // student just reviewed, not an unrelated background refresh.
+            _revision = latest.revision;
+          }
+        } else {
+          setState(
+            () => _saveError =
+                'Profile changed elsewhere. Your edits are kept; please try saving again.',
+          );
+        }
+        return;
+      }
+      setState(
+        () => _saveError = "Couldn't save your profile. Please try again.",
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isProfileSaving = false);
+      }
+    }
+  }
+
+  void _syncLocalProfile(
+    int classNo,
+    String board,
+    String language, {
+    bool syncExploreClass = false,
+  }) {
+    ref.read(userBoardProvider.notifier).setBoard(board);
+    ref.read(primaryClassProvider.notifier).setClass(classNo);
+    if (syncExploreClass) {
+      final prefs = ref.read(userPrefsRepositoryProvider);
+      if (prefs.getExploreSelectionMode() == 'primary') {
+        ref.read(exploreClassSelectionProvider.notifier).setClasses({classNo});
+      }
+      if (prefs.getLibrarySelectionMode() == 'primary') {
+        ref.read(libraryClassSelectionProvider.notifier).setClasses({classNo});
+      }
+    }
+    ref.read(subjectFilterProvider.notifier).setFilter(null);
+    ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
+  }
+
+  void _selectBoardForEditing(String board) {
+    final availableClasses = availableClassNumbersForBoard(board).toList()
+      ..sort();
+    if (availableClasses.isEmpty) return;
+
+    setState(() {
+      _board = board;
+      if (!availableClasses.contains(_selectedClass)) {
+        _selectedClass = availableClasses.first;
+      }
+    });
+  }
+}
+
 // ─── Theme toggle (sun ↔ moon) ────────────────────────────────────────────
 //
 // A quick light/dark switch in the profile header. The icon cross-fades and
@@ -756,93 +886,68 @@ class _BigAvatar extends StatelessWidget {
   final String letter;
   final StudentAvatar? avatar;
   final bool clay;
-  final VoidCallback? onTap;
 
-  const _BigAvatar({
-    required this.letter,
-    this.avatar,
-    this.clay = true,
-    this.onTap,
-  });
+  const _BigAvatar({required this.letter, this.avatar, this.clay = true});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              color: Color.alphaBlend(
-                cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-                cs.surface,
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isDark ? AppColors.green100Dark : AppColors.green100,
-              ),
-              boxShadow: clay
-                  ? [
-                      BoxShadow(
-                        color:
-                            (isDark
-                                    ? AppColors.clayShadowDark
-                                    : AppColors.clayShadow)
-                                .withValues(alpha: isDark ? 0.55 : 0.7),
-                        blurRadius: 16,
-                        offset: const Offset(5, 5),
-                      ),
-                      BoxShadow(
-                        color:
-                            (isDark
-                                    ? AppColors.clayHighlightDark
-                                    : AppColors.clayHighlight)
-                                .withValues(alpha: isDark ? 0.30 : 0.9),
-                        blurRadius: 16,
-                        offset: const Offset(-5, -5),
-                      ),
-                    ]
-                  : null,
+    return Stack(
+      children: [
+        Container(
+          width: 88,
+          height: 88,
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(
+              cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+              cs.surface,
             ),
-            alignment: Alignment.center,
-            child: avatar != null
-                ? ClipOval(
-                    child: SvgPicture.asset(
-                      avatar!.assetPath,
-                      width: 86,
-                      height: 86,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? AppColors.green100Dark : AppColors.green100,
+            ),
+            boxShadow: clay
+                ? [
+                    BoxShadow(
+                      color:
+                          (isDark
+                                  ? AppColors.clayShadowDark
+                                  : AppColors.clayShadow)
+                              .withValues(alpha: isDark ? 0.55 : 0.7),
+                      blurRadius: 16,
+                      offset: const Offset(5, 5),
                     ),
-                  )
-                : Text(
-                    letter,
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: AppFontSize.displayLarge,
-                      color: cs.primary,
+                    BoxShadow(
+                      color:
+                          (isDark
+                                  ? AppColors.clayHighlightDark
+                                  : AppColors.clayHighlight)
+                              .withValues(alpha: isDark ? 0.30 : 0.9),
+                      blurRadius: 16,
+                      offset: const Offset(-5, -5),
                     ),
-                  ),
+                  ]
+                : null,
           ),
-          if (onTap != null)
-            Positioned(
-              right: -2,
-              bottom: -2,
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: cs.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: cs.surface, width: 2.5),
+          alignment: Alignment.center,
+          child: avatar != null
+              ? ClipOval(
+                  child: SvgPicture.asset(
+                    avatar!.assetPath,
+                    width: 86,
+                    height: 86,
+                  ),
+                )
+              : Text(
+                  letter,
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    fontSize: AppFontSize.displayLarge,
+                    color: cs.primary,
+                  ),
                 ),
-                child: Icon(Icons.edit_rounded, size: 13, color: cs.onPrimary),
-              ),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -866,58 +971,69 @@ class _AvatarChoice extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Color.alphaBlend(
-                cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-                cs.surface,
-              ),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: selected ? cs.primary : cs.outline,
-                width: selected ? 2.5 : 1,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: avatar != null
-                ? ClipOval(
-                    child: SvgPicture.asset(
-                      avatar!.assetPath,
-                      width: 51,
-                      height: 51,
-                    ),
-                  )
-                : Text(
-                    letter,
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: AppFontSize.headingLarge,
-                      color: cs.primary,
-                    ),
-                  ),
-          ),
-          if (selected)
-            Positioned(
-              right: -3,
-              top: -3,
-              child: Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: cs.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: cs.surface, width: 2),
+    return Semantics(
+      label: avatar?.label ?? 'Default avatar',
+      excludeSemantics: true,
+      selected: selected,
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: Color.alphaBlend(
+                  cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                  cs.surface,
                 ),
-                child: Icon(Icons.check_rounded, size: 12, color: cs.onPrimary),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected ? cs.primary : cs.outline,
+                  width: selected ? 2.5 : 1,
+                ),
               ),
+              alignment: Alignment.center,
+              child: avatar != null
+                  ? ClipOval(
+                      child: SvgPicture.asset(
+                        avatar!.assetPath,
+                        width: 51,
+                        height: 51,
+                      ),
+                    )
+                  : Text(
+                      letter,
+                      style: Theme.of(context).textTheme.displayMedium
+                          ?.copyWith(
+                            fontSize: AppFontSize.headingLarge,
+                            color: cs.primary,
+                          ),
+                    ),
             ),
-        ],
+            if (selected)
+              Positioned(
+                right: -3,
+                top: -3,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: cs.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: cs.surface, width: 2),
+                  ),
+                  child: Icon(
+                    Icons.check_rounded,
+                    size: 12,
+                    color: cs.onPrimary,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -925,10 +1041,8 @@ class _AvatarChoice extends StatelessWidget {
 
 // ─── Stats strip ──────────────────────────────────────────────────────────
 
-/// Tappable "My Learning" summary: a labeled card showing three headline stats
-/// that opens the full progress page. The eyebrow + "View details ›" make the
-/// card read as a doorway, not just decoration; tap-down dims it slightly so it
-/// physically responds.
+/// Tappable learning statistics; the section heading sits above the card.
+/// Tap-down dims the card before opening the full progress page.
 class _StatsStrip extends StatefulWidget {
   final int streak;
   final int aiSessions;
@@ -952,7 +1066,6 @@ class _StatsStripState extends State<_StatsStrip> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -964,64 +1077,33 @@ class _StatsStripState extends State<_StatsStrip> {
         opacity: _pressed ? 0.72 : 1,
         child: ClayCard(
           pressed: _pressed,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('MY LEARNING', style: kEyebrow(context)),
-                  Row(
-                    children: [
-                      Text(
-                        'View details',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: cs.primary,
-                          fontWeight: AppFontWeight.semibold,
-                          fontSize: AppFontSize.body,
-                        ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 18,
-                        color: cs.primary,
-                      ),
-                    ],
-                  ),
-                ],
+              Expanded(
+                child: _Stat(
+                  color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+                  icon: Icons.local_fire_department_rounded,
+                  value: '${widget.streak}',
+                  label: 'Day streak',
+                ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _Stat(
-                      color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-                      icon: Icons.local_fire_department_rounded,
-                      value: '${widget.streak}',
-                      label: 'Day streak',
-                    ),
-                  ),
-                  _Divider(),
-                  Expanded(
-                    child: _Stat(
-                      color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                      icon: Icons.auto_awesome_rounded,
-                      value: '${widget.aiSessions}',
-                      label: 'AI sessions',
-                    ),
-                  ),
-                  _Divider(),
-                  Expanded(
-                    child: _Stat(
-                      color: isDark
-                          ? AppColors.cEnglishDark
-                          : AppColors.cEnglish,
-                      icon: Icons.menu_book_rounded,
-                      value: '${widget.books}',
-                      label: 'Books',
-                    ),
-                  ),
-                ],
+              _Divider(),
+              Expanded(
+                child: _Stat(
+                  color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                  icon: Icons.auto_awesome_rounded,
+                  value: '${widget.aiSessions}',
+                  label: 'AI sessions',
+                ),
+              ),
+              _Divider(),
+              Expanded(
+                child: _Stat(
+                  color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                  icon: Icons.menu_book_rounded,
+                  value: '${widget.books}',
+                  label: 'Books',
+                ),
               ),
             ],
           ),
@@ -1145,11 +1227,13 @@ class _AuthButton extends StatelessWidget {
               color: accent,
             ),
             const SizedBox(width: 7),
-            Text(
-              isSignedIn ? 'Sign out' : 'Sign in with Google',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: accent,
-                fontWeight: AppFontWeight.semibold,
+            Flexible(
+              child: Text(
+                isSignedIn ? 'Sign out' : 'Sign in with Google',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: accent,
+                  fontWeight: AppFontWeight.semibold,
+                ),
               ),
             ),
           ],
@@ -1207,31 +1291,25 @@ class _ProfileSyncErrorBanner extends StatelessWidget {
 // ─── Profile summary (view mode) ─────────────────────────────────────────
 
 class _ProfileSummary extends StatelessWidget {
+  final Widget identity;
   final int classNo;
   final String board;
   final String language;
   final String school;
-  final VoidCallback onEdit;
 
   const _ProfileSummary({
+    required this.identity,
     required this.classNo,
     required this.board,
     required this.language,
     required this.school,
-    required this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.cardPad,
-        4,
-        AppSpacing.cardPad,
-        AppSpacing.cardPad - 6,
-      ),
+      padding: const EdgeInsets.all(AppSpacing.cardPad),
       decoration: BoxDecoration(
         color: cs.surface,
         border: Border.all(color: cs.outline),
@@ -1240,36 +1318,50 @@ class _ProfileSummary extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SummaryRow(label: 'Class', value: 'Class $classNo'),
-          _SummaryRow(label: 'Board', value: boardLabel(board)),
-          _SummaryRow(label: 'Language', value: language),
-          _SummaryRow(
-            label: 'School',
-            value: school.isEmpty ? 'Not set' : school,
-            muted: school.isEmpty,
-            last: true,
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onEdit,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: cs.primary,
-                side: BorderSide(color: cs.outline),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              icon: const Icon(Icons.edit_rounded, size: 16),
-              label: Text(
-                'Edit profile',
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: cs.primary),
-              ),
-            ),
+          identity,
+          const SizedBox(height: 20),
+          Divider(height: 1, color: cs.outline),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final singleColumn =
+                  constraints.maxWidth < 240 ||
+                  MediaQuery.textScalerOf(context).scale(AppFontSize.body) > 20;
+              final width = singleColumn
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - 16) / 2;
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  SizedBox(
+                    width: width,
+                    child: _ProfileDetail(
+                      label: 'Class',
+                      value: 'Class $classNo',
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: _ProfileDetail(
+                      label: 'Board',
+                      value: boardLabel(board),
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: _ProfileDetail(label: 'Language', value: language),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: _ProfileDetail(
+                      label: 'School',
+                      value: school.isEmpty ? 'Not added' : school,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -1277,62 +1369,27 @@ class _ProfileSummary extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
+class _ProfileDetail extends StatelessWidget {
   final String label;
   final String value;
-  final bool muted;
-  final bool last;
 
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    this.muted = false,
-    this.last = false,
-  });
+  const _ProfileDetail({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      decoration: last
-          ? null
-          : BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? AppColors.hairline2Dark : AppColors.hairline2,
-                ),
-              ),
-            ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 86,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: AppFontSize.small,
-                fontWeight: AppFontWeight.medium,
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: AppFontWeight.semibold,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-          Expanded(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: AppFontWeight.semibold,
-                color: muted
-                    ? (isDark ? AppColors.ink3Dark : AppColors.ink3)
-                    : cs.onSurface,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1342,11 +1399,6 @@ class _SummaryRow extends StatelessWidget {
 class _StudentForm extends StatelessWidget {
   final bool isSignedIn;
 
-  /// True only until the student's saved profile has been read for the first
-  /// time. Saving before that would push blanks over their stored name/school,
-  /// so the form waits — but a *background* refresh never sets this, or the
-  /// form would go dead every time it re-synced.
-  final bool isInitialLoad;
   final bool isSaving;
   final int selectedClass;
   final String preferredLanguage;
@@ -1361,7 +1413,6 @@ class _StudentForm extends StatelessWidget {
 
   const _StudentForm({
     required this.isSignedIn,
-    required this.isInitialLoad,
     required this.isSaving,
     required this.selectedClass,
     required this.preferredLanguage,
@@ -1378,7 +1429,7 @@ class _StudentForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isBusy = isInitialLoad || isSaving;
+    final isBusy = isSaving;
     final langLabel =
         const {
           'en': 'English',
@@ -1387,128 +1438,102 @@ class _StudentForm extends StatelessWidget {
         }[preferredLanguage] ??
         'English';
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPad),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _TextInput(
-            label: 'Name',
-            hint: 'Your name',
-            controller: nameController,
-            enabled: isSignedIn && !isBusy,
-            onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
-          ),
-          const SizedBox(height: 12),
-          _Field<int>(
-            label: 'Class',
-            value: 'Class $selectedClass',
-            onTap: isBusy
-                ? null
-                : () => _showClassPicker(
-                    context,
-                    onClassChanged,
-                    selectedClass,
-                    board,
-                  ),
-          ),
-          const SizedBox(height: 12),
-          _Field<String>(
-            label: 'Board',
-            value: boardLabel(board),
-            onTap: isBusy
-                ? null
-                : () => _showBoardPicker(context, onBoardChanged, board),
-          ),
-          const SizedBox(height: 12),
-          _Field<String>(
-            label: 'Preferred language',
-            value: langLabel,
-            onTap: isBusy
-                ? null
-                : () => _showLanguagePicker(
-                    context,
-                    onLanguageChanged,
-                    preferredLanguage,
-                  ),
-          ),
-          const SizedBox(height: 12),
-          _TextInput(
-            label: 'School name',
-            hint: 'e.g. SSVM',
-            controller: schoolController,
-            enabled: isSignedIn && !isBusy,
-            onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
-          ),
-          if (!isSignedIn) ...[
-            const SizedBox(height: 10),
-            Text(
-              'Sign in to change your name and school.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-          // The fields are greyed out while the first load runs; say why,
-          // rather than leaving the student tapping a form that ignores them.
-          if (isInitialLoad) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const SizedBox.square(
-                  dimension: 13,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _TextInput(
+          label: 'Name',
+          hint: 'Your name',
+          controller: nameController,
+          enabled: isSignedIn && !isBusy,
+          onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
+        ),
+        const SizedBox(height: 8),
+        _Field<int>(
+          label: 'Class',
+          value: 'Class $selectedClass',
+          onTap: isBusy
+              ? null
+              : () => _showClassPicker(
+                  context,
+                  onClassChanged,
+                  selectedClass,
+                  board,
                 ),
-                const SizedBox(width: 9),
-                Text(
-                  'Loading your saved profile…',
-                  style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        _Field<String>(
+          label: 'Board',
+          value: boardLabel(board),
+          onTap: isBusy
+              ? null
+              : () => _showBoardPicker(context, onBoardChanged, board),
+        ),
+        const SizedBox(height: 8),
+        _Field<String>(
+          label: 'Preferred language',
+          value: langLabel,
+          onTap: isBusy
+              ? null
+              : () => _showLanguagePicker(
+                  context,
+                  onLanguageChanged,
+                  preferredLanguage,
                 ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  // Cancel stays live even mid-load: it only drops back to the
-                  // summary, and a student must always be able to back out.
-                  onPressed: isSaving ? null : onCancel,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: cs.outline),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                  child: Text(
-                    'Cancel',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  onPressed: isBusy ? null : onSave,
-                  icon: isSaving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2.2),
-                        )
-                      : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(isSignedIn ? 'Save profile' : 'Save'),
-                ),
-              ),
-            ],
+        ),
+        const SizedBox(height: 8),
+        _TextInput(
+          label: 'School name',
+          hint: 'e.g. SSVM',
+          controller: schoolController,
+          enabled: isSignedIn && !isBusy,
+          onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
+        ),
+        if (!isSignedIn) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Sign in to change your name and school.',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
-      ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                // Cancel stays live even mid-load: it only drops back to the
+                // summary, and a student must always be able to back out.
+                onPressed: isSaving ? null : onCancel,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: cs.outline),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                child: Text(
+                  'Cancel',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton.icon(
+                onPressed: isBusy ? null : onSave,
+                icon: isSaving
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2.2),
+                      )
+                    : const Icon(Icons.check_rounded, size: 18),
+                label: Text(isSignedIn ? 'Save profile' : 'Save'),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -1668,11 +1693,12 @@ class _Field<T> extends StatelessWidget {
             color: isDark ? AppColors.ink3Dark : AppColors.ink3,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 4),
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isDark ? AppColors.surface3Dark : AppColors.surface3,
               border: Border.all(
@@ -1686,7 +1712,7 @@ class _Field<T> extends StatelessWidget {
                   child: Text(
                     value,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontSize: AppFontSize.content,
+                      fontSize: AppFontSize.body,
                       fontWeight: AppFontWeight.medium,
                       color: cs.onSurface,
                     ),
@@ -1738,7 +1764,7 @@ class _TextInput extends StatelessWidget {
             color: isDark ? AppColors.ink3Dark : AppColors.ink3,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 4),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: enabled ? null : onDisabledTap,
@@ -1746,7 +1772,18 @@ class _TextInput extends StatelessWidget {
             controller: controller,
             enabled: enabled,
             textInputAction: TextInputAction.done,
-            decoration: InputDecoration(hintText: hint),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: AppFontSize.body),
+            decoration: InputDecoration(
+              hintText: hint,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              constraints: const BoxConstraints(minHeight: 44),
+            ),
           ),
         ),
       ],

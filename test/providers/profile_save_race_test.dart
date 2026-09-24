@@ -30,17 +30,19 @@ class _TestAuth extends Fake implements FirebaseAuth {
   User? get currentUser => user;
 }
 
-http.Response _profileResponse(int revision, int classNo) => http.Response(
-  jsonEncode({
-    'board': 'scert_odisha',
-    'class_no': classNo,
-    'preferred_language': 'en',
-    'name': 'Asha',
-    'revision': revision,
-    'onboarding_completed': true,
-  }),
-  200,
-);
+http.Response _profileResponse(int revision, int classNo, {String? avatarId}) =>
+    http.Response(
+      jsonEncode({
+        'board': 'scert_odisha',
+        'class_no': classNo,
+        'preferred_language': 'en',
+        'name': 'Asha',
+        'avatar_id': avatarId,
+        'revision': revision,
+        'onboarding_completed': true,
+      }),
+      200,
+    );
 
 http.Response _eventResponse(http.Request request) => http.Response(
   jsonEncode({
@@ -50,13 +52,15 @@ http.Response _eventResponse(http.Request request) => http.Response(
   200,
 );
 
-StudentProfile _profile(int revision, int classNo) => StudentProfile(
-  board: 'scert_odisha',
-  classNo: classNo,
-  preferredLanguage: 'en',
-  name: 'Asha',
-  revision: revision,
-);
+StudentProfile _profile(int revision, int classNo, {String? avatarId}) =>
+    StudentProfile(
+      board: 'scert_odisha',
+      classNo: classNo,
+      preferredLanguage: 'en',
+      name: 'Asha',
+      avatarId: avatarId,
+      revision: revision,
+    );
 
 void main() {
   late Directory cacheDirectory;
@@ -113,7 +117,7 @@ void main() {
         return slowGet.future;
       }
       expect(request.method, 'PUT');
-      return _profileResponse(2, 9);
+      return _profileResponse(2, 9, avatarId: 'girl_2');
     });
     final container = containerFor(client);
     await container.read(authStateProvider.future);
@@ -121,13 +125,14 @@ void main() {
 
     final pendingRead = cache.ensureProfile();
     await getStarted.future;
-    await cache.saveProfile(_profile(1, 9));
-    slowGet.complete(_profileResponse(1, 8));
+    await cache.saveProfile(_profile(1, 9, avatarId: 'girl_2'));
+    slowGet.complete(_profileResponse(1, 8, avatarId: 'boy_1'));
     await pendingRead;
 
     final stored = container.read(backendAccountCacheProvider).profile.value;
     expect(stored?.revision, 2);
     expect(stored?.classNo, 9);
+    expect(stored?.avatarId, 'girl_2');
   });
 
   test('a lost PUT response reconciles the committed profile', () async {
@@ -174,4 +179,23 @@ void main() {
     expect(confirmed?.revision, 1);
     expect(confirmed?.classNo, 8);
   });
+  test(
+    'lost response cannot accept a different server avatar as success',
+    () async {
+      final client = MockClient((request) async {
+        if (request.url.path == '/me/events') return _eventResponse(request);
+        if (request.method == 'PUT') {
+          throw http.ClientException('response lost');
+        }
+        return _profileResponse(2, 9, avatarId: 'boy_1');
+      });
+      final container = containerFor(client);
+      await container.read(authStateProvider.future);
+      final cache = container.read(backendAccountCacheProvider.notifier);
+      await expectLater(
+        cache.saveProfile(_profile(1, 9, avatarId: 'girl_2')),
+        throwsException,
+      );
+    },
+  );
 }

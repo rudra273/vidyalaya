@@ -1,8 +1,8 @@
 /// Bundled profile avatars.
 ///
 /// Students under 13 pick from these preset illustrations instead of
-/// uploading a photo — no camera/gallery permissions, nothing leaves the
-/// device. Add new avatars by dropping an SVG in `assets/avatars/` and
+/// uploading a photo — no camera/gallery permissions. Only the preset ID is synced to the
+/// account; images remain bundled with the app. Add new avatars by dropping an SVG in `assets/avatars/` and
 /// appending an entry here; ids are persisted, so never reuse or rename one.
 class StudentAvatar {
   final String id;

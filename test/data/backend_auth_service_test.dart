@@ -134,12 +134,14 @@ void main() {
       client: MockClient((request) async {
         expect(request.url.path, '/me/profile');
         expect(jsonDecode(request.body)['revision'], 4);
+        expect(jsonDecode(request.body)['avatar_id'], 'girl_2');
         return http.Response(
           jsonEncode({
             'board': 'scert_odisha',
             'class_no': 8,
             'preferred_language': 'en',
             'revision': 5,
+            'avatar_id': 'girl_2',
             'onboarding_completed': true,
           }),
           200,
@@ -155,9 +157,12 @@ void main() {
         classNo: 8,
         preferredLanguage: 'en',
         revision: 4,
+        avatarId: 'girl_2',
       ),
     );
     expect(saved.revision, 5);
+    expect(saved.avatarId, 'girl_2');
+    expect(StudentProfile.fromJson(saved.toCacheJson()).avatarId, 'girl_2');
   });
 
   test(
