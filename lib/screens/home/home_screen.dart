@@ -12,6 +12,7 @@ import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/regional_language_provider.dart';
+import '../../providers/vocabulary_provider.dart';
 import '../../widgets/home_ai_chat.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
@@ -209,7 +210,7 @@ class HomeScreen extends ConsumerWidget {
             ),
             child: _WordOfDayCard(
               word: wordOfTheDay(),
-              regionalLang: ref.watch(regionalLanguageProvider),
+              regionalLang: ref.watch(dictionaryDefaultLanguageProvider),
             ),
           ),
 
