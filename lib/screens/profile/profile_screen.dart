@@ -62,10 +62,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   /// Seeds the form from local prefs — the source of truth while signed out,
   /// and the placeholder until the backend profile lands.
   void _restoreFromLocalPrefs() {
-    final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
-    if (selectedClasses.isNotEmpty) {
-      _selectedClass = selectedClasses.first;
-    }
+    _selectedClass = ref.read(primaryClassProvider);
     _board = ref.read(userBoardProvider);
     _preferredLanguage =
         ref.read(userPrefsRepositoryProvider).getPreferredLanguage() ?? 'en';
@@ -205,9 +202,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     const SizedBox(height: 10),
                     Text(
                       displayName,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.headlineMedium?.copyWith(fontSize: AppFontSize.heading),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontSize: AppFontSize.heading),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -415,9 +411,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     Text(
                       'Choose your avatar',
-                      style: Theme.of(
-                        ctx,
-                      ).textTheme.headlineMedium?.copyWith(fontSize: AppFontSize.title),
+                      style: Theme.of(ctx).textTheme.headlineMedium?.copyWith(
+                        fontSize: AppFontSize.title,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Wrap(
@@ -621,8 +617,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     bool syncExploreClass = false,
   }) {
     ref.read(userBoardProvider.notifier).setBoard(board);
+    ref.read(primaryClassProvider.notifier).setClass(classNo);
     if (syncExploreClass) {
-      ref.read(userSelectionProvider.notifier).setClasses({classNo});
+      final prefs = ref.read(userPrefsRepositoryProvider);
+      if (prefs.getExploreSelectionMode() == 'primary') {
+        ref.read(exploreClassSelectionProvider.notifier).setClasses({classNo});
+      }
+      if (prefs.getLibrarySelectionMode() == 'primary') {
+        ref.read(libraryClassSelectionProvider.notifier).setClasses({classNo});
+      }
     }
     ref.read(subjectFilterProvider.notifier).setFilter(null);
     ref.read(userPrefsRepositoryProvider).setPreferredLanguage(language);
@@ -1052,9 +1055,10 @@ class _Stat extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontSize: AppFontSize.heading, height: 1),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontSize: AppFontSize.heading,
+                height: 1,
+              ),
             ),
           ],
         ),

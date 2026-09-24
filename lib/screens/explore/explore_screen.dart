@@ -36,7 +36,7 @@ class ExploreScreen extends ConsumerWidget {
   void _open(BuildContext context, WidgetRef ref, _Tool tool) {
     Haptics.light(ref);
     ref.read(userPrefsRepositoryProvider).recordToolOpened(tool.id);
-    final selectedClasses = ref.read(userSelectionProvider);
+    final selectedClasses = ref.read(exploreClassSelectionProvider);
     unawaited(
       ref
           .read(learningEventServiceProvider)
@@ -69,7 +69,7 @@ class ExploreScreen extends ConsumerWidget {
       });
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final classes = ref.watch(userSelectionProvider).toList()..sort();
+    final classes = ref.watch(exploreClassSelectionProvider).toList()..sort();
     final labsAvailable = labAvailableForSelection(classes);
     final tools = _tools(isDark, labsAvailable);
 
@@ -117,12 +117,16 @@ class _ClassFilterSheetState extends ConsumerState<_ClassFilterSheet> {
   @override
   void initState() {
     super.initState();
-    _draftClasses = Set<int>.from(ref.read(userSelectionProvider));
+    _draftClasses = Set<int>.from(ref.read(exploreClassSelectionProvider));
     final preferences = ref
         .read(backendAccountCacheProvider)
         .explorePreferences
         .maybeWhen(data: (value) => value, orElse: () => null);
-    if (preferences != null) _selectionMode = preferences.selectionMode;
+    _selectionMode =
+        preferences?.selectionMode ??
+        ref
+            .read(userPrefsRepositoryProvider)
+            .getExploreSelectionMode(uid: ref.read(accountUidProvider));
   }
 
   void _selectMode(String mode, Set<int> available, int? primaryClass) {
@@ -142,7 +146,12 @@ class _ClassFilterSheetState extends ConsumerState<_ClassFilterSheet> {
         .read(authStateProvider)
         .maybeWhen(data: (user) => user != null, orElse: () => false);
     if (!signedIn) {
-      ref.read(userSelectionProvider.notifier).setClasses(selectedClasses);
+      ref
+          .read(exploreClassSelectionProvider.notifier)
+          .setClasses(selectedClasses);
+      ref
+          .read(userPrefsRepositoryProvider)
+          .setExploreSelectionMode(_selectionMode);
       if (mounted) Navigator.of(context).pop();
       return;
     }
@@ -174,25 +183,13 @@ class _ClassFilterSheetState extends ConsumerState<_ClassFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final account = ref.watch(backendAccountCacheProvider);
     final board = ref.watch(userBoardProvider);
     final available = {
       ...availableClassNumbersForBoard(board),
       ...ref.watch(activeIngestedBooksProvider).classesFor(board),
     }.toList()..sort();
     final availableClasses = available.toSet();
-    final savedClasses = ref.watch(userSelectionProvider);
-    final isSignedIn = ref
-        .watch(authStateProvider)
-        .maybeWhen(data: (user) => user != null, orElse: () => false);
-    final primaryClass =
-        account.profile.maybeWhen(
-          data: (profile) => profile?.classNo,
-          orElse: () => null,
-        ) ??
-        (isSignedIn || savedClasses.isEmpty
-            ? null
-            : (savedClasses.toList()..sort()).first);
+    final primaryClass = ref.watch(primaryClassProvider);
     final selectedClasses = _draftClasses.intersection(availableClasses);
     final cs = Theme.of(context).colorScheme;
 
@@ -260,9 +257,7 @@ class _ClassFilterSheetState extends ConsumerState<_ClassFilterSheet> {
                 ChoiceChip(
                   label: const Text('My class'),
                   selected: _selectionMode == 'primary',
-                  onSelected:
-                      primaryClass != null &&
-                          availableClasses.contains(primaryClass)
+                  onSelected: availableClasses.contains(primaryClass)
                       ? (_) => _selectMode(
                           'primary',
                           availableClasses,

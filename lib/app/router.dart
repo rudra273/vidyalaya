@@ -8,7 +8,6 @@ import '../data/seed/seed_data.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
-import '../screens/class_selector/class_selector_screen.dart';
 import '../screens/pdf_viewer/pdf_viewer_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/settings_screen.dart';
@@ -85,7 +84,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isBookRoute) return '/';
       }
       final labsAvailable = labAvailableForSelection(
-        ref.read(userSelectionProvider),
+        ref.read(exploreClassSelectionProvider),
       );
       if (!labsAvailable && state.matchedLocation == '/labs') return '/explore';
       return null;
@@ -317,11 +316,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const MathFractionsScreen(),
       ),
       GoRoute(
-        path: '/class-selector',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ClassSelectorScreen(),
-      ),
-      GoRoute(
         path: '/labs',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const VirtualLabScreen(),
@@ -385,7 +379,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // class changes only affect the lab-route guard, so refresh that guard
   // instead of recreating GoRouter (which detaches live inherited dependents).
   ref.listen(userBoardProvider, (_, _) => router.refresh());
-  ref.listen(userSelectionProvider, (_, _) => router.refresh());
+  ref.listen(exploreClassSelectionProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
   return router;
 });

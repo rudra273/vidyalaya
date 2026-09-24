@@ -21,35 +21,6 @@ void main() {
     });
   });
 
-  group('resolveLearnAssistClass', () {
-    test('uses class 8 when no classes are selected', () {
-      expect(resolveLearnAssistClass({}), 8);
-      expect(learnAssistClassOptions({}), [8]);
-    });
-
-    test('uses the selected class when one class is selected', () {
-      expect(resolveLearnAssistClass({7}), 7);
-      expect(learnAssistClassOptions({7}), [7]);
-    });
-
-    test('uses the lowest class as the default when multiple are selected', () {
-      expect(resolveLearnAssistClass({8, 6, 7}), 6);
-      expect(learnAssistClassOptions({8, 6, 7}), [6, 7, 8]);
-    });
-
-    test('uses the profile class independently of Explore selection', () {
-      expect(resolveLearnAssistClass({7, 8, 9}, primaryClass: 8), 8);
-      expect(resolveLearnAssistClass({7, 9}, primaryClass: 8), 8);
-    });
-
-    test('ignores classes below the LearnAssist minimum', () {
-      expect(resolveLearnAssistClass({3, 9}), 9);
-      expect(learnAssistClassOptions({3, 9}), [9]);
-      expect(resolveLearnAssistClass({2, 4}), 8);
-      expect(learnAssistClassOptions({2, 4}), [8]);
-    });
-  });
-
   group('learnAssistSubjects', () {
     final ingestedBooks = IngestedBooks.fromJson({
       'boards': [

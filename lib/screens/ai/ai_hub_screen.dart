@@ -60,14 +60,7 @@ class AiHubScreen extends ConsumerWidget {
 
     // Same board/class the chat resolves to, so the subjects offered here are
     // exactly the conversations the chat can open.
-    final primaryClass = account.profile.maybeWhen(
-      data: (profile) => profile?.classNo,
-      orElse: () => null,
-    );
-    final classNo = resolveLearnAssistClass(
-      ref.watch(userSelectionProvider),
-      primaryClass: primaryClass,
-    );
+    final classNo = ref.watch(primaryClassProvider);
     final board = ref.watch(userBoardProvider);
     final subjects = learnAssistSubjects(
       ref.watch(activeIngestedBooksProvider),
@@ -441,16 +434,16 @@ class _HubRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(fontSize: AppFontSize.content),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: AppFontSize.content,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     sub,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: AppFontSize.small),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: AppFontSize.small,
+                    ),
                   ),
                 ],
               ),
@@ -613,9 +606,8 @@ class _TutorRow extends StatelessWidget {
                     children: [
                       Text(
                         'AI Tutor',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(fontSize: AppFontSize.content),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontSize: AppFontSize.content),
                       ),
                       const SizedBox(width: 7),
                       Text(
@@ -631,9 +623,9 @@ class _TutorRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     'Step-by-step guided lessons, subject by subject',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(fontSize: AppFontSize.small),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: AppFontSize.small,
+                    ),
                   ),
                 ],
               ),

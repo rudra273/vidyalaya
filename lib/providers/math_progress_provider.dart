@@ -41,7 +41,7 @@ class MathProgressNotifier extends Notifier<MathProgress> {
   Future<void> recordScore(String toolId, int score) async {
     await ref.read(userPrefsRepositoryProvider).recordMathScore(toolId, score);
     refresh();
-    final classes = ref.read(userSelectionProvider);
+    final classes = ref.read(exploreClassSelectionProvider);
     unawaited(
       ref
           .read(learningEventServiceProvider)

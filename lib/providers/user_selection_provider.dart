@@ -6,8 +6,8 @@ final accountUidProvider = Provider<String?>((ref) {
   return ref.watch(authStateProvider).value?.uid;
 });
 
-/// Notifier that manages the set of class numbers the user has selected.
-class UserSelectionNotifier extends Notifier<Set<int>> {
+/// App-wide classes used by Explore and general learning content.
+class ExploreClassSelectionNotifier extends Notifier<Set<int>> {
   String? _accountUid;
 
   @override
@@ -44,8 +44,66 @@ class UserSelectionNotifier extends Notifier<Set<int>> {
   }
 }
 
-final userSelectionProvider = NotifierProvider<UserSelectionNotifier, Set<int>>(
-  UserSelectionNotifier.new,
+final exploreClassSelectionProvider =
+    NotifierProvider<ExploreClassSelectionNotifier, Set<int>>(
+      ExploreClassSelectionNotifier.new,
+    );
+
+/// Classes shown in the textbook Library. This state is deliberately
+/// independent from Explore and from the single class used by AI.
+class LibraryClassSelectionNotifier extends Notifier<Set<int>> {
+  String? _accountUid;
+
+  @override
+  Set<int> build() {
+    _accountUid = ref.watch(accountUidProvider);
+    final repo = ref.read(userPrefsRepositoryProvider);
+    final classes = repo.getLibrarySelectedClasses(uid: _accountUid);
+    if (classes.isEmpty &&
+        repo.getLibrarySelectionMode(uid: _accountUid) == 'primary') {
+      return {ref.watch(primaryClassProvider)};
+    }
+    return classes;
+  }
+
+  void setClasses(Set<int> classes) {
+    if (classes.length == state.length && state.containsAll(classes)) return;
+    state = classes;
+    ref
+        .read(userPrefsRepositoryProvider)
+        .setLibrarySelectedClasses(classes, uid: _accountUid);
+  }
+}
+
+final libraryClassSelectionProvider =
+    NotifierProvider<LibraryClassSelectionNotifier, Set<int>>(
+      LibraryClassSelectionNotifier.new,
+    );
+
+/// The student's one profile class. AI reads this provider directly and can
+/// therefore never inherit a multi-class Explore or Library selection.
+class PrimaryClassNotifier extends Notifier<int> {
+  String? _accountUid;
+
+  @override
+  int build() {
+    _accountUid = ref.watch(accountUidProvider);
+    return ref
+        .read(userPrefsRepositoryProvider)
+        .getPrimaryClass(uid: _accountUid);
+  }
+
+  void setClass(int classNo) {
+    if (classNo == state) return;
+    state = classNo;
+    ref
+        .read(userPrefsRepositoryProvider)
+        .setPrimaryClass(classNo, uid: _accountUid);
+  }
+}
+
+final primaryClassProvider = NotifierProvider<PrimaryClassNotifier, int>(
+  PrimaryClassNotifier.new,
 );
 
 /// Notifier that manages the user's selected syllabus board.

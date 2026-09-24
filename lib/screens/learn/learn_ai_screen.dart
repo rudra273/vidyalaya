@@ -154,14 +154,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   @override
   void initState() {
     super.initState();
-    final profile = ref
-        .read(backendAccountCacheProvider)
-        .profile
-        .maybeWhen(data: (value) => value, orElse: () => null);
-    _selectedClass = resolveLearnAssistClass(
-      ref.read(userSelectionProvider),
-      primaryClass: profile?.classNo,
-    );
+    _selectedClass = ref.read(primaryClassProvider);
     // A subject from the route (AI hub chip). build() drops it again if it
     // isn't one of the ingested subjects for this board/class.
     final subject = widget.initialSubject?.trim();
@@ -903,7 +896,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedClasses = ref.watch(userSelectionProvider);
+    final profileClass = ref.watch(primaryClassProvider);
     final authState = ref.watch(authStateProvider);
     final accountState = ref.watch(backendAccountCacheProvider);
     final isSignedIn = authState.maybeWhen(
@@ -918,14 +911,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       _ensureAccountSummary();
     }
     // Derive the effective class from profile selection (not user-choosable in UI).
-    final primaryClass = accountState.profile.maybeWhen(
-      data: (profile) => profile?.classNo,
-      orElse: () => null,
-    );
-    final effectiveClass = resolveLearnAssistClass(
-      selectedClasses,
-      primaryClass: primaryClass,
-    );
+    final effectiveClass = profileClass;
     if (effectiveClass != _selectedClass) {
       // Profile changed class — sync without triggering a rebuild loop.
       WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -72,7 +72,7 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
   /// Walk the pool forward from the day's question, keeping the class filter.
   void _next() {
     Haptics.light(ref);
-    final selected = ref.read(userSelectionProvider);
+    final selected = ref.read(exploreClassSelectionProvider);
     final pool = warmupPool(
       classNo: selected.isEmpty ? null : (selected.toList()..sort()).first,
     );
@@ -152,9 +152,10 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
 
           Text(
             question.question,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontSize: AppFontSize.title, height: 1.28),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontSize: AppFontSize.title,
+              height: 1.28,
+            ),
           ),
           const SizedBox(height: 12),
 

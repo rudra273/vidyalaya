@@ -91,6 +91,44 @@ void main() {
     expect(result.selectedClasses, [6, 8]);
   });
 
+  test('loads and saves account-owned Library preferences', () async {
+    var requestCount = 0;
+    final service = BackendAuthService(
+      client: MockClient((request) async {
+        requestCount++;
+        expect(request.url.path, '/me/library-preferences');
+        if (request.method == 'GET') {
+          return http.Response(
+            jsonEncode({
+              'selection_mode': 'primary',
+              'selected_classes': [8],
+            }),
+            200,
+          );
+        }
+        expect(jsonDecode(request.body), {
+          'selection_mode': 'selected',
+          'selected_classes': [7, 9],
+        });
+        return http.Response(request.body, 200);
+      }),
+      idTokenProvider: ({required forceRefresh}) async => 'test-token',
+      baseUrl: Uri.parse('https://example.test'),
+    );
+
+    final loaded = await service.libraryPreferences();
+    final saved = await service.updateLibraryPreferences(
+      const LibraryPreferences(
+        selectionMode: 'selected',
+        selectedClasses: [7, 9],
+      ),
+    );
+
+    expect(loaded.selectedClasses, [8]);
+    expect(saved.selectedClasses, [7, 9]);
+    expect(requestCount, 2);
+  });
+
   test('sends profile revision and reads the next revision', () async {
     final service = BackendAuthService(
       client: MockClient((request) async {

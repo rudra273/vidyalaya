@@ -39,7 +39,7 @@ class _MathQuizScreenState extends ConsumerState<MathQuizScreen> {
   /// The class used to scale difficulty — highest selected class, defaulting to
   /// 4 when the student hasn't picked any.
   int get _classLevel {
-    final selected = ref.read(userSelectionProvider);
+    final selected = ref.read(exploreClassSelectionProvider);
     if (selected.isEmpty) return 4;
     return selected.reduce((a, b) => a > b ? a : b);
   }
@@ -123,26 +123,26 @@ class _MathQuizScreenState extends ConsumerState<MathQuizScreen> {
             Text(
               'Question ${_index + 1} of ${questions.length}',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.5,
-                  ),
+                color: AppColors.textMuted,
+                letterSpacing: 0.5,
+              ),
             ),
             Text(
               'Score $_correct',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: accent,
-                    fontWeight: AppFontWeight.bold,
-                  ),
+                color: accent,
+                fontWeight: AppFontWeight.bold,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 10),
         Text(
           q.prompt,
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: AppFontWeight.bold, height: 1.35),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: AppFontWeight.bold,
+            height: 1.35,
+          ),
         ),
         const SizedBox(height: 20),
         ...List.generate(q.options.length, (i) {
@@ -170,9 +170,9 @@ class _MathQuizScreenState extends ConsumerState<MathQuizScreen> {
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: accent),
             onPressed: () => _next(isLast),
-            icon: Icon(isLast
-                ? Icons.emoji_events_rounded
-                : Icons.arrow_forward_rounded),
+            icon: Icon(
+              isLast ? Icons.emoji_events_rounded : Icons.arrow_forward_rounded,
+            ),
             label: Text(isLast ? 'See results' : 'Next question'),
           ),
         ],

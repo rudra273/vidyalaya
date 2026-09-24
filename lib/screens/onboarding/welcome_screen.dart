@@ -23,10 +23,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   void initState() {
     super.initState();
     _selectedBoard = ref.read(userBoardProvider);
-    final selectedClasses = ref.read(userSelectionProvider).toList()..sort();
-    if (selectedClasses.isNotEmpty) {
-      _selectedClass = selectedClasses.first;
-    }
+    _selectedClass = ref.read(primaryClassProvider);
     _scrollController = FixedExtentScrollController(
       initialItem: _selectedClass - 1,
     );
@@ -199,7 +196,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                                 child: AnimatedDefaultTextStyle(
                                   duration: const Duration(milliseconds: 200),
                                   style: TextStyle(
-                                    fontSize: isSelected ? AppFontSize.displaySmall : AppFontSize.heading,
+                                    fontSize: isSelected
+                                        ? AppFontSize.displaySmall
+                                        : AppFontSize.heading,
                                     fontWeight: isSelected
                                         ? AppFontWeight.bold
                                         : AppFontWeight.medium,
@@ -277,7 +276,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                             ? () {
                                 // Save selection
                                 ref
-                                    .read(userSelectionProvider.notifier)
+                                    .read(primaryClassProvider.notifier)
+                                    .setClass(_selectedClass);
+                                ref
+                                    .read(
+                                      exploreClassSelectionProvider.notifier,
+                                    )
+                                    .setClasses({_selectedClass});
+                                ref
+                                    .read(
+                                      libraryClassSelectionProvider.notifier,
+                                    )
                                     .setClasses({_selectedClass});
                                 ref
                                     .read(userBoardProvider.notifier)

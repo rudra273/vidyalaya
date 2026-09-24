@@ -11,6 +11,10 @@ import '../models/virtual_lab.dart';
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
 class UserPrefsRepository {
   static const _selectedClassesKey = 'selected_classes';
+  static const _exploreSelectionModeKey = 'explore_selection_mode';
+  static const _librarySelectedClassesKey = 'library_selected_classes';
+  static const _librarySelectionModeKey = 'library_selection_mode';
+  static const _primaryClassKey = 'primary_class';
   static const _selectedBoardKey = 'selected_board';
   static const _lastReadBookIdKey = 'last_read_book_id';
   static const _bookPagePrefix = 'book_page_';
@@ -131,6 +135,71 @@ class UserPrefsRepository {
   Future<void> setSelectedClasses(Set<int> classes, {String? uid}) async {
     final key = uid == null ? _selectedClassesKey : '$uid:$_selectedClassesKey';
     await _prefs.setString(key, jsonEncode(classes.toList()));
+  }
+
+  String getExploreSelectionMode({String? uid}) {
+    final key = uid == null
+        ? _exploreSelectionModeKey
+        : '$uid:$_exploreSelectionModeKey';
+    return _prefs.getString(key) ?? 'primary';
+  }
+
+  Future<void> setExploreSelectionMode(String mode, {String? uid}) async {
+    final key = uid == null
+        ? _exploreSelectionModeKey
+        : '$uid:$_exploreSelectionModeKey';
+    await _prefs.setString(key, mode);
+  }
+
+  Set<int> getLibrarySelectedClasses({String? uid}) {
+    final key = uid == null
+        ? _librarySelectedClassesKey
+        : '$uid:$_librarySelectedClassesKey';
+    final jsonStr = _prefs.getString(key);
+    if (jsonStr == null) return {};
+    final list = jsonDecode(jsonStr) as List;
+    return list.map((e) => e as int).toSet();
+  }
+
+  Future<void> setLibrarySelectedClasses(
+    Set<int> classes, {
+    String? uid,
+  }) async {
+    final key = uid == null
+        ? _librarySelectedClassesKey
+        : '$uid:$_librarySelectedClassesKey';
+    await _prefs.setString(key, jsonEncode(classes.toList()));
+  }
+
+  String getLibrarySelectionMode({String? uid}) {
+    final key = uid == null
+        ? _librarySelectionModeKey
+        : '$uid:$_librarySelectionModeKey';
+    return _prefs.getString(key) ?? 'primary';
+  }
+
+  Future<void> setLibrarySelectionMode(String mode, {String? uid}) async {
+    final key = uid == null
+        ? _librarySelectionModeKey
+        : '$uid:$_librarySelectionModeKey';
+    await _prefs.setString(key, mode);
+  }
+
+  int getPrimaryClass({String? uid}) {
+    final key = uid == null ? _primaryClassKey : '$uid:$_primaryClassKey';
+    final stored = _prefs.getInt(key);
+    if (stored != null) return stored;
+    // One-time compatibility fallback for installs that predate a dedicated
+    // profile-class key. Never persist a multi-class choice as the profile.
+    final legacy = getSelectedClasses(uid: uid).toList()..sort();
+    final migrated = legacy.isEmpty ? 8 : legacy.first;
+    _prefs.setInt(key, migrated);
+    return migrated;
+  }
+
+  Future<void> setPrimaryClass(int classNo, {String? uid}) async {
+    final key = uid == null ? _primaryClassKey : '$uid:$_primaryClassKey';
+    await _prefs.setInt(key, classNo);
   }
 
   // ─── Selected Board ─────────────────────────────────────────────────────

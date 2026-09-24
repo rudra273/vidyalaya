@@ -61,7 +61,7 @@ class HomeScreen extends ConsumerWidget {
 
     // One warm-up a day, pitched at the lowest class the student has selected
     // (null = draw from the whole pool) so it never lands above their level.
-    final selectedClasses = ref.watch(userSelectionProvider);
+    final selectedClasses = ref.watch(exploreClassSelectionProvider);
     final warmupQuestion = warmupForDate(
       DateTime.now(),
       classNo: selectedClasses.isEmpty
@@ -176,8 +176,7 @@ class HomeScreen extends ConsumerWidget {
                               : AppColors.cAi,
                           icon: Icons.menu_book_rounded,
                           label: 'Books',
-                          onTap: () =>
-                              _navTap(ref, context, '/library', replace: true),
+                          onTap: () => _navTap(ref, context, '/library'),
                         ),
                       ),
                     SizedBox(

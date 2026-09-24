@@ -27,8 +27,7 @@ class MathNumberSenseScreen extends ConsumerStatefulWidget {
       _MathNumberSenseScreenState();
 }
 
-class _MathNumberSenseScreenState
-    extends ConsumerState<MathNumberSenseScreen> {
+class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
   static const _toolId = 'math-number-sense';
 
   late List<NumberSenseQuestion> _questions;
@@ -39,7 +38,7 @@ class _MathNumberSenseScreenState
   bool _finished = false;
 
   int get _classLevel {
-    final selected = ref.read(userSelectionProvider);
+    final selected = ref.read(exploreClassSelectionProvider);
     if (selected.isEmpty) return 4;
     return selected.reduce((a, b) => a > b ? a : b);
   }
@@ -114,8 +113,8 @@ class _MathNumberSenseScreenState
     final q = _questions[_index];
     final isLast = _index == _questions.length - 1;
     // Two-per-row for short numeric options; full width for word answers.
-    final useGrid = q.options.length == 4 &&
-        q.options.every((o) => o.length <= 5);
+    final useGrid =
+        q.options.length == 4 && q.options.every((o) => o.length <= 5);
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.screenPadding),
@@ -126,53 +125,55 @@ class _MathNumberSenseScreenState
             Text(
               '${_index + 1} of ${_questions.length}  ·  ${q.kind.label}',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.3,
-                  ),
+                color: AppColors.textMuted,
+                letterSpacing: 0.3,
+              ),
             ),
             Text(
               'Score $_correct',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: accent,
-                    fontWeight: AppFontWeight.bold,
-                  ),
+                color: accent,
+                fontWeight: AppFontWeight.bold,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         Text(
           q.prompt,
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: AppFontWeight.bold, height: 1.35),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: AppFontWeight.bold,
+            height: 1.35,
+          ),
         ),
         const SizedBox(height: 22),
         if (useGrid)
-          LayoutBuilder(builder: (context, c) {
-            const gap = 12.0;
-            final cellW = (c.maxWidth - gap) / 2;
-            return Wrap(
-              spacing: gap,
-              runSpacing: gap,
-              children: List.generate(q.options.length, (i) {
-                return SizedBox(
-                  width: cellW,
-                  child: MathOptionTile(
-                    label: q.options[i],
-                    centered: true,
-                    state: mathOptionState(
-                      answered: _answered,
-                      index: i,
-                      correctIndex: q.correctIndex,
-                      selected: _selected,
+          LayoutBuilder(
+            builder: (context, c) {
+              const gap = 12.0;
+              final cellW = (c.maxWidth - gap) / 2;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: List.generate(q.options.length, (i) {
+                  return SizedBox(
+                    width: cellW,
+                    child: MathOptionTile(
+                      label: q.options[i],
+                      centered: true,
+                      state: mathOptionState(
+                        answered: _answered,
+                        index: i,
+                        correctIndex: q.correctIndex,
+                        selected: _selected,
+                      ),
+                      onTap: _answered ? null : () => _answer(q, i),
                     ),
-                    onTap: _answered ? null : () => _answer(q, i),
-                  ),
-                );
-              }),
-            );
-          })
+                  );
+                }),
+              );
+            },
+          )
         else
           ...List.generate(q.options.length, (i) {
             return Padding(
@@ -199,9 +200,9 @@ class _MathNumberSenseScreenState
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: accent),
             onPressed: () => _next(isLast),
-            icon: Icon(isLast
-                ? Icons.emoji_events_rounded
-                : Icons.arrow_forward_rounded),
+            icon: Icon(
+              isLast ? Icons.emoji_events_rounded : Icons.arrow_forward_rounded,
+            ),
             label: Text(isLast ? 'See results' : 'Next'),
           ),
         ],

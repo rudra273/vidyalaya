@@ -85,6 +85,31 @@ void main() {
       );
     });
 
+    test('changed Library preferences produce a different state', () {
+      const base = BackendAccountState(uid: 'uid-1');
+
+      expect(
+        base.copyWith(
+          libraryPreferences: const AsyncData(
+            LibraryPreferences(
+              selectionMode: 'selected',
+              selectedClasses: [7, 8],
+            ),
+          ),
+        ),
+        isNot(
+          base.copyWith(
+            libraryPreferences: const AsyncData(
+              LibraryPreferences(
+                selectionMode: 'selected',
+                selectedClasses: [8],
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+
     test('an empty profile is distinct from one that has not loaded', () {
       const base = BackendAccountState(uid: 'uid-1');
 
@@ -125,7 +150,7 @@ void main() {
     });
   });
 
-  group('UserSelectionNotifier.setClasses', () {
+  group('ExploreClassSelectionNotifier.setClasses', () {
     final activeUidProvider = NotifierProvider<_ActiveUid, String?>(
       _ActiveUid.new,
     );
@@ -153,47 +178,53 @@ void main() {
     test('setting the same classes does not notify listeners', () async {
       final container = await containerWith({8});
       var notifications = 0;
-      container.listen(userSelectionProvider, (_, _) => notifications++);
+      container.listen(
+        exploreClassSelectionProvider,
+        (_, _) => notifications++,
+      );
 
-      container.read(userSelectionProvider.notifier).setClasses({8});
+      container.read(exploreClassSelectionProvider.notifier).setClasses({8});
 
       expect(notifications, 0);
-      expect(container.read(userSelectionProvider), {8});
+      expect(container.read(exploreClassSelectionProvider), {8});
     });
 
     test('setting different classes still notifies', () async {
       final container = await containerWith({8});
       var notifications = 0;
-      container.listen(userSelectionProvider, (_, _) => notifications++);
+      container.listen(
+        exploreClassSelectionProvider,
+        (_, _) => notifications++,
+      );
 
-      container.read(userSelectionProvider.notifier).setClasses({7});
+      container.read(exploreClassSelectionProvider.notifier).setClasses({7});
 
       expect(notifications, 1);
-      expect(container.read(userSelectionProvider), {7});
+      expect(container.read(exploreClassSelectionProvider), {7});
     });
 
     test('account switches keep class and board mirrors isolated', () async {
       final container = await containerWith({6});
-      final classes = container.read(userSelectionProvider.notifier);
+      final classes = container.read(exploreClassSelectionProvider.notifier);
       final board = container.read(userBoardProvider.notifier);
-      expect(container.read(userSelectionProvider), {6});
+      expect(container.read(exploreClassSelectionProvider), {6});
 
       container.read(activeUidProvider.notifier).setUid('student-a');
-      expect(container.read(userSelectionProvider), isEmpty);
+      expect(container.read(exploreClassSelectionProvider), isEmpty);
       classes.setClasses({7, 8});
       board.setBoard('ncert');
 
       container.read(activeUidProvider.notifier).setUid('student-b');
-      expect(container.read(userSelectionProvider), isEmpty);
+      expect(container.read(exploreClassSelectionProvider), isEmpty);
       expect(container.read(userBoardProvider), 'scert_odisha');
       classes.setClasses({9});
 
       container.read(activeUidProvider.notifier).setUid('student-a');
-      expect(container.read(userSelectionProvider), {7, 8});
+      expect(container.read(exploreClassSelectionProvider), {7, 8});
       expect(container.read(userBoardProvider), 'ncert');
 
       container.read(activeUidProvider.notifier).setUid(null);
-      expect(container.read(userSelectionProvider), {6});
+      expect(container.read(exploreClassSelectionProvider), {6});
       expect(container.read(userBoardProvider), 'scert_odisha');
     });
   });
