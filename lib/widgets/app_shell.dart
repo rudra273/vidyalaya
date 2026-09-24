@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../app/theme.dart';
 import '../providers/auth_provider.dart';
 import '../utils/haptics.dart';
+import 'app_update_banner.dart';
 import 'pressable.dart';
 
 /// Shell wrapper that provides the Calm Scholar bottom navigation for tab
@@ -83,36 +84,42 @@ class AppShell extends ConsumerWidget {
       onBackButtonPressed: () => _onBack(context, ref),
       child: Scaffold(
         body: child,
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            color: cs.surface,
-            border: Border(top: BorderSide(color: hair, width: 1)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
-              child: Row(
-                children: List.generate(_tabs.length, (index) {
-                  final isActive = index == currentIndex;
-                  final tab = _tabs[index];
-                  return Expanded(
-                    child: _NavBarItem(
-                      icon: tab.$2,
-                      label: tab.$3,
-                      isActive: isActive,
-                      onTap: () {
-                        if (index != currentIndex) {
-                          Haptics.selection(ref);
-                          context.go(tab.$1);
-                        }
-                      },
-                    ),
-                  );
-                }),
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppUpdateBanner(),
+            Container(
+              decoration: BoxDecoration(
+                color: cs.surface,
+                border: Border(top: BorderSide(color: hair, width: 1)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+                  child: Row(
+                    children: List.generate(_tabs.length, (index) {
+                      final isActive = index == currentIndex;
+                      final tab = _tabs[index];
+                      return Expanded(
+                        child: _NavBarItem(
+                          icon: tab.$2,
+                          label: tab.$3,
+                          isActive: isActive,
+                          onTap: () {
+                            if (index != currentIndex) {
+                              Haptics.selection(ref);
+                              context.go(tab.$1);
+                            }
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
