@@ -109,7 +109,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Q&A AI conversation entry ──────────────────────────
+          // ── Q&A Assist conversation entry ──────────────────────
           const SizedBox(height: AppSpacing.sectionGap - 14),
           Padding(
             padding: const EdgeInsets.symmetric(
