@@ -56,6 +56,7 @@ class AppColors {
   static const Color cCosmos = Color(0xFF3A66C9);
   static const Color cPython = Color(0xFF3E8E5A);
   static const Color cMathHub = Color(0xFF5B54C4);
+  static const Color cQuiz = Color(0xFF4F9A2C);
 
   // ─── DARK ─────────────────────────────────────────────────────────────
   static const Color paperDark = Color(0xFF0D1411);
@@ -103,6 +104,7 @@ class AppColors {
   static const Color cCosmosDark = Color(0xFF6E92E8);
   static const Color cPythonDark = Color(0xFF74C293);
   static const Color cMathHubDark = Color(0xFF8E88E4);
+  static const Color cQuizDark = Color(0xFF90CB6E);
 
   // ─── Subject color mapping ───────────────────────────────────────────
   static Color subjectColor(String subject, Brightness brightness) {
