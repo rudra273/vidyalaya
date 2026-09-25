@@ -6,10 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../data/math/math_generators.dart';
 import '../../../data/math/math_models.dart';
+import '../../../data/models/localized_text.dart';
 import '../../../providers/math_progress_provider.dart';
+import '../../../providers/regional_language_provider.dart';
 import '../../../utils/haptics.dart';
 import '../../../widgets/calm_widgets.dart';
 import '../../../widgets/pressable.dart';
+import '../../../widgets/regional_language_switch.dart';
 import 'math_home_screen.dart';
 import 'widgets/countdown_ring.dart';
 import 'widgets/flash_custom_sheet.dart';
@@ -209,6 +212,7 @@ class _MathFlashScreenState extends ConsumerState<MathFlashScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Flash Math'),
+          actions: const [RegionalLanguageSwitch()],
           leading: _roundInProgress
               ? IconButton(
                   icon: const Icon(Icons.close_rounded),
@@ -236,6 +240,7 @@ class _MathFlashScreenState extends ConsumerState<MathFlashScreen> {
           _Phase.answering => _AnswerView(
               chain: _chain!,
               promptForStep: _promptForStep,
+              lang: ref.watch(regionalLanguageProvider),
               entry: _entry,
               accent: accent,
               onChanged: () => setState(() {}),
@@ -633,6 +638,7 @@ class _FlashView extends StatelessWidget {
 class _AnswerView extends StatelessWidget {
   final MathFlashChain chain;
   final int promptForStep;
+  final RegionalLanguage lang;
   final NumpadValue entry;
   final Color accent;
   final VoidCallback onChanged;
@@ -641,6 +647,7 @@ class _AnswerView extends StatelessWidget {
   const _AnswerView({
     required this.chain,
     required this.promptForStep,
+    required this.lang,
     required this.entry,
     required this.accent,
     required this.onChanged,
@@ -665,9 +672,8 @@ class _AnswerView extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              isFinal
-                  ? 'The total after all ${chain.steps.length} steps'
-                  : 'The total after step ${promptForStep + 1}',
+              _totalQuestion(isFinal, chain.steps.length, promptForStep + 1)
+                  .of(lang),
               style: TextStyle(color: AppColors.textMuted),
             ),
             const SizedBox(height: 18),
@@ -696,6 +702,19 @@ class _AnswerView extends StatelessWidget {
     );
   }
 }
+
+/// The question asked at a checkpoint or at the end of the chain.
+LocalizedText _totalQuestion(bool isFinal, int steps, int step) => isFinal
+    ? LocalizedText(
+        en: 'The total after all $steps steps',
+        or: 'ସମସ୍ତ $steps ପଦକ୍ଷେପ ପରେ ମୋଟ',
+        hi: 'सभी $steps चरणों के बाद कुल',
+      )
+    : LocalizedText(
+        en: 'The total after step $step',
+        or: 'ପଦକ୍ଷେପ $step ପରେ ମୋଟ',
+        hi: 'चरण $step के बाद कुल',
+      );
 
 // ─── Result ───────────────────────────────────────────────────────────────────
 

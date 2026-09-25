@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vidyalaya/data/models/virtual_lab.dart';
 import 'package:vidyalaya/data/repositories/user_prefs_repository.dart';
 import 'package:vidyalaya/data/models/class_range.dart';
+import 'package:vidyalaya/data/models/regional_language.dart';
 
 void main() {
   test('lab is recommended from Class 6', () {
@@ -68,5 +69,39 @@ void main() {
     expect(restored.clientAttemptId, attempt.clientAttemptId);
     expect(restored.clientSessionId, attempt.clientSessionId);
     expect(repository.getLabAttempts(), hasLength(1));
+  });
+
+  test('lab content is translated but saved values stay English keys', () {
+    for (final sample in ['lemon', 'water', 'soap']) {
+      final obs = evaluateLab('indicator', {'sample': sample}, 'red');
+      expect(obs.values['color'], isIn(['red', 'green', 'blue']));
+      expect(obs.explanation.or, isNot(obs.explanation.en));
+      expect(obs.explanation.hi, isNot(obs.explanation.en));
+      expect(
+        obs.explanation.or,
+        contains(labWord(sample, RegionalLanguage.odia)),
+      );
+    }
+    for (final key in [
+      'off',
+      'dim',
+      'bright',
+      'red',
+      'green',
+      'blue',
+      'acidic',
+      'neutral',
+      'basic',
+      'lemon',
+      'water',
+      'soap',
+    ]) {
+      for (final lang in RegionalLanguage.values) {
+        expect(labWord(key, lang), isNot(key), reason: '$key/$lang');
+      }
+    }
+    for (final text in labInstructions.values) {
+      expect({text.en, text.or, text.hi}, hasLength(3));
+    }
   });
 }

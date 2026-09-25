@@ -6,8 +6,10 @@ import '../../../app/theme.dart';
 import '../../../data/math/math_generators.dart';
 import '../../../data/math/math_models.dart';
 import '../../../providers/math_progress_provider.dart';
+import '../../../providers/regional_language_provider.dart';
 import '../../../providers/user_selection_provider.dart';
 import '../../../utils/haptics.dart';
+import '../../../widgets/regional_language_switch.dart';
 import 'math_home_screen.dart';
 import 'widgets/math_option_tile.dart';
 
@@ -96,7 +98,10 @@ class _MathQuizScreenState extends ConsumerState<MathQuizScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Math Quiz')),
+      appBar: AppBar(
+        title: const Text('Math Quiz'),
+        actions: const [RegionalLanguageSwitch()],
+      ),
       body: _finished
           ? MathScorePage(
               correct: _correct,
@@ -138,7 +143,7 @@ class _MathQuizScreenState extends ConsumerState<MathQuizScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          q.prompt,
+          q.prompt.of(ref.watch(regionalLanguageProvider)),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: AppFontWeight.bold,
             height: 1.35,
@@ -164,7 +169,7 @@ class _MathQuizScreenState extends ConsumerState<MathQuizScreen> {
           const SizedBox(height: 4),
           MathExplanation(
             correct: _selected == q.correctIndex,
-            text: q.explanation,
+            text: q.explanation.of(ref.watch(regionalLanguageProvider)),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(

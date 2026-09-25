@@ -1,331 +1,159 @@
-# Vidya AI — Release Readiness Plan
+# Vidya AI — Release Plan
 
-_Created 2026-09-24 from a full app audit (analyzer: 11 lint infos, tests: 411/411 passing)._
+_Phases 1–6 are done: release polish, math in AI answers, formulas, content gaps,
+class-aware Explore, and regional language for study content. This file now tracks only
+what's left._
 
-Frontend work comes first (Phases 1–7). The new backend **Explore Assist** agent is the
-last phase (Phase 8). New diagrams are tracked separately in the **Appendix** and will be
-built in a different session.
-
-Each step is small enough to review on its own. Nothing is started until it is approved.
+Phase 7 (new learning tools) runs in a separate session. Phase 8 (the backend Explore Assist
+agent) comes last.
 
 **Legend:** `[ ]` todo · `[x]` done · 🔸 needs a decision from you before starting
 
 ---
 
-## Phase 1 — Release polish (visible "unfinished" spots)
+## Ground rules (carried over from Phases 1–6)
 
-Quick fixes that remove anything a student would read as broken or stale.
-
-- [x] **1.1 About screen copy** — [about_screen.dart](lib/screens/profile/about_screen.dart)
-  - Remove "More is on the way, including Quizzes and a Virtual Science Lab" (both already ship).
-  - Add the missing Explore tools to the list: Math practice (tables, flash, quiz, drills,
-    number sense, fractions), Vocabulary, Python, and Science Lab.
-- [x] **1.2 Explore "Math" tile subtitle** — [explore_screen.dart](lib/screens/explore/explore_screen.dart)
-  - `'Tables and drills'` → `'Formulas, tables & practice'`.
-  - Also remove the stale "Coming soon group" mention in the class doc comment.
-- [x] **1.3 Average formula description** — [math_formulas_screen.dart](lib/screens/learn/math_formulas_screen.dart)
-  - "average of **two numbers**" → "average of a set of numbers" (EN/OR/HI).
-- [x] **1.4 Remove "More formulas coming soon..." footer** in every formula category list.
-- [x] **1.5 Periodic Table "Ask AI" button** — [periodic_table_screen.dart:846](lib/screens/learn/periodic_table_screen.dart:846)
-  - Today it only shows a "coming soon" snackbar. **Recommendation:** hide the button until
-    Phase 8 wires it to the new agent (the TODO stays and points to Phase 8).
-- [x] **1.6 AI Tutor row** in the AI hub (already labelled "Preview", but any typed
-  question gets a canned "coming soon" reply).
-  - Option A: hide the row for this release and bring it back with a real agent.
-  - ✅ Option B chosen: row kept; composer disabled, banner reads "Preview — guided lesson demo", About lists it as a preview.
-  - Also update the About screen line "AI Tutor (coming soon)" to match whichever option is chosen.
-- [x] **1.7 Clear analyzer infos** — 10× `curly_braces_in_flow_control_structures` in
-  `math_formulas_screen.dart`, 1× deprecated `cacheExtent` → `scrollCacheExtent` in
-  `vocabulary_screen.dart`. Goal: `flutter analyze` reports 0 issues.
-- [x] **1.8 Docs** — CLAUDE.md says "classes 1–8", but the catalog now ships Classes 9–10. Update it.
-- [x] **1.9 Version bump** — `pubspec.yaml` is `1.0.3+4`. Bumped to `1.0.4+5`.
+- **Language:** only *study content* switches to Odia/Hindi, via the per-screen
+  `RegionalLanguageSwitch`. App labels, titles, buttons and navigation stay English. Python,
+  the AI hub, Profile, Settings, Timetable and Notes are English-only. Content translations
+  live next to the content as `LocalizedText` (`lib/data/models/localized_text.dart`), with
+  no global string table.
+- **Class ranges:** every Explore tool, diagram and formula category has a `ClassRange` in
+  `lib/data/models/class_range.dart`. Content outside the student's classes is never hidden;
+  it moves under "More tools" or the "All classes" switch. Class ranges are your decision.
+- **Brand:** user-facing name is "Vidya AI"; technical identifiers stay `vidyalaya`.
+- **Git diffs:** don't run `dart format` on whole files that weren't formatted before; keep
+  diffs to the lines that changed.
 
 ---
 
-## Phase 2 — Math rendering in AI answers
+## Open follow-ups from Phases 1–6
 
-Today AI answers go through plain `flutter_markdown` `MarkdownBody`, in
-[learn_ai_screen.dart:1656](lib/screens/learn/learn_ai_screen.dart:1656) and
-[chat_bubble.dart:56](lib/screens/learn_ai/widgets/chat_bubble.dart:56). Nothing handles LaTeX,
-so `$x^2$`, `\frac{a}{b}`, `\sqrt{}` and `\[ ... \]` show up as raw text.
-
-- [ ] **2.1 Collect real failing samples** — pull 10–15 math-heavy answers (quadratics,
-  fractions, trig, physics units, Class 9–10 algebra) and note exactly which delimiters the
-  backend emits (`$…$`, `$$…$$`, `\(…\)`, `\[…\]`, bare `\frac`, Unicode like `x²`).
-  These samples become the test fixtures.
-  - Done partly: backend logs don't store answer text, and the Learn Assist prompt has no
-    math-format rule, so fixtures cover all four delimiter styles. Still to do: check them
-    against 10–15 real answers on a device.
-- [x] **2.2 One shared answer renderer** — create `lib/widgets/ai_markdown.dart`, used by both
-  the Learn AI screen and `chat_bubble.dart`, so the two can't drift apart.
-- [x] **2.3 LaTeX support**
-  - Add `flutter_math_fork` (pure-Dart KaTeX, works offline).
-  - Custom markdown syntaxes: inline math for `$…$` and `\(…\)`, block math for `$$…$$` and
-    `\[…\]`.
-  - Don't treat currency like `₹5` or `$5` as math: a `$` followed by a digit and a space
-    is not an opening delimiter.
-  - Wide equations scroll horizontally instead of overflowing the bubble.
-  - Math follows the theme text colour, so it's readable in dark mode.
-  - If an expression fails to parse, show the raw TeX in monospace instead of crashing.
-- [x] **2.4 Streaming safety** — while an answer is still streaming, an unclosed `$`/`\[` is
-  rendered as plain text until its closing delimiter arrives. This avoids flicker and parse
-  errors mid-stream. The `▌` cursor must never end up inside a math span.
-- [x] **2.5 Tables & code** — check that GFM tables (common in step-by-step solutions) and
-  code blocks still render, and that tables scroll horizontally on narrow phones.
-- [ ] 🔸 **2.6 Backend prompt alignment** — ask the Learn Assist prompt to use only
-  `$…$` / `$$…$$`, so the client doesn't have to guess. The client still accepts all four forms.
-- [x] **2.7 Copy button** — "Copy answer" should copy readable text rather than raw
-  `\frac{}{}` (keep the TeX, but strip the delimiters).
-- [x] **2.8 Tests** — widget tests using the 2.1 fixtures: inline math, block math, currency
-  that should *not* be treated as math, an unclosed delimiter mid-stream, and invalid TeX falling back to text.
-- [ ] 🔸 **2.9 (optional) Package migration** — `flutter_markdown` is discontinued upstream,
-  and its successor is `flutter_markdown_plus`. It's cheap to switch while this code is open.
-
-This also sets up Phase 8: Explore Assist answers (formula explanations) reuse the same renderer.
+- [ ] 🔸 **Native-speaker review** of the new Odia/Hindi text: new formulas (Phase 3),
+  30 timeline events (Phase 4), Math practice and Science Lab content (Phase 6).
+- [ ] 🔸 **Timeline dates** marked "c." or given as a century are approximate. Check them.
+- [ ] **Math in AI answers: real samples.** Check the LaTeX renderer against 10–15 real
+  math-heavy answers on a device (the tests use made-up answers).
+- [ ] 🔸 **Backend prompt rule.** Ask the Learn Assist prompt to write math only as
+  `$…$` / `$$…$$` (backend repo).
+- [ ] 🔸 **(optional) `flutter_markdown` → `flutter_markdown_plus`.** The old package is
+  discontinued upstream.
+- [ ] **Diagrams follow-up (you).** Correct labels, and fix some images such as the maps.
+  Every new diagram needs an entry in `diagramClassRanges`; a test fails without one.
+- [ ] **Formula figures.** New solids (cone, sphere, parallelogram, trapezium…) have no
+  drawn diagram yet; `FormulaDiagramPainter` only knows the original 9 shapes.
+- [ ] **Science Lab header** still reads "CLASS 7 · SCIENCE · CHAPTER …" although the lab is
+  now recommended from Class 6.
 
 ---
 
-## Phase 3 — Math formulas expansion
+## Phase 7 — New learning tools (separate session)
 
-Currently 35 formulas (roughly Class 6–7 level). Target: about 75, covering Classes 3–10.
-Every new formula gets EN/OR/HI title and description, plus a working calculator (a new
-`FormulaType` and calculator branch), matching the existing entries.
+Every new tool also needs:
+- an entry in `exploreToolClassRanges`,
+- a tile in `explore_screen.dart` and a route in `app/router.dart`,
+- Odia/Hindi for its study content only.
 
-- [x] **3.1 New category "Measurement" (Classes 3–6)**
-  - Length conversions (km ↔ m ↔ cm ↔ mm), mass (kg ↔ g), capacity (L ↔ mL),
-    time (h ↔ min ↔ s), money (₹ ↔ paise), perimeter of a triangle.
-- [x] **3.2 Arithmetic additions**
-  - Discount & selling price, marked price after discount, ratio → share (divide ₹N in a:b),
-    unitary method, HCF × LCM = product of two numbers, percentage increase and decrease.
-- [x] **3.3 Algebra additions**
-  - Laws of exponents (aᵐ·aⁿ, aᵐ/aⁿ, (aᵐ)ⁿ), (a+b+c)², a³+b³, a³−b³,
-    discriminant D = b²−4ac (nature of roots), sum of the first n natural numbers, linear equation ax+b=0.
-- [x] **3.4 Geometry / mensuration additions**
-  - Area of a parallelogram, trapezium, rhombus; Heron's formula; sector area;
-    surface area of a cube, cuboid and cylinder (curved + total);
-    cone (slant height, CSA, volume); sphere (surface area, volume); hemisphere (CSA, TSA, volume);
-    angle sum of a polygon.
-- [x] **3.5 New category "Coordinate Geometry" (Classes 9–10)**
-  - Distance formula, midpoint, section formula, slope, area of a triangle from its vertices.
-- [x] **3.6 Trigonometry additions**
-  - Identities: sin²θ+cos²θ=1, 1+tan²θ=sec²θ, 1+cot²θ=cosec²θ; reciprocal ratios;
-    a standard-angle table (0°, 30°, 45°, 60°, 90°) as a reference card with no calculator.
-- [x] **3.7 New category "Statistics & Probability" (Classes 6–10)**
-  - Mean of a list of values, median, mode, range, grouped mean (assumed-mean method),
-    probability of an event P(E) = favourable / total.
-- [x] **3.8 Split "Science" into a proper "Physics" category** (keep the temperature conversions)
-  - Speed/velocity, acceleration, F = ma, momentum, weight W = mg, density, pressure,
-    work, power, kinetic energy, potential energy, Ohm's law V = IR,
-    series and parallel resistance, electric power P = VI.
-- [x] **3.9 Tests** — one test per new calculator type, checking a known answer.
+Do the steps in order within each tool; tools themselves can be picked in any order.
+Suggested order: 7A → 7B → 7C → 7D → 7E → 7F → 7G → 7H.
 
-> ✅ Refactor done first: formula data now lives in `lib/data/math/formulas/` (one file per
-> category). Each `FormulaData` carries its own `inputs` and a `compute` function, so one
-> generic calculator replaced the three per-type `switch` blocks. The screen dropped from
-> 2,221 to about 1,080 lines.
->
-> Notes from implementation:
-> - "Perimeter of triangle" went into Geometry rather than Measurement.
-> - "Mean of a list" (3.7) was folded into Arithmetic → Average, which now takes a list.
-> - New solids (cone, sphere, parallelogram, …) have no drawn figure yet; the painter only
->   has the original 9 shapes.
-> - 🔸 The Odia and Hindi text for the new formulas needs a native-speaker review.
+### 7A — Subject quizzes (Science, Social Science, English)
+- [ ] **7A.1** 🔸 Decide the class bands and subjects for v1 (suggested: Classes 3–5, 6–8, 9–10).
+- [ ] **7A.2** Question model: prompt, options, answer, explanation as `LocalizedText`, plus
+  subject and class range. Store banks under `lib/data/quiz/<subject>/`.
+- [ ] **7A.3** Write the first bank: about 20 questions per subject per band.
+- [ ] **7A.4** Quiz screen: reuse the Math Quiz shell (`MathOptionTile`, `MathExplanation`,
+  results sheet) with a subject picker.
+- [ ] **7A.5** Best scores per subject, stored the way `mathProgressProvider` does it.
+- [ ] **7A.6** Tests: every question has a valid answer index and all three languages.
 
----
+### 7B — Units & measurement (extend, don't duplicate)
+Formulas → Measurement already converts length, mass, capacity, time and money.
+- [ ] **7B.1** 🔸 Decide: extend the Measurement category (recommended) or build a separate tool.
+- [ ] **7B.2** Add temperature (°C/°F/K), area (m², cm², hectare, acre) and volume
+  (m³, cm³, L).
+- [ ] **7B.3** Tests with known conversions.
 
-## Phase 4 — Other content gaps
+### 7C — Alphabet & first words (Classes 1–3)
+- [ ] **7C.1** Letter data for Odia, Hindi and English: each letter with 1–2 example words.
+- [ ] **7C.2** Browse screen: a letter grid, and a letter detail with example words.
+- [ ] **7C.3** "Find the letter" game with 10 rounds and a score.
+- [ ] **7C.4** 🔸 Decide whether to add audio later. It's out of scope for v1.
+- [ ] **7C.5** Tests: complete letter sets and no empty examples.
 
-- [x] **4.1 Timeline: fill the state filter or trim it**
-  - Today there are 52 events: 30 World, 12 India, 6 Odisha, 2 Tamil Nadu, 1 Maharashtra,
-    1 West Bengal. The picker offers all 28 states, so most show nothing.
-  - (a) Make the picker list only states that have events.
-  - (b) Add Odisha events (target ~20): Kharavela & the Hathigumpha inscription, Konark Sun
-    Temple, Jagannath Temple (Puri), Lingaraj Temple, the Somavamshi and Eastern Ganga dynasties,
-    Na'anka Durbhiksha (1866 famine), Madhusudan Das, Gopabandhu Das & Satyabadi school,
-    Utkal Sammilani (1903), Cuttack as capital → Bhubaneswar (1948), the 1999 super cyclone,
-    Hirakud Dam, and others.
-  - (c) Add more India events (target ~30 total): Harappan cities, Ashoka's edicts, Chola
-    empire, Vijayanagara, Akbar, Shivaji, Non-Cooperation Movement, Dandi March, Constitution
-    (1950), first general elections, Green Revolution, Chandrayaan, and others.
-  - Done: 82 events (Odisha 20, India 24, World 30, and Tamil Nadu, Karnataka, Kerala, Punjab,
-    Maharashtra, West Bengal). The picker now lists only the 7 states that have events.
-  - Also fixed: events are now sorted by year. Before, mixing World and India showed two
-    separate runs of history, because the data is grouped by region.
-  - 🔸 Dates marked "c." or given as a century are approximate. The Odia/Hindi text needs review.
-- [x] **4.2 Books catalog gaps** — ✅ no change: the catalogue is correct as it is (confirmed by you).
-  - Class 1 and Class 2 have only 2 books each; Class 8 has no PE book (Classes 6–7 do).
-  - This needs the real OSEPA PDF URLs. I can search osepa.odisha.gov.in for them, or you
-    can supply the links.
-- [x] **4.3 Vocabulary: word of the day** — a deterministic daily pick from the ~930 words,
-  shown on the Vocabulary screen header (and optionally on the Home warm-up).
-  - Done: Home already had one. The Vocabulary card now opens on the same word, labelled
-    "Word of the day", and the arrows then show "More words".
+### 7D — English grammar
+- [ ] **7D.1** Topic list: parts of speech, tenses, articles, prepositions (more later).
+- [ ] **7D.2** Each topic has a short explainer, with an Odia/Hindi explanation where it helps.
+- [ ] **7D.3** 5–10 practice questions per topic, reusing the 7A question model and screen.
+- [ ] **7D.4** Tests.
 
----
+### 7E — Maps (India & Odisha)
+- [ ] **7E.1** 🔸 Source SVG maps and check their licence before bundling.
+- [ ] **7E.2** State/district data: name (EN/OR/HI), capital or HQ, and 1–2 key facts.
+- [ ] **7E.3** Tap-to-explore map screen.
+- [ ] **7E.4** "Find the state/district" quiz.
+- [ ] **7E.5** Tests: every map region has data and every data entry has a region.
 
-## Phase 5 — Class-aware Explore
+### 7F — Revision flashcards
+- [ ] **7F.1** Card sources: highlights, notes and bookmarks (`UserPrefsRepository`), plus
+  vocabulary words.
+- [ ] **7F.2** Flip-card screen with "know it / review again" buttons.
+- [ ] **7F.3** Simple spaced repetition: store the next-review date per card, locally.
+- [ ] **7F.4** Tests for scheduling.
 
-Today the Explore class filter only hides or shows the Science Lab tile. A Class 3 student
-sees trigonometry and Python and can't filter them out.
+### 7G — Science Lab: more experiments
+- [ ] **7G.1** 🔸 Pick the experiments. Suggested: pendulum, plane mirror, magnets,
+  sink or float, germination (for Classes 5–6).
+- [ ] **7G.2** Add rules to the local `evaluateLab`, with a `LocalizedText` explanation and
+  `labWord` display words.
+- [ ] **7G.3** Matching backend evaluator rules (backend repo). Bump `labVersion`.
+- [ ] **7G.4** Painter/visual for each experiment.
+- [ ] **7G.5** Fix the header (see follow-ups) and update the tile subtitle "Try two experiments".
+- [ ] **7G.6** Tests: deterministic observations and translated explanations.
 
-- [x] **5.1 Class ranges on content**
-  - Add `minClass` / `maxClass` to `FormulaData` and `InteractiveDiagram` (including the existing 12).
-  - Add a class range to each Explore `_Tool`.
-- [x] **5.2 Filter behaviour**
-  - Explore tiles outside the selected classes move to a collapsed "More tools" section,
-    so nothing is hidden completely.
-  - Formula categories and formulas: show "For your class" first, then a "Show all classes" toggle.
-  - Diagrams list: same pattern.
-  - Done as a "My classes / All classes" switch (default My classes) on Diagrams and the
-    Formulas grid. If nothing matches, the screen falls back to everything with a note.
-    Formula search always covers every formula.
-- [x] **5.3 Tool ranges** (confirmed by you)
-  - Math 1–10 · Cosmulator 1–10 · Diagrams 3–10 · Vocabulary 3–10 · Timeline 5–10 ·
-    Science Lab 6–10 · Python 6–10 · Periodic Table 7–10.
-  - Done: `ClassRange` in `lib/data/models/class_range.dart`. The Explore grid shows tools
-    for the selected classes first, and the rest under a collapsed "More tools" section.
-    The old Class 7+ lab gate (`lab_provider.dart` plus a router redirect) was removed so the
-    lab can open from "More tools".
-- [x] **5.3b Diagram and formula ranges** (your rule: suggested lower bounds, every upper
-  bound Class 10, maths diagrams stop at Class 8). Stored as `diagramClassRanges` /
-  `formulaCategoryClassRanges` lookups, so the diagram data files are untouched.
-- [x] **5.4 Tests** for the filtering, including class ranges on formulas and diagrams.
-
----
-
-## Phase 6 — Regional language for study content (Math practice + Science Lab)
-
-**Rule:** only *study content* can switch to Odia or Hindi. App labels, navigation, screen
-titles, buttons and other UI chrome stay **English everywhere**. This matches how
-Formulas, Diagrams, Periodic Table, Vocabulary and Timeline already work: a per-screen
-`RegionalLanguageSwitch` that changes the content, not the app.
-
-**Out of scope (English only):** Python (all of it, including lessons), the AI hub,
-Profile, Settings, Timetable, Notes, and navigation or titles anywhere.
-
-- [ ] **6.1 Math practice tools** — Tables, Flash Math, Quiz, Speed Drills, Number Sense,
-  Fractions Lab.
-  - Translate: question text (for example "Which is bigger?", "Is 17 prime?", fraction
-    prompts), answer options that are words (odd/even, prime/composite), and the
-    explanation/feedback shown after an answer.
-  - Stays English: screen titles, buttons (Start, Next, Try again), score and timer labels, the hub list.
-  - Numbers stay as Western digits (0–9) in every language.
-  - Add the `RegionalLanguageSwitch` to each practice screen, the same way Formulas has it.
-- [ ] **6.2 Science Lab** — experiment aim/instructions, control descriptions (sample names
-  like lemon/water/soap), the prediction choices, observation values (bright/dim/off,
-  colours, acidic/neutral/basic) and the explanation text.
-  - Stays English: the screen title, section headers and buttons.
-  - The explanation currently comes from `evaluateLab`. Make it return keys or `DiagramText`-style
-    EN/HI/OR triples instead of a single English string.
-- [ ] **6.3 Approach** — keep content translations next to the content (EN/HI/OR fields, like
-  `DiagramText` / `FormulaData`). Don't add a global string table or `intl`/ARB tooling.
-- [ ] 🔸 **6.4 Translations** — I'll draft Odia and Hindi. A native speaker should review them
-  before release.
-- [ ] **6.5 Tests** — for each tool, switching language changes the question/explanation
-  text while titles and buttons stay English.
-
----
-
-## Phase 7 — New learning tools (Explore)
-
-Each tool is its own step. Proposed order, from highest value/effort ratio down.
-Language rule from Phase 6 applies here: only study content gets Odia/Hindi, and all UI
-labels, titles and navigation stay English.
-
-- [ ] **7.1 Subject quizzes (Science, Social Science, English)**
-  - Reuse the math-quiz shell.
-  - Static question banks per class (about 20 questions per subject per class band to start).
-  - Best scores tracked like `mathProgressProvider`.
-- [ ] **7.2 Units & measurement converter** — length, mass, capacity, time, temperature,
-  area and volume. Shares the conversion logic from Phase 3.1.
-- [ ] **7.3 Alphabet & first words (Classes 1–3)** — Odia, Hindi and English letters with
-  example words, then a "find the letter" game. Audio is out of scope for v1.
-- [ ] **7.4 English grammar** — parts of speech, tenses, articles, prepositions. Each topic
-  has a short explainer and 5–10 practice questions.
-- [ ] **7.5 Maps (India & Odisha)** — tap a state or district to see its capital, language
-  and key facts, with a "find the state" quiz.
-  - Needs SVG map assets. 🔸 Check the licensing of the source before bundling.
-- [ ] **7.6 Revision flashcards** — built from the student's own highlights, notes and
-  bookmarks (the data already exists in `UserPrefsRepository`), plus vocabulary words.
-- [ ] **7.7 Science Lab: more experiments** — pendulum (time period vs length),
-  reflection with plane mirrors, magnets (attract/repel, magnetic vs non-magnetic),
-  sink or float (density), germination conditions (for Classes 5–6).
-  - Needs matching backend evaluator rules; today the local `evaluateLab` mirrors backend v1.
-- [ ] **7.8 Daily challenge** — one task a day drawn from any tool, feeding the existing streak.
+### 7H — Daily challenge
+- [ ] **7H.1** 🔸 Decide what counts as a task (one quiz question, one formula, one word …).
+- [ ] **7H.2** Deterministic daily pick, the same way `wordOfTheDay()` works.
+- [ ] **7H.3** Home card, and completion feeding the existing streak.
+- [ ] **7H.4** Tests.
 
 ---
 
 ## Phase 8 — Backend: new generic "Explore Assist" agent (LAST)
 
-Today the backend has a single agent, **Learn Assist** (`/learnassist/chat`,
-`/learnassist/chat/stream`). It is book- and syllabus-grounded, with citations,
-history keyed by `HistorySelector`, and usage limits.
+Today the backend has one agent, **Learn Assist** (`/learnassist/chat`,
+`/learnassist/chat/stream`). It is grounded in books and the syllabus, cites its sources,
+keeps history keyed by `HistorySelector`, and has usage limits.
 
-The new agent answers **generic, content-anchored questions** from inside the Explore
-tools, where the "context" is a piece of app content rather than a textbook.
+The new agent answers **generic questions tied to a piece of app content** inside the
+Explore tools, rather than a textbook.
 
 - [ ] **8.1 Backend agent (separate backend repo)**
   - Proposed endpoints: `POST /exploreassist/chat` and `/exploreassist/chat/stream`.
   - Request: `board`, `class_no`, `language`, `message`, plus a `context` object:
     `{ kind: element | formula | diagram_label | timeline_event | vocab_word | lab,
-       id, title, payload }`.
-    The `payload` holds the data already on screen (for example an element's properties),
-    so the agent doesn't have to look it up.
-  - The answer is pitched at the student's class, in the student's language, with no book citations.
+       id, title, payload }`. The `payload` holds the data already on screen. Formulas have
+    stable ids (`formulaById`) for this.
+  - Answers are pitched at the student's class, in their language, with no book citations.
   - Shares auth (Firebase ID token), rate limits and usage accounting with Learn Assist.
+  - Include the math-format rule (`$…$` / `$$…$$`) so answers render with `AiMarkdown`.
   - 🔸 Decide: separate daily quota, or shared with Learn Assist?
-  - 🔸 Decide: store history server-side or keep it ephemeral? Recommendation: ephemeral per
-    content item, because these are quick follow-ups rather than study sessions.
+  - 🔸 Decide: history stored server-side or ephemeral? Recommendation: ephemeral per item.
 - [ ] **8.2 Frontend service + provider**
   - `explore_assist_service.dart`, mirroring `learn_assist_service.dart`: same `defaultBaseUrl`,
     token refresh, 401 retry and SSE streaming.
   - Models `ExploreAssistRequest` / `ExploreAssistContext` in `data/models/`.
 - [ ] **8.3 Shared "Ask about this" bottom sheet**
-  - One reusable widget: a context chip, suggested questions, a streaming answer and a
+  - A context chip, suggested questions, a streaming answer rendered with `AiMarkdown`, and a
     follow-up box.
 - [ ] **8.4 Wire it into content**
-  - Periodic Table element detail (replaces the Phase 1.5 hidden button and resolves the TODO)
-  - Formula detail ("Explain this formula", "Show a worked example")
-  - Diagram label popups
-  - Timeline event cards
-  - Vocabulary word detail ("Use it in a sentence")
-  - Science Lab results ("Why did this happen?")
-- [ ] **8.5 AI Tutor** — if Phase 1.6 hid the row, decide whether the tutor becomes a mode of
-  this agent or stays a separate future agent.
+  - Periodic Table element detail: turn on `_showAskAi` in `periodic_table_screen.dart` and
+    resolve its TODO.
+  - Formula detail ("Explain this formula", "Show a worked example").
+  - Diagram label popups.
+  - Timeline event cards.
+  - Vocabulary word detail ("Use it in a sentence").
+  - Science Lab results ("Why did this happen?").
+- [ ] **8.5 AI Tutor** — currently a read-only preview (Option B). Decide whether the tutor
+  becomes a mode of this agent or a separate agent later.
 - [ ] **8.6 Tests** — service tests with a `baseUrl` override (same pattern as `learn_assist_test.dart`).
-
----
-
-## Appendix — New diagrams (owner: you, separate session)
-
-Existing (12): animal cell, water cycle, food chain, digestive system, heart, photosynthesis,
-earth layers, volcano, electric circuit, atom structure, reflection of light, states of matter.
-
-Each new diagram needs an image in `assets/diagrams/interactive/`, labels with positions,
-and EN/HI/OR text. If Phase 5 is done first, each also needs a `minClass`/`maxClass`.
-
-| Priority | Diagram | Section | Classes | Key labels |
-|---|---|---|---|---|
-| P1 | Plant cell | biology | 6–9 | cell wall, membrane, chloroplast, vacuole, nucleus, cytoplasm, mitochondria |
-| P1 | Parts of a flower | biology | 5–8 | petal, sepal, stamen (anther, filament), pistil (stigma, style, ovary) |
-| P1 | Structure of a leaf | biology | 5–8 | blade, midrib, veins, petiole, stomata |
-| P1 | Human eye | biology | 7–10 | cornea, iris, pupil, lens, retina, optic nerve |
-| P1 | Respiratory system | biology | 6–10 | nose, trachea, bronchi, lungs, alveoli, diaphragm |
-| P1 | Map of India (states) | geography | 4–10 | states, capitals, major rivers |
-| P2 | Human skeleton | biology | 5–8 | skull, rib cage, spine, pelvis, femur, humerus |
-| P2 | Human ear | biology | 8–10 | pinna, ear canal, eardrum, ossicles, cochlea |
-| P2 | Human brain | biology | 8–10 | cerebrum, cerebellum, medulla |
-| P2 | Kidney / excretory system | biology | 7–10 | kidney, ureter, bladder, urethra, nephron |
-| P2 | Odisha districts | geography | 4–8 | 30 districts, Mahanadi, Chilika |
-| P2 | Latitudes & longitudes | geography | 6–8 | equator, tropics, prime meridian, poles |
-| P2 | Refraction through a lens | science | 8–10 | convex/concave lens, focus, principal axis |
-| P2 | Magnet & field lines | science | 6–10 | N/S poles, field lines, compass |
-| P3 | Solar system (2D) | geography | 3–6 | Sun, 8 planets, asteroid belt |
-| P3 | Types of angles & triangles | math | 5–7 | acute, right, obtuse, equilateral, isosceles, scalene |
-| P3 | Parts of a circle | math | 6–8 | centre, radius, diameter, chord, arc, sector, tangent |
-| P3 | 3D solids | math | 5–9 | cube, cuboid, cylinder, cone, sphere (faces, edges, vertices) |
-| P3 | Simple machines | science | 6–8 | lever (fulcrum, load, effort), pulley, inclined plane |
-| P3 | Soil profile | geography | 7–8 | humus, topsoil, subsoil, bedrock |
-
-Note: the geography section currently has only 2 diagrams (earth layers, volcano).
-The math section doesn't exist yet: `DiagramSection` needs a `math` value.

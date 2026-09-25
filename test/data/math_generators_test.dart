@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vidyalaya/data/models/localized_text.dart';
+import 'package:vidyalaya/data/models/regional_language.dart';
 import 'package:vidyalaya/data/math/math_generators.dart';
 import 'package:vidyalaya/data/math/math_models.dart';
 
@@ -243,16 +245,16 @@ void main() {
           expect(questions, hasLength(10));
 
           for (final q in questions) {
-            expect(q.prompt, isNotEmpty);
-            expect(q.explanation, isNotEmpty);
+            expect(q.prompt.en, isNotEmpty);
+            expect(q.explanation.en, isNotEmpty);
             expect(q.options, hasLength(4),
-                reason: 'class $level seed $seed: ${q.prompt}');
+                reason: 'class $level seed $seed: ${q.prompt.en}');
             expect(q.correctIndex, greaterThanOrEqualTo(0));
             expect(q.correctIndex, lessThan(q.options.length));
 
             // Distractors must be distinct, or two taps would both be "right".
             expect(q.options.toSet().length, q.options.length,
-                reason: 'duplicate options in "${q.prompt}": ${q.options}');
+                reason: 'duplicate options in "${q.prompt.en}": ${q.options}');
           }
         }
       }
@@ -268,8 +270,8 @@ void main() {
       final questions =
           buildQuizQuestions(classLevel: 1, count: 40, random: Random(5));
       for (final q in questions) {
-        expect(q.prompt.contains('×') || q.prompt.contains('÷'), isFalse,
-            reason: 'class 1 should not see × or ÷: ${q.prompt}');
+        expect(q.prompt.en.contains('×') || q.prompt.en.contains('÷'), isFalse,
+            reason: 'class 1 should not see × or ÷: ${q.prompt.en}');
       }
     });
   });
@@ -337,14 +339,14 @@ void main() {
           );
           expect(round, hasLength(10));
           for (final q in round) {
-            expect(q.prompt, isNotEmpty);
+            expect(q.prompt.en, isNotEmpty);
             expect(q.options.length, greaterThanOrEqualTo(2));
             expect(q.correctIndex, greaterThanOrEqualTo(0),
-                reason: 'class $level seed $seed: ${q.prompt} / ${q.options}');
+                reason: 'class $level seed $seed: ${q.prompt.en} / ${q.options}');
             expect(q.correctIndex, lessThan(q.options.length),
-                reason: 'class $level seed $seed: ${q.prompt} / ${q.options}');
+                reason: 'class $level seed $seed: ${q.prompt.en} / ${q.options}');
             expect(q.options.toSet().length, q.options.length,
-                reason: 'duplicate options: ${q.prompt} ${q.options}');
+                reason: 'duplicate options: ${q.prompt.en} ${q.options}');
           }
         }
       }
@@ -357,12 +359,12 @@ void main() {
         for (final q in round) {
           if (q.kind == NumberSenseKind.oddEven) {
             final n = int.parse(
-                RegExp(r'\d+').firstMatch(q.prompt)!.group(0)!);
+                RegExp(r'\d+').firstMatch(q.prompt.en)!.group(0)!);
             expect(q.options[q.correctIndex], n.isEven ? 'Even' : 'Odd');
           }
           if (q.kind == NumberSenseKind.prime) {
             final n = int.parse(
-                RegExp(r'\d+').firstMatch(q.prompt)!.group(0)!);
+                RegExp(r'\d+').firstMatch(q.prompt.en)!.group(0)!);
             expect(q.options[q.correctIndex],
                 isPrime(n) ? 'Prime' : 'Not prime');
           }
@@ -443,7 +445,7 @@ void main() {
               reason: 'seed $seed ${t.kind}: ${t.options}');
           expect(t.options.toSet().length, t.options.length,
               reason: 'seed $seed duplicate options: ${t.options}');
-          expect(t.explanation, isNotEmpty);
+          expect(t.explanation.en, isNotEmpty);
 
           // Compare and add both show two bars; simplify shows one.
           if (t.kind == FractionTaskKind.simplify) {
@@ -494,6 +496,63 @@ void main() {
       }
     });
   });
+  group('regional language content', () {
+    // Word order differs between languages ("25% of 240" vs "240 ର 25%"),
+    // so compare the numbers as a sorted list.
+    List<String> digits(String s) =>
+        RegExp(r'\d+').allMatches(s).map((m) => m[0]!).toList()..sort();
+
+    void expectSameNumbers(LocalizedText t, String reason) {
+      for (final text in [t.or, t.hi]) {
+        expect(text.trim(), isNotEmpty, reason: reason);
+        expect(digits(text), digits(t.en), reason: '$reason → $text');
+      }
+    }
+
+    test('quiz questions have Odia and Hindi with the same numbers', () {
+      for (var level = 1; level <= 8; level++) {
+        for (var seed = 0; seed < 30; seed++) {
+          for (final q in buildQuizQuestions(
+            classLevel: level,
+            random: Random(seed),
+          )) {
+            expectSameNumbers(q.prompt, q.prompt.en);
+            expectSameNumbers(q.explanation, q.explanation.en);
+          }
+        }
+      }
+    });
+
+    test('number sense prompts are translated and word options map', () {
+      for (var seed = 0; seed < 40; seed++) {
+        for (final q in buildNumberSenseRound(
+          classLevel: 8,
+          random: Random(seed),
+        )) {
+          expectSameNumbers(q.prompt, q.prompt.en);
+          expect(q.prompt.or, isNot(q.prompt.en), reason: q.prompt.en);
+          for (final o in q.options) {
+            final isWord = int.tryParse(o) == null;
+            expect(
+              mathOptionLabel(o, RegionalLanguage.odia) != o,
+              isWord,
+              reason: o,
+            );
+          }
+        }
+      }
+    });
+
+    test('fraction explanations are translated', () {
+      for (var seed = 0; seed < 30; seed++) {
+        for (final t in buildFractionTasks(random: Random(seed))) {
+          expectSameNumbers(t.explanation, t.explanation.en);
+          expect(t.explanation.hi, isNot(t.explanation.en));
+        }
+      }
+    });
+  });
+
 }
 
 Fraction _parse(String display) {
