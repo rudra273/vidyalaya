@@ -134,13 +134,17 @@ class HomeAiChat extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Stack(
             children: [
+              // Positioned, so its size never affects the card's height; the
+              // card clips whatever runs past its edge. 1.2× the 120×146
+              // design, nudged up/right so the "?" badge still clears the
+              // bubble's right edge (70px in from the card's).
               Positioned(
-                top: 44,
-                right: 5,
+                top: 38,
+                right: 2,
                 child: ExcludeSemantics(
                   child: SizedBox(
-                    width: 120,
-                    height: 146,
+                    width: 144,
+                    height: 175,
                     child: CustomPaint(painter: _TextbookArtwork(dark: dark)),
                   ),
                 ),
