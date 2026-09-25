@@ -582,7 +582,7 @@ List<_Tool> _tools(bool isDark) => [
   _Tool(
     id: 'virtual-lab',
     title: 'Science Lab',
-    sub: 'Try two experiments',
+    sub: 'Play with 6 experiments',
     icon: Icons.science_rounded,
     color: isDark ? AppColors.cScienceDark : AppColors.cScience,
     route: '/labs',

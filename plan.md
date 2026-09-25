@@ -42,8 +42,6 @@ agent) comes last.
   Every new diagram needs an entry in `diagramClassRanges`; a test fails without one.
 - [ ] **Formula figures.** New solids (cone, sphere, parallelogram, trapezium…) have no
   drawn diagram yet; `FormulaDiagramPainter` only knows the original 9 shapes.
-- [ ] **Science Lab header** still reads "CLASS 7 · SCIENCE · CHAPTER …" although the lab is
-  now recommended from Class 6.
 
 ---
 
@@ -101,15 +99,28 @@ Formulas → Measurement already converts length, mass, capacity, time and money
 - [ ] **7F.3** Simple spaced repetition: store the next-review date per card, locally.
 - [ ] **7F.4** Tests for scheduling.
 
-### 7G — Science Lab: more experiments
-- [ ] **7G.1** 🔸 Pick the experiments. Suggested: pendulum, plane mirror, magnets,
-  sink or float, germination (for Classes 5–6).
-- [ ] **7G.2** Add rules to the local `evaluateLab`, with a `LocalizedText` explanation and
-  `labWord` display words.
-- [ ] **7G.3** Matching backend evaluator rules (backend repo). Bump `labVersion`.
-- [ ] **7G.4** Painter/visual for each experiment.
-- [ ] **7G.5** Fix the header (see follow-ups) and update the tile subtitle "Try two experiments".
-- [ ] **7G.6** Tests: deterministic observations and translated explanations.
+### 7G — Science Lab: full rebuild
+The lab was rebuilt from scratch as a graphics-first playground: a hub at `/labs` whose
+cards play live miniatures of each experiment, and a bench at `/labs/:labId` where students
+set up with picture tokens, pick a picture prediction, press run and watch it happen.
+Rules: `lib/data/lab/` (plain Dart). Visuals: `lib/screens/lab/` (one painter "rig" each).
+- [x] **7G.1** Experiments: physics — light the bulb (circuit), pendulum, mirror bounce,
+  sink or float; chemistry — colour detective (universal indicator), fizz balloon
+  (baking soda + vinegar).
+- [x] **7G.2** Deterministic local rules (`evaluateLab`) with `LocalizedText` explanations and
+  `labWord` display words. `kLabVersion` is now 2; version 1 attempts still load.
+- [ ] **7G.3** Matching backend evaluator rules (backend repo) for `labVersion` 2 — mirror
+  `lib/data/lab/lab_rules.dart` exactly (control keys, thresholds, outcome keys).
+- [x] **7G.4** Animated painter for each experiment, plus hub previews, confetti and stars
+  (one per correct prediction, three per experiment).
+- [x] **7G.5** "CLASS 7 · CHAPTER …" header removed; tile subtitle is "Play with 6 experiments".
+- [x] **7G.6** Tests: every control combination is deterministic, reachable and translated;
+  every rig paints through a whole run; bench flow and reduced motion.
+- [ ] 🔸 **7G.7** Native-speaker review of the new Odia/Hindi lab text (`lab_rules.dart`,
+  `lab_words.dart`, questions in `lab_catalog.dart`).
+- [ ] 🔸 **7G.8** Class range: the lab is still recommended for Classes 6–10; sink or float and
+  the indicator also suit Class 5. Decide whether to widen it.
+- [ ] **7G.9** Next experiments to consider: magnets, germination, shadows, dissolving.
 
 ### 7H — Daily challenge
 - [ ] **7H.1** 🔸 Decide what counts as a task (one quiz question, one formula, one word …).

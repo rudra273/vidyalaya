@@ -44,7 +44,9 @@ import '../screens/learn/math/math_quiz_screen.dart';
 import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
-import '../screens/learn/virtual_lab_screen.dart';
+import '../screens/lab/lab_home_screen.dart';
+import '../screens/lab/lab_bench_screen.dart';
+import '../data/lab/lab_catalog.dart' show labById;
 import '../data/seed/interactive_diagrams_data.dart';
 import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
@@ -311,7 +313,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/labs',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const VirtualLabScreen(),
+        builder: (context, state) => const LabHomeScreen(),
+      ),
+      GoRoute(
+        path: '/labs/:labId',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) =>
+            labById(state.pathParameters['labId']!) == null ? '/labs' : null,
+        builder: (context, state) =>
+            LabBenchScreen(labId: state.pathParameters['labId']!),
       ),
       GoRoute(
         path: '/timetable',
