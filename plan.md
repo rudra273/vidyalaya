@@ -56,14 +56,14 @@ Do the steps in order within each tool; tools themselves can be picked in any or
 Suggested order: 7A → 7B → 7C → 7D → 7E → 7F → 7G → 7H.
 
 ### 7A — Subject quizzes (Science, Social Science, English)
-- [ ] **7A.1** 🔸 Decide the class bands and subjects for v1 (suggested: Classes 3–5, 6–8, 9–10).
-- [ ] **7A.2** Question model: prompt, options, answer, explanation as `LocalizedText`, plus
+- [x] **7A.1** 🔸 Decide the class bands and subjects for v1 (suggested: Classes 3–5, 6–8, 9–10).
+- [x] **7A.2** Question model: prompt, options, answer, explanation as `LocalizedText`, plus
   subject and class range. Store banks under `lib/data/quiz/<subject>/`.
-- [ ] **7A.3** Write the first bank: about 20 questions per subject per band.
-- [ ] **7A.4** Quiz screen: reuse the Math Quiz shell (`MathOptionTile`, `MathExplanation`,
+- [x] **7A.3** Write the first bank: about 20 questions per subject per band.
+- [x] **7A.4** Quiz screen: reuse the Math Quiz shell (`MathOptionTile`, `MathExplanation`,
   results sheet) with a subject picker.
-- [ ] **7A.5** Best scores per subject, stored the way `mathProgressProvider` does it.
-- [ ] **7A.6** Tests: every question has a valid answer index and all three languages.
+- [x] **7A.5** Best scores per subject, stored the way `mathProgressProvider` does it.
+- [x] **7A.6** Tests: every question has a valid answer index and all three languages.
 
 ### 7B — Units & measurement (extend, don't duplicate)
 Formulas → Measurement already converts length, mass, capacity, time and money.

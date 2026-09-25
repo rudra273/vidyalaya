@@ -580,6 +580,14 @@ List<_Tool> _tools(bool isDark) => [
     route: '/learn/python',
   ),
   _Tool(
+    id: 'quiz',
+    title: 'Subject Quiz',
+    sub: 'Science, Social, English',
+    icon: Icons.quiz_rounded,
+    color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+    route: '/learn/quiz',
+  ),
+  _Tool(
     id: 'virtual-lab',
     title: 'Science Lab',
     sub: 'Play with 6 experiments',

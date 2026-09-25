@@ -44,6 +44,9 @@ import '../screens/learn/math/math_quiz_screen.dart';
 import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
+import '../screens/learn/quiz/subject_quiz_home_screen.dart';
+import '../screens/learn/quiz/subject_quiz_screen.dart';
+import '../data/quiz/quiz_models.dart';
 import '../screens/lab/lab_home_screen.dart';
 import '../screens/lab/lab_bench_screen.dart';
 import '../data/lab/lab_catalog.dart' show labById;
@@ -310,6 +313,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const MathFractionsScreen(),
       ),
+      // ── Subject quizzes ──
+      GoRoute(
+        path: '/learn/quiz',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SubjectQuizHomeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/quiz/:subject/:band',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) =>
+            _quizSubject(state.pathParameters['subject']) == null ||
+                _quizBand(state.pathParameters['band']) == null
+            ? '/learn/quiz'
+            : null,
+        builder: (context, state) => SubjectQuizScreen(
+          subject: _quizSubject(state.pathParameters['subject'])!,
+          band: _quizBand(state.pathParameters['band'])!,
+        ),
+      ),
       GoRoute(
         path: '/labs',
         parentNavigatorKey: _rootNavigatorKey,
@@ -381,3 +403,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+QuizSubject? _quizSubject(String? name) =>
+    QuizSubject.values.where((s) => s.name == name).firstOrNull;
+
+QuizBand? _quizBand(String? name) =>
+    QuizBand.values.where((b) => b.name == name).firstOrNull;
