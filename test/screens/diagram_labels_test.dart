@@ -8,16 +8,16 @@ import 'package:vidyalaya/screens/learn/interactive_diagram_viewer_screen.dart';
 
 void main() {
   test('interactive diagram catalog is complete and internally valid', () {
-    expect(interactiveDiagrams, hasLength(32));
+    expect(interactiveDiagrams, hasLength(31));
     expect(
       interactiveDiagrams.map((diagram) => diagram.id).toSet(),
-      hasLength(32),
+      hasLength(31),
     );
     expect(
       interactiveDiagrams.where(
         (diagram) => diagram.section == DiagramSection.biology,
       ),
-      hasLength(14),
+      hasLength(13),
     );
     expect(
       interactiveDiagrams.where(
