@@ -11,6 +11,7 @@ import 'package:vidyalaya/providers/auth_provider.dart';
 import 'package:vidyalaya/providers/avatar_provider.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
 import 'package:vidyalaya/screens/profile/profile_screen.dart';
+import 'package:vidyalaya/widgets/calm_widgets.dart';
 
 class _User extends Fake implements User {
   @override
@@ -143,10 +144,10 @@ void main() {
     await tester.pump();
     expect(find.text('Syncing your profile…'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    final editButton = tester.widget<TextButton>(
-      find.widgetWithText(TextButton, 'Edit'),
+    final editAction = tester.widget<SectionHead>(
+      find.widgetWithText(SectionHead, 'Edit'),
     );
-    expect(editButton.onPressed, isNull);
+    expect(editAction.onAction, isNull);
     await tester.scrollUntilVisible(find.text('Sign out'), 200);
     expect(find.text('Sign out').hitTestable(), findsOneWidget);
   });

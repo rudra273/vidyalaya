@@ -12,6 +12,7 @@ import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/games_progress_provider.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../providers/vocabulary_provider.dart';
 import '../../widgets/home_ai_chat.dart';
@@ -74,6 +75,16 @@ class HomeScreen extends ConsumerWidget {
 
     final showRecentBooks = booksEnabled && recentBooks.isNotEmpty;
 
+    // The AI card offers to resume the latest question — but only while it's
+    // fresh. A week-old "Continue" reads as stale, not helpful.
+    final recents = ref.watch(recentQuestionsProvider);
+    final lastQuestion =
+        recents.isNotEmpty &&
+            DateTime.now().difference(recents.first.askedAt) <
+                const Duration(days: 7)
+        ? recents.first
+        : null;
+
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
@@ -84,30 +95,24 @@ class HomeScreen extends ConsumerWidget {
           PageTitle(
             title: 'Vidya AI',
             sub: _greetingLine(firstName),
-            // Nudged down to centre against the title's line rather than
-            // constrained to its height — the 40px avatar and the streak chip
-            // are both taller than the 25px text line and would clip.
-            trailing: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (streak > 0) ...[
-                    _StreakChip(
-                      streak: streak,
-                      onTap: () => _navTap(ref, context, '/progress'),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  _Avatar(
-                    letter: avatarLetter,
-                    avatar: ref.watch(selectedAvatarProvider),
-                    onTap: () =>
-                        _navTap(ref, context, '/profile', replace: true),
+            // Both controls fit PageTitle's title row, so they centre on the
+            // wordmark and the greeting runs full width underneath.
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (streak > 0) ...[
+                  _StreakChip(
+                    streak: streak,
+                    onTap: () => _navTap(ref, context, '/progress'),
                   ),
+                  const SizedBox(width: 8),
                 ],
-              ),
+                _Avatar(
+                  letter: avatarLetter,
+                  avatar: ref.watch(selectedAvatarProvider),
+                  onTap: () => _navTap(ref, context, '/profile', replace: true),
+                ),
+              ],
             ),
           ),
 
@@ -119,6 +124,14 @@ class HomeScreen extends ConsumerWidget {
             ),
             child: HomeAiChat(
               onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
+              resumeText: lastQuestion?.text,
+              onResume: lastQuestion == null
+                  ? null
+                  : () => _navTap(
+                      ref,
+                      context,
+                      recentQuestionResumePath(lastQuestion),
+                    ),
             ),
           ),
 
@@ -133,68 +146,64 @@ class HomeScreen extends ConsumerWidget {
               builder: (context, constraints) {
                 const spacing = 9.0;
                 final tileWidth = (constraints.maxWidth - spacing * 2) / 3;
+                final dark = _isDark(context);
+                // Always six tiles — two full rows. With books off, Vocabulary
+                // takes the Books slot so the grid never has a gap.
+                final tools = [
+                  _MiniTool(
+                    color: dark ? AppColors.cHindiDark : AppColors.cHindi,
+                    icon: Icons.bookmark_rounded,
+                    label: 'Bookmarks',
+                    onTap: () => _navTap(ref, context, '/bookmarks'),
+                  ),
+                  _MiniTool(
+                    color: dark ? AppColors.cScienceDark : AppColors.cScience,
+                    icon: Icons.calendar_month_rounded,
+                    label: 'Timetable',
+                    onTap: () => _navTap(ref, context, '/timetable'),
+                  ),
+                  _MiniTool(
+                    color: dark ? AppColors.cSocialDark : AppColors.cSocial,
+                    icon: Icons.edit_note_rounded,
+                    label: 'Notes',
+                    onTap: () => _navTap(ref, context, '/notes'),
+                  ),
+                  booksEnabled
+                      ? _MiniTool(
+                          color: dark ? AppColors.cAiDark : AppColors.cAi,
+                          icon: Icons.menu_book_rounded,
+                          label: 'Books',
+                          onTap: () => _navTap(ref, context, '/library'),
+                        )
+                      : _MiniTool(
+                          color: dark ? AppColors.cAiDark : AppColors.cAi,
+                          icon: Icons.menu_book_outlined,
+                          label: 'Vocabulary',
+                          onTap: () =>
+                              _navTap(ref, context, '/learn/vocabulary'),
+                        ),
+                  // Same hue + icon as its Explore card, so it's recognisable.
+                  _MiniTool(
+                    color: dark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                    icon: Icons.quiz_rounded,
+                    label: 'Quizzes',
+                    onTap: () => _navTap(ref, context, '/learn/quiz'),
+                  ),
+                  _MiniTool(
+                    color: dark ? AppColors.cMathsDark : AppColors.cMaths,
+                    icon: Icons.extension_rounded,
+                    label: 'Games',
+                    // Dot until today's Daily Brain Challenge is done.
+                    badge: !dailyDone,
+                    onTap: () => _navTap(ref, context, '/games'),
+                  ),
+                ];
                 return Wrap(
                   spacing: spacing,
                   runSpacing: spacing,
                   children: [
-                    SizedBox(
-                      width: tileWidth,
-                      child: _MiniTool(
-                        color: _isDark(context)
-                            ? AppColors.cAiDark
-                            : AppColors.cAi,
-                        icon: Icons.bookmark_rounded,
-                        label: 'Bookmarks',
-                        onTap: () => _navTap(ref, context, '/bookmarks'),
-                      ),
-                    ),
-                    SizedBox(
-                      width: tileWidth,
-                      child: _MiniTool(
-                        color: _isDark(context)
-                            ? AppColors.cEnglishDark
-                            : AppColors.cEnglish,
-                        icon: Icons.calendar_month_rounded,
-                        label: 'Timetable',
-                        onTap: () => _navTap(ref, context, '/timetable'),
-                      ),
-                    ),
-                    SizedBox(
-                      width: tileWidth,
-                      child: _MiniTool(
-                        color: _isDark(context)
-                            ? AppColors.cSocialDark
-                            : AppColors.cSocial,
-                        icon: Icons.edit_note_rounded,
-                        label: 'Notes',
-                        onTap: () => _navTap(ref, context, '/notes'),
-                      ),
-                    ),
-                    if (booksEnabled)
-                      SizedBox(
-                        width: tileWidth,
-                        child: _MiniTool(
-                          color: _isDark(context)
-                              ? AppColors.cAiDark
-                              : AppColors.cAi,
-                          icon: Icons.menu_book_rounded,
-                          label: 'Books',
-                          onTap: () => _navTap(ref, context, '/library'),
-                        ),
-                      ),
-                    SizedBox(
-                      width: tileWidth,
-                      child: _MiniTool(
-                        color: _isDark(context)
-                            ? AppColors.cMathsDark
-                            : AppColors.cMaths,
-                        icon: Icons.extension_rounded,
-                        label: 'Games',
-                        // Dot until today's Daily Brain Challenge is done.
-                        badge: !dailyDone,
-                        onTap: () => _navTap(ref, context, '/games'),
-                      ),
-                    ),
+                    for (final tool in tools)
+                      SizedBox(width: tileWidth, child: tool),
                   ],
                 );
               },
@@ -319,29 +328,40 @@ class _StreakChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
     final accent = isDark ? AppColors.cMathsDark : AppColors.cMaths;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(9, 6, 12, 6),
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
-          border: Border.all(color: accent.withValues(alpha: 0.26)),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.local_fire_department_rounded, size: 17, color: accent),
-            const SizedBox(width: 5),
-            Text(
-              '$streak',
-              style: TextStyle(
-                fontSize: AppFontSize.body,
-                fontWeight: AppFontWeight.bold,
+    return Semantics(
+      button: true,
+      label: '$streak day streak',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        scale: 0.92,
+        child: Container(
+          height: 32,
+          padding: const EdgeInsets.fromLTRB(8, 0, 11, 0),
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
+            border: Border.all(color: accent.withValues(alpha: 0.26)),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_fire_department_rounded,
+                size: 16,
                 color: accent,
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Text(
+                '$streak',
+                style: TextStyle(
+                  fontSize: AppFontSize.body,
+                  fontWeight: AppFontWeight.bold,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -359,41 +379,47 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(
-            cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-            cs.surface,
+    return Semantics(
+      button: true,
+      label: 'Profile',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        scale: 0.92,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(
+              cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+              cs.surface,
+            ),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? AppColors.green100Dark : AppColors.green100,
+            ),
           ),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isDark ? AppColors.green100Dark : AppColors.green100,
-          ),
+          alignment: Alignment.center,
+          child: avatar != null
+              ? ClipOval(
+                  child: SvgPicture.asset(
+                    avatar!.assetPath,
+                    width: 32,
+                    height: 32,
+                  ),
+                )
+              : Text(
+                  letter,
+                  style: TextStyle(
+                    fontFamily: Theme.of(
+                      context,
+                    ).textTheme.displaySmall?.fontFamily,
+                    fontSize: AppFontSize.content,
+                    fontWeight: AppFontWeight.semibold,
+                    color: cs.primary,
+                  ),
+                ),
         ),
-        alignment: Alignment.center,
-        child: avatar != null
-            ? ClipOval(
-                child: SvgPicture.asset(
-                  avatar!.assetPath,
-                  width: 38,
-                  height: 38,
-                ),
-              )
-            : Text(
-                letter,
-                style: TextStyle(
-                  fontFamily: Theme.of(
-                    context,
-                  ).textTheme.displaySmall?.fontFamily,
-                  fontSize: AppFontSize.title,
-                  fontWeight: AppFontWeight.semibold,
-                  color: cs.primary,
-                ),
-              ),
       ),
     );
   }
@@ -448,12 +474,22 @@ class _WordOfDayCard extends StatelessWidget {
                           ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '/${word.pronunciation}/ · ${word.partOfSpeech}',
+                    // Upright respelling (its capitals mark the stressed
+                    // syllable, which italics made hard to read); only the
+                    // part of speech is italic, dictionary-style.
+                    Text.rich(
+                      TextSpan(
+                        text: '/${word.pronunciation}/ · ',
+                        children: [
+                          TextSpan(
+                            text: word.partOfSpeech,
+                            style: const TextStyle(fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                      ),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: AppFontSize.small,
                         color: muted,
-                        fontStyle: FontStyle.italic,
                       ),
                     ),
                   ],
@@ -607,7 +643,7 @@ class _MiniTool extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         radius: AppSpacing.tileRadius,
         blur: 13,
         distance: 4,
@@ -625,7 +661,9 @@ class _MiniTool extends StatelessWidget {
                       width: 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: color,
+                        // A fixed alert red: a dot in the tile's own hue
+                        // vanished against its tinted background.
+                        color: AppColors.badge,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: Theme.of(context).colorScheme.surface,
@@ -636,15 +674,20 @@ class _MiniTool extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 7),
+            // Scales down rather than truncating on narrow phones, where
+            // "Bookmarks" would otherwise lose its last letters.
             Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontSize: AppFontSize.small,
-                  fontWeight: AppFontWeight.semibold,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontSize: AppFontSize.small,
+                    fontWeight: AppFontWeight.semibold,
+                  ),
                 ),
               ),
             ),

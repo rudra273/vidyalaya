@@ -58,23 +58,29 @@ class AppColors {
   static const Color cMathHub = Color(0xFF5B54C4);
   static const Color cQuiz = Color(0xFF4F9A2C);
 
+  /// Attention dot on tiles ("something new here"). One fixed red in both
+  /// themes so it never blends into the tile's own hue.
+  static const Color badge = Color(0xFFE5484D);
+
   // ─── DARK ─────────────────────────────────────────────────────────────
-  static const Color paperDark = Color(0xFF0D1411);
-  static const Color paper2Dark = Color(0xFF121A16);
-  static const Color surfaceDark = Color(0xFF161F1A);
-  static const Color surface2Dark = Color(0xFF1B2620);
-  static const Color surface3Dark = Color(0xFF202D26);
+  // Near-neutral charcoal with only a hint of green: a saturated green-black
+  // read murky on AMOLED, and cards need a clear step up from the page.
+  static const Color paperDark = Color(0xFF111614);
+  static const Color paper2Dark = Color(0xFF151B18);
+  static const Color surfaceDark = Color(0xFF1A211D);
+  static const Color surface2Dark = Color(0xFF212A25);
+  static const Color surface3Dark = Color(0xFF28322C);
 
   static const Color inkDark = Color(0xFFEBEEEA);
   static const Color ink2Dark = Color(0xFFA6B1AA);
   static const Color ink3Dark = Color(0xFF73807A);
 
-  static const Color hairlineDark = Color(0xFF28342E);
-  static const Color hairline2Dark = Color(0xFF202B25);
+  static const Color hairlineDark = Color(0xFF2C3631);
+  static const Color hairline2Dark = Color(0xFF242D28);
 
   // Claymorphism (dark)
   static const Color clayShadowDark = Color(0xFF070B09);
-  static const Color clayHighlightDark = Color(0xFF1F2A23);
+  static const Color clayHighlightDark = Color(0xFF252E29);
 
   static const Color heroDark = Color(0xFF14241C);
   static const Color hero2Dark = Color(0xFF102019);
