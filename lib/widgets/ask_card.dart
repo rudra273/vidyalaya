@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 import '../data/models/answer_style.dart';
+import 'ai_robot_mark.dart';
 import 'pressable.dart';
 
 // AI tab entry card with answer-style switch.
@@ -85,7 +86,7 @@ class _AiAskHeroState extends State<AiAskHero> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const _AiMark(),
+                    const AiRobotMark(size: 40),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -161,6 +162,15 @@ class _StyleSwitch extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final trackColor = isDark ? AppColors.surface3Dark : AppColors.surface3;
+    // The selected pill must sit *above* the track. In light mode the card
+    // surface is lighter than the track; in dark it's darker, so dark mode
+    // lifts the pill with a lighter tone instead.
+    final pillColor = isDark
+        ? Color.alphaBlend(
+            AppColors.inkDark.withValues(alpha: 0.10),
+            AppColors.surface3Dark,
+          )
+        : cs.surface;
     final idleInk = isDark ? AppColors.ink3Dark : AppColors.ink3;
 
     return Container(
@@ -181,7 +191,7 @@ class _StyleSwitch extends StatelessWidget {
                   height: 28,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: style == selected ? cs.surface : Colors.transparent,
+                    color: style == selected ? pillColor : Colors.transparent,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: FittedBox(
@@ -200,36 +210,6 @@ class _StyleSwitch extends StatelessWidget {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-/// The little gradient sparkle mark that stands in for the assistant.
-class _AiMark extends StatelessWidget {
-  const _AiMark();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [AppColors.green500Dark, AppColors.green700Dark]
-              : const [AppColors.green500, AppColors.green700],
-        ),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      alignment: Alignment.center,
-      child: Icon(
-        Icons.auto_awesome_rounded,
-        size: 19,
-        color: isDark ? AppColors.onGreenDark : Colors.white,
       ),
     );
   }

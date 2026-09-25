@@ -25,6 +25,7 @@ import '../../providers/clay_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
+import '../../widgets/pressable.dart';
 import '../../widgets/support_section.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -100,9 +101,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // Prefer the backend name (student-editable) over the Google account name.
     final backendName = cachedProfile?.name?.trim() ?? '';
     final firebaseName = user?.displayName?.trim() ?? '';
-    final displayName = backendName.isNotEmpty
-        ? backendName
-        : (firebaseName.isNotEmpty ? firebaseName : 'Student');
+    final displayName = _titleCase(
+      backendName.isNotEmpty
+          ? backendName
+          : (firebaseName.isNotEmpty ? firebaseName : 'Student'),
+    );
     final email = user?.email ?? '—';
     final avatarLetter = displayName.isNotEmpty
         ? displayName[0].toUpperCase()
@@ -118,29 +121,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             PageTitle(
               title: 'Profile',
-              // Center the two action icons against the serif title's height so
-              // they read as sitting on the same line as "Profile".
-              trailing: SizedBox(
-                // Match PageTitle's rendered title size (displayMedium @ 24).
-                height: 24 * Theme.of(context).textTheme.displayMedium!.height!,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _ThemeToggle(
-                      isDark: Theme.of(context).brightness == Brightness.dark,
-                      onTap: () =>
-                          ref.read(themeModeProvider.notifier).toggle(),
-                    ),
-                    const SizedBox(width: 10),
-                    IconBox(
-                      icon: Icons.settings_rounded,
-                      tooltip: 'Settings',
-                      topMargin: 0,
-                      onTap: () => context.push('/settings'),
-                    ),
-                  ],
-                ),
+              sub: 'Your account & learning',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ThemeToggle(
+                    isDark: Theme.of(context).brightness == Brightness.dark,
+                    onTap: () => ref.read(themeModeProvider.notifier).toggle(),
+                  ),
+                  const SizedBox(width: 10),
+                  IconBox(
+                    icon: Icons.settings_rounded,
+                    tooltip: 'Settings',
+                    onTap: () => context.push('/settings'),
+                  ),
+                ],
               ),
             ),
 
@@ -152,17 +147,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 AppSpacing.screenPadding,
                 0,
               ),
-              child: Row(
-                children: [
-                  const Expanded(child: SectionHead(label: 'Student profile')),
-                  TextButton.icon(
-                    onPressed: isInitialProfileLoad
-                        ? null
-                        : () => _showProfileEditor(cachedProfile),
-                    icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('Edit'),
-                  ),
-                ],
+              child: SectionHead(
+                label: 'Student profile',
+                action: 'Edit',
+                onAction: isInitialProfileLoad
+                    ? null
+                    : () => _showProfileEditor(cachedProfile),
               ),
             ),
             if (isInitialProfileLoad)
@@ -261,22 +251,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      const Expanded(child: SectionHead(label: 'My learning')),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: TextButton.icon(
-                          onPressed: () => context.push('/progress'),
-                          iconAlignment: IconAlignment.end,
-                          icon: const Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                          ),
-                          label: const Text('View progress'),
-                        ),
-                      ),
-                    ],
+                  SectionHead(
+                    label: 'My learning',
+                    action: 'View progress',
+                    onAction: () => context.push('/progress'),
                   ),
                   _StatsStrip(
                     streak: progress.currentStreak,
@@ -367,6 +345,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
     if (mounted) setState(() {});
   }
+
+  /// Capitalises the first letter of each word for display ("rudra mohanty"
+  /// → "Rudra Mohanty"), leaving the rest alone so names like "McKay" keep
+  /// their casing. Display only — the saved name is untouched.
+  static String _titleCase(String name) => name
+      .split(' ')
+      .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+      .join(' ');
 
   static String _languageLabel(String code) =>
       const {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'}[code] ?? 'English';
@@ -867,29 +853,33 @@ class _ThemeToggle extends StatelessWidget {
     // Warm amber for the sun, cool indigo for the moon.
     final accent = isDark ? const Color(0xFF9DB2E8) : const Color(0xFFE0A23B);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
-          border: Border.all(color: accent.withValues(alpha: 0.32)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 320),
-          switchInCurve: Curves.easeOutBack,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, animation) => RotationTransition(
-            turns: Tween<double>(begin: 0.6, end: 1).animate(animation),
-            child: ScaleTransition(scale: animation, child: child),
+    return Tooltip(
+      message: isDark ? 'Switch to light mode' : 'Switch to dark mode',
+      child: Pressable(
+        onTap: onTap,
+        scale: 0.92,
+        child: Container(
+          width: kPageTitleRowHeight,
+          height: kPageTitleRowHeight,
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
+            border: Border.all(color: accent.withValues(alpha: 0.32)),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-            key: ValueKey(isDark),
-            size: 20,
-            color: accent,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 320),
+            switchInCurve: Curves.easeOutBack,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) => RotationTransition(
+              turns: Tween<double>(begin: 0.6, end: 1).animate(animation),
+              child: ScaleTransition(scale: animation, child: child),
+            ),
+            child: Icon(
+              isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
+              key: ValueKey(isDark),
+              size: 20,
+              color: accent,
+            ),
           ),
         ),
       ),
@@ -1119,7 +1109,7 @@ class _StatsStripState extends State<_StatsStrip> {
                   color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
                   icon: Icons.menu_book_rounded,
                   value: '${widget.books}',
-                  label: 'Books',
+                  label: 'My books',
                 ),
               ),
             ],

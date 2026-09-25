@@ -177,7 +177,9 @@ class _NavBarItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: AppFontSize.caption,
+                // One step above caption: 10sp was too small for young
+                // readers on the most-tapped labels in the app.
+                fontSize: AppFontSize.caption + 1,
                 fontWeight: isActive
                     ? AppFontWeight.bold
                     : AppFontWeight.medium,

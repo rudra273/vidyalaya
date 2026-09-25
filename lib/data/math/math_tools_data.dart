@@ -43,13 +43,6 @@ const mathTools = <MathTool>[
     route: '/learn/math/flash',
   ),
   MathTool(
-    id: 'math-quiz',
-    title: 'Math Quiz',
-    sub: '10 questions for your class',
-    icon: Icons.help_outline_rounded,
-    route: '/learn/math/quiz',
-  ),
-  MathTool(
     id: 'math-drills',
     title: 'Speed Drills',
     sub: '60-second sprint',

@@ -656,6 +656,70 @@ class UserPrefsRepository {
     await _recordActivityToday();
   }
 
+  // ─── Brain games ─────────────────────────────────────────────────────────
+  //
+  // Best score per game key (e.g. 'sudoku-6', 'element-match-easy'). Some games
+  // score points (higher wins), others time or moves (lower wins), so the
+  // caller says which. The Daily Brain Challenge keeps its own streak, separate
+  // from the learning streak it also feeds.
+
+  static const _gameBestScoresKey = 'game_best_scores';
+  static const _dailyChallengeLastKey = 'daily_challenge_last';
+  static const _dailyChallengeStreakKey = 'daily_challenge_streak';
+
+  Map<String, int> getGameBestScores() {
+    final jsonStr = _prefs.getString(_gameBestScoresKey);
+    if (jsonStr == null) return {};
+    try {
+      final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+      return map.map((k, v) => MapEntry(k, v as int));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Records a finished game, keeping only the best score for [key].
+  Future<void> recordGameScore(
+    String key,
+    int score, {
+    bool lowerIsBetter = false,
+  }) async {
+    final scores = getGameBestScores();
+    final best = scores[key];
+    final improved =
+        best == null || (lowerIsBetter ? score < best : score > best);
+    if (improved) {
+      scores[key] = score;
+      await _prefs.setString(_gameBestScoresKey, jsonEncode(scores));
+    }
+    await _recordActivityToday();
+  }
+
+  bool isDailyChallengeDoneToday() =>
+      _prefs.getString(_dailyChallengeLastKey) == _todayKey();
+
+  /// Consecutive days the challenge was solved. A streak whose last day is
+  /// older than yesterday has lapsed and reads as 0.
+  int getDailyChallengeStreak() {
+    final last = _prefs.getString(_dailyChallengeLastKey);
+    if (last == null) return 0;
+    // Compare as UTC dates so a DST shift can't stretch or shrink a day.
+    DateTime day(String iso) => DateTime.parse('${iso}T00:00:00Z');
+    if (day(_todayKey()).difference(day(last)).inDays > 1) return 0;
+    return _prefs.getInt(_dailyChallengeStreakKey) ?? 0;
+  }
+
+  /// Marks today's challenge solved. Idempotent within a day.
+  Future<void> recordDailyChallengeDone() async {
+    if (isDailyChallengeDoneToday()) return;
+    final streak = getDailyChallengeStreak() + 1;
+    await _prefs.setInt(_dailyChallengeStreakKey, streak);
+    await _prefs.setString(_dailyChallengeLastKey, _todayKey());
+    await _recordActivityToday();
+  }
+
+  String _todayKey() => DateTime.now().toIso8601String().split('T')[0];
+
   // ─── Recent AI questions ─────────────────────────────────────────────────
   //
   // A local ring of the last few questions the student asked, so the AI tab can

@@ -16,6 +16,7 @@ import '../../data/seed/seed_data.dart'
 import '../../data/services/backend_auth_service.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 
 /// The **Explore** tab — interactive learning tools, presented as a tasteful
@@ -439,69 +440,74 @@ class _ToolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
       enabled: true,
       label: tool.title,
       child: Pressable(
         onTap: onTap,
-        child: Container(
-          // Every tile reserves room for a two-line description, so a
-          // longer subtitle never makes its row taller than its neighbour.
+        // Every tile reserves room for a two-line description, so a longer
+        // subtitle never makes its row taller than its neighbour.
+        child: SizedBox(
           height: 144,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            border: Border.all(color: cs.outline),
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          ),
-          child: Stack(
-            clipBehavior: Clip.hardEdge,
-            children: [
-              // faint glyph backdrop
-              Positioned(
-                right: -16,
-                bottom: -18,
-                child: Icon(
-                  tool.icon,
-                  size: 92,
-                  color: tool.color.withValues(alpha: 0.12),
+          child: ClayCard(
+            padding: const EdgeInsets.all(12),
+            blur: 13,
+            distance: 4,
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                // faint glyph backdrop
+                Positioned(
+                  right: -16,
+                  bottom: -18,
+                  child: Icon(
+                    tool.icon,
+                    size: 92,
+                    // Kept faint so it never competes with the subtitle it
+                    // sits under; dark mode needs less to read the same.
+                    color: tool.color.withValues(
+                      alpha: Theme.of(context).brightness == Brightness.dark
+                          ? 0.07
+                          : 0.09,
+                    ),
+                  ),
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Tile(color: tool.color, icon: tool.icon, size: 46),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    tool.title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontSize: AppFontSize.content,
-                      height: 1.12,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Tile(color: tool.color, icon: tool.icon, size: 46),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    tool.sub,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: AppFontSize.small,
+                    const SizedBox(height: 10),
+                    Text(
+                      tool.title,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontSize: AppFontSize.content,
+                            height: 1.12,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(height: 3),
+                    Text(
+                      tool.sub,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontSize: AppFontSize.small,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -548,12 +554,12 @@ List<_Tool> _tools(bool isDark) => [
     route: '/learn/diagrams',
   ),
   _Tool(
-    id: 'cosmulator',
-    title: 'Cosmulator',
-    sub: 'Solar system in 3D',
-    icon: Icons.public_rounded,
-    color: isDark ? AppColors.cCosmosDark : AppColors.cCosmos,
-    route: '/learn/cosmulator',
+    id: 'virtual-lab',
+    title: 'Laboratory',
+    sub: 'Play with 6 experiments',
+    icon: Icons.science_rounded,
+    color: isDark ? AppColors.cScienceDark : AppColors.cScience,
+    route: '/labs',
   ),
   _Tool(
     id: 'periodic-table',
@@ -564,12 +570,20 @@ List<_Tool> _tools(bool isDark) => [
     route: '/learn/periodic-table',
   ),
   _Tool(
-    id: 'vocabulary',
-    title: 'Vocabulary',
-    sub: 'Build your word power',
-    icon: Icons.menu_book_outlined,
+    id: 'cosmulator',
+    title: 'Cosmulator',
+    sub: 'Solar system in 3D',
+    icon: Icons.public_rounded,
+    color: isDark ? AppColors.cCosmosDark : AppColors.cCosmos,
+    route: '/learn/cosmulator',
+  ),
+  _Tool(
+    id: 'quiz',
+    title: 'Quizzes',
+    sub: 'Test yourself by subject',
+    icon: Icons.quiz_rounded,
     color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-    route: '/learn/vocabulary',
+    route: '/learn/quiz',
   ),
   _Tool(
     id: 'python',
@@ -580,12 +594,12 @@ List<_Tool> _tools(bool isDark) => [
     route: '/learn/python',
   ),
   _Tool(
-    id: 'virtual-lab',
-    title: 'Science Lab',
-    sub: 'Try two experiments',
-    icon: Icons.science_rounded,
-    color: isDark ? AppColors.cScienceDark : AppColors.cScience,
-    route: '/labs',
+    id: 'vocabulary',
+    title: 'Vocabulary',
+    sub: 'Build your word power',
+    icon: Icons.menu_book_outlined,
+    color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+    route: '/learn/vocabulary',
   ),
   _Tool(
     id: 'timeline',

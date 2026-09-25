@@ -149,7 +149,11 @@ class AiHubScreen extends ConsumerWidget {
                     question: question,
                     board: board,
                     classNo: classNo,
-                    onTap: () => _navTap(ref, context, _resumePath(question)),
+                    onTap: () => _navTap(
+                      ref,
+                      context,
+                      recentQuestionResumePath(question),
+                    ),
                   );
                 },
               ),
@@ -295,17 +299,6 @@ class AiHubScreen extends ConsumerWidget {
       Theme.of(c).brightness == Brightness.dark;
 }
 
-/// Deep link back to the conversation a past question was asked in — its own
-/// subject thread when it had one, otherwise the general chat.
-String _resumePath(RecentQuestion question) {
-  // Resume the conversation the question was asked in — don't seed the
-  // composer with it. It's already asked and answered; re-typing it into the
-  // input reads as if the tap did nothing.
-  final subject = question.subject;
-  if (subject == null) return '/learn/ai?resume=1';
-  return '/learn/ai?resume=1&subject=${Uri.encodeComponent(subject)}';
-}
-
 /// Coarse "how long ago" label — minutes, hours, days, then weeks.
 String _ago(DateTime then) {
   final diff = DateTime.now().difference(then);
@@ -349,52 +342,56 @@ class _RecentQuestionCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       scale: 0.97,
-      child: Container(
+      child: SizedBox(
         width: 208,
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              (subject == null
-                      ? 'Any subject'
-                      : formatSubject(subject, board: board, classNo: classNo))
-                  .toUpperCase(),
-              style: TextStyle(
-                fontSize: AppFontSize.caption,
-                fontWeight: AppFontWeight.bold,
-                letterSpacing: 0.8,
-                color: accent,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Expanded(
-              child: Text(
-                question.text,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: AppFontSize.small,
-                  height: 1.35,
-                  fontWeight: AppFontWeight.medium,
+        child: ClayCard(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+          radius: AppSpacing.tileRadius,
+          blur: 13,
+          distance: 4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                (subject == null
+                        ? 'Any subject'
+                        : formatSubject(
+                            subject,
+                            board: board,
+                            classNo: classNo,
+                          ))
+                    .toUpperCase(),
+                style: TextStyle(
+                  fontSize: AppFontSize.caption + 1,
+                  fontWeight: AppFontWeight.bold,
+                  letterSpacing: 0.8,
+                  color: accent,
                 ),
               ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              _ago(question.askedAt),
-              style: TextStyle(
-                fontSize: AppFontSize.caption,
-                fontWeight: AppFontWeight.medium,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+              const SizedBox(height: 5),
+              Expanded(
+                child: Text(
+                  question.text,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: AppFontSize.small,
+                    height: 1.35,
+                    fontWeight: AppFontWeight.medium,
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 5),
+              Text(
+                _ago(question.askedAt),
+                style: TextStyle(
+                  fontSize: AppFontSize.caption + 1,
+                  fontWeight: AppFontWeight.medium,
+                  color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -421,20 +418,17 @@ class _HubRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Pressable(
       onTap: onTap,
-      child: Container(
+      child: ClayCard(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.cardPad - 4,
           vertical: 12,
         ),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
+        radius: AppSpacing.cardRadius,
+        blur: 13,
+        distance: 4,
         child: Row(
           children: [
             Tile(color: color, icon: icon, size: 38, radius: 11),
@@ -541,18 +535,15 @@ class _StarterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Pressable(
       onTap: onTap,
       scale: 0.98,
-      child: Container(
+      child: ClayCard(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(13),
-        ),
+        radius: 13,
+        blur: 13,
+        distance: 4,
         child: Row(
           children: [
             Expanded(
@@ -585,21 +576,18 @@ class _TutorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isDark ? AppColors.cTutorDark : AppColors.cTutor;
     return Pressable(
       onTap: onTap,
-      child: Container(
+      child: ClayCard(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.cardPad - 4,
           vertical: 12,
         ),
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outline),
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
+        radius: AppSpacing.cardRadius,
+        blur: 13,
+        distance: 4,
         child: Row(
           children: [
             Tile(

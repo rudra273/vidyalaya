@@ -44,7 +44,16 @@ import '../screens/learn/math/math_quiz_screen.dart';
 import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
-import '../screens/learn/virtual_lab_screen.dart';
+import '../screens/learn/quiz/subject_quiz_home_screen.dart';
+import '../screens/learn/quiz/subject_quiz_screen.dart';
+import '../data/quiz/quiz_models.dart';
+import '../screens/games/element_match_screen.dart';
+import '../screens/games/games_home_screen.dart';
+import '../screens/games/sudoku_screen.dart';
+import '../screens/games/word_builder_screen.dart';
+import '../screens/lab/lab_home_screen.dart';
+import '../screens/lab/lab_bench_screen.dart';
+import '../data/lab/lab_catalog.dart' show labById;
 import '../data/seed/interactive_diagrams_data.dart';
 import '../data/models/answer_style.dart';
 import '../data/models/learn_assist.dart';
@@ -308,10 +317,58 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const MathFractionsScreen(),
       ),
+      // ── Subject quizzes ──
+      GoRoute(
+        path: '/learn/quiz',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SubjectQuizHomeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/quiz/:subject/:band',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) =>
+            _quizSubject(state.pathParameters['subject']) == null ||
+                _quizBand(state.pathParameters['band']) == null
+            ? '/learn/quiz'
+            : null,
+        builder: (context, state) => SubjectQuizScreen(
+          subject: _quizSubject(state.pathParameters['subject'])!,
+          band: _quizBand(state.pathParameters['band'])!,
+        ),
+      ),
+      // ── Brain games (Home "Games" tile). `?daily=1` plays today's challenge.
+      GoRoute(
+        path: '/games',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const GamesHomeScreen(),
+      ),
+      GoRoute(
+        path: '/games/word-builder',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => WordBuilderScreen(daily: _isDaily(state)),
+      ),
+      GoRoute(
+        path: '/games/sudoku',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => SudokuScreen(daily: _isDaily(state)),
+      ),
+      GoRoute(
+        path: '/games/element-match',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ElementMatchScreen(daily: _isDaily(state)),
+      ),
       GoRoute(
         path: '/labs',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const VirtualLabScreen(),
+        builder: (context, state) => const LabHomeScreen(),
+      ),
+      GoRoute(
+        path: '/labs/:labId',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) =>
+            labById(state.pathParameters['labId']!) == null ? '/labs' : null,
+        builder: (context, state) =>
+            LabBenchScreen(labId: state.pathParameters['labId']!),
       ),
       GoRoute(
         path: '/timetable',
@@ -371,3 +428,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+QuizSubject? _quizSubject(String? name) =>
+    QuizSubject.values.where((s) => s.name == name).firstOrNull;
+
+QuizBand? _quizBand(String? name) =>
+    QuizBand.values.where((b) => b.name == name).firstOrNull;
+
+bool _isDaily(GoRouterState state) => state.uri.queryParameters['daily'] == '1';

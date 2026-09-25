@@ -439,7 +439,7 @@ class _MathDrillsScreenState extends ConsumerState<MathDrillsScreen> {
               child: FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: accent),
                 onPressed: () => context.pop(),
-                child: const Text('Back to Math'),
+                child: const Text('Done'),
               ),
             ),
           ],

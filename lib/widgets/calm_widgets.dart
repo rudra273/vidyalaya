@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app/theme.dart';
+import 'pressable.dart';
 
 // ─── Subject metadata ────────────────────────────────────────────────────
 // Single source of truth for hue + icon + native script display.
@@ -267,27 +268,41 @@ class SectionHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Every head reserves the same row height, so sections with an action
+    // link space out exactly like sections without one — and the link gets a
+    // full-height tap target instead of just its glyphs.
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: Text(label.toUpperCase(), style: kEyebrow(context)),
-          ),
-          if (action != null)
-            GestureDetector(
-              onTap: onAction,
-              child: Text(
-                action!,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: cs.primary,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 28),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(label.toUpperCase(), style: kEyebrow(context)),
+            ),
+            if (action != null)
+              GestureDetector(
+                onTap: onAction,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 28),
+                  padding: const EdgeInsets.only(left: 16),
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    action!,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: onAction == null
+                          ? cs.onSurface.withValues(alpha: 0.38)
+                          : cs.primary,
                       fontWeight: AppFontWeight.semibold,
                       fontSize: AppFontSize.body,
                     ),
+                  ),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -388,6 +403,11 @@ class ListRow extends StatelessWidget {
 
 // ─── PageTitle: large serif title with optional subtitle and trailing ────
 
+/// Height of the title line. Header controls (avatar, [IconBox], chips) are
+/// sized to fit it, so they center on the title and every tab's title sits at
+/// the same height whether or not it has trailing actions.
+const double kPageTitleRowHeight = 38;
+
 class PageTitle extends StatelessWidget {
   final String title;
   final String? sub;
@@ -408,47 +428,54 @@ class PageTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
-        14,
+        8,
         AppSpacing.screenPadding,
         4,
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (onBack != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8, top: 4),
-              child: InkResponse(
-                onTap: onBack,
-                radius: 22,
-                child: Icon(Icons.arrow_back_rounded,
-                    size: 24, color: cs.onSurface),
-              ),
-            ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: kPageTitleRowHeight),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .displayMedium
-                      ?.copyWith(fontSize: AppFontSize.headingLarge),
-                ),
-                if (sub != null) ...[
-                  const SizedBox(height: 5),
-                  Text(
-                    sub!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: AppFontWeight.medium,
-                        ),
+                if (onBack != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: InkResponse(
+                      onTap: onBack,
+                      radius: 22,
+                      child: Icon(
+                        Icons.arrow_back_rounded,
+                        size: 24,
+                        color: cs.onSurface,
+                      ),
+                    ),
                   ),
-                ],
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      fontSize: AppFontSize.headingLarge,
+                    ),
+                  ),
+                ),
+                if (trailing != null) ...[const SizedBox(width: 12), trailing!],
               ],
             ),
           ),
-          ?trailing,
+          // The subtitle runs the full width under the title row, so trailing
+          // actions never squeeze it onto a second line.
+          if (sub != null)
+            Padding(
+              padding: EdgeInsets.only(left: onBack != null ? 32 : 0),
+              child: Text(
+                sub!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: AppFontWeight.medium,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -465,34 +492,33 @@ class IconBox extends StatelessWidget {
   /// Accessibility/long-press label for the icon-only action.
   final String? tooltip;
 
-  /// Nudges the box down to align with a top-anchored page title. Pass 0 when
-  /// the box is already vertically centered by its parent.
-  final double topMargin;
-
   const IconBox({
     super.key,
     required this.icon,
     this.onTap,
-    this.size = 42,
+    this.size = kPageTitleRowHeight,
     this.tooltip,
-    this.topMargin = 4,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final box = GestureDetector(
+    final box = Pressable(
       onTap: onTap,
+      scale: 0.92,
       child: Container(
         width: size,
         height: size,
-        margin: EdgeInsets.only(top: topMargin),
         decoration: BoxDecoration(
           color: cs.surface,
           border: Border.all(color: cs.outline),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, size: 20, color: cs.onSurface.withValues(alpha: 0.75)),
+        child: Icon(
+          icon,
+          size: 20,
+          color: cs.onSurface.withValues(alpha: 0.75),
+        ),
       ),
     );
     if (tooltip == null) return box;
