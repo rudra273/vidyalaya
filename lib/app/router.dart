@@ -47,6 +47,10 @@ import '../screens/learn/math/math_fractions_screen.dart';
 import '../screens/learn/quiz/subject_quiz_home_screen.dart';
 import '../screens/learn/quiz/subject_quiz_screen.dart';
 import '../data/quiz/quiz_models.dart';
+import '../screens/games/element_match_screen.dart';
+import '../screens/games/games_home_screen.dart';
+import '../screens/games/sudoku_screen.dart';
+import '../screens/games/word_builder_screen.dart';
 import '../screens/lab/lab_home_screen.dart';
 import '../screens/lab/lab_bench_screen.dart';
 import '../data/lab/lab_catalog.dart' show labById;
@@ -332,6 +336,27 @@ final routerProvider = Provider<GoRouter>((ref) {
           band: _quizBand(state.pathParameters['band'])!,
         ),
       ),
+      // ── Brain games (Home "Games" tile). `?daily=1` plays today's challenge.
+      GoRoute(
+        path: '/games',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const GamesHomeScreen(),
+      ),
+      GoRoute(
+        path: '/games/word-builder',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => WordBuilderScreen(daily: _isDaily(state)),
+      ),
+      GoRoute(
+        path: '/games/sudoku',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => SudokuScreen(daily: _isDaily(state)),
+      ),
+      GoRoute(
+        path: '/games/element-match',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ElementMatchScreen(daily: _isDaily(state)),
+      ),
       GoRoute(
         path: '/labs',
         parentNavigatorKey: _rootNavigatorKey,
@@ -409,3 +434,5 @@ QuizSubject? _quizSubject(String? name) =>
 
 QuizBand? _quizBand(String? name) =>
     QuizBand.values.where((b) => b.name == name).firstOrNull;
+
+bool _isDaily(GoRouterState state) => state.uri.queryParameters['daily'] == '1';

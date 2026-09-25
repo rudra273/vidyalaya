@@ -10,6 +10,7 @@ import '../../providers/reading_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
+import '../../providers/games_progress_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../providers/vocabulary_provider.dart';
@@ -52,6 +53,7 @@ class HomeScreen extends ConsumerWidget {
     final recentBooks = ref.watch(recentBooksProvider);
     final booksEnabled = ref.watch(booksEnabledProvider);
     final streak = ref.watch(progressProvider).currentStreak;
+    final dailyDone = ref.watch(gamesProgressProvider).dailyDoneToday;
     final user = ref
         .watch(authStateProvider)
         .maybeWhen(data: (u) => u, orElse: () => null);
@@ -186,10 +188,11 @@ class HomeScreen extends ConsumerWidget {
                         color: _isDark(context)
                             ? AppColors.cMathsDark
                             : AppColors.cMaths,
-                        icon: Icons.bolt_rounded,
-                        label: 'Practice',
-                        onTap: () =>
-                            _navTap(ref, context, '/learn/math/drills'),
+                        icon: Icons.extension_rounded,
+                        label: 'Games',
+                        // Dot until today's Daily Brain Challenge is done.
+                        badge: !dailyDone,
+                        onTap: () => _navTap(ref, context, '/games'),
                       ),
                     ),
                   ],
@@ -588,11 +591,15 @@ class _MiniTool extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
+  /// Shows a small attention dot on the icon.
+  final bool badge;
+
   const _MiniTool({
     required this.color,
     required this.icon,
     required this.label,
     required this.onTap,
+    this.badge = false,
   });
 
   @override
@@ -606,7 +613,29 @@ class _MiniTool extends StatelessWidget {
         distance: 4,
         child: Row(
           children: [
-            Tile(color: color, icon: icon, size: 22, radius: 7),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Tile(color: color, icon: icon, size: 22, radius: 7),
+                if (badge)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.surface,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
