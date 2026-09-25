@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Vidya AI is a Flutter book-reading + AI tutoring app for Indian school students (SCERT Odisha, classes 1–8). Cross-platform (Android primary; iOS/web/desktop scaffolding present).
+Vidya AI is a Flutter book-reading + AI tutoring app for Indian school students (SCERT Odisha, classes 1–10). Cross-platform (Android primary; iOS/web/desktop scaffolding present).
 
 ## Brand identity
 

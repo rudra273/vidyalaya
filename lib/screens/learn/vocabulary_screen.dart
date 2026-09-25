@@ -37,7 +37,7 @@ const _kLetterHeaderExtent = 40.0;
 
 /// Extra pre-built area above and below the viewport. The default (250) is
 /// barely one card tall, so fast scrolls build cards just-in-time.
-const _kCacheExtent = 600.0;
+const _kCacheExtent = ScrollCacheExtent.pixels(600);
 
 /// How many re-aim passes a jump may take before giving up.
 ///
@@ -166,7 +166,15 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
   IndexedWord? _shuffleWord(VocabularyIndex index) {
     if (index.words.isEmpty) return null;
     if (_shuffleHistory.isEmpty) {
-      _shuffleHistory.add(index.words[_random.nextInt(index.words.length)]);
+      // Opens on today's word — the same one the Home card shows — and the
+      // arrows then walk through random picks.
+      final today = wordOfTheDay();
+      _shuffleHistory.add(
+        index.words.firstWhere(
+          (w) => identical(w.word, today),
+          orElse: () => index.words[_random.nextInt(index.words.length)],
+        ),
+      );
       _shuffleCursor = 0;
     }
     return _shuffleHistory[_shuffleCursor];
@@ -380,6 +388,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 word: shuffled.word,
                 lang: lang,
                 styles: styles,
+                isWordOfTheDay: _shuffleCursor == 0,
                 canGoBack: _shuffleCursor > 0,
                 onPrevious: _shufflePrevious,
                 onNext: () => _shuffleNext(index),
@@ -397,7 +406,7 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
                 else
                   CustomScrollView(
                     controller: _scrollController,
-                    cacheExtent: _kCacheExtent,
+                    scrollCacheExtent: _kCacheExtent,
                     slivers: searching
                         ? _buildFlatSlivers(_results, lang, styles)
                         : _buildSectionedSlivers(index, lang, styles),
@@ -809,7 +818,8 @@ class _WordCardStyles {
   }
 }
 
-/// Random-word card pinned above the list, with arrows to walk through picks.
+/// Word-of-the-day card pinned above the list, with arrows to walk through
+/// random picks.
 ///
 /// Deliberately more compact than [_WordCard] — it sits above the whole list,
 /// so a full-height card would push the alphabet out of view on small phones.
@@ -817,6 +827,9 @@ class _ShuffleCard extends StatelessWidget {
   final VocabularyWord word;
   final RegionalLanguage lang;
   final _WordCardStyles styles;
+
+  /// The first card is today's word; later ones are random picks.
+  final bool isWordOfTheDay;
   final bool canGoBack;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
@@ -825,6 +838,7 @@ class _ShuffleCard extends StatelessWidget {
     required this.word,
     required this.lang,
     required this.styles,
+    required this.isWordOfTheDay,
     required this.canGoBack,
     required this.onPrevious,
     required this.onNext,
@@ -857,6 +871,16 @@ class _ShuffleCard extends StatelessWidget {
               child: Column(
                 key: ValueKey(word.word),
                 children: [
+                  Text(
+                    isWordOfTheDay ? 'WORD OF THE DAY' : 'MORE WORDS',
+                    textAlign: TextAlign.center,
+                    style: tt.labelSmall?.copyWith(
+                      color: styles.accent,
+                      fontWeight: AppFontWeight.semibold,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     word.word,
                     textAlign: TextAlign.center,

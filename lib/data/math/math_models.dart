@@ -8,6 +8,9 @@
 // Deliberately free of Flutter imports so the generators and their tests stay
 // pure Dart. `MathTool` (which needs an IconData) lives in math_tools_data.dart.
 
+import '../models/localized_text.dart';
+import '../models/regional_language.dart';
+
 // ─── Operations ───────────────────────────────────────────────────────────────
 
 /// The four arithmetic operations, used by Flash Math and Speed Drills.
@@ -202,10 +205,12 @@ class MathFlashChain {
 
 /// A multiple-choice question for the Math Quiz.
 class MathQuizQuestion {
-  final String prompt;
+  final LocalizedText prompt;
+
+  /// Numeric answers — the same in every language.
   final List<String> options;
   final int correctIndex;
-  final String explanation;
+  final LocalizedText explanation;
 
   const MathQuizQuestion({
     required this.prompt,
@@ -254,7 +259,10 @@ enum NumberSenseKind {
 /// UI can label the round.
 class NumberSenseQuestion {
   final NumberSenseKind kind;
-  final String prompt;
+  final LocalizedText prompt;
+
+  /// Numbers, or English words (Odd/Even/Prime/Not prime) that the screen
+  /// translates with [mathOptionLabel].
   final List<String> options;
   final int correctIndex;
 
@@ -265,6 +273,22 @@ class NumberSenseQuestion {
     required this.correctIndex,
   });
 }
+
+/// Word answers in Number Sense, translated for display. Anything else (a
+/// number) is returned unchanged.
+String mathOptionLabel(String option, RegionalLanguage lang) =>
+    _optionWords[option]?.of(lang) ?? option;
+
+const _optionWords = {
+  'Odd': LocalizedText(en: 'Odd', or: 'ଅଯୁଗ୍ମ', hi: 'विषम'),
+  'Even': LocalizedText(en: 'Even', or: 'ଯୁଗ୍ମ', hi: 'सम'),
+  'Prime': LocalizedText(en: 'Prime', or: 'ମୌଳିକ', hi: 'अभाज्य'),
+  'Not prime': LocalizedText(
+    en: 'Not prime',
+    or: 'ମୌଳିକ ନୁହେଁ',
+    hi: 'अभाज्य नहीं',
+  ),
+};
 
 // ─── Fractions ────────────────────────────────────────────────────────────────
 

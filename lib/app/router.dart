@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
-import '../providers/lab_provider.dart';
-import '../providers/user_selection_provider.dart';
 import '../data/seed/seed_data.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -26,6 +24,7 @@ import '../widgets/app_shell.dart';
 import '../screens/explore/explore_screen.dart';
 import '../screens/learn_ai/tutor_mock_screen.dart';
 import '../screens/learn/learn_ai_screen.dart';
+import '../data/math/formulas/formulas.dart' show formulaCategoryByName;
 import '../screens/learn/math_formulas_screen.dart';
 import '../screens/learn/periodic_table_screen.dart';
 import '../screens/learn/timeline_screen.dart';
@@ -83,10 +82,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
         if (isBookRoute) return '/';
       }
-      final labsAvailable = labAvailableForSelection(
-        ref.read(exploreClassSelectionProvider),
-      );
-      if (!labsAvailable && state.matchedLocation == '/labs') return '/explore';
       return null;
     },
     routes: [
@@ -373,11 +368,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 
-  // The router must retain its Navigator while a route is active. Board and
-  // class changes only affect the lab-route guard, so refresh that guard
-  // instead of recreating GoRouter (which detaches live inherited dependents).
-  ref.listen(userBoardProvider, (_, _) => router.refresh());
-  ref.listen(exploreClassSelectionProvider, (_, _) => router.refresh());
   ref.onDispose(router.dispose);
   return router;
 });

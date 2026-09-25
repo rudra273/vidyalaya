@@ -5,9 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../data/math/math_generators.dart';
 import '../../../data/math/math_models.dart';
+import '../../../data/models/localized_text.dart';
 import '../../../providers/math_progress_provider.dart';
+import '../../../providers/regional_language_provider.dart';
 import '../../../providers/user_selection_provider.dart';
 import '../../../utils/haptics.dart';
+import '../../../widgets/regional_language_switch.dart';
 import 'math_home_screen.dart';
 import 'widgets/math_option_tile.dart';
 
@@ -95,7 +98,10 @@ class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Number Sense')),
+      appBar: AppBar(
+        title: const Text('Number Sense'),
+        actions: const [RegionalLanguageSwitch()],
+      ),
       body: _finished
           ? MathScorePage(
               correct: _correct,
@@ -140,7 +146,7 @@ class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          q.prompt,
+          q.prompt.of(ref.watch(regionalLanguageProvider)),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: AppFontWeight.bold,
             height: 1.35,
@@ -159,7 +165,10 @@ class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
                   return SizedBox(
                     width: cellW,
                     child: MathOptionTile(
-                      label: q.options[i],
+                      label: mathOptionLabel(
+                        q.options[i],
+                        ref.watch(regionalLanguageProvider),
+                      ),
                       centered: true,
                       state: mathOptionState(
                         answered: _answered,
@@ -179,7 +188,10 @@ class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: MathOptionTile(
-                label: q.options[i],
+                label: mathOptionLabel(
+                  q.options[i],
+                  ref.watch(regionalLanguageProvider),
+                ),
                 state: mathOptionState(
                   answered: _answered,
                   index: i,
@@ -194,7 +206,12 @@ class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
           const SizedBox(height: 18),
           MathExplanation(
             correct: _selected == q.correctIndex,
-            text: 'The answer is ${q.options[q.correctIndex]}.',
+            text: _answerIs(
+              mathOptionLabel(
+                q.options[q.correctIndex],
+                ref.watch(regionalLanguageProvider),
+              ),
+            ).of(ref.watch(regionalLanguageProvider)),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -210,3 +227,9 @@ class _MathNumberSenseScreenState extends ConsumerState<MathNumberSenseScreen> {
     );
   }
 }
+
+LocalizedText _answerIs(String answer) => LocalizedText(
+  en: 'The answer is $answer.',
+  or: 'ଉତ୍ତର ହେଉଛି $answer।',
+  hi: 'उत्तर है $answer।',
+);

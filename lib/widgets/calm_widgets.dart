@@ -272,7 +272,9 @@ class SectionHead extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label.toUpperCase(), style: kEyebrow(context)),
+          Flexible(
+            child: Text(label.toUpperCase(), style: kEyebrow(context)),
+          ),
           if (action != null)
             GestureDetector(
               onTap: onAction,

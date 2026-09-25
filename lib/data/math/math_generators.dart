@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'math_models.dart';
+import '../models/localized_text.dart';
 
 // ─── Math question generators ─────────────────────────────────────────────────
 //
@@ -140,9 +141,9 @@ typedef _QuizBuilder = MathQuizQuestion Function(int level, Random rng);
 /// answer landed. Builders pass the correct answer as `options.first`; this is
 /// the only place `correctIndex` is computed, so it can't drift out of sync.
 MathQuizQuestion _mcq({
-  required String prompt,
+  required LocalizedText prompt,
   required List<String> options,
-  required String explanation,
+  required LocalizedText explanation,
   required Random rng,
 }) {
   final correct = options.first;
@@ -182,9 +183,13 @@ MathQuizQuestion _addQuestion(int level, Random rng) {
   final b = 1 + rng.nextInt(scale);
   final answer = a + b;
   return _mcq(
-    prompt: 'What is $a + $b?',
+    prompt: LocalizedText(
+      en: 'What is $a + $b?',
+      or: '$a + $b କେତେ?',
+      hi: '$a + $b कितना है?',
+    ),
     options: _numericOptions(answer, rng, spread: max(4, scale ~/ 5)),
-    explanation: '$a + $b = $answer.',
+    explanation: LocalizedText.same('$a + $b = $answer.'),
     rng: rng,
   );
 }
@@ -195,9 +200,13 @@ MathQuizQuestion _subQuestion(int level, Random rng) {
   final b = 1 + rng.nextInt(a); // keep it non-negative
   final answer = a - b;
   return _mcq(
-    prompt: 'What is $a − $b?',
+    prompt: LocalizedText(
+      en: 'What is $a − $b?',
+      or: '$a − $b କେତେ?',
+      hi: '$a − $b कितना है?',
+    ),
     options: _numericOptions(answer, rng, spread: max(4, scale ~/ 5)),
-    explanation: '$a − $b = $answer.',
+    explanation: LocalizedText.same('$a − $b = $answer.'),
     rng: rng,
   );
 }
@@ -208,9 +217,13 @@ MathQuizQuestion _mulQuestion(int level, Random rng) {
   final b = 2 + rng.nextInt(cap - 1);
   final answer = a * b;
   return _mcq(
-    prompt: 'What is $a × $b?',
+    prompt: LocalizedText(
+      en: 'What is $a × $b?',
+      or: '$a × $b କେତେ?',
+      hi: '$a × $b कितना है?',
+    ),
     options: _numericOptions(answer, rng, spread: max(4, answer ~/ 4)),
-    explanation: '$a × $b = $answer.',
+    explanation: LocalizedText.same('$a × $b = $answer.'),
     rng: rng,
   );
 }
@@ -221,9 +234,17 @@ MathQuizQuestion _divQuestion(int level, Random rng) {
   final answer = 2 + rng.nextInt(cap - 1);
   final a = b * answer; // build backwards so it divides exactly
   return _mcq(
-    prompt: 'What is $a ÷ $b?',
+    prompt: LocalizedText(
+      en: 'What is $a ÷ $b?',
+      or: '$a ÷ $b କେତେ?',
+      hi: '$a ÷ $b कितना है?',
+    ),
     options: _numericOptions(answer, rng, spread: max(3, answer)),
-    explanation: '$a ÷ $b = $answer, because $b × $answer = $a.',
+    explanation: LocalizedText(
+      en: '$a ÷ $b = $answer, because $b × $answer = $a.',
+      or: '$a ÷ $b = $answer, କାରଣ $b × $answer = $a।',
+      hi: '$a ÷ $b = $answer, क्योंकि $b × $answer = $a।',
+    ),
     rng: rng,
   );
 }
@@ -234,9 +255,13 @@ MathQuizQuestion _missingNumberQuestion(int level, Random rng) {
   final answer = 1 + rng.nextInt(scale);
   final total = a + answer;
   return _mcq(
-    prompt: 'What number goes in the box?   $a + ▢ = $total',
+    prompt: LocalizedText(
+      en: 'What number goes in the box?   $a + ▢ = $total',
+      or: 'ଘରେ କେଉଁ ସଂଖ୍ୟା ବସିବ?   $a + ▢ = $total',
+      hi: 'खाने में कौन-सी संख्या आएगी?   $a + ▢ = $total',
+    ),
     options: _numericOptions(answer, rng, spread: max(4, scale ~/ 5)),
-    explanation: '$total − $a = $answer.',
+    explanation: LocalizedText.same('$total − $a = $answer.'),
     rng: rng,
   );
 }
@@ -255,10 +280,17 @@ MathQuizQuestion _fractionAddQuestion(int level, Random rng) {
     options.add(Fraction(wrongN, wrongD).display);
   }
   return _mcq(
-    prompt: 'What is $n1/$d + $n2/$d?',
+    prompt: LocalizedText(
+      en: 'What is $n1/$d + $n2/$d?',
+      or: '$n1/$d + $n2/$d କେତେ?',
+      hi: '$n1/$d + $n2/$d कितना है?',
+    ),
     options: options.toList(),
-    explanation:
-        'Add the numerators over the same denominator: ${n1 + n2}/$d = ${sum.display}.',
+    explanation: LocalizedText(
+      en: 'Add the numerators over the same denominator: ${n1 + n2}/$d = ${sum.display}.',
+      or: 'ସମାନ ହର ଉପରେ ଲବଗୁଡ଼ିକୁ ଯୋଗ କର: ${n1 + n2}/$d = ${sum.display}।',
+      hi: 'समान हर पर अंशों को जोड़ें: ${n1 + n2}/$d = ${sum.display}।',
+    ),
     rng: rng,
   );
 }
@@ -270,9 +302,17 @@ MathQuizQuestion _percentQuestion(int level, Random rng) {
   final base = (1 + rng.nextInt(20)) * 20;
   final answer = base * pct ~/ 100;
   return _mcq(
-    prompt: 'What is $pct% of $base?',
+    prompt: LocalizedText(
+      en: 'What is $pct% of $base?',
+      or: '$base ର $pct% କେତେ?',
+      hi: '$base का $pct% कितना है?',
+    ),
     options: _numericOptions(answer, rng, spread: max(3, answer ~/ 2)),
-    explanation: '$pct% of $base = $base × $pct ÷ 100 = $answer.',
+    explanation: LocalizedText(
+      en: '$pct% of $base = $base × $pct ÷ 100 = $answer.',
+      or: '$base ର $pct% = $base × $pct ÷ 100 = $answer।',
+      hi: '$base का $pct% = $base × $pct ÷ 100 = $answer।',
+    ),
     rng: rng,
   );
 }
@@ -283,10 +323,17 @@ MathQuizQuestion _linearEquationQuestion(int level, Random rng) {
   final b = 1 + rng.nextInt(20);
   final rhs = a * answer + b;
   return _mcq(
-    prompt: 'Solve for x:   ${a}x + $b = $rhs',
+    prompt: LocalizedText(
+      en: 'Solve for x:   ${a}x + $b = $rhs',
+      or: 'x ର ମାନ ନିର୍ଣ୍ଣୟ କର:   ${a}x + $b = $rhs',
+      hi: 'x का मान ज्ञात करें:   ${a}x + $b = $rhs',
+    ),
     options: _numericOptions(answer, rng, spread: max(3, answer)),
-    explanation:
-        '${a}x = $rhs − $b = ${a * answer}, so x = ${a * answer} ÷ $a = $answer.',
+    explanation: LocalizedText(
+      en: '${a}x = $rhs − $b = ${a * answer}, so x = ${a * answer} ÷ $a = $answer.',
+      or: '${a}x = $rhs − $b = ${a * answer}, ତେଣୁ x = ${a * answer} ÷ $a = $answer।',
+      hi: '${a}x = $rhs − $b = ${a * answer}, इसलिए x = ${a * answer} ÷ $a = $answer।',
+    ),
     rng: rng,
   );
 }
@@ -416,7 +463,17 @@ NumberSenseQuestion _buildNumberSense(
           : list.reduce((a, b) => a < b ? a : b);
       return NumberSenseQuestion(
         kind: kind,
-        prompt: kind.label,
+        prompt: wantLarger
+            ? const LocalizedText(
+                en: 'Which is larger?',
+                or: 'କେଉଁଟି ବଡ଼?',
+                hi: 'कौन-सा बड़ा है?',
+              )
+            : const LocalizedText(
+                en: 'Which is smaller?',
+                or: 'କେଉଁଟି ଛୋଟ?',
+                hi: 'कौन-सा छोटा है?',
+              ),
         options: list.map((e) => e.toString()).toList(),
         correctIndex: list.indexOf(target),
       );
@@ -425,7 +482,11 @@ NumberSenseQuestion _buildNumberSense(
       final n = 1 + rng.nextInt(scale * 2);
       return NumberSenseQuestion(
         kind: kind,
-        prompt: 'Is $n odd or even?',
+        prompt: LocalizedText(
+          en: 'Is $n odd or even?',
+          or: '$n ଯୁଗ୍ମ ନା ଅଯୁଗ୍ମ?',
+          hi: '$n सम है या विषम?',
+        ),
         options: const ['Odd', 'Even'],
         correctIndex: n.isEven ? 1 : 0,
       );
@@ -433,7 +494,11 @@ NumberSenseQuestion _buildNumberSense(
     case NumberSenseKind.placeValue:
       // Always a 3-digit number so the place names are unambiguous.
       final n = 100 + rng.nextInt(900);
-      const places = ['ones', 'tens', 'hundreds'];
+      const places = [
+        LocalizedText(en: 'ones', or: 'ଏକକ', hi: 'इकाई'),
+        LocalizedText(en: 'tens', or: 'ଦଶକ', hi: 'दहाई'),
+        LocalizedText(en: 'hundreds', or: 'ଶତକ', hi: 'सैकड़ा'),
+      ];
       final placeIndex = rng.nextInt(3);
       final digit = (n ~/ pow(10, placeIndex).toInt()) % 10;
       final options = <String>{digit.toString()};
@@ -443,7 +508,11 @@ NumberSenseQuestion _buildNumberSense(
       }
       return NumberSenseQuestion(
         kind: kind,
-        prompt: 'In $n, what digit is in the ${places[placeIndex]} place?',
+        prompt: LocalizedText(
+          en: 'In $n, what digit is in the ${places[placeIndex].en} place?',
+          or: '$n ରେ ${places[placeIndex].or} ସ୍ଥାନରେ କେଉଁ ଅଙ୍କ ଅଛି?',
+          hi: '$n में ${places[placeIndex].hi} के स्थान पर कौन-सा अंक है?',
+        ),
         options: options.toList(),
         correctIndex: options.toList().indexOf(digit.toString()),
       );
@@ -462,7 +531,11 @@ NumberSenseQuestion _buildNumberSense(
       final list = options.toList();
       return NumberSenseQuestion(
         kind: kind,
-        prompt: 'Round $n to the nearest $to.',
+        prompt: LocalizedText(
+          en: 'Round $n to the nearest $to.',
+          or: '$n କୁ ନିକଟତମ $to କୁ ଆସନ୍ନ କର।',
+          hi: '$n को निकटतम $to तक पूर्णांकित करें।',
+        ),
         options: list.map((e) => e.toString()).toList(),
         correctIndex: list.indexOf(answer),
       );
@@ -471,7 +544,11 @@ NumberSenseQuestion _buildNumberSense(
       final n = 2 + rng.nextInt(58);
       return NumberSenseQuestion(
         kind: kind,
-        prompt: 'Is $n a prime number?',
+        prompt: LocalizedText(
+          en: 'Is $n a prime number?',
+          or: '$n କ\'ଣ ଏକ ମୌଳିକ ସଂଖ୍ୟା?',
+          hi: 'क्या $n एक अभाज्य संख्या है?',
+        ),
         options: const ['Prime', 'Not prime'],
         correctIndex: isPrime(n) ? 0 : 1,
       );
@@ -503,7 +580,7 @@ class FractionTask {
   final Fraction? right;
   final List<String> options;
   final int correctIndex;
-  final String explanation;
+  final LocalizedText explanation;
 
   const FractionTask({
     required this.kind,
@@ -550,8 +627,16 @@ FractionTask _compareTask(Random rng) {
     options: options,
     correctIndex: correct,
     explanation: a.value == b.value
-        ? 'They are equal.'
-        : '${options[correct]} is larger — compare ${a.value.toStringAsFixed(2)} and ${b.value.toStringAsFixed(2)}.',
+        ? const LocalizedText(
+            en: 'They are equal.',
+            or: 'ଦୁହେଁ ସମାନ।',
+            hi: 'दोनों बराबर हैं।',
+          )
+        : LocalizedText(
+            en: '${options[correct]} is larger — compare ${a.value.toStringAsFixed(2)} and ${b.value.toStringAsFixed(2)}.',
+            or: '${options[correct]} ବଡ଼ — ${a.value.toStringAsFixed(2)} ଓ ${b.value.toStringAsFixed(2)} ତୁଳନା କର।',
+            hi: '${options[correct]} बड़ा है — ${a.value.toStringAsFixed(2)} और ${b.value.toStringAsFixed(2)} की तुलना करें।',
+          ),
   );
 }
 
@@ -578,8 +663,11 @@ FractionTask _simplifyTask(Random rng) {
     left: raw,
     options: list,
     correctIndex: list.indexOf(simple.display),
-    explanation:
-        'Divide top and bottom by $factor: ${raw.display} = ${simple.display}.',
+    explanation: LocalizedText(
+      en: 'Divide top and bottom by $factor: ${raw.display} = ${simple.display}.',
+      or: 'ଲବ ଓ ହରକୁ $factor ଦ୍ୱାରା ଭାଗ କର: ${raw.display} = ${simple.display}।',
+      hi: 'अंश और हर को $factor से भाग दें: ${raw.display} = ${simple.display}।',
+    ),
   );
 }
 
@@ -607,7 +695,10 @@ FractionTask _addFractionTask(Random rng) {
     right: b,
     options: list,
     correctIndex: list.indexOf(sum.display),
-    explanation:
-        'Same denominator, so add the numerators: ${n1 + n2}/$d = ${sum.display}.',
+    explanation: LocalizedText(
+      en: 'Same denominator, so add the numerators: ${n1 + n2}/$d = ${sum.display}.',
+      or: 'ହର ସମାନ, ତେଣୁ ଲବଗୁଡ଼ିକୁ ଯୋଗ କର: ${n1 + n2}/$d = ${sum.display}।',
+      hi: 'हर समान है, इसलिए अंशों को जोड़ें: ${n1 + n2}/$d = ${sum.display}।',
+    ),
   );
 }

@@ -8,28 +8,34 @@ import 'package:vidyalaya/screens/learn/interactive_diagram_viewer_screen.dart';
 
 void main() {
   test('interactive diagram catalog is complete and internally valid', () {
-    expect(interactiveDiagrams, hasLength(12));
+    expect(interactiveDiagrams, hasLength(31));
     expect(
       interactiveDiagrams.map((diagram) => diagram.id).toSet(),
-      hasLength(12),
+      hasLength(31),
     );
     expect(
       interactiveDiagrams.where(
         (diagram) => diagram.section == DiagramSection.biology,
       ),
-      hasLength(5),
+      hasLength(13),
     );
     expect(
       interactiveDiagrams.where(
         (diagram) => diagram.section == DiagramSection.geography,
       ),
-      hasLength(2),
+      hasLength(7),
     );
     expect(
       interactiveDiagrams.where(
         (diagram) => diagram.section == DiagramSection.science,
       ),
-      hasLength(5),
+      hasLength(8),
+    );
+    expect(
+      interactiveDiagrams.where(
+        (diagram) => diagram.section == DiagramSection.math,
+      ),
+      hasLength(3),
     );
 
     for (final diagram in interactiveDiagrams) {

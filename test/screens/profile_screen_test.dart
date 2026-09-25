@@ -45,6 +45,10 @@ class _Cache extends BackendAccountCache {
     state = state.copyWith(profile: AsyncData(profile));
   }
 
+  void startProfileLoad() {
+    state = state.copyWith(profile: const AsyncLoading(), profileLoaded: false);
+  }
+
   @override
   BackendAccountState build() => BackendAccountState(
     uid: 'student-a',
@@ -86,6 +90,7 @@ void main() {
     WidgetTester tester, {
     Brightness brightness = Brightness.light,
     bool clay = true,
+    bool openEditor = true,
   }) async {
     await prefs.setBool('clay_enabled', clay);
     await tester.binding.setSurfaceSize(const Size(360, 800));
@@ -117,8 +122,10 @@ void main() {
     );
     authChanges.add(auth.currentUser);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Edit'));
-    await tester.pumpAndSettle();
+    if (openEditor) {
+      await tester.tap(find.text('Edit'));
+      await tester.pumpAndSettle();
+    }
   }
 
   Future<void> tapAction(WidgetTester tester, String label) async {
@@ -127,6 +134,22 @@ void main() {
     await tester.tap(find.text(label));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('Sign out remains available while profile sync is pending', (
+    tester,
+  ) async {
+    await pumpProfile(tester, openEditor: false);
+    cache.startProfileLoad();
+    await tester.pump();
+    expect(find.text('Syncing your profile…'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    final editButton = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Edit'),
+    );
+    expect(editButton.onPressed, isNull);
+    await tester.scrollUntilVisible(find.text('Sign out'), 200);
+    expect(find.text('Sign out').hitTestable(), findsOneWidget);
+  });
 
   testWidgets(
     'Avatar choices open only from the pencil and dismissal preserves selection',

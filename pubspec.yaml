@@ -1,7 +1,7 @@
 name: vidyalaya
 description: "Vidya AI. A book reading app for Indian school students."
 publish_to: 'none'
-version: 1.0.3+4
+version: 1.0.4+5
 
 environment:
   sdk: ^3.11.5
@@ -31,6 +31,8 @@ dependencies:
   in_app_update: ^4.2.5
   printing: ^5.15.1
   pdf: ^3.13.1
+  flutter_math_fork: ^0.7.4
+  markdown: ^7.3.1
 
 dev_dependencies:
   flutter_test:

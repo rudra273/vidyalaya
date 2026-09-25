@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../data/models/class_range.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ingested_books_provider.dart';
-import '../../providers/lab_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../data/seed/seed_data.dart'
@@ -19,8 +19,7 @@ import '../../widgets/calm_widgets.dart';
 import '../../widgets/pressable.dart';
 
 /// The **Explore** tab — interactive learning tools, presented as a tasteful
-/// duotone grid (faint glyph backdrop, tinted tile, serif title) plus a
-/// "Coming soon" group.
+/// duotone grid (faint glyph backdrop, tinted tile, serif title).
 class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
@@ -69,9 +68,15 @@ class ExploreScreen extends ConsumerWidget {
       });
     }
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final classes = ref.watch(exploreClassSelectionProvider).toList()..sort();
-    final labsAvailable = labAvailableForSelection(classes);
-    final tools = _tools(isDark, labsAvailable);
+    final classes = ref.watch(exploreClassSelectionProvider);
+    final tools = _tools(isDark);
+    // Tools meant for the selected classes come first; the rest stay one tap
+    // away under "More tools" rather than disappearing.
+    bool fits(_Tool t) =>
+        classes.isEmpty ||
+        (exploreToolClassRanges[t.id] ?? ClassRange.all).fitsAny(classes);
+    final forYou = tools.where(fits).toList();
+    final more = tools.where((t) => !fits(t)).toList();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -93,8 +98,10 @@ class ExploreScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
-              child: _Grid(items: tools, onTap: (t) => _open(context, ref, t)),
+              child: _Grid(items: forYou, onTap: (t) => _open(context, ref, t)),
             ),
+            if (more.isNotEmpty)
+              _MoreTools(items: more, onTap: (t) => _open(context, ref, t)),
           ],
         ),
       ),
@@ -355,6 +362,75 @@ class _Grid extends StatelessWidget {
   }
 }
 
+/// Collapsed section holding tools recommended for other classes.
+class _MoreTools extends StatefulWidget {
+  final List<_Tool> items;
+  final ValueChanged<_Tool> onTap;
+
+  const _MoreTools({required this.items, required this.onTap});
+
+  @override
+  State<_MoreTools> createState() => _MoreToolsState();
+}
+
+class _MoreToolsState extends State<_MoreTools> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.screenPadding,
+        AppSpacing.sectionGap - 4,
+        AppSpacing.screenPadding,
+        0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            button: true,
+            expanded: _open,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => setState(() => _open = !_open),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'More tools (${widget.items.length})',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    Text(
+                      'For other classes',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _open
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_open) ...[
+            const SizedBox(height: 8),
+            _Grid(items: widget.items, onTap: widget.onTap),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _ToolCard extends StatelessWidget {
   final _Tool tool;
   final VoidCallback? onTap;
@@ -453,12 +529,12 @@ class _Tool {
   });
 }
 
-List<_Tool> _tools(bool isDark, bool labsAvailable) => [
+List<_Tool> _tools(bool isDark) => [
   // Math is a hub for tables, drills, and formulas.
   _Tool(
     id: 'math',
     title: 'Math',
-    sub: 'Tables and drills',
+    sub: 'Formulas, tables & practice',
     icon: Icons.calculate_rounded,
     color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
     route: '/learn/math',
@@ -503,15 +579,14 @@ List<_Tool> _tools(bool isDark, bool labsAvailable) => [
     color: isDark ? AppColors.cPythonDark : AppColors.cPython,
     route: '/learn/python',
   ),
-  if (labsAvailable)
-    _Tool(
-      id: 'virtual-lab',
-      title: 'Science Lab',
-      sub: 'Try two experiments',
-      icon: Icons.science_rounded,
-      color: isDark ? AppColors.cScienceDark : AppColors.cScience,
-      route: '/labs',
-    ),
+  _Tool(
+    id: 'virtual-lab',
+    title: 'Science Lab',
+    sub: 'Try two experiments',
+    icon: Icons.science_rounded,
+    color: isDark ? AppColors.cScienceDark : AppColors.cScience,
+    route: '/labs',
+  ),
   _Tool(
     id: 'timeline',
     title: 'Timeline',

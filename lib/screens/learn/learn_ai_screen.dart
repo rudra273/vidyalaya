@@ -4,7 +4,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,6 +23,7 @@ import '../../providers/user_selection_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
+import '../../widgets/ai_markdown.dart';
 import '../../widgets/ncert_ai_notice.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
@@ -80,7 +80,8 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
   late int _selectedClass;
   String? _selectedSubject;
-  String _languageMode = 'auto';
+  String _languageMode = 'en';
+  bool _languageSelectedManually = false;
   bool _isSending = false;
 
   /// The answer-style hint rides along with the first message only — after that
@@ -156,6 +157,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void initState() {
     super.initState();
     _selectedClass = ref.read(primaryClassProvider);
+    _languageMode = defaultLearnAssistLanguage(
+      ref.read(userPrefsRepositoryProvider).getPreferredLanguage(),
+    );
     // A subject from the route (AI hub chip). build() drops it again if it
     // isn't one of the ingested subjects for this board/class.
     final subject = widget.initialSubject?.trim();
@@ -909,6 +913,23 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
             !accountState.profileLoaded)) {
       _ensureAccountSummary();
     }
+    // The local preference gives the picker an immediate profile-based value.
+    // Once the latest profile arrives, use it too unless the student has
+    // already chosen a language for this chat themselves.
+    final profileLanguage = accountState.profile.maybeWhen(
+      data: (profile) => profile?.preferredLanguage,
+      orElse: () => null,
+    );
+    final preferredLanguage = defaultLearnAssistLanguage(
+      profileLanguage ??
+          ref.read(userPrefsRepositoryProvider).getPreferredLanguage(),
+    );
+    if (!_languageSelectedManually && preferredLanguage != _languageMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _languageSelectedManually) return;
+        setState(() => _languageMode = preferredLanguage);
+      });
+    }
     // Derive the effective class from profile selection (not user-choosable in UI).
     final effectiveClass = profileClass;
     if (effectiveClass != _selectedClass) {
@@ -972,7 +993,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
               },
               languageMode: _languageMode,
               onLanguageChanged: (value) {
-                setState(() => _languageMode = value);
+                setState(() {
+                  _languageMode = value;
+                  _languageSelectedManually = true;
+                });
               },
             ),
             if (isNcert)
@@ -1045,7 +1069,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                               showActions &&
                                   msg.role == _MessageRole.assistant &&
                                   msg.text.trim().isNotEmpty
-                              ? () => _copyMessage(msg.text)
+                              ? () => _copyMessage(aiAnswerPlainText(msg.text))
                               : null,
                           onRegenerate:
                               showActions &&
@@ -1629,29 +1653,7 @@ class _MessageView extends StatelessWidget {
               ).textTheme.bodyMedium?.copyWith(color: cs.error, height: 1.45),
             )
           else
-            MarkdownBody(
-              data: message.isStreaming ? '${message.text} ▌' : message.text,
-              styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                  .copyWith(
-                    p: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(height: 1.45),
-                    strong: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      height: 1.45,
-                      fontWeight: AppFontWeight.bold,
-                    ),
-                    listBullet: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(height: 1.45),
-                    blockquote: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(height: 1.45, color: AppColors.textMuted),
-                    code: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                      backgroundColor: cs.surfaceContainerHighest,
-                    ),
-                  ),
-              shrinkWrap: true,
-            ),
+            AiMarkdown(text: message.text, streaming: message.isStreaming),
           if (message.citations.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(

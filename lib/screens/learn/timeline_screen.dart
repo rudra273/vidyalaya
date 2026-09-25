@@ -35,20 +35,24 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
     }
   }
 
-  /// Events whose region matches any of the active scopes.
+  /// Events whose region matches any of the active scopes, oldest first — the
+  /// data is grouped by region, so mixing scopes needs an explicit sort.
   List<HistoricalEvent> get _filteredEvents {
-    return timelineEvents.where((e) {
-      if (_scopes.contains(_RegionScope.world) && e.region == kRegionWorld) {
-        return true;
-      }
-      if (_scopes.contains(_RegionScope.india) && e.region == kRegionIndia) {
-        return true;
-      }
-      if (_scopes.contains(_RegionScope.state) && e.region == _selectedState) {
-        return true;
-      }
-      return false;
-    }).toList();
+    return sortedChronologically(
+      timelineEvents.where((e) {
+        if (_scopes.contains(_RegionScope.world) && e.region == kRegionWorld) {
+          return true;
+        }
+        if (_scopes.contains(_RegionScope.india) && e.region == kRegionIndia) {
+          return true;
+        }
+        if (_scopes.contains(_RegionScope.state) &&
+            e.region == _selectedState) {
+          return true;
+        }
+        return false;
+      }),
+    );
   }
 
   void _toggleScope(_RegionScope scope) {
@@ -317,7 +321,7 @@ class _RegionChip extends StatelessWidget {
   }
 }
 
-/// A searchable bottom sheet listing all 28 Indian states. The student can type
+/// A searchable bottom sheet listing the states that have events. The student can type
 /// to filter and tap to select. Returns the chosen state name via [Navigator.pop].
 class _StatePickerSheet extends StatefulWidget {
   final String selected;
@@ -334,7 +338,7 @@ class _StatePickerSheetState extends State<_StatePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final matches = indianStates
+    final matches = statesWithEvents
         .where((s) => s.toLowerCase().contains(_query.toLowerCase()))
         .toList();
 

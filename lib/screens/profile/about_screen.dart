@@ -55,19 +55,21 @@ class AboutScreen extends StatelessWidget {
                        '• Ask Anything: Type a question in your own words and get a clear, syllabus-aware explanation tailored to your class and subject.\n'
                        '• Snap & Ask: Stuck on a problem? Attach a photo of your notes, an assignment, or a page from a book and let the assistant help you work through it.\n'
                        '• Saved Conversations: Your chats are saved to your account, so you can return and pick up where you left off.\n'
-                       '• AI Tutor (coming soon): Guided, step-by-step lessons that teach a concept one small step at a time.',
+                       '• AI Tutor (preview): A demo of guided, step-by-step lessons. Live tutoring is on the way.',
             ),
 
             _buildSection(
               theme,
               title: 'Explore Tools',
               content: 'In the Explore tab, learn Maths, Science, History and more through hands-on tools:\n\n'
-                       '• Formulas & Calculator — quick reference and on-the-spot calculations.\n'
-                       '• Periodic Table — explore every element interactively.\n'
+                       '• Math — formulas with a built-in calculator, plus multiplication tables, Flash Math, quizzes, speed drills, number sense and a fractions lab.\n'
                        '• Diagrams — interactive science and concept diagrams.\n'
+                       '• Periodic Table — explore every element interactively.\n'
+                       '• Vocabulary — build your word power with meanings in your language.\n'
+                       '• Python — learn to code with bite-sized lessons, quizzes and a playground.\n'
+                       '• Science Lab — run virtual experiments and test your predictions.\n'
                        '• Timeline — walk through major events in history.\n'
-                       '• Cosmulator — view the solar system in 3D.\n\n'
-                       'More is on the way, including Quizzes and a Virtual Science Lab.',
+                       '• Cosmulator — view the solar system in 3D.',
             ),
 
             _buildSection(

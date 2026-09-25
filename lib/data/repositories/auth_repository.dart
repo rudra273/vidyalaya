@@ -1,22 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../services/backend_auth_service.dart';
-
 const _googleServerClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
 
 class AuthRepository {
   AuthRepository({
     required FirebaseAuth firebaseAuth,
     required GoogleSignIn googleSignIn,
-    required BackendAuthService backendAuthService,
   }) : _firebaseAuth = firebaseAuth,
-       _googleSignIn = googleSignIn,
-       _backendAuthService = backendAuthService;
+       _googleSignIn = googleSignIn;
 
   final FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
-  final BackendAuthService _backendAuthService;
   Future<void>? _googleSignInInit;
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
@@ -37,10 +32,9 @@ class AuthRepository {
       idToken: googleAuth.idToken,
     );
 
-    final userCredential = await _firebaseAuth.signInWithCredential(credential);
-    await userCredential.user?.updatePhotoURL(null);
-    await _backendAuthService.me();
-    return userCredential;
+    // Account data syncs separately through BackendAccountCache. Completing
+    // authentication must not depend on the API or an unused photo update.
+    return _firebaseAuth.signInWithCredential(credential);
   }
 
   Future<void> signOut() async {

@@ -1,34 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/models/regional_language.dart';
+
 import '../data/seed/seed_data.dart';
 import 'auth_provider.dart';
 import 'core_providers.dart';
 import 'user_selection_provider.dart';
 
-/// The selected content language in the Explore tools.
-enum RegionalLanguage {
-  english('en', 'English', 'English'),
-  odia('or', 'Odia', 'ଓଡ଼ିଆ'),
-  hindi('hi', 'Hindi', 'हिंदी');
-
-  const RegionalLanguage(this.code, this.labelEn, this.labelNative);
-
-  /// Persisted code: `'en'`, `'or'`, or `'hi'`.
-  final String code;
-
-  /// English name, e.g. for accessibility.
-  final String labelEn;
-
-  /// Native-script label shown in the switcher chip.
-  final String labelNative;
-
-  static RegionalLanguage fromCode(String? code) {
-    return RegionalLanguage.values.firstWhere(
-      (l) => l.code == code,
-      orElse: () => RegionalLanguage.odia,
-    );
-  }
-}
+export '../data/models/regional_language.dart';
 
 /// The active content language for the Explore tools.
 ///

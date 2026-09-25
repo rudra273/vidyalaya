@@ -41,3 +41,14 @@ String detectLearnAssistLanguage(String text) {
   final hasDevanagari = RegExp(r'[\u0900-\u097F]').hasMatch(text);
   return hasDevanagari ? 'hi' : 'en';
 }
+
+/// The chat language selected when a conversation first opens. Keep this
+/// separate from [detectLearnAssistLanguage]: script detection remains useful
+/// when a student explicitly switches the chat picker back to Auto.
+String defaultLearnAssistLanguage(String? preferredLanguage) {
+  return switch (preferredLanguage?.trim().toLowerCase()) {
+    'or' => 'or',
+    'hi' => 'hi',
+    _ => 'en',
+  };
+}

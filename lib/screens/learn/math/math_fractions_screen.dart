@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../data/math/math_generators.dart';
 import '../../../data/math/math_models.dart';
+import '../../../data/models/localized_text.dart';
 import '../../../providers/math_progress_provider.dart';
+import '../../../providers/regional_language_provider.dart';
 import '../../../utils/haptics.dart';
+import '../../../widgets/regional_language_switch.dart';
 import 'math_home_screen.dart';
 import 'widgets/math_option_tile.dart';
 
@@ -75,13 +78,26 @@ class _MathFractionsScreenState extends ConsumerState<MathFractionsScreen> {
     }
   }
 
-  String _promptFor(FractionTask t) => switch (t.kind) {
-        FractionTaskKind.compare => 'Which fraction is larger?',
-        FractionTaskKind.simplify =>
-          'Write ${t.left.numerator}/${t.left.denominator} in its simplest form.',
-        FractionTaskKind.add =>
-          'What is ${t.left.display} + ${t.right!.display}?',
-      };
+  LocalizedText _promptFor(FractionTask t) {
+    final raw = '${t.left.numerator}/${t.left.denominator}';
+    return switch (t.kind) {
+      FractionTaskKind.compare => const LocalizedText(
+        en: 'Which fraction is larger?',
+        or: 'କେଉଁ ଭଗ୍ନାଂଶଟି ବଡ଼?',
+        hi: 'कौन-सी भिन्न बड़ी है?',
+      ),
+      FractionTaskKind.simplify => LocalizedText(
+        en: 'Write $raw in its simplest form.',
+        or: '$raw କୁ ସରଳତମ ରୂପରେ ଲେଖ।',
+        hi: '$raw को सरलतम रूप में लिखें।',
+      ),
+      FractionTaskKind.add => LocalizedText(
+        en: 'What is ${t.left.display} + ${t.right!.display}?',
+        or: '${t.left.display} + ${t.right!.display} କେତେ?',
+        hi: '${t.left.display} + ${t.right!.display} कितना है?',
+      ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +105,10 @@ class _MathFractionsScreenState extends ConsumerState<MathFractionsScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Fractions Lab')),
+      appBar: AppBar(
+        title: const Text('Fractions Lab'),
+        actions: const [RegionalLanguageSwitch()],
+      ),
       body: _finished
           ? MathScorePage(
               correct: _correct,
@@ -131,7 +150,7 @@ class _MathFractionsScreenState extends ConsumerState<MathFractionsScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          _promptFor(t),
+          _promptFor(t).of(ref.watch(regionalLanguageProvider)),
           style: Theme.of(context)
               .textTheme
               .titleLarge
@@ -174,7 +193,7 @@ class _MathFractionsScreenState extends ConsumerState<MathFractionsScreen> {
           const SizedBox(height: 4),
           MathExplanation(
             correct: _selected == t.correctIndex,
-            text: t.explanation,
+            text: t.explanation.of(ref.watch(regionalLanguageProvider)),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(

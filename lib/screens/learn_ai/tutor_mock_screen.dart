@@ -5,8 +5,8 @@ import 'widgets/chat_bubble.dart';
 
 /// A **preview** of the upcoming AI Tutor agent. This screen is intentionally a
 /// mock: it shows a scripted, step-by-step lesson so the intended experience is
-/// clear, but it makes **no network calls** and the composer only returns a
-/// canned "coming soon" reply. The real agent will reuse this same chat shell.
+/// clear, but it makes **no network calls** and the composer is disabled. The
+/// real agent will reuse this same chat shell.
 class TutorMockScreen extends StatefulWidget {
   const TutorMockScreen({super.key});
 
@@ -17,41 +17,7 @@ class TutorMockScreen extends StatefulWidget {
 class _TutorMockScreenState extends State<TutorMockScreen> {
   static const _subjects = ['Mathematics', 'Science', 'English', 'History'];
 
-  final _messageController = TextEditingController();
-  final _scrollController = ScrollController();
-  final List<_MockTurn> _turns = List.of(_scriptedLesson);
-
   String _selectedSubject = 'Mathematics';
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onSend() {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
-    setState(() {
-      _turns.add(_MockTurn.user(text));
-      _turns.add(
-        _MockTurn.assistant(
-          "I'd love to teach you that! Full AI tutoring is coming soon — "
-          'for now this is just a preview. 🌱',
-        ),
-      );
-      _messageController.clear();
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,27 +39,23 @@ class _TutorMockScreenState extends State<TutorMockScreen> {
             ),
             Expanded(
               child: ListView.separated(
-                controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screenPadding,
                   12,
                   AppSpacing.screenPadding,
                   16,
                 ),
-                itemCount: _turns.length,
+                itemCount: _scriptedLesson.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
-                  final turn = _turns[index];
+                  final turn = _scriptedLesson[index];
                   return turn.isUser
                       ? UserChatBubble(text: turn.text)
                       : AssistantChatBubble(text: turn.text);
                 },
               ),
             ),
-            _MockComposer(
-              controller: _messageController,
-              onSubmitted: _onSend,
-            ),
+            const _DisabledComposer(),
           ],
         ),
       ),
@@ -121,7 +83,7 @@ class _PreviewBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'AI Tutor preview — full step-by-step tutoring is coming soon.',
+              'Preview — guided lesson demo. Live tutoring isn\'t available yet.',
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                 color: cs.tertiary,
                 fontWeight: AppFontWeight.semibold,
@@ -170,11 +132,10 @@ class _SubjectChips extends StatelessWidget {
   }
 }
 
-class _MockComposer extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onSubmitted;
-
-  const _MockComposer({required this.controller, required this.onSubmitted});
+/// Greyed-out composer: shows where the student will type once the tutor is
+/// live, without pretending to answer.
+class _DisabledComposer extends StatelessWidget {
+  const _DisabledComposer();
 
   @override
   Widget build(BuildContext context) {
@@ -196,13 +157,9 @@ class _MockComposer extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => onSubmitted(),
+              enabled: false,
               decoration: InputDecoration(
-                hintText: 'Try asking the tutor…',
+                hintText: 'Live tutoring is coming soon',
                 filled: true,
                 fillColor: cs.surface,
                 contentPadding: const EdgeInsets.symmetric(
@@ -213,7 +170,7 @@ class _MockComposer extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide(color: cs.outline),
                 ),
-                enabledBorder: OutlineInputBorder(
+                disabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),
                   borderSide: BorderSide(color: cs.outline),
                 ),
@@ -222,7 +179,7 @@ class _MockComposer extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           IconButton.filled(
-            onPressed: onSubmitted,
+            onPressed: null,
             icon: const Icon(Icons.send_rounded),
             tooltip: 'Send',
           ),
@@ -237,9 +194,6 @@ class _MockTurn {
   final String text;
 
   const _MockTurn._(this.isUser, this.text);
-
-  factory _MockTurn.user(String text) => _MockTurn._(true, text);
-  factory _MockTurn.assistant(String text) => _MockTurn._(false, text);
 }
 
 /// A short, pre-scripted lesson that demonstrates the intended step-by-step UX.
@@ -267,6 +221,8 @@ const _scriptedLesson = <_MockTurn>[
   _MockTurn._(
     false,
     "**Your turn.** If a chocolate bar has **5** equal pieces and you eat "
-    '**2**, what fraction did you eat? Type your answer below 👇',
+    '**2**, what fraction did you eat? 🤔\n\n'
+    '_(In the full tutor you\'ll type your answer here and get step-by-step '
+    'feedback.)_',
   ),
 ];

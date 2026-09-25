@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/models/virtual_lab.dart';
 import '../../providers/core_providers.dart';
+import '../../providers/regional_language_provider.dart';
 import '../../widgets/calm_widgets.dart';
+import '../../widgets/regional_language_switch.dart';
 
 class VirtualLabScreen extends ConsumerStatefulWidget {
   const VirtualLabScreen({super.key});
@@ -119,10 +121,13 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
     final disabledMotion = MediaQuery.of(context).disableAnimations;
     final colorScheme = Theme.of(context).colorScheme;
     final completed = _history.where((item) => item.labId == _labId).length;
+    final lang = ref.watch(regionalLanguageProvider);
+    String word(Object? key) => labWord('$key', lang);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Virtual Science Lab'),
+        actions: const [RegionalLanguageSwitch()],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
@@ -165,9 +170,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              circuit
-                  ? 'Predict how a switch, cells, and total resistance affect a bulb in this simplified model.'
-                  : 'Predict the colour of universal indicator in each sample.',
+              labInstructions[_labId]!.of(lang),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -249,11 +252,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                 enabled: !_saving,
                 values: const ['lemon', 'water', 'soap'],
                 selected: _sample,
-                format: (value) => switch (value) {
-                  'lemon' => 'Lemon juice',
-                  'water' => 'Water',
-                  _ => 'Soap solution',
-                },
+                format: word,
                 onSelected: (value) => setState(() {
                   _sample = value;
                   _result = null;
@@ -269,9 +268,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                           : const ['red', 'green', 'blue'])
                       .map(
                         (value) => ChoiceChip(
-                          label: Text(
-                            value[0].toUpperCase() + value.substring(1),
-                          ),
+                          label: Text(word(value)),
                           selected: _prediction == value,
                           onSelected: _saving
                               ? null
@@ -317,8 +314,8 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                       const SizedBox(height: 8),
                       Text(
                         circuit
-                            ? 'Bulb: ${observation!['brightness']}\nVoltage: ${observation['voltage_v']} V · Current: ${observation['current_a']} A'
-                            : 'Colour: ${observation!['color']} · Approx. pH: ${observation['approx_ph']}\nNature: ${observation['nature']}',
+                            ? 'Bulb: ${word(observation!['brightness'])}\nVoltage: ${observation['voltage_v']} V · Current: ${observation['current_a']} A'
+                            : 'Colour: ${word(observation!['color'])} · Approx. pH: ${observation['approx_ph']}\nNature: ${word(observation['nature'])}',
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -326,7 +323,7 @@ class _VirtualLabScreenState extends ConsumerState<VirtualLabScreen> {
                           _labId,
                           _result!.controls,
                           _result!.prediction,
-                        ).explanation,
+                        ).explanation.of(lang),
                       ),
                       const SizedBox(height: 8),
                       Text(

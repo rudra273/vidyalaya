@@ -2,16 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vidyalaya/data/models/virtual_lab.dart';
 import 'package:vidyalaya/data/repositories/user_prefs_repository.dart';
-import 'package:vidyalaya/providers/lab_provider.dart';
+import 'package:vidyalaya/data/models/class_range.dart';
+import 'package:vidyalaya/data/models/regional_language.dart';
 
 void main() {
-  test('lab is visible for Classes 7 through 12 on every board', () {
-    expect(labAvailableForSelection({6}), isFalse);
-    expect(labAvailableForSelection({7}), isTrue);
-    expect(labAvailableForSelection({10}), isTrue);
-    expect(labAvailableForSelection({12}), isTrue);
-    expect(labAvailableForSelection({13}), isFalse);
-    expect(labAvailableForSelection({6, 7}), isTrue);
+  test('lab is recommended from Class 6', () {
+    final lab = exploreToolClassRanges['virtual-lab']!;
+    expect(lab.fitsAny({5}), isFalse);
+    expect(lab.fitsAny({6}), isTrue);
+    expect(lab.fitsAny({10}), isTrue);
+    expect(lab.fitsAny({4, 6}), isTrue);
   });
 
   test('circuit and indicator observations are deterministic', () {
@@ -69,5 +69,39 @@ void main() {
     expect(restored.clientAttemptId, attempt.clientAttemptId);
     expect(restored.clientSessionId, attempt.clientSessionId);
     expect(repository.getLabAttempts(), hasLength(1));
+  });
+
+  test('lab content is translated but saved values stay English keys', () {
+    for (final sample in ['lemon', 'water', 'soap']) {
+      final obs = evaluateLab('indicator', {'sample': sample}, 'red');
+      expect(obs.values['color'], isIn(['red', 'green', 'blue']));
+      expect(obs.explanation.or, isNot(obs.explanation.en));
+      expect(obs.explanation.hi, isNot(obs.explanation.en));
+      expect(
+        obs.explanation.or,
+        contains(labWord(sample, RegionalLanguage.odia)),
+      );
+    }
+    for (final key in [
+      'off',
+      'dim',
+      'bright',
+      'red',
+      'green',
+      'blue',
+      'acidic',
+      'neutral',
+      'basic',
+      'lemon',
+      'water',
+      'soap',
+    ]) {
+      for (final lang in RegionalLanguage.values) {
+        expect(labWord(key, lang), isNot(key), reason: '$key/$lang');
+      }
+    }
+    for (final text in labInstructions.values) {
+      expect({text.en, text.or, text.hi}, hasLength(3));
+    }
   });
 }
