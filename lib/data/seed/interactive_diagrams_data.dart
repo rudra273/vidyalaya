@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+part 'interactive_diagrams_remaining_data.dart';
+
 enum DiagramLanguage { english, hindi, odia }
 
-enum DiagramSection { biology, geography, science }
+enum DiagramSection { biology, geography, science, math }
 
 class DiagramText {
   final String en;
@@ -164,6 +166,442 @@ const interactiveDiagrams = [
           or: 'କ୍ଷୁଦ୍ର ଥଳି ଯାହା ବର୍ଜ୍ୟ ଓ ପୁରୁଣା କୋଷୀୟ ଅଂଶକୁ ଭାଙ୍ଗେ।',
         ),
         position: Offset(0.81, 0.39),
+      ),
+    ],
+  ),
+  InteractiveDiagram(
+    id: 'plant_cell',
+    section: DiagramSection.biology,
+    title: DiagramText(en: 'Plant Cell', hi: 'पादप कोशिका', or: 'ଉଦ୍ଭିଦ କୋଷ'),
+    description: DiagramText(
+      en: 'Explore the main structures of a plant cell.',
+      hi: 'पादप कोशिका की मुख्य संरचनाओं को जानें।',
+      or: 'ଉଦ୍ଭିଦ କୋଷର ମୁଖ୍ୟ ଗଠନଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
+    ),
+    imagePath: 'assets/diagrams/interactive/plant_cell.png',
+    aspectRatio: 1,
+    labels: [
+      InteractiveDiagramLabel(
+        id: 'cell_wall',
+        title: DiagramText(
+          en: 'Cell wall',
+          hi: 'कोशिका भित्ति',
+          or: 'କୋଷ ପ୍ରାଚୀର',
+        ),
+        explanation: DiagramText(
+          en: 'A strong outer layer that supports, protects and gives shape to the cell.',
+          hi: 'मजबूत बाहरी परत जो कोशिका को सहारा, सुरक्षा और आकार देती है।',
+          or: 'ଦୃଢ଼ ବାହ୍ୟ ସ୍ତର ଯାହା କୋଷକୁ ଆଧାର, ସୁରକ୍ଷା ଓ ଆକାର ଦିଏ।',
+        ),
+        position: Offset(0.08, 0.50),
+      ),
+      InteractiveDiagramLabel(
+        id: 'membrane',
+        title: DiagramText(
+          en: 'Cell membrane',
+          hi: 'कोशिका झिल्ली',
+          or: 'କୋଷ ଝିଲ୍ଲୀ',
+        ),
+        explanation: DiagramText(
+          en: 'A thin boundary that controls what enters and leaves the cell.',
+          hi: 'पतली सीमा जो कोशिका में पदार्थों के आने और बाहर जाने को नियंत्रित करती है।',
+          or: 'ପତଳା ସୀମା ଯାହା କୋଷ ଭିତରକୁ ଓ ବାହାରକୁ ପଦାର୍ଥର ଯାତାୟାତ ନିୟନ୍ତ୍ରଣ କରେ।',
+        ),
+        position: Offset(0.17, 0.50),
+      ),
+      InteractiveDiagramLabel(
+        id: 'chloroplast',
+        title: DiagramText(en: 'Chloroplast', hi: 'हरितलवक', or: 'ହରିତଲବକ'),
+        explanation: DiagramText(
+          en: 'Contains chlorophyll and captures sunlight to make food by photosynthesis.',
+          hi: 'इसमें पर्णहरित होता है और यह प्रकाश संश्लेषण द्वारा भोजन बनाने के लिए सूर्य का प्रकाश ग्रहण करता है।',
+          or: 'ଏଥିରେ କ୍ଲୋରୋଫିଲ୍ ଥାଏ ଏବଂ ଆଲୋକ ସଂଶ୍ଳେଷଣ ଦ୍ୱାରା ଖାଦ୍ୟ ତିଆରି ପାଇଁ ସୂର୍ଯ୍ୟାଲୋକ ଗ୍ରହଣ କରେ।',
+        ),
+        position: Offset(0.26, 0.19),
+      ),
+      InteractiveDiagramLabel(
+        id: 'vacuole',
+        title: DiagramText(
+          en: 'Central vacuole',
+          hi: 'केंद्रीय रिक्तिका',
+          or: 'କେନ୍ଦ୍ରୀୟ ରସଧାନୀ',
+        ),
+        explanation: DiagramText(
+          en: 'A large fluid-filled sac that stores water and helps keep the cell firm.',
+          hi: 'तरल से भरी बड़ी थैली जो जल का भंडारण करती है और कोशिका को दृढ़ रखने में मदद करती है।',
+          or: 'ତରଳଭରା ବଡ଼ ଥଳି ଯାହା ଜଳ ସଞ୍ଚୟ କରେ ଓ କୋଷକୁ ଦୃଢ଼ ରଖିବାରେ ସାହାଯ୍ୟ କରେ।',
+        ),
+        position: Offset(0.50, 0.56),
+      ),
+      InteractiveDiagramLabel(
+        id: 'nucleus',
+        title: DiagramText(en: 'Nucleus', hi: 'केंद्रक', or: 'କେନ୍ଦ୍ରକ'),
+        explanation: DiagramText(
+          en: 'The control centre of the cell. It contains the genetic material.',
+          hi: 'कोशिका का नियंत्रण केंद्र। इसमें आनुवंशिक पदार्थ होता है।',
+          or: 'କୋଷର ନିୟନ୍ତ୍ରଣ କେନ୍ଦ୍ର। ଏଥିରେ ଆନୁବଂଶିକ ପଦାର୍ଥ ରହିଥାଏ।',
+        ),
+        position: Offset(0.75, 0.24),
+      ),
+      InteractiveDiagramLabel(
+        id: 'cytoplasm',
+        title: DiagramText(
+          en: 'Cytoplasm',
+          hi: 'कोशिकाद्रव्य',
+          or: 'କୋଷଦ୍ରବ୍ୟ',
+        ),
+        explanation: DiagramText(
+          en: 'A jelly-like material in which the cell structures are suspended.',
+          hi: 'जेली जैसा पदार्थ जिसमें कोशिका की संरचनाएँ स्थित रहती हैं।',
+          or: 'ଜେଲି ପରି ପଦାର୍ଥ ଯେଉଁଥିରେ କୋଷର ଗଠନଗୁଡ଼ିକ ରହିଥାଏ।',
+        ),
+        position: Offset(0.55, 0.15),
+      ),
+      InteractiveDiagramLabel(
+        id: 'mitochondria',
+        title: DiagramText(
+          en: 'Mitochondrion',
+          hi: 'माइटोकॉन्ड्रिया',
+          or: 'ମାଇଟୋକଣ୍ଡ୍ରିଆ',
+        ),
+        explanation: DiagramText(
+          en: 'Releases usable energy from food for the cell.',
+          hi: 'कोशिका के लिए भोजन से उपयोगी ऊर्जा मुक्त करता है।',
+          or: 'କୋଷ ପାଇଁ ଖାଦ୍ୟରୁ ବ୍ୟବହାରଯୋଗ୍ୟ ଶକ୍ତି ମୁକ୍ତ କରେ।',
+        ),
+        position: Offset(0.82, 0.57),
+      ),
+    ],
+  ),
+  InteractiveDiagram(
+    id: 'flower_parts',
+    section: DiagramSection.biology,
+    title: DiagramText(
+      en: 'Parts of a Flower',
+      hi: 'फूल के भाग',
+      or: 'ଫୁଲର ଅଂଶ',
+    ),
+    description: DiagramText(
+      en: 'Explore the reproductive and protective parts of a flower.',
+      hi: 'फूल के प्रजनन और सुरक्षात्मक भागों को जानें।',
+      or: 'ଫୁଲର ପ୍ରଜନନ ଓ ସୁରକ୍ଷାକାରୀ ଅଂଶଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
+    ),
+    imagePath: 'assets/diagrams/interactive/flower_parts.png',
+    aspectRatio: 1,
+    labels: [
+      InteractiveDiagramLabel(
+        id: 'petal',
+        title: DiagramText(en: 'Petal', hi: 'पंखुड़ी', or: 'ପାଖୁଡ଼ା'),
+        explanation: DiagramText(
+          en: 'A colourful leaf-like part that attracts pollinators.',
+          hi: 'रंगीन पत्ती जैसा भाग जो परागणकर्ताओं को आकर्षित करता है।',
+          or: 'ରଙ୍ଗିନ ପତ୍ର ପରି ଅଂଶ ଯାହା ପରାଗବାହୀଙ୍କୁ ଆକର୍ଷିତ କରେ।',
+        ),
+        position: Offset(0.18, 0.35),
+      ),
+      InteractiveDiagramLabel(
+        id: 'sepal',
+        title: DiagramText(en: 'Sepal', hi: 'बाह्यदल', or: 'ବୃତ୍ତିପତ୍ର'),
+        explanation: DiagramText(
+          en: 'A green outer part that protects the flower while it is a bud.',
+          hi: 'हरा बाहरी भाग जो कली की अवस्था में फूल की रक्षा करता है।',
+          or: 'ସବୁଜ ବାହ୍ୟ ଅଂଶ ଯାହା କଢ଼ ଅବସ୍ଥାରେ ଫୁଲକୁ ସୁରକ୍ଷା କରେ।',
+        ),
+        position: Offset(0.77, 0.72),
+      ),
+      InteractiveDiagramLabel(
+        id: 'stamen',
+        title: DiagramText(en: 'Stamen', hi: 'पुंकेसर', or: 'ପୁଂକେଶର'),
+        explanation: DiagramText(
+          en: 'The male reproductive part, made of an anther and a filament.',
+          hi: 'नर प्रजनन भाग, जो परागकोष और तंतु से बना होता है।',
+          or: 'ପୁରୁଷ ପ୍ରଜନନ ଅଂଶ, ଯାହା ପରାଗଧାନୀ ଓ ପୁଂକେଶର ଦଣ୍ଡରୁ ଗଠିତ।',
+        ),
+        position: Offset(0.70, 0.38),
+      ),
+      InteractiveDiagramLabel(
+        id: 'anther',
+        title: DiagramText(en: 'Anther', hi: 'परागकोष', or: 'ପରାଗଧାନୀ'),
+        explanation: DiagramText(
+          en: 'The pollen-producing tip of a stamen.',
+          hi: 'पुंकेसर का सिरा जहाँ परागकण बनते हैं।',
+          or: 'ପୁଂକେଶରର ଶୀର୍ଷ ଅଂଶ ଯେଉଁଠାରେ ପରାଗରେଣୁ ତିଆରି ହୁଏ।',
+        ),
+        position: Offset(0.70, 0.24),
+      ),
+      InteractiveDiagramLabel(
+        id: 'filament',
+        title: DiagramText(en: 'Filament', hi: 'पुंतंतु', or: 'ପୁଂକେଶର ଦଣ୍ଡ'),
+        explanation: DiagramText(
+          en: 'A slender stalk that holds up the anther.',
+          hi: 'पतला डंठल जो परागकोष को सहारा देता है।',
+          or: 'ପତଳା ଦଣ୍ଡ ଯାହା ପରାଗଧାନୀକୁ ଧରି ରଖେ।',
+        ),
+        position: Offset(0.66, 0.47),
+      ),
+      InteractiveDiagramLabel(
+        id: 'pistil',
+        title: DiagramText(en: 'Pistil', hi: 'स्त्रीकेसर', or: 'ସ୍ତ୍ରୀକେଶର'),
+        explanation: DiagramText(
+          en: 'The female reproductive part, formed by the stigma, style and ovary.',
+          hi: 'मादा प्रजनन भाग, जो वर्तिकाग्र, वर्तिका और अंडाशय से बना होता है।',
+          or: 'ସ୍ତ୍ରୀ ପ୍ରଜନନ ଅଂଶ, ଯାହା ଗର୍ଭମୁଣ୍ଡ, ଗର୍ଭଦଣ୍ଡ ଓ ଡିମ୍ବାଶୟରୁ ଗଠିତ।',
+        ),
+        position: Offset(0.50, 0.42),
+      ),
+      InteractiveDiagramLabel(
+        id: 'stigma',
+        title: DiagramText(en: 'Stigma', hi: 'वर्तिकाग्र', or: 'ଗର୍ଭମୁଣ୍ଡ'),
+        explanation: DiagramText(
+          en: 'The sticky tip of the pistil that receives pollen.',
+          hi: 'स्त्रीकेसर का चिपचिपा सिरा जो परागकण ग्रहण करता है।',
+          or: 'ସ୍ତ୍ରୀକେଶରର ଅଠାଳିଆ ଶୀର୍ଷ ଯାହା ପରାଗରେଣୁ ଗ୍ରହଣ କରେ।',
+        ),
+        position: Offset(0.50, 0.15),
+      ),
+      InteractiveDiagramLabel(
+        id: 'style',
+        title: DiagramText(en: 'Style', hi: 'वर्तिका', or: 'ଗର୍ଭଦଣ୍ଡ'),
+        explanation: DiagramText(
+          en: 'The narrow stalk joining the stigma to the ovary.',
+          hi: 'पतला भाग जो वर्तिकाग्र को अंडाशय से जोड़ता है।',
+          or: 'ପତଳା ଦଣ୍ଡ ଯାହା ଗର୍ଭମୁଣ୍ଡକୁ ଡିମ୍ବାଶୟ ସହ ଯୋଡ଼େ।',
+        ),
+        position: Offset(0.50, 0.37),
+      ),
+      InteractiveDiagramLabel(
+        id: 'ovary',
+        title: DiagramText(en: 'Ovary', hi: 'अंडाशय', or: 'ଡିମ୍ବାଶୟ'),
+        explanation: DiagramText(
+          en: 'The swollen base of the pistil that contains ovules.',
+          hi: 'स्त्रीकेसर का फूला हुआ आधार जिसमें बीजांड होते हैं।',
+          or: 'ସ୍ତ୍ରୀକେଶରର ଫୁଲିଥିବା ତଳ ଅଂଶ ଯେଉଁଥିରେ ଡିମ୍ବକ ଥାଏ।',
+        ),
+        position: Offset(0.50, 0.66),
+      ),
+    ],
+  ),
+  InteractiveDiagram(
+    id: 'leaf_structure',
+    section: DiagramSection.biology,
+    title: DiagramText(
+      en: 'Structure of a Leaf',
+      hi: 'पत्ती की संरचना',
+      or: 'ପତ୍ରର ଗଠନ',
+    ),
+    description: DiagramText(
+      en: 'Explore the external parts of a leaf and its stomata.',
+      hi: 'पत्ती के बाहरी भागों और रंध्रों को जानें।',
+      or: 'ପତ୍ରର ବାହ୍ୟ ଅଂଶ ଓ ପତ୍ରରନ୍ଧ୍ରକୁ ଜାଣନ୍ତୁ।',
+    ),
+    imagePath: 'assets/diagrams/interactive/leaf_structure.png',
+    aspectRatio: 1.5,
+    labels: [
+      InteractiveDiagramLabel(
+        id: 'blade',
+        title: DiagramText(en: 'Leaf blade', hi: 'पर्णफलक', or: 'ପତ୍ରଫଳକ'),
+        explanation: DiagramText(
+          en: 'The broad, flat part that captures sunlight for photosynthesis.',
+          hi: 'चौड़ा, चपटा भाग जो प्रकाश संश्लेषण के लिए सूर्य का प्रकाश ग्रहण करता है।',
+          or: 'ଚଉଡ଼ା ଓ ଚେପଟା ଅଂଶ ଯାହା ଆଲୋକ ସଂଶ୍ଳେଷଣ ପାଇଁ ସୂର୍ଯ୍ୟାଲୋକ ଗ୍ରହଣ କରେ।',
+        ),
+        position: Offset(0.55, 0.26),
+      ),
+      InteractiveDiagramLabel(
+        id: 'midrib',
+        title: DiagramText(en: 'Midrib', hi: 'मध्यशिरा', or: 'ମଧ୍ୟଶିରା'),
+        explanation: DiagramText(
+          en: 'The main central vein that supports the blade and carries materials.',
+          hi: 'मुख्य केंद्रीय शिरा जो पर्णफलक को सहारा देती है और पदार्थ पहुँचाती है।',
+          or: 'ମୁଖ୍ୟ କେନ୍ଦ୍ରୀୟ ଶିରା ଯାହା ପତ୍ରଫଳକକୁ ଆଧାର ଦିଏ ଓ ପଦାର୍ଥ ପରିବହନ କରେ।',
+        ),
+        position: Offset(0.46, 0.48),
+      ),
+      InteractiveDiagramLabel(
+        id: 'veins',
+        title: DiagramText(en: 'Veins', hi: 'शिराएँ', or: 'ଶିରା'),
+        explanation: DiagramText(
+          en: 'Branching tubes that carry water and food through the leaf.',
+          hi: 'शाखित नलिकाएँ जो पत्ती में जल और भोजन पहुँचाती हैं।',
+          or: 'ଶାଖାଯୁକ୍ତ ନଳୀ ଯାହା ପତ୍ରରେ ଜଳ ଓ ଖାଦ୍ୟ ପରିବହନ କରେ।',
+        ),
+        position: Offset(0.67, 0.31),
+      ),
+      InteractiveDiagramLabel(
+        id: 'petiole',
+        title: DiagramText(en: 'Petiole', hi: 'पर्णवृंत', or: 'ପତ୍ରବୃନ୍ତ'),
+        explanation: DiagramText(
+          en: 'The stalk that attaches the leaf blade to the stem.',
+          hi: 'डंठल जो पर्णफलक को तने से जोड़ता है।',
+          or: 'ଡେମ୍ଫ ଯାହା ପତ୍ରଫଳକକୁ କାଣ୍ଡ ସହ ଯୋଡ଼େ।',
+        ),
+        position: Offset(0.13, 0.76),
+      ),
+      InteractiveDiagramLabel(
+        id: 'stomata',
+        title: DiagramText(en: 'Stomata', hi: 'रंध्र', or: 'ପତ୍ରରନ୍ଧ୍ର'),
+        explanation: DiagramText(
+          en: 'Tiny pores controlled by guard cells that exchange gases and release water vapour.',
+          hi: 'रक्षक कोशिकाओं द्वारा नियंत्रित छोटे छिद्र जो गैसों का आदान-प्रदान करते हैं और जलवाष्प छोड़ते हैं।',
+          or: 'ରକ୍ଷୀକୋଷ ଦ୍ୱାରା ନିୟନ୍ତ୍ରିତ କ୍ଷୁଦ୍ର ରନ୍ଧ୍ର ଯାହା ଗ୍ୟାସ୍ ବିନିମୟ କରେ ଓ ଜଳୀୟ ବାଷ୍ପ ଛାଡ଼େ।',
+        ),
+        position: Offset(0.85, 0.68),
+      ),
+    ],
+  ),
+  InteractiveDiagram(
+    id: 'human_eye',
+    section: DiagramSection.biology,
+    title: DiagramText(en: 'Human Eye', hi: 'मानव नेत्र', or: 'ମାନବ ଚକ୍ଷୁ'),
+    description: DiagramText(
+      en: 'Follow light through the main structures of the human eye.',
+      hi: 'मानव नेत्र की मुख्य संरचनाओं से होकर प्रकाश की यात्रा को समझें।',
+      or: 'ମାନବ ଚକ୍ଷୁର ମୁଖ୍ୟ ଗଠନ ମଧ୍ୟରେ ଆଲୋକର ଯାତ୍ରାକୁ ବୁଝନ୍ତୁ।',
+    ),
+    imagePath: 'assets/diagrams/interactive/human_eye.png',
+    aspectRatio: 1.5,
+    labels: [
+      InteractiveDiagramLabel(
+        id: 'cornea',
+        title: DiagramText(en: 'Cornea', hi: 'कॉर्निया', or: 'କର୍ଣ୍ଣିଆ'),
+        explanation: DiagramText(
+          en: 'The clear curved front surface that begins to focus incoming light.',
+          hi: 'पारदर्शी घुमावदार सामने की सतह जो आने वाले प्रकाश को केंद्रित करना शुरू करती है।',
+          or: 'ସ୍ୱଚ୍ଛ ବକ୍ର ସାମ୍ନା ସ୍ତର ଯାହା ଆସୁଥିବା ଆଲୋକକୁ କେନ୍ଦ୍ରିତ କରିବା ଆରମ୍ଭ କରେ।',
+        ),
+        position: Offset(0.13, 0.48),
+      ),
+      InteractiveDiagramLabel(
+        id: 'iris',
+        title: DiagramText(en: 'Iris', hi: 'परितारिका', or: 'କନୀନିକା'),
+        explanation: DiagramText(
+          en: 'The coloured ring that changes pupil size to control how much light enters.',
+          hi: 'रंगीन वलय जो पुतली का आकार बदलकर प्रवेश करने वाले प्रकाश की मात्रा नियंत्रित करता है।',
+          or: 'ରଙ୍ଗିନ ବଳୟ ଯାହା କନୀନିକାର ଆକାର ବଦଳାଇ ଆଲୋକର ପରିମାଣ ନିୟନ୍ତ୍ରଣ କରେ।',
+        ),
+        position: Offset(0.23, 0.38),
+      ),
+      InteractiveDiagramLabel(
+        id: 'pupil',
+        title: DiagramText(en: 'Pupil', hi: 'पुतली', or: 'ଚକ୍ଷୁତାରା'),
+        explanation: DiagramText(
+          en: 'The opening in the centre of the iris through which light enters.',
+          hi: 'परितारिका के केंद्र का छिद्र जिससे प्रकाश प्रवेश करता है।',
+          or: 'କନୀନିକାର ମଝିରେ ଥିବା ରନ୍ଧ୍ର ଯାହା ଦେଇ ଆଲୋକ ପ୍ରବେଶ କରେ।',
+        ),
+        position: Offset(0.22, 0.49),
+      ),
+      InteractiveDiagramLabel(
+        id: 'lens',
+        title: DiagramText(en: 'Lens', hi: 'नेत्र लेंस', or: 'ଚକ୍ଷୁ ଲେନ୍ସ'),
+        explanation: DiagramText(
+          en: 'A flexible transparent structure that focuses light onto the retina.',
+          hi: 'लचीली पारदर्शी संरचना जो प्रकाश को रेटिना पर केंद्रित करती है।',
+          or: 'ନମନୀୟ ସ୍ୱଚ୍ଛ ଗଠନ ଯାହା ଆଲୋକକୁ ଦୃଷ୍ଟିପଟଳ ଉପରେ କେନ୍ଦ୍ରିତ କରେ।',
+        ),
+        position: Offset(0.35, 0.49),
+      ),
+      InteractiveDiagramLabel(
+        id: 'retina',
+        title: DiagramText(en: 'Retina', hi: 'दृष्टिपटल', or: 'ଦୃଷ୍ଟିପଟଳ'),
+        explanation: DiagramText(
+          en: 'A light-sensitive layer that changes light into nerve signals.',
+          hi: 'प्रकाश-संवेदी परत जो प्रकाश को तंत्रिका संकेतों में बदलती है।',
+          or: 'ଆଲୋକ-ସମ୍ବେଦନଶୀଳ ସ୍ତର ଯାହା ଆଲୋକକୁ ସ୍ନାୟୁ ସଙ୍କେତରେ ପରିଣତ କରେ।',
+        ),
+        position: Offset(0.69, 0.20),
+      ),
+      InteractiveDiagramLabel(
+        id: 'optic_nerve',
+        title: DiagramText(
+          en: 'Optic nerve',
+          hi: 'दृष्टि तंत्रिका',
+          or: 'ଦୃଷ୍ଟି ସ୍ନାୟୁ',
+        ),
+        explanation: DiagramText(
+          en: 'Carries visual signals from the retina to the brain.',
+          hi: 'दृष्टिपटल से दृश्य संकेतों को मस्तिष्क तक पहुँचाती है।',
+          or: 'ଦୃଷ୍ଟିପଟଳରୁ ଦୃଶ୍ୟ ସଙ୍କେତକୁ ମସ୍ତିଷ୍କକୁ ବହନ କରେ।',
+        ),
+        position: Offset(0.88, 0.49),
+      ),
+    ],
+  ),
+  InteractiveDiagram(
+    id: 'respiratory_system',
+    section: DiagramSection.biology,
+    title: DiagramText(
+      en: 'Respiratory System',
+      hi: 'श्वसन तंत्र',
+      or: 'ଶ୍ୱସନ ତନ୍ତ୍ର',
+    ),
+    description: DiagramText(
+      en: 'Trace the path of air through the human respiratory system.',
+      hi: 'मानव श्वसन तंत्र में वायु के मार्ग को समझें।',
+      or: 'ମାନବ ଶ୍ୱସନ ତନ୍ତ୍ରରେ ବାୟୁର ଗତିପଥକୁ ବୁଝନ୍ତୁ।',
+    ),
+    imagePath: 'assets/diagrams/interactive/respiratory_system.png',
+    aspectRatio: 2 / 3,
+    labels: [
+      InteractiveDiagramLabel(
+        id: 'nose',
+        title: DiagramText(en: 'Nose', hi: 'नाक', or: 'ନାକ'),
+        explanation: DiagramText(
+          en: 'Filters, warms and moistens air as it enters the body.',
+          hi: 'शरीर में प्रवेश करते समय वायु को छानती, गर्म और नम करती है।',
+          or: 'ଶରୀରକୁ ପ୍ରବେଶ କରୁଥିବା ବାୟୁକୁ ଛାଣେ, ଉଷ୍ଣ ଓ ଆର୍ଦ୍ର କରେ।',
+        ),
+        position: Offset(0.42, 0.18),
+      ),
+      InteractiveDiagramLabel(
+        id: 'trachea',
+        title: DiagramText(en: 'Trachea', hi: 'श्वासनली', or: 'ଶ୍ୱାସନଳୀ'),
+        explanation: DiagramText(
+          en: 'A tube strengthened by cartilage rings that carries air toward the lungs.',
+          hi: 'उपास्थि के छल्लों से मजबूत नली जो वायु को फेफड़ों की ओर ले जाती है।',
+          or: 'ଉପାସ୍ଥି ବଳୟରେ ଦୃଢ଼ ହୋଇଥିବା ନଳୀ ଯାହା ବାୟୁକୁ ଫୁସ୍‌ଫୁସ୍‌କୁ ନେଇଯାଏ।',
+        ),
+        position: Offset(0.42, 0.37),
+      ),
+      InteractiveDiagramLabel(
+        id: 'bronchi',
+        title: DiagramText(en: 'Bronchi', hi: 'श्वसनी', or: 'ଶ୍ୱାସନଳିକା'),
+        explanation: DiagramText(
+          en: 'Two main branches that carry air from the trachea into the lungs.',
+          hi: 'दो मुख्य शाखाएँ जो श्वासनली से वायु को फेफड़ों में ले जाती हैं।',
+          or: 'ଦୁଇଟି ମୁଖ୍ୟ ଶାଖା ଯାହା ଶ୍ୱାସନଳୀରୁ ବାୟୁକୁ ଫୁସ୍‌ଫୁସ୍‌ ଭିତରକୁ ନେଇଯାଏ।',
+        ),
+        position: Offset(0.48, 0.49),
+      ),
+      InteractiveDiagramLabel(
+        id: 'lungs',
+        title: DiagramText(en: 'Lungs', hi: 'फेफड़े', or: 'ଫୁସ୍‌ଫୁସ୍‌'),
+        explanation: DiagramText(
+          en: 'A pair of spongy organs where oxygen enters the blood and carbon dioxide leaves it.',
+          hi: 'स्पंजी अंगों की जोड़ी जहाँ ऑक्सीजन रक्त में जाती है और कार्बन डाइऑक्साइड बाहर निकलती है।',
+          or: 'ସ୍ପଞ୍ଜ ପରି ଦୁଇଟି ଅଙ୍ଗ ଯେଉଁଠାରେ ଅମ୍ଳଜାନ ରକ୍ତକୁ ଯାଏ ଓ ଅଙ୍ଗାରକାମ୍ଳ ବାହାରେ।',
+        ),
+        position: Offset(0.27, 0.61),
+      ),
+      InteractiveDiagramLabel(
+        id: 'alveoli',
+        title: DiagramText(en: 'Alveoli', hi: 'वायुकोष', or: 'ବାୟୁକୋଷ'),
+        explanation: DiagramText(
+          en: 'Tiny air sacs where oxygen and carbon dioxide are exchanged with the blood.',
+          hi: 'छोटे वायुकोष जहाँ रक्त के साथ ऑक्सीजन और कार्बन डाइऑक्साइड का आदान-प्रदान होता है।',
+          or: 'କ୍ଷୁଦ୍ର ବାୟୁଥଳି ଯେଉଁଠାରେ ରକ୍ତ ସହ ଅମ୍ଳଜାନ ଓ ଅଙ୍ଗାରକାମ୍ଳର ବିନିମୟ ହୁଏ।',
+        ),
+        position: Offset(0.81, 0.29),
+      ),
+      InteractiveDiagramLabel(
+        id: 'diaphragm',
+        title: DiagramText(en: 'Diaphragm', hi: 'डायाफ्राम', or: 'ମଧ୍ୟଚ୍ଛଦା'),
+        explanation: DiagramText(
+          en: 'A dome-shaped muscle that changes chest volume to move air in and out.',
+          hi: 'गुंबदाकार पेशी जो छाती का आयतन बदलकर वायु को अंदर और बाहर करती है।',
+          or: 'ଗମ୍ବୁଜ ଆକାରର ପେଶୀ ଯାହା ବକ୍ଷଗହ୍ୱରର ଆୟତନ ବଦଳାଇ ବାୟୁକୁ ଭିତରକୁ ଓ ବାହାରକୁ ଚଳାଏ।',
+        ),
+        position: Offset(0.47, 0.78),
       ),
     ],
   ),
@@ -652,6 +1090,144 @@ const interactiveDiagrams = [
     ],
   ),
   InteractiveDiagram(
+    id: 'india_states_map',
+    section: DiagramSection.geography,
+    title: DiagramText(
+      en: 'Map of India',
+      hi: 'भारत का मानचित्र',
+      or: 'ଭାରତର ମାନଚିତ୍ର',
+    ),
+    description: DiagramText(
+      en: 'Explore selected states, capitals and major rivers of India.',
+      hi: 'भारत के चुनिंदा राज्यों, राजधानियों और प्रमुख नदियों को जानें।',
+      or: 'ଭାରତର ଚୟନିତ ରାଜ୍ୟ, ରାଜଧାନୀ ଓ ପ୍ରମୁଖ ନଦୀଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
+    ),
+    imagePath: 'assets/diagrams/interactive/india_states_map.png',
+    aspectRatio: 2 / 3,
+    labels: [
+      InteractiveDiagramLabel(
+        id: 'new_delhi',
+        title: DiagramText(en: 'New Delhi', hi: 'नई दिल्ली', or: 'ନୂଆଦିଲ୍ଲୀ'),
+        explanation: DiagramText(
+          en: 'New Delhi is the national capital of India.',
+          hi: 'नई दिल्ली भारत की राष्ट्रीय राजधानी है।',
+          or: 'ନୂଆଦିଲ୍ଲୀ ଭାରତର ଜାତୀୟ ରାଜଧାନୀ।',
+        ),
+        position: Offset(0.32, 0.24),
+      ),
+      InteractiveDiagramLabel(
+        id: 'odisha',
+        title: DiagramText(
+          en: 'Odisha — Bhubaneswar',
+          hi: 'ओडिशा — भुवनेश्वर',
+          or: 'ଓଡ଼ିଶା — ଭୁବନେଶ୍ୱର',
+        ),
+        explanation: DiagramText(
+          en: 'Odisha is an eastern coastal state. Its capital is Bhubaneswar.',
+          hi: 'ओडिशा पूर्वी तट का राज्य है। इसकी राजधानी भुवनेश्वर है।',
+          or: 'ଓଡ଼ିଶା ପୂର୍ବ ଉପକୂଳର ଏକ ରାଜ୍ୟ। ଏହାର ରାଜଧାନୀ ଭୁବନେଶ୍ୱର।',
+        ),
+        position: Offset(0.59, 0.50),
+      ),
+      InteractiveDiagramLabel(
+        id: 'maharashtra',
+        title: DiagramText(
+          en: 'Maharashtra — Mumbai',
+          hi: 'महाराष्ट्र — मुंबई',
+          or: 'ମହାରାଷ୍ଟ୍ର — ମୁମ୍ବାଇ',
+        ),
+        explanation: DiagramText(
+          en: 'Maharashtra is a western state. Its capital is Mumbai.',
+          hi: 'महाराष्ट्र पश्चिमी भारत का राज्य है। इसकी राजधानी मुंबई है।',
+          or: 'ମହାରାଷ୍ଟ୍ର ପଶ୍ଚିମ ଭାରତର ଏକ ରାଜ୍ୟ। ଏହାର ରାଜଧାନୀ ମୁମ୍ବାଇ।',
+        ),
+        position: Offset(0.15, 0.52),
+      ),
+      InteractiveDiagramLabel(
+        id: 'west_bengal',
+        title: DiagramText(
+          en: 'West Bengal — Kolkata',
+          hi: 'पश्चिम बंगाल — कोलकाता',
+          or: 'ପଶ୍ଚିମବଙ୍ଗ — କୋଲକାତା',
+        ),
+        explanation: DiagramText(
+          en: 'West Bengal lies in eastern India. Its capital is Kolkata.',
+          hi: 'पश्चिम बंगाल पूर्वी भारत में है। इसकी राजधानी कोलकाता है।',
+          or: 'ପଶ୍ଚିମବଙ୍ଗ ପୂର୍ବ ଭାରତରେ ଅବସ୍ଥିତ। ଏହାର ରାଜଧାନୀ କୋଲକାତା।',
+        ),
+        position: Offset(0.67, 0.45),
+      ),
+      InteractiveDiagramLabel(
+        id: 'tamil_nadu',
+        title: DiagramText(
+          en: 'Tamil Nadu — Chennai',
+          hi: 'तमिलनाडु — चेन्नई',
+          or: 'ତାମିଲନାଡୁ — ଚେନ୍ନାଇ',
+        ),
+        explanation: DiagramText(
+          en: 'Tamil Nadu is a southern state. Its capital is Chennai.',
+          hi: 'तमिलनाडु दक्षिणी भारत का राज्य है। इसकी राजधानी चेन्नई है।',
+          or: 'ତାମିଲନାଡୁ ଦକ୍ଷିଣ ଭାରତର ଏକ ରାଜ୍ୟ। ଏହାର ରାଜଧାନୀ ଚେନ୍ନାଇ।',
+        ),
+        position: Offset(0.41, 0.74),
+      ),
+      InteractiveDiagramLabel(
+        id: 'ganga',
+        title: DiagramText(en: 'Ganga', hi: 'गंगा', or: 'ଗଙ୍ଗା'),
+        explanation: DiagramText(
+          en: 'A major northern river that flows eastward to the Bay of Bengal.',
+          hi: 'उत्तरी भारत की प्रमुख नदी जो पूर्व की ओर बंगाल की खाड़ी में बहती है।',
+          or: 'ଉତ୍ତର ଭାରତର ଏକ ପ୍ରମୁଖ ନଦୀ ଯାହା ପୂର୍ବ ଦିଗକୁ ବହି ବଙ୍ଗୋପସାଗରରେ ମିଶେ।',
+        ),
+        position: Offset(0.50, 0.34),
+      ),
+      InteractiveDiagramLabel(
+        id: 'brahmaputra',
+        title: DiagramText(
+          en: 'Brahmaputra',
+          hi: 'ब्रह्मपुत्र',
+          or: 'ବ୍ରହ୍ମପୁତ୍ର',
+        ),
+        explanation: DiagramText(
+          en: 'A great river that crosses northeastern India through Assam.',
+          hi: 'एक विशाल नदी जो असम से होकर पूर्वोत्तर भारत में बहती है।',
+          or: 'ଏକ ବିଶାଳ ନଦୀ ଯାହା ଆସାମ ଦେଇ ଉତ୍ତର-ପୂର୍ବ ଭାରତରେ ବହେ।',
+        ),
+        position: Offset(0.82, 0.34),
+      ),
+      InteractiveDiagramLabel(
+        id: 'mahanadi',
+        title: DiagramText(en: 'Mahanadi', hi: 'महानदी', or: 'ମହାନଦୀ'),
+        explanation: DiagramText(
+          en: 'A major river of central-eastern India that flows through Odisha.',
+          hi: 'मध्य-पूर्वी भारत की प्रमुख नदी जो ओडिशा से होकर बहती है।',
+          or: 'ମଧ୍ୟ-ପୂର୍ବ ଭାରତର ଏକ ପ୍ରମୁଖ ନଦୀ ଯାହା ଓଡ଼ିଶା ଦେଇ ବହେ।',
+        ),
+        position: Offset(0.56, 0.51),
+      ),
+      InteractiveDiagramLabel(
+        id: 'godavari',
+        title: DiagramText(en: 'Godavari', hi: 'गोदावरी', or: 'ଗୋଦାବରୀ'),
+        explanation: DiagramText(
+          en: 'A long peninsular river that flows eastward across the Deccan Plateau.',
+          hi: 'लंबी प्रायद्वीपीय नदी जो दक्कन के पठार से पूर्व की ओर बहती है।',
+          or: 'ଏକ ଦୀର୍ଘ ଉପଦ୍ୱୀପୀୟ ନଦୀ ଯାହା ଦାକ୍ଷିଣାତ୍ୟ ମାଳଭୂମି ଦେଇ ପୂର୍ବକୁ ବହେ।',
+        ),
+        position: Offset(0.45, 0.60),
+      ),
+      InteractiveDiagramLabel(
+        id: 'kaveri',
+        title: DiagramText(en: 'Kaveri', hi: 'कावेरी', or: 'କାବେରୀ'),
+        explanation: DiagramText(
+          en: 'A southern river that flows through Karnataka and Tamil Nadu.',
+          hi: 'दक्षिणी नदी जो कर्नाटक और तमिलनाडु से होकर बहती है।',
+          or: 'ଦକ୍ଷିଣ ଭାରତର ଏକ ନଦୀ ଯାହା କର୍ଣ୍ଣାଟକ ଓ ତାମିଲନାଡୁ ଦେଇ ବହେ।',
+        ),
+        position: Offset(0.35, 0.75),
+      ),
+    ],
+  ),
+  InteractiveDiagram(
     id: 'earth_layers',
     section: DiagramSection.geography,
     title: DiagramText(
@@ -1133,6 +1709,7 @@ const interactiveDiagrams = [
       ),
     ],
   ),
+  ...remainingInteractiveDiagrams,
 ];
 
 InteractiveDiagram? interactiveDiagramById(String id) {

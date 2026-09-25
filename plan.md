@@ -135,7 +135,7 @@ Every new formula gets EN/OR/HI title and description, plus a working calculator
 
 ## Phase 4 — Other content gaps
 
-- [ ] **4.1 Timeline: fill the state filter or trim it**
+- [x] **4.1 Timeline: fill the state filter or trim it**
   - Today there are 52 events: 30 World, 12 India, 6 Odisha, 2 Tamil Nadu, 1 Maharashtra,
     1 West Bengal. The picker offers all 28 states, so most show nothing.
   - (a) Make the picker list only states that have events.
@@ -147,12 +147,19 @@ Every new formula gets EN/OR/HI title and description, plus a working calculator
   - (c) Add more India events (target ~30 total): Harappan cities, Ashoka's edicts, Chola
     empire, Vijayanagara, Akbar, Shivaji, Non-Cooperation Movement, Dandi March, Constitution
     (1950), first general elections, Green Revolution, Chandrayaan, and others.
-- [ ] 🔸 **4.2 Books catalog gaps**
+  - Done: 82 events (Odisha 20, India 24, World 30, and Tamil Nadu, Karnataka, Kerala, Punjab,
+    Maharashtra, West Bengal). The picker now lists only the 7 states that have events.
+  - Also fixed: events are now sorted by year. Before, mixing World and India showed two
+    separate runs of history, because the data is grouped by region.
+  - 🔸 Dates marked "c." or given as a century are approximate. The Odia/Hindi text needs review.
+- [x] **4.2 Books catalog gaps** — ✅ no change: the catalogue is correct as it is (confirmed by you).
   - Class 1 and Class 2 have only 2 books each; Class 8 has no PE book (Classes 6–7 do).
   - This needs the real OSEPA PDF URLs. I can search osepa.odisha.gov.in for them, or you
     can supply the links.
-- [ ] **4.3 Vocabulary: word of the day** — a deterministic daily pick from the ~930 words,
+- [x] **4.3 Vocabulary: word of the day** — a deterministic daily pick from the ~930 words,
   shown on the Vocabulary screen header (and optionally on the Home warm-up).
+  - Done: Home already had one. The Vocabulary card now opens on the same word, labelled
+    "Word of the day", and the arrows then show "More words".
 
 ---
 

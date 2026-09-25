@@ -26,14 +26,49 @@ class HistoricalEvent {
     required this.era,
     required this.region,
   });
+
+  /// Signed year for ordering (BCE negative), parsed from [year]. Handles
+  /// "320 CE", "c. 3100 BCE" and "12th century CE" (taken as its midpoint).
+  int get sortYear => timelineSortYear(year);
 }
+
+final _yearPattern = RegExp(
+  r'(\d+)(?:st|nd|rd|th)?\s*(century)?\s*(BCE|CE)?',
+  caseSensitive: false,
+);
+
+/// See [HistoricalEvent.sortYear]. Unparseable years sort last.
+int timelineSortYear(String year) {
+  final m = _yearPattern.firstMatch(year);
+  if (m == null) return 1 << 30;
+  var n = int.parse(m[1]!);
+  if (m[2] != null) n = (n - 1) * 100 + 50;
+  return (m[3]?.toUpperCase() == 'BCE') ? -n : n;
+}
+
+/// Events oldest first; events in the same year keep their listed order.
+List<HistoricalEvent> sortedChronologically(Iterable<HistoricalEvent> events) {
+  final indexed = events.toList().asMap().entries.toList()
+    ..sort((a, b) {
+      final byYear = a.value.sortYear.compareTo(b.value.sortYear);
+      return byYear != 0 ? byYear : a.key.compareTo(b.key);
+    });
+  return [for (final e in indexed) e.value];
+}
+
+/// States that actually have events, in [indianStates] order — the state
+/// picker offers only these, so no choice leads to an empty timeline.
+final List<String> statesWithEvents = [
+  for (final s in indianStates)
+    if (timelineEvents.any((e) => e.region == s)) s,
+];
 
 /// Region scope sentinels used by [HistoricalEvent.region].
 const String kRegionWorld = 'World';
 const String kRegionIndia = 'India';
 
-/// The 28 Indian states (excluding union territories), alphabetical, used to
-/// populate the state-picker in the timeline filter. Odisha is the default
+/// The 28 Indian states (excluding union territories), alphabetical. The
+/// state picker shows the subset in [statesWithEvents]. Odisha is the default
 /// state for this app's primary audience.
 const List<String> indianStates = [
   'Andhra Pradesh',
@@ -803,5 +838,429 @@ const List<HistoricalEvent> timelineEvents = [
         'छत्रपति शिवाजी का राज्याभिषेक हुआ, जिन्होंने रायगढ़ में मराठा साम्राज्य की स्थापना की।',
     era: 'Medieval',
     region: 'Maharashtra',
+  ),
+
+  // ─── Odisha (Phase 4 additions) ─────────────────────────────────────────
+  HistoricalEvent(
+    year: 'c. 1st century BCE',
+    title: 'King Kharavela of Kalinga',
+    titleOdia: 'କଳିଙ୍ଗର ରାଜା ଖାରବେଳ',
+    titleHindi: 'कलिंग के राजा खारवेल',
+    description:
+        'Kharavela of the Chedi (Mahameghavahana) dynasty makes Kalinga powerful again. His deeds are recorded in the Hathigumpha inscription at Udayagiri near Bhubaneswar.',
+    descriptionOdia:
+        'ଚେଦି (ମହାମେଘବାହନ) ବଂଶର ଖାରବେଳ କଳିଙ୍ଗକୁ ପୁଣି ଶକ୍ତିଶାଳୀ କରନ୍ତି। ତାଙ୍କ କୀର୍ତ୍ତି ଭୁବନେଶ୍ୱର ନିକଟ ଉଦୟଗିରିର ହାତୀଗୁମ୍ଫା ଶିଳାଲେଖରେ ଲିପିବଦ୍ଧ।',
+    descriptionHindi:
+        'चेदि (महामेघवाहन) वंश के खारवेल ने कलिंग को फिर से शक्तिशाली बनाया। उनके कार्य भुवनेश्वर के पास उदयगिरि के हाथीगुम्फा शिलालेख में दर्ज हैं।',
+    era: 'Ancient',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '11th century CE',
+    title: 'Lingaraj Temple Built',
+    titleOdia: 'ଲିଙ୍ଗରାଜ ମନ୍ଦିର ନିର୍ମାଣ',
+    titleHindi: 'लिंगराज मंदिर का निर्माण',
+    description:
+        'The Lingaraj Temple, dedicated to Shiva, rises in Bhubaneswar, the "Temple City" of India, as a high point of Kalinga-style architecture.',
+    descriptionOdia:
+        'ଶିବଙ୍କୁ ଉତ୍ସର୍ଗୀକୃତ ଲିଙ୍ଗରାଜ ମନ୍ଦିର ଭାରତର "ମନ୍ଦିର ନଗରୀ" ଭୁବନେଶ୍ୱରରେ କଳିଙ୍ଗ ଶୈଳୀ ସ୍ଥାପତ୍ୟର ଏକ ଶିଖର ଭାବେ ନିର୍ମିତ ହୁଏ।',
+    descriptionHindi:
+        'शिव को समर्पित लिंगराज मंदिर भारत के "मंदिर नगर" भुवनेश्वर में कलिंग शैली की वास्तुकला के शिखर के रूप में बना।',
+    era: 'Medieval',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1078 CE',
+    title: 'Eastern Ganga Rule in Odisha',
+    titleOdia: 'ଓଡ଼ିଶାରେ ପୂର୍ବ ଗଙ୍ଗ ଶାସନ',
+    titleHindi: 'ओडिशा में पूर्वी गंग शासन',
+    description:
+        'Anantavarman Chodaganga Deva comes to the throne and the Eastern Ganga dynasty unites Odisha from the Ganga to the Godavari.',
+    descriptionOdia:
+        'ଅନନ୍ତବର୍ମନ ଚୋଡ଼ଗଙ୍ଗ ଦେବ ସିଂହାସନ ଆରୋହଣ କରନ୍ତି ଏବଂ ପୂର୍ବ ଗଙ୍ଗ ବଂଶ ଗଙ୍ଗାଠାରୁ ଗୋଦାବରୀ ପର୍ଯ୍ୟନ୍ତ ଓଡ଼ିଶାକୁ ଏକତ୍ର କରେ।',
+    descriptionHindi:
+        'अनंतवर्मन चोडगंग देव सिंहासन पर बैठे और पूर्वी गंग वंश ने गंगा से गोदावरी तक ओडिशा को एक किया।',
+    era: 'Medieval',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '12th century CE',
+    title: 'Jagannath Temple, Puri',
+    titleOdia: 'ପୁରୀ ଶ୍ରୀଜଗନ୍ନାଥ ମନ୍ଦିର',
+    titleHindi: 'जगन्नाथ मंदिर, पुरी',
+    description:
+        'Anantavarman Chodaganga Deva begins building the great Jagannath Temple at Puri, home of the famous Rath Yatra.',
+    descriptionOdia:
+        'ଅନନ୍ତବର୍ମନ ଚୋଡ଼ଗଙ୍ଗ ଦେବ ପୁରୀରେ ମହାନ ଶ୍ରୀଜଗନ୍ନାଥ ମନ୍ଦିର ନିର୍ମାଣ ଆରମ୍ଭ କରନ୍ତି, ଯାହା ପ୍ରସିଦ୍ଧ ରଥଯାତ୍ରାର ପୀଠ।',
+    descriptionHindi:
+        'अनंतवर्मन चोडगंग देव ने पुरी में भव्य जगन्नाथ मंदिर का निर्माण आरंभ किया, जो प्रसिद्ध रथ यात्रा का केंद्र है।',
+    era: 'Medieval',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: 'c. 1250 CE',
+    title: 'Konark Sun Temple',
+    titleOdia: 'କୋଣାର୍କ ସୂର୍ଯ୍ୟ ମନ୍ଦିର',
+    titleHindi: 'कोणार्क सूर्य मंदिर',
+    description:
+        'King Narasimha Deva I builds the Sun Temple at Konark, shaped like a giant chariot with 24 carved stone wheels. It is now a UNESCO World Heritage Site.',
+    descriptionOdia:
+        'ରାଜା ପ୍ରଥମ ନରସିଂହ ଦେବ କୋଣାର୍କରେ ସୂର୍ଯ୍ୟ ମନ୍ଦିର ନିର୍ମାଣ କରନ୍ତି, ଯାହା 24ଟି ଖୋଦିତ ପଥର ଚକ ଥିବା ଏକ ବିଶାଳ ରଥ ଆକୃତିର। ଏହା ଏବେ ୟୁନେସ୍କୋ ବିଶ୍ୱ ଐତିହ୍ୟ ସ୍ଥଳ।',
+    descriptionHindi:
+        'राजा नरसिंह देव प्रथम ने कोणार्क में सूर्य मंदिर बनवाया, जो 24 नक्काशीदार पत्थर के पहियों वाले विशाल रथ के आकार का है। यह अब यूनेस्को विश्व धरोहर स्थल है।',
+    era: 'Medieval',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1866 CE',
+    title: 'Great Odisha Famine (Na\'anka Durbhiksha)',
+    titleOdia: 'ନଅଙ୍କ ଦୁର୍ଭିକ୍ଷ',
+    titleHindi: 'ओडिशा का महा अकाल (नअंक दुर्भिक्ष)',
+    description:
+        'A terrible famine kills about a million people in Odisha, about a third of its population, and exposes the neglect of British rule.',
+    descriptionOdia:
+        'ଏକ ଭୟଙ୍କର ଦୁର୍ଭିକ୍ଷରେ ଓଡ଼ିଶାର ପ୍ରାୟ ଦଶ ଲକ୍ଷ ଲୋକ, ଅର୍ଥାତ୍ ଜନସଂଖ୍ୟାର ପ୍ରାୟ ଏକ ତୃତୀୟାଂଶ ପ୍ରାଣ ହରାନ୍ତି, ଯାହା ବ୍ରିଟିଶ୍ ଶାସନର ଅବହେଳାକୁ ପ୍ରକାଶ କରେ।',
+    descriptionHindi:
+        'एक भयानक अकाल में ओडिशा के लगभग दस लाख लोग, यानी लगभग एक तिहाई आबादी, मारे गए, जिससे ब्रिटिश शासन की उपेक्षा उजागर हुई।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1903 CE',
+    title: 'Utkal Sammilani Founded',
+    titleOdia: 'ଉତ୍କଳ ସମ୍ମିଳନୀ ପ୍ରତିଷ୍ଠା',
+    titleHindi: 'उत्कल सम्मिलनी की स्थापना',
+    description:
+        'Madhusudan Das (Utkal Gourab) founds the Utkal Sammilani to unite all Odia-speaking areas into one province.',
+    descriptionOdia:
+        'ଉତ୍କଳ ଗୌରବ ମଧୁସୂଦନ ଦାସ ସମସ୍ତ ଓଡ଼ିଆ ଭାଷାଭାଷୀ ଅଞ୍ଚଳକୁ ଗୋଟିଏ ପ୍ରଦେଶରେ ଏକତ୍ର କରିବା ପାଇଁ ଉତ୍କଳ ସମ୍ମିଳନୀ ପ୍ରତିଷ୍ଠା କରନ୍ତି।',
+    descriptionHindi:
+        'उत्कल गौरव मधुसूदन दास ने सभी ओड़िया भाषी क्षेत्रों को एक प्रांत में मिलाने के लिए उत्कल सम्मिलनी की स्थापना की।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1909 CE',
+    title: 'Satyabadi School Founded',
+    titleOdia: 'ସତ୍ୟବାଦୀ ବିଦ୍ୟାଳୟ ପ୍ରତିଷ୍ଠା',
+    titleHindi: 'सत्यवादी विद्यालय की स्थापना',
+    description:
+        'Utkalmani Gopabandhu Das starts the Satyabadi Bana Vidyalaya near Puri, an open-air school that inspired a generation of nationalists.',
+    descriptionOdia:
+        'ଉତ୍କଳମଣି ଗୋପବନ୍ଧୁ ଦାସ ପୁରୀ ନିକଟରେ ସତ୍ୟବାଦୀ ବନ ବିଦ୍ୟାଳୟ ଆରମ୍ଭ କରନ୍ତି, ଯାହା ଏକ ପିଢ଼ି ଦେଶପ୍ରେମୀଙ୍କୁ ପ୍ରେରଣା ଦେଇଥିଲା।',
+    descriptionHindi:
+        'उत्कलमणि गोपबंधु दास ने पुरी के पास सत्यवादी वन विद्यालय शुरू किया, जिसने राष्ट्रवादियों की एक पीढ़ी को प्रेरित किया।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1948 CE',
+    title: 'Princely States Merge with Odisha',
+    titleOdia: 'ଗଡ଼ଜାତ ରାଜ୍ୟମାନଙ୍କର ଓଡ଼ିଶାରେ ମିଶ୍ରଣ',
+    titleHindi: 'रियासतों का ओडिशा में विलय',
+    description:
+        'The princely states (Garjats) join Odisha after independence; Mayurbhanj follows in 1949, giving the state its present shape.',
+    descriptionOdia:
+        'ସ୍ୱାଧୀନତା ପରେ ଗଡ଼ଜାତ ରାଜ୍ୟମାନେ ଓଡ଼ିଶାରେ ମିଶନ୍ତି; 1949ରେ ମୟୂରଭଞ୍ଜ ମିଶି ରାଜ୍ୟକୁ ଏହାର ବର୍ତ୍ତମାନ ଆକାର ଦିଏ।',
+    descriptionHindi:
+        'स्वतंत्रता के बाद रियासतें (गड़जात) ओडिशा में मिलीं; 1949 में मयूरभंज के विलय से राज्य को वर्तमान रूप मिला।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1948 CE',
+    title: 'Bhubaneswar Chosen as Capital',
+    titleOdia: 'ଭୁବନେଶ୍ୱର ରାଜଧାନୀ ଭାବେ ମନୋନୀତ',
+    titleHindi: 'भुवनेश्वर राजधानी चुना गया',
+    description:
+        'Prime Minister Nehru lays the foundation of a new planned capital at Bhubaneswar, which replaces Cuttack as the capital of Odisha.',
+    descriptionOdia:
+        'ପ୍ରଧାନମନ୍ତ୍ରୀ ନେହେରୁ ଭୁବନେଶ୍ୱରରେ ଏକ ନୂତନ ଯୋଜନାବଦ୍ଧ ରାଜଧାନୀର ଶିଳାନ୍ୟାସ କରନ୍ତି, ଯାହା କଟକ ପରିବର୍ତ୍ତେ ଓଡ଼ିଶାର ରାଜଧାନୀ ହୁଏ।',
+    descriptionHindi:
+        'प्रधानमंत्री नेहरू ने भुवनेश्वर में एक नई नियोजित राजधानी की नींव रखी, जो कटक के स्थान पर ओडिशा की राजधानी बनी।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1957 CE',
+    title: 'Hirakud Dam Inaugurated',
+    titleOdia: 'ହୀରାକୁଦ ବନ୍ଧ ଉଦ୍‌ଘାଟନ',
+    titleHindi: 'हीराकुंड बाँध का उद्घाटन',
+    description:
+        'The Hirakud Dam on the Mahanadi, one of the longest earthen dams in the world, opens to control floods, irrigate fields and make electricity.',
+    descriptionOdia:
+        'ମହାନଦୀ ଉପରେ ବିଶ୍ୱର ଅନ୍ୟତମ ଦୀର୍ଘତମ ମାଟି ବନ୍ଧ ହୀରାକୁଦ ବନ୍ଧ ବନ୍ୟା ନିୟନ୍ତ୍ରଣ, ଜଳସେଚନ ଓ ବିଦ୍ୟୁତ୍ ଉତ୍ପାଦନ ପାଇଁ ଖୋଲେ।',
+    descriptionHindi:
+        'महानदी पर बना हीराकुंड बाँध, दुनिया के सबसे लंबे मिट्टी के बाँधों में से एक, बाढ़ नियंत्रण, सिंचाई और बिजली के लिए खोला गया।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '1999 CE',
+    title: 'Odisha Super Cyclone',
+    titleOdia: 'ଓଡ଼ିଶା ମହାବାତ୍ୟା',
+    titleHindi: 'ओडिशा महाचक्रवात',
+    description:
+        'A super cyclone strikes the Odisha coast and kills around 10,000 people. The disaster leads Odisha to build one of the best cyclone-warning and shelter systems in the world.',
+    descriptionOdia:
+        'ଏକ ମହାବାତ୍ୟା ଓଡ଼ିଶା ଉପକୂଳରେ ଆଘାତ କରି ପ୍ରାୟ 10,000 ଲୋକଙ୍କ ଜୀବନ ନିଏ। ଏହା ପରେ ଓଡ଼ିଶା ବିଶ୍ୱର ଅନ୍ୟତମ ଶ୍ରେଷ୍ଠ ବାତ୍ୟା ସତର୍କତା ଓ ଆଶ୍ରୟସ୍ଥଳୀ ବ୍ୟବସ୍ଥା ଗଢ଼େ।',
+    descriptionHindi:
+        'एक महाचक्रवात ने ओडिशा तट पर प्रहार किया और लगभग 10,000 लोगों की जान ली। इसके बाद ओडिशा ने दुनिया की सबसे अच्छी चक्रवात चेतावनी और आश्रय व्यवस्थाओं में से एक बनाई।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '2011 CE',
+    title: 'Orissa Renamed Odisha',
+    titleOdia: 'ଓଡ଼ିଶା ନାମକରଣ',
+    titleHindi: 'उड़ीसा का नाम ओडिशा हुआ',
+    description:
+        'The state\'s name in English changes from Orissa to Odisha, and its language from Oriya to Odia, to match how they are said in Odia.',
+    descriptionOdia:
+        'ଇଂରାଜୀରେ ରାଜ୍ୟର ନାମ Orissa ରୁ Odisha ଓ ଭାଷାର ନାମ Oriya ରୁ Odia ହୁଏ, ଯାହା ଓଡ଼ିଆ ଉଚ୍ଚାରଣ ସହ ମେଳ ଖାଏ।',
+    descriptionHindi:
+        'अंग्रेज़ी में राज्य का नाम Orissa से Odisha और भाषा का नाम Oriya से Odia हुआ, ताकि ओड़िया उच्चारण से मेल खाए।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+  HistoricalEvent(
+    year: '2014 CE',
+    title: 'Odia Declared a Classical Language',
+    titleOdia: 'ଓଡ଼ିଆ ଶାସ୍ତ୍ରୀୟ ଭାଷା ଘୋଷିତ',
+    titleHindi: 'ओड़िया शास्त्रीय भाषा घोषित',
+    description:
+        'Odia becomes the sixth Indian language to be given classical language status, recognising its long literary history.',
+    descriptionOdia:
+        'ଓଡ଼ିଆ ଶାସ୍ତ୍ରୀୟ ଭାଷାର ମାନ୍ୟତା ପାଇଥିବା ଷଷ୍ଠ ଭାରତୀୟ ଭାଷା ହୁଏ, ଯାହା ଏହାର ଦୀର୍ଘ ସାହିତ୍ୟିକ ଇତିହାସକୁ ସ୍ୱୀକୃତି ଦିଏ।',
+    descriptionHindi:
+        'ओड़िया शास्त्रीय भाषा का दर्जा पाने वाली छठी भारतीय भाषा बनी, जिससे इसके लंबे साहित्यिक इतिहास को मान्यता मिली।',
+    era: 'Modern',
+    region: 'Odisha',
+  ),
+
+  // ─── India & other states (Phase 4 additions) ───────────────────────────
+  HistoricalEvent(
+    year: 'c. 260 BCE',
+    title: 'Ashoka\'s Edicts',
+    titleOdia: 'ଅଶୋକଙ୍କ ଶିଳାଲେଖ',
+    titleHindi: 'अशोक के शिलालेख',
+    description:
+        'After the Kalinga War, Emperor Ashoka carves edicts on rocks and pillars across India spreading dhamma: kindness, tolerance and non-violence.',
+    descriptionOdia:
+        'କଳିଙ୍ଗ ଯୁଦ୍ଧ ପରେ ସମ୍ରାଟ ଅଶୋକ ଭାରତ ସାରା ପଥର ଓ ସ୍ତମ୍ଭରେ ଧର୍ମ — ଦୟା, ସହନଶୀଳତା ଓ ଅହିଂସା ପ୍ରଚାର ପାଇଁ ଶିଳାଲେଖ ଖୋଦନ୍ତି।',
+    descriptionHindi:
+        'कलिंग युद्ध के बाद सम्राट अशोक ने पूरे भारत में चट्टानों और स्तंभों पर धम्म — दया, सहनशीलता और अहिंसा — फैलाने के लिए शिलालेख खुदवाए।',
+    era: 'Ancient',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '985 CE',
+    title: 'Rajaraja Chola I Becomes King',
+    titleOdia: 'ରାଜରାଜ ଚୋଳ ପ୍ରଥମଙ୍କ ରାଜ୍ୟାରୋହଣ',
+    titleHindi: 'राजराज चोल प्रथम राजा बने',
+    description:
+        'Rajaraja Chola I begins a reign that turns the Chola kingdom into a great empire with a powerful navy.',
+    descriptionOdia:
+        'ରାଜରାଜ ଚୋଳ ପ୍ରଥମଙ୍କ ଶାସନ ଆରମ୍ଭ ହୁଏ, ଯାହା ଚୋଳ ରାଜ୍ୟକୁ ଏକ ଶକ୍ତିଶାଳୀ ନୌସେନା ସହ ମହାନ ସାମ୍ରାଜ୍ୟରେ ପରିଣତ କରେ।',
+    descriptionHindi:
+        'राजराज चोल प्रथम का शासन शुरू हुआ, जिसने चोल राज्य को शक्तिशाली नौसेना वाले महान साम्राज्य में बदल दिया।',
+    era: 'Medieval',
+    region: 'Tamil Nadu',
+  ),
+  HistoricalEvent(
+    year: '1206 CE',
+    title: 'Delhi Sultanate Founded',
+    titleOdia: 'ଦିଲ୍ଲୀ ସୁଲତାନାତ ପ୍ରତିଷ୍ଠା',
+    titleHindi: 'दिल्ली सल्तनत की स्थापना',
+    description:
+        'Qutb-ud-din Aibak becomes the first Sultan of Delhi, beginning more than three centuries of Sultanate rule in north India.',
+    descriptionOdia:
+        'କୁତୁବୁଦ୍ଦିନ ଆଇବକ ଦିଲ୍ଲୀର ପ୍ରଥମ ସୁଲତାନ ହୁଅନ୍ତି, ଯାହା ଉତ୍ତର ଭାରତରେ ତିନି ଶତାବ୍ଦୀରୁ ଅଧିକ ସୁଲତାନାତ ଶାସନର ଆରମ୍ଭ।',
+    descriptionHindi:
+        'कुतुबुद्दीन ऐबक दिल्ली के पहले सुल्तान बने, जिससे उत्तर भारत में तीन शताब्दियों से अधिक के सल्तनत शासन की शुरुआत हुई।',
+    era: 'Medieval',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1336 CE',
+    title: 'Vijayanagara Empire Founded',
+    titleOdia: 'ବିଜୟନଗର ସାମ୍ରାଜ୍ୟ ପ୍ରତିଷ୍ଠା',
+    titleHindi: 'विजयनगर साम्राज्य की स्थापना',
+    description:
+        'Harihara and Bukka found the Vijayanagara Empire, whose capital Hampi became one of the richest cities in the world.',
+    descriptionOdia:
+        'ହରିହର ଓ ବୁକ୍କ ବିଜୟନଗର ସାମ୍ରାଜ୍ୟ ପ୍ରତିଷ୍ଠା କରନ୍ତି, ଯାହାର ରାଜଧାନୀ ହମ୍ପି ବିଶ୍ୱର ଅନ୍ୟତମ ଧନୀ ସହର ହୋଇଥିଲା।',
+    descriptionHindi:
+        'हरिहर और बुक्का ने विजयनगर साम्राज्य की स्थापना की, जिसकी राजधानी हम्पी दुनिया के सबसे समृद्ध शहरों में से एक बनी।',
+    era: 'Medieval',
+    region: 'Karnataka',
+  ),
+  HistoricalEvent(
+    year: '1498 CE',
+    title: 'Vasco da Gama Reaches Calicut',
+    titleOdia: 'ଭାସ୍କୋ ଡା ଗାମାଙ୍କ କାଲିକଟ ଆଗମନ',
+    titleHindi: 'वास्को दा गामा कालीकट पहुँचे',
+    description:
+        'The Portuguese sailor Vasco da Gama lands at Calicut, opening a sea route from Europe to India around Africa.',
+    descriptionOdia:
+        'ପର୍ତ୍ତୁଗୀଜ୍ ନାବିକ ଭାସ୍କୋ ଡା ଗାମା କାଲିକଟରେ ପହଞ୍ଚନ୍ତି ଏବଂ ଆଫ୍ରିକା ଘେରି ୟୁରୋପରୁ ଭାରତକୁ ସମୁଦ୍ର ପଥ ଖୋଲନ୍ତି।',
+    descriptionHindi:
+        'पुर्तगाली नाविक वास्को दा गामा कालीकट पहुँचे और अफ्रीका का चक्कर लगाकर यूरोप से भारत का समुद्री मार्ग खोला।',
+    era: 'Medieval',
+    region: 'Kerala',
+  ),
+  HistoricalEvent(
+    year: '1556 CE',
+    title: 'Akbar Becomes Mughal Emperor',
+    titleOdia: 'ଆକବରଙ୍କ ମୋଗଲ ସମ୍ରାଟ ହେବା',
+    titleHindi: 'अकबर मुग़ल सम्राट बने',
+    description:
+        'After the Second Battle of Panipat, the young Akbar becomes emperor and goes on to build a vast, well-run empire known for religious tolerance.',
+    descriptionOdia:
+        'ପାଣିପଥର ଦ୍ୱିତୀୟ ଯୁଦ୍ଧ ପରେ ଯୁବ ଆକବର ସମ୍ରାଟ ହୁଅନ୍ତି ଏବଂ ଧାର୍ମିକ ସହନଶୀଳତା ପାଇଁ ଜଣାଶୁଣା ଏକ ବିଶାଳ, ସୁଶାସିତ ସାମ୍ରାଜ୍ୟ ଗଢ଼ନ୍ତି।',
+    descriptionHindi:
+        'पानीपत की दूसरी लड़ाई के बाद युवा अकबर सम्राट बने और धार्मिक सहिष्णुता के लिए प्रसिद्ध एक विशाल, सुशासित साम्राज्य बनाया।',
+    era: 'Medieval',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1858 CE',
+    title: 'Crown Rule Begins in India',
+    titleOdia: 'ଭାରତରେ ବ୍ରିଟିଶ୍ ରାଜମୁକୁଟ ଶାସନ ଆରମ୍ଭ',
+    titleHindi: 'भारत में ब्रिटिश ताज का शासन आरंभ',
+    description:
+        'After the Rebellion of 1857, the British Crown takes over India from the East India Company.',
+    descriptionOdia:
+        '1857 ବିଦ୍ରୋହ ପରେ ବ୍ରିଟିଶ୍ ରାଜମୁକୁଟ ଇଷ୍ଟ ଇଣ୍ଡିଆ କମ୍ପାନୀଠାରୁ ଭାରତର ଶାସନ ଭାର ନିଏ।',
+    descriptionHindi:
+        '1857 के विद्रोह के बाद ब्रिटिश ताज ने ईस्ट इंडिया कंपनी से भारत का शासन अपने हाथ में ले लिया।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1905 CE',
+    title: 'Partition of Bengal',
+    titleOdia: 'ବଙ୍ଗ ବିଭାଜନ',
+    titleHindi: 'बंगाल का विभाजन',
+    description:
+        'Lord Curzon divides Bengal. Indians protest with the Swadeshi movement, boycotting British goods, and the partition is reversed in 1911.',
+    descriptionOdia:
+        'ଲର୍ଡ କର୍ଜନ ବଙ୍ଗକୁ ବିଭାଜନ କରନ୍ତି। ଭାରତୀୟମାନେ ବ୍ରିଟିଶ୍ ସାମଗ୍ରୀ ବର୍ଜନ କରି ସ୍ୱଦେଶୀ ଆନ୍ଦୋଳନ ମାଧ୍ୟମରେ ବିରୋଧ କରନ୍ତି, ଏବଂ 1911ରେ ବିଭାଜନ ରଦ୍ଦ ହୁଏ।',
+    descriptionHindi:
+        'लॉर्ड कर्ज़न ने बंगाल का विभाजन किया। भारतीयों ने ब्रिटिश सामान का बहिष्कार कर स्वदेशी आंदोलन से विरोध किया, और 1911 में विभाजन रद्द हुआ।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1919 CE',
+    title: 'Jallianwala Bagh Massacre',
+    titleOdia: 'ଜାଲିଆନୱାଲାବାଗ ହତ୍ୟାକାଣ୍ଡ',
+    titleHindi: 'जलियाँवाला बाग हत्याकांड',
+    description:
+        'British troops under General Dyer fire on a peaceful crowd in Amritsar, killing hundreds and turning many Indians firmly against British rule.',
+    descriptionOdia:
+        'ଜେନେରାଲ ଡାୟରଙ୍କ ନେତୃତ୍ୱରେ ବ୍ରିଟିଶ୍ ସୈନ୍ୟ ଅମୃତସରରେ ଏକ ଶାନ୍ତିପୂର୍ଣ୍ଣ ଜନସମାଗମ ଉପରେ ଗୁଳି ଚଳାଇ ଶହ ଶହ ଲୋକଙ୍କୁ ହତ୍ୟା କରନ୍ତି।',
+    descriptionHindi:
+        'जनरल डायर के नेतृत्व में ब्रिटिश सैनिकों ने अमृतसर में शांतिपूर्ण भीड़ पर गोली चलाकर सैकड़ों लोगों को मार डाला।',
+    era: 'Modern',
+    region: 'Punjab',
+  ),
+  HistoricalEvent(
+    year: '1920 CE',
+    title: 'Non-Cooperation Movement',
+    titleOdia: 'ଅସହଯୋଗ ଆନ୍ଦୋଳନ',
+    titleHindi: 'असहयोग आंदोलन',
+    description:
+        'Mahatma Gandhi asks Indians to stop cooperating with British rule: to leave government schools, courts and jobs, and to boycott foreign cloth.',
+    descriptionOdia:
+        'ମହାତ୍ମା ଗାନ୍ଧୀ ଭାରତୀୟମାନଙ୍କୁ ବ୍ରିଟିଶ୍ ଶାସନ ସହ ସହଯୋଗ ବନ୍ଦ କରିବାକୁ କହନ୍ତି: ସରକାରୀ ବିଦ୍ୟାଳୟ, ଅଦାଲତ ଓ ଚାକିରି ଛାଡ଼ିବା ଏବଂ ବିଦେଶୀ ବସ୍ତ୍ର ବର୍ଜନ କରିବା।',
+    descriptionHindi:
+        'महात्मा गांधी ने भारतीयों से ब्रिटिश शासन से सहयोग बंद करने को कहा: सरकारी स्कूल, अदालतें और नौकरियाँ छोड़ना और विदेशी कपड़े का बहिष्कार करना।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1930 CE',
+    title: 'Dandi March (Salt Satyagraha)',
+    titleOdia: 'ଦାଣ୍ଡି ଯାତ୍ରା (ଲବଣ ସତ୍ୟାଗ୍ରହ)',
+    titleHindi: 'दांडी मार्च (नमक सत्याग्रह)',
+    description:
+        'Gandhi walks about 390 km from Sabarmati to Dandi and makes salt from sea water, breaking the British salt law.',
+    descriptionOdia:
+        'ଗାନ୍ଧୀ ସାବରମତୀରୁ ଦାଣ୍ଡି ପର୍ଯ୍ୟନ୍ତ ପ୍ରାୟ 390 କିମି ପଦଯାତ୍ରା କରି ସମୁଦ୍ର ଜଳରୁ ଲୁଣ ତିଆରି କରନ୍ତି ଓ ବ୍ରିଟିଶ୍ ଲବଣ ଆଇନ ଭାଙ୍ଗନ୍ତି।',
+    descriptionHindi:
+        'गांधी ने साबरमती से दांडी तक लगभग 390 किमी पैदल चलकर समुद्री पानी से नमक बनाया और ब्रिटिश नमक कानून तोड़ा।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1950 CE',
+    title: 'Constitution of India Comes into Force',
+    titleOdia: 'ଭାରତୀୟ ସମ୍ବିଧାନ ଲାଗୁ',
+    titleHindi: 'भारत का संविधान लागू',
+    description:
+        'On 26 January India becomes a republic under its new Constitution, drafted by a committee led by Dr B. R. Ambedkar. The day is celebrated as Republic Day.',
+    descriptionOdia:
+        '26 ଜାନୁଆରୀରେ ଡକ୍ଟର ବି. ଆର୍. ଆମ୍ବେଦକରଙ୍କ ନେତୃତ୍ୱାଧୀନ କମିଟି ପ୍ରସ୍ତୁତ କରିଥିବା ନୂତନ ସମ୍ବିଧାନ ଅଧୀନରେ ଭାରତ ଗଣତନ୍ତ୍ର ହୁଏ। ଏହି ଦିନ ଗଣତନ୍ତ୍ର ଦିବସ ଭାବେ ପାଳିତ ହୁଏ।',
+    descriptionHindi:
+        '26 जनवरी को डॉ. बी. आर. आंबेडकर की अध्यक्षता वाली समिति द्वारा तैयार नए संविधान के तहत भारत गणतंत्र बना। यह दिन गणतंत्र दिवस के रूप में मनाया जाता है।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1951 CE',
+    title: 'First General Elections',
+    titleOdia: 'ପ୍ରଥମ ସାଧାରଣ ନିର୍ବାଚନ',
+    titleHindi: 'पहले आम चुनाव',
+    description:
+        'India holds its first general elections (1951–52), with every adult allowed to vote: the largest election the world had seen.',
+    descriptionOdia:
+        'ଭାରତ ଏହାର ପ୍ରଥମ ସାଧାରଣ ନିର୍ବାଚନ (1951–52) କରେ, ଯେଉଁଥିରେ ପ୍ରତ୍ୟେକ ପ୍ରାପ୍ତବୟସ୍କ ଭୋଟ ଦେଇପାରିଲେ — ସେ ସମୟର ବିଶ୍ୱର ସର୍ବବୃହତ ନିର୍ବାଚନ।',
+    descriptionHindi:
+        'भारत ने अपने पहले आम चुनाव (1951–52) कराए, जिसमें हर वयस्क को वोट देने का अधिकार था — उस समय दुनिया का सबसे बड़ा चुनाव।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: 'c. 1966 CE',
+    title: 'Green Revolution',
+    titleOdia: 'ସବୁଜ ବିପ୍ଳବ',
+    titleHindi: 'हरित क्रांति',
+    description:
+        'High-yield seeds, irrigation and fertilisers greatly increase wheat and rice harvests, helping India grow enough food for its people.',
+    descriptionOdia:
+        'ଅଧିକ ଅମଳକ୍ଷମ ବିହନ, ଜଳସେଚନ ଓ ସାର ଗହମ ଓ ଧାନ ଅମଳକୁ ବହୁତ ବଢ଼ାଏ, ଯାହା ଭାରତକୁ ଖାଦ୍ୟରେ ଆତ୍ମନିର୍ଭରଶୀଳ ହେବାରେ ସାହାଯ୍ୟ କରେ।',
+    descriptionHindi:
+        'अधिक उपज वाले बीज, सिंचाई और उर्वरकों ने गेहूँ और चावल की पैदावार बहुत बढ़ाई, जिससे भारत खाद्यान्न में आत्मनिर्भर बना।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '1975 CE',
+    title: 'India\'s First Satellite, Aryabhata',
+    titleOdia: 'ଭାରତର ପ୍ରଥମ ଉପଗ୍ରହ ଆର୍ଯ୍ୟଭଟ୍ଟ',
+    titleHindi: 'भारत का पहला उपग्रह आर्यभट',
+    description:
+        'ISRO\'s first satellite, named after the ancient mathematician Aryabhata, is launched into space.',
+    descriptionOdia:
+        'ପ୍ରାଚୀନ ଗଣିତଜ୍ଞ ଆର୍ଯ୍ୟଭଟ୍ଟଙ୍କ ନାମରେ ନାମିତ ଇସ୍ରୋର ପ୍ରଥମ ଉପଗ୍ରହ ମହାକାଶକୁ ଉତ୍କ୍ଷେପିତ ହୁଏ।',
+    descriptionHindi:
+        'प्राचीन गणितज्ञ आर्यभट के नाम पर इसरो का पहला उपग्रह अंतरिक्ष में प्रक्षेपित किया गया।',
+    era: 'Modern',
+    region: kRegionIndia,
+  ),
+  HistoricalEvent(
+    year: '2023 CE',
+    title: 'Chandrayaan-3 Lands on the Moon',
+    titleOdia: 'ଚନ୍ଦ୍ରଯାନ-3ର ଚନ୍ଦ୍ରରେ ଅବତରଣ',
+    titleHindi: 'चंद्रयान-3 चंद्रमा पर उतरा',
+    description:
+        'India becomes the first country to land a spacecraft near the Moon\'s south pole, and the fourth to land on the Moon at all.',
+    descriptionOdia:
+        'ଚନ୍ଦ୍ରର ଦକ୍ଷିଣ ମେରୁ ନିକଟରେ ମହାକାଶଯାନ ଅବତରଣ କରାଇଥିବା ଭାରତ ପ୍ରଥମ ଦେଶ ଏବଂ ଚନ୍ଦ୍ରରେ ଅବତରଣ କରିଥିବା ଚତୁର୍ଥ ଦେଶ ହୁଏ।',
+    descriptionHindi:
+        'भारत चंद्रमा के दक्षिणी ध्रुव के पास अंतरिक्ष यान उतारने वाला पहला देश और चंद्रमा पर उतरने वाला चौथा देश बना।',
+    era: 'Modern',
+    region: kRegionIndia,
   ),
 ];

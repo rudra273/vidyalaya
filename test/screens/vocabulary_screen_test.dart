@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vidyalaya/data/seed/vocabulary_data.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
 import 'package:vidyalaya/providers/vocabulary_provider.dart';
 import 'package:vidyalaya/screens/learn/vocabulary_screen.dart';
@@ -92,6 +93,24 @@ void main() {
     _allWords = {
       for (final w in container.read(vocabularyIndexProvider).words) w.word.word,
     };
+  });
+
+  group('word of the day', () {
+    testWidgets('card opens on today\'s word, arrows move to more words', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      expect(find.text('WORD OF THE DAY'), findsOneWidget);
+      expect(find.text(wordOfTheDay().word), findsWidgets);
+
+      await tester.tap(find.byTooltip('Next word'));
+      await tester.pumpAndSettle();
+      expect(find.text('MORE WORDS'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Previous word'));
+      await tester.pumpAndSettle();
+      expect(find.text('WORD OF THE DAY'), findsOneWidget);
+    });
   });
 
   group('A-Z jump', () {

@@ -162,4 +162,9 @@ DiagramText _sectionTitle(DiagramSection section) => switch (section) {
     hi: 'विज्ञान',
     or: 'ବିଜ୍ଞାନ',
   ),
+  DiagramSection.math => const DiagramText(
+    en: 'Mathematics',
+    hi: 'गणित',
+    or: 'ଗଣିତ',
+  ),
 };
