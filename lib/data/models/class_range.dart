@@ -30,7 +30,7 @@ const exploreToolClassRanges = <String, ClassRange>{
   'periodic-table': ClassRange(7, 10),
   'vocabulary': ClassRange(3, 10),
   'python': ClassRange(6, 10),
-  'virtual-lab': ClassRange(6, 10),
+  'virtual-lab': ClassRange(5, 10),
   'timeline': ClassRange(5, 10),
 };
 

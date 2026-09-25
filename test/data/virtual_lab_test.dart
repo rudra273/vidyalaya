@@ -12,10 +12,10 @@ LabObservation run(String lab, Map<String, Object> controls) =>
     evaluateLab(lab, controls);
 
 void main() {
-  test('lab is recommended from Class 6', () {
+  test('lab is recommended from Class 5', () {
     final lab = exploreToolClassRanges['virtual-lab']!;
-    expect(lab.fitsAny({5}), isFalse);
-    expect(lab.fitsAny({6}), isTrue);
+    expect(lab.fitsAny({4}), isFalse);
+    expect(lab.fitsAny({5}), isTrue);
     expect(lab.fitsAny({10}), isTrue);
     expect(lab.fitsAny({4, 6}), isTrue);
   });
