@@ -49,6 +49,8 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(harness(const MathFormulasScreen()));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('All classes'));
+    await tester.pumpAndSettle();
     for (final c in formulaCategories) {
       expect(find.text(c.name), findsOneWidget, reason: c.name);
     }

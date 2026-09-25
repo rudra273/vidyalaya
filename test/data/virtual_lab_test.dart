@@ -2,16 +2,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vidyalaya/data/models/virtual_lab.dart';
 import 'package:vidyalaya/data/repositories/user_prefs_repository.dart';
-import 'package:vidyalaya/providers/lab_provider.dart';
+import 'package:vidyalaya/data/models/class_range.dart';
 
 void main() {
-  test('lab is visible for Classes 7 through 12 on every board', () {
-    expect(labAvailableForSelection({6}), isFalse);
-    expect(labAvailableForSelection({7}), isTrue);
-    expect(labAvailableForSelection({10}), isTrue);
-    expect(labAvailableForSelection({12}), isTrue);
-    expect(labAvailableForSelection({13}), isFalse);
-    expect(labAvailableForSelection({6, 7}), isTrue);
+  test('lab is recommended from Class 6', () {
+    final lab = exploreToolClassRanges['virtual-lab']!;
+    expect(lab.fitsAny({5}), isFalse);
+    expect(lab.fitsAny({6}), isTrue);
+    expect(lab.fitsAny({10}), isTrue);
+    expect(lab.fitsAny({4, 6}), isTrue);
   });
 
   test('circuit and indicator observations are deterministic', () {

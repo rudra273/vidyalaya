@@ -168,19 +168,28 @@ Every new formula gets EN/OR/HI title and description, plus a working calculator
 Today the Explore class filter only hides or shows the Science Lab tile. A Class 3 student
 sees trigonometry and Python and can't filter them out.
 
-- [ ] **5.1 Class ranges on content**
+- [x] **5.1 Class ranges on content**
   - Add `minClass` / `maxClass` to `FormulaData` and `InteractiveDiagram` (including the existing 12).
   - Add a class range to each Explore `_Tool`.
-- [ ] **5.2 Filter behaviour**
+- [x] **5.2 Filter behaviour**
   - Explore tiles outside the selected classes move to a collapsed "More tools" section,
     so nothing is hidden completely.
   - Formula categories and formulas: show "For your class" first, then a "Show all classes" toggle.
   - Diagrams list: same pattern.
-- [ ] 🔸 **5.3 Proposed tool ranges** (please confirm)
-  - Math 1–10 · Diagrams 3–10 · Vocabulary 3–10 · Timeline 5–10 · Cosmulator 3–10 ·
-    Periodic Table 7–10 · Python 6–10 · Science Lab 5–10 (after Phase 7 adds labs for
-    younger classes; stays 7+ until then).
-- [ ] **5.4 Tests** for the filtering, including class ranges on formulas and diagrams.
+  - Done as a "My classes / All classes" switch (default My classes) on Diagrams and the
+    Formulas grid. If nothing matches, the screen falls back to everything with a note.
+    Formula search always covers every formula.
+- [x] **5.3 Tool ranges** (confirmed by you)
+  - Math 1–10 · Cosmulator 1–10 · Diagrams 3–10 · Vocabulary 3–10 · Timeline 5–10 ·
+    Science Lab 6–10 · Python 6–10 · Periodic Table 7–10.
+  - Done: `ClassRange` in `lib/data/models/class_range.dart`. The Explore grid shows tools
+    for the selected classes first, and the rest under a collapsed "More tools" section.
+    The old Class 7+ lab gate (`lab_provider.dart` plus a router redirect) was removed so the
+    lab can open from "More tools".
+- [x] **5.3b Diagram and formula ranges** (your rule: suggested lower bounds, every upper
+  bound Class 10, maths diagrams stop at Class 8). Stored as `diagramClassRanges` /
+  `formulaCategoryClassRanges` lookups, so the diagram data files are untouched.
+- [x] **5.4 Tests** for the filtering, including class ranges on formulas and diagrams.
 
 ---
 

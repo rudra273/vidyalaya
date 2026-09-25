@@ -3,17 +3,36 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../data/models/class_range.dart';
 import '../../data/seed/interactive_diagrams_data.dart';
 import '../../providers/regional_language_provider.dart';
+import '../../providers/user_selection_provider.dart';
+import '../../widgets/class_scope_toggle.dart';
 import '../../widgets/regional_language_switch.dart';
 
-class DiagramsScreen extends ConsumerWidget {
+class DiagramsScreen extends ConsumerStatefulWidget {
   const DiagramsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiagramsScreen> createState() => _DiagramsScreenState();
+}
+
+class _DiagramsScreenState extends ConsumerState<DiagramsScreen> {
+  bool _mine = true;
+
+  @override
+  Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(regionalLanguageProvider);
     final language = _diagramLanguage(selectedLanguage);
+    final classes = ref.watch(exploreClassSelectionProvider);
+    final forClasses = interactiveDiagrams
+        .where(
+          (d) => (diagramClassRanges[d.id] ?? ClassRange.all).fitsAny(classes),
+        )
+        .toList(growable: false);
+    // "My classes" with no matches (e.g. Class 1) falls back to everything.
+    final fallback = _mine && forClasses.isEmpty;
+    final visible = _mine && !fallback ? forClasses : interactiveDiagrams;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -23,8 +42,21 @@ class DiagramsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.screenPadding),
         children: [
+          ClassScopeToggle(
+            mine: _mine,
+            showingAllAsFallback: fallback,
+            onChanged: (v) => setState(() => _mine = v),
+          ),
           for (final section in DiagramSection.values)
-            _DiagramSectionRail(section: section, language: language),
+            if (visible.any((d) => d.section == section))
+              _DiagramSectionRail(
+                section: section,
+                diagrams: [
+                  for (final d in visible)
+                    if (d.section == section) d,
+                ],
+                language: language,
+              ),
         ],
       ),
     );
@@ -32,16 +64,18 @@ class DiagramsScreen extends ConsumerWidget {
 }
 
 class _DiagramSectionRail extends StatelessWidget {
-  const _DiagramSectionRail({required this.section, required this.language});
+  const _DiagramSectionRail({
+    required this.section,
+    required this.diagrams,
+    required this.language,
+  });
 
   final DiagramSection section;
+  final List<InteractiveDiagram> diagrams;
   final DiagramLanguage language;
 
   @override
   Widget build(BuildContext context) {
-    final diagrams = interactiveDiagrams
-        .where((diagram) => diagram.section == section)
-        .toList(growable: false);
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: Column(

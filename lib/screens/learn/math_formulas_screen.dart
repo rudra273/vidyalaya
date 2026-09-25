@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/math/formulas/formulas.dart';
+import '../../data/models/class_range.dart';
 import '../../providers/regional_language_provider.dart';
+import '../../providers/user_selection_provider.dart';
+import '../../widgets/class_scope_toggle.dart';
 import '../../widgets/regional_language_switch.dart';
 
 class MathFormulasScreen extends ConsumerStatefulWidget {
@@ -17,6 +20,7 @@ class MathFormulasScreen extends ConsumerStatefulWidget {
 class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
   final _searchController = TextEditingController();
   String _query = '';
+  bool _mine = true;
 
   @override
   void initState() {
@@ -45,6 +49,16 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
     final cs = Theme.of(context).colorScheme;
     final lang = ref.watch(regionalLanguageProvider);
     final isSearching = _query.isNotEmpty;
+    // Search always covers every formula; the class scope only trims the grid.
+    final classes = ref.watch(exploreClassSelectionProvider);
+    final forClasses = formulaCategories
+        .where(
+          (c) => (formulaCategoryClassRanges[c.name] ?? ClassRange.all)
+              .fitsAny(classes),
+        )
+        .toList(growable: false);
+    final fallback = _mine && forClasses.isEmpty;
+    final categories = _mine && !fallback ? forClasses : formulaCategories;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -79,10 +93,19 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
               ),
             ),
           ),
+          if (!isSearching)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ClassScopeToggle(
+                mine: _mine,
+                showingAllAsFallback: fallback,
+                onChanged: (v) => setState(() => _mine = v),
+              ),
+            ),
           Expanded(
             child: isSearching
                 ? _buildSearchResults(lang)
-                : _buildCategoryGrid(context, lang),
+                : _buildCategoryGrid(context, lang, categories),
           ),
         ],
       ),
@@ -107,7 +130,11 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
     );
   }
 
-  Widget _buildCategoryGrid(BuildContext context, RegionalLanguage lang) {
+  Widget _buildCategoryGrid(
+    BuildContext context,
+    RegionalLanguage lang,
+    List<FormulaCategory> categories,
+  ) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -126,9 +153,9 @@ class _MathFormulasScreenState extends ConsumerState<MathFormulasScreen> {
         mainAxisSpacing: 16,
         mainAxisExtent: 178,
       ),
-      itemCount: formulaCategories.length,
+      itemCount: categories.length,
       itemBuilder: (context, index) {
-        final category = formulaCategories[index];
+        final category = categories[index];
         final count = category.formulas.length;
         return GestureDetector(
           onTap: () => context.push(
