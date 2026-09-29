@@ -1,75 +1,59 @@
-# Vidya AI — Release Plan
+# Static content expansion plan
 
-_Phases 1–7 are done, and everything validated. Only Phase 8, the backend Explore Assist
-agent, is left._
+All study content is trilingual (English, Odia, Hindi). UI labels stay English.
+Work top to bottom; tick items as they land.
 
-**Legend:** `[ ]` todo · `[x]` done · 🔸 needs a decision from you before starting
+## 1. Quizzes (`lib/data/quiz/`)
+- [x] Add a **Maths** subject to `QuizSubject` (enum, accent, icon) with banks for all three bands
+- [x] Grow Science banks to ~60 questions per band (primary / middle / secondary)
+- [x] Grow Social Science banks to ~60 questions per band
+- [x] Grow English banks to ~60 questions per band
+- [x] Grow Maths banks to ~60 questions per band
+- [x] Add a Classes 1–2 band (`QuizBand.early`) with starter banks
+- [x] Add an optional `topic` tag to `QuizQuestion` + topic filter on the quiz home
+- [x] New question types: true/false, fill-in-the-blank, match-the-pairs
 
----
+## 0. App size (do before adding diagrams)
+Text content is cheap (all quizzes ≈ 540 KB source, ~0.2% of the APK). The size
+comes from images and fat APKs. Last `app-release.apk`: 105.7 MB.
+- [ ] Convert `assets/diagrams/interactive/` (31 images, 48 MB, mostly 1–3 MB PNGs) to WebP ~80% quality — target ≈ 5–8 MB; update paths in `lib/data/seed/interactive_diagrams*.dart` and check every diagram still renders
+- [ ] Ship with `flutter build appbundle --release` (Play Store) or `flutter build apk --release --split-per-abi` (sideload) instead of a fat APK
+- [ ] Rule for section 5: new diagrams must be WebP (or drawn in code / SVG), never raw PNG
 
-## Ground rules
+## 2. Maths formulas (`lib/data/math/formulas/`)
+- [ ] Geometry: Heron's formula, frustum of a cone, area of a segment, area of a ring
+- [ ] Statistics: median and mode of grouped data
+- [ ] Algebra: sum/product of quadratic roots, consistency of a pair of linear equations
+- [ ] Trigonometry: heights & distances calculator
+- [ ] Physics: Ohm's law, F = ma, Q = mcΔT, mirror & lens formulas, magnification, refractive index, v = fλ
+- [ ] Primary reference cards: divisibility rules, Roman numerals, BODMAS, place value, squares & cubes
+- [ ] New maths tools: clock & money (Classes 1–3), word problems, linear-equation graph plotter
 
-- **Language:** only *study content* switches to Odia/Hindi, via the per-screen
-  `RegionalLanguageSwitch`. App labels, titles, buttons and navigation stay English. Python,
-  the AI hub, Profile, Settings, Timetable and Notes are English-only. Content translations
-  live next to the content as `LocalizedText` (`lib/data/models/localized_text.dart`), with
-  no global string table.
-- **Class ranges:** every Explore tool, diagram and formula category has a `ClassRange` in
-  `lib/data/models/class_range.dart`. Content outside the student's classes is never hidden;
-  it moves under "More tools" or the "All classes" switch. Class ranges are your decision.
-- **Brand:** user-facing name is "Vidya AI"; technical identifiers stay `vidyalaya`.
-- **Git diffs:** don't run `dart format` on whole files that weren't formatted before; keep
-  diffs to the lines that changed.
+## 3. History timeline (`lib/data/history/timeline_data.dart`)
+- [ ] Odisha: Dhauli/Jaugada edicts, Sarala Das, Chaitanya in Puri, Surendra Sai, Laxman Naik, Baji Rout, Prajamandal, Madhusudan Das, Gopabandhu Das
+- [ ] India freedom struggle: Permanent Settlement, Ram Mohan Roy, Lucknow Pact, Simon Commission, Poona Pact, Partition
+- [ ] India post-1947: States Reorganisation, Goa liberation, ISRO, Emergency, 1991 reforms, Pokhran
+- [ ] India earlier: Mahavira, Nalanda, Aryabhata & zero, Cholas, Bhakti movement, Haldighati, Buxar
+- [ ] World: Renaissance, printing press, Scientific Revolution, Industrial Revolution, Chinese Revolution, Internet
+- [ ] 3–5 events each for more states (Bihar, Gujarat, Assam, UP, Rajasthan, …)
+- [ ] Schema: optional `classLevel`, `chapterRef`, key person
 
----
+## 4. Vocabulary (`lib/data/seed/vocabulary/`)
+- [ ] Add ~100 adverbs (only 2 today)
+- [ ] Add difficulty / class band field
+- [ ] Add synonyms & antonyms fields
+- [ ] Optional Odia/Hindi example sentence
+- [ ] New sets: idioms, phrasal verbs, homophones & confused words, one-word substitutions, prefixes & suffixes
+- [ ] Vocabulary quiz / flashcard mode
 
-## References
+## 5. Interactive diagrams (`lib/data/seed/interactive_diagrams*.dart`)
+- [ ] Biology: skeleton, neuron & nervous system, kidney/nephron, tooth, skin, frog & butterfly life cycles, seed germination, mitosis, DNA, amoeba/bacteria
+- [ ] Science: prism & rainbow, electric motor/generator, sound waves, nitrogen & carbon cycles, greenhouse effect, levers
+- [ ] Geography: Odisha rivers/physical map, rivers of India, monsoon winds, atmosphere layers, seasons, eclipses & moon phases, rock cycle, river landforms
+- [ ] Maths: Pythagoras proof, quadrilateral family, symmetry, number line, unit circle
 
-- **Learn Assist (the pattern to mirror):** `lib/data/services/learn_assist_service.dart`
-  (`defaultBaseUrl`, token refresh, 401 retry, SSE streaming) and
-  `test/data/learn_assist_test.dart` (`baseUrl` override in tests).
-- **Markdown/math rendering:** `AiMarkdown`; math is written as `$…$` / `$$…$$`.
-- **Content ids for the `context` object:** formulas use `formulaById`; labs use `labById`
-  (`lib/data/lab/lab_catalog.dart`).
-- **Explore tools:** `lib/screens/explore/explore_screen.dart`, routes in
-  `lib/app/router.dart`, class ranges in `lib/data/models/class_range.dart`.
-
----
-
-## Phase 8 — Backend: new generic "Explore Assist" agent
-
-Today the backend has one agent, **Learn Assist** (`/learnassist/chat`,
-`/learnassist/chat/stream`). It is grounded in books and the syllabus, cites its sources,
-keeps history keyed by `HistorySelector`, and has usage limits.
-
-The new agent answers **generic questions tied to a piece of app content** inside the
-Explore tools, rather than a textbook.
-
-- [ ] **8.1 Backend agent (separate backend repo)**
-  - Proposed endpoints: `POST /exploreassist/chat` and `/exploreassist/chat/stream`.
-  - Request: `board`, `class_no`, `language`, `message`, plus a `context` object:
-    `{ kind: element | formula | diagram_label | timeline_event | vocab_word | lab,
-       id, title, payload }`. The `payload` holds the data already on screen.
-  - Answers are pitched at the student's class, in their language, with no book citations.
-  - Shares auth (Firebase ID token), rate limits and usage accounting with Learn Assist.
-  - Include the math-format rule (`$…$` / `$$…$$`) so answers render with `AiMarkdown`.
-  - 🔸 Decide: separate daily quota, or shared with Learn Assist?
-  - 🔸 Decide: history stored server-side or ephemeral? Recommendation: ephemeral per item.
-- [ ] **8.2 Frontend service + provider**
-  - `explore_assist_service.dart`, mirroring `learn_assist_service.dart`: same `defaultBaseUrl`,
-    token refresh, 401 retry and SSE streaming.
-  - Models `ExploreAssistRequest` / `ExploreAssistContext` in `data/models/`.
-- [ ] **8.3 Shared "Ask about this" bottom sheet**
-  - A context chip, suggested questions, a streaming answer rendered with `AiMarkdown`, and a
-    follow-up box.
-- [ ] **8.4 Wire it into content**
-  - Periodic Table element detail: turn on `_showAskAi` in `periodic_table_screen.dart` and
-    resolve its TODO.
-  - Formula detail ("Explain this formula", "Show a worked example").
-  - Diagram label popups.
-  - Timeline event cards.
-  - Vocabulary word detail ("Use it in a sentence").
-  - Laboratory results ("Why did this happen?").
-- [ ] **8.5 AI Tutor** — currently a read-only preview (Option B). Decide whether the tutor
-  becomes a mode of this agent or a separate agent later.
-- [ ] **8.6 Tests** — service tests with a `baseUrl` override (same pattern as `learn_assist_test.dart`).
+## 6. Python (`lib/data/programming/`)
+- [ ] Interpreter: string methods, dictionaries, tuples, `try`/`except`, `random`
+- [ ] Chapters: string methods, dictionaries & tuples, nested loops, errors, random games
+- [ ] Mini-projects: quiz game, report card, calculator, rock-paper-scissors
+- [ ] "Predict the output" quiz per chapter

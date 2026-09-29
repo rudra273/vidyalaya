@@ -2,11 +2,12 @@ import '../quiz_models.dart';
 
 // ─── Science · Classes 9–10 ───────────────────────────────────────────────────
 
-QuizQuestion _q(Tri p, List<Tri> o, int a, Tri e) =>
-    QuizQuestion.tri(QuizSubject.science, QuizBand.secondary, p, o, a, e);
+const _k = QuizKit(QuizSubject.science, QuizBand.secondary);
+final _q = _k.choice;
 
 final scienceSecondary = <QuizQuestion>[
   _q(
+    'Force & energy',
     (
       'What is the SI unit of work?',
       'କାର୍ଯ୍ୟର SI ଏକକ କଣ?',
@@ -26,6 +27,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Newton’s first law is also called the law of…',
       'ନ୍ୟୁଟନ୍‌ଙ୍କ ପ୍ରଥମ ନିୟମକୁ ମଧ୍ୟ କଣ କହନ୍ତି?',
@@ -45,6 +47,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Which formula gives force?',
       'କେଉଁ ସୂତ୍ର ବଳ ଦିଏ?',
@@ -64,6 +67,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'The value of acceleration due to gravity on Earth is about…',
       'ପୃଥିବୀରେ ଗୁରୁତ୍ୱଜନିତ ତ୍ୱରଣର ମାନ ପ୍ରାୟ କେତେ?',
@@ -83,6 +87,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'The lens used to correct short-sightedness (myopia) is…',
       'ନିକଟଦୃଷ୍ଟି (ମାୟୋପିଆ) ସଂଶୋଧନ ପାଇଁ କେଉଁ ଲେନ୍ସ ବ୍ୟବହୃତ ହୁଏ?',
@@ -102,6 +107,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Ohm’s law relates…',
       'ଓମ୍‌ଙ୍କ ନିୟମ କାହା ମଧ୍ୟରେ ସମ୍ପର୍କ ଦର୍ଶାଏ?',
@@ -121,6 +127,7 @@ final scienceSecondary = <QuizQuestion>[
     ('V = I × R.', 'V = I × R।', 'V = I × R।'),
   ),
   _q(
+    'Matter & materials',
     (
       'What is the atomic number of carbon?',
       'କାର୍ବନର ପରମାଣୁ କ୍ରମାଙ୍କ କେତେ?',
@@ -135,6 +142,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'What is the pH of a neutral solution?',
       'ଏକ ଉଦାସୀନ ଦ୍ରବଣର pH କେତେ?',
@@ -149,6 +157,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which gas is released when zinc reacts with dilute hydrochloric acid?',
       'ଜିଙ୍କ୍ ଲଘୁ ହାଇଡ୍ରୋକ୍ଲୋରିକ୍ ଅମ୍ଳ ସହ ପ୍ରତିକ୍ରିୟା କଲେ କେଉଁ ଗ୍ୟାସ୍ ବାହାରେ?',
@@ -168,6 +177,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which type of reaction is 2H₂ + O₂ → 2H₂O?',
       '2H₂ + O₂ → 2H₂O କେଉଁ ପ୍ରକାର ପ୍ରତିକ୍ରିୟା?',
@@ -187,6 +197,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which is the most reactive metal here?',
       'ଏଠାରେ କେଉଁ ଧାତୁ ସବୁଠାରୁ ସକ୍ରିୟ?',
@@ -206,6 +217,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Which organelle is the “powerhouse of the cell”?',
       'କେଉଁ କୋଷାଙ୍ଗ “କୋଷର ଶକ୍ତିଘର”?',
@@ -225,6 +237,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which hormone controls blood sugar level?',
       'କେଉଁ ହରମୋନ୍ ରକ୍ତରେ ଶର୍କରା ସ୍ତର ନିୟନ୍ତ୍ରଣ କରେ?',
@@ -244,6 +257,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Who is known as the father of genetics?',
       'ବଂଶାଣୁବିଜ୍ଞାନର ପିତା କାହାକୁ କୁହାଯାଏ?',
@@ -263,6 +277,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'The focal length of a lens with a power of +2 D is…',
       '+2 D କ୍ଷମତାର ଲେନ୍ସର ଫୋକାଲ୍ ଦୈର୍ଘ୍ୟ କେତେ?',
@@ -282,6 +297,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Earth & space',
     (
       'Which greenhouse gas is mainly produced by burning fossil fuels?',
       'ଜୀବାଶ୍ମ ଇନ୍ଧନ ଜଳାଇଲେ ମୁଖ୍ୟତଃ କେଉଁ ଗ୍ରୀନ୍‌ହାଉସ୍ ଗ୍ୟାସ୍ ସୃଷ୍ଟି ହୁଏ?',
@@ -301,6 +317,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'The speed of light in vacuum is about…',
       'ଶୂନ୍ୟସ୍ଥାନରେ ଆଲୋକର ବେଗ ପ୍ରାୟ କେତେ?',
@@ -320,6 +337,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which is a covalent compound?',
       'କେଉଁଟି ସହସଂଯୋଜୀ ଯୌଗିକ?',
@@ -339,6 +357,7 @@ final scienceSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'The process by which plants make food using sunlight is…',
       'ସୂର୍ଯ୍ୟାଲୋକ ବ୍ୟବହାର କରି ଉଦ୍ଭିଦ ଖାଦ୍ୟ ତିଆରି କରିବାର ପ୍ରକ୍ରିୟାକୁ କଣ କହନ୍ତି?',

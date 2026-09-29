@@ -2,11 +2,12 @@ import '../quiz_models.dart';
 
 // ─── Social Science · Classes 3–5 ─────────────────────────────────────────────
 
-QuizQuestion _q(Tri p, List<Tri> o, int a, Tri e) =>
-    QuizQuestion.tri(QuizSubject.social, QuizBand.primary, p, o, a, e);
+const _k = QuizKit(QuizSubject.social, QuizBand.primary);
+final _q = _k.choice;
 
 final socialPrimary = <QuizQuestion>[
   _q(
+    'Geography',
     (
       'What is the capital of India?',
       'ଭାରତର ରାଜଧାନୀ କଣ?',
@@ -26,6 +27,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'What is the capital of Odisha?',
       'ଓଡ଼ିଶାର ରାଜଧାନୀ କଣ?',
@@ -45,6 +47,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Who is called the Father of the Nation in India?',
       'ଭାରତରେ କାହାକୁ ରାଷ୍ଟ୍ରପିତା କୁହାଯାଏ?',
@@ -64,6 +67,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'On which date do we celebrate Independence Day?',
       'ଆମେ କେଉଁ ତାରିଖରେ ସ୍ୱାଧୀନତା ଦିବସ ପାଳନ କରୁ?',
@@ -83,6 +87,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'How many colours are there in the Indian flag?',
       'ଭାରତୀୟ ପତାକାରେ କେତୋଟି ରଙ୍ଗ ଅଛି?',
@@ -102,6 +107,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which is the longest river in India?',
       'ଭାରତର ସବୁଠାରୁ ଲମ୍ବା ନଦୀ କେଉଁଟି?',
@@ -121,6 +127,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'The Konark Sun Temple is in which state?',
       'କୋଣାର୍କ ସୂର୍ଯ୍ୟ ମନ୍ଦିର କେଉଁ ରାଜ୍ୟରେ ଅଛି?',
@@ -140,6 +147,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which is the largest state of India by area?',
       'କ୍ଷେତ୍ରଫଳ ଅନୁସାରେ ଭାରତର ସବୁଠାରୁ ବଡ଼ ରାଜ୍ୟ କେଉଁଟି?',
@@ -159,6 +167,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which direction does the Sun rise in?',
       'ସୂର୍ଯ୍ୟ କେଉଁ ଦିଗରେ ଉଦୟ ହୁଏ?',
@@ -178,6 +187,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'Who is the head of a village panchayat?',
       'ଗ୍ରାମ ପଞ୍ଚାୟତର ମୁଖ୍ୟ କିଏ?',
@@ -197,6 +207,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Economy',
     (
       'What do we call a person who grows crops?',
       'ଫସଲ ଚାଷ କରୁଥିବା ବ୍ୟକ୍ତିଙ୍କୁ କଣ କହନ୍ତି?',
@@ -216,6 +227,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'Which festival is called the festival of lights?',
       'କେଉଁ ପର୍ବକୁ ଆଲୋକର ପର୍ବ କୁହାଯାଏ?',
@@ -235,6 +247,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'The Rath Yatra is held in which town of Odisha?',
       'ଓଡ଼ିଶାର କେଉଁ ସହରରେ ରଥଯାତ୍ରା ହୁଏ?',
@@ -254,6 +267,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'Which is the national animal of India?',
       'ଭାରତର ରାଷ୍ଟ୍ରୀୟ ପଶୁ କେଉଁଟି?',
@@ -273,6 +287,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'Which is the national bird of India?',
       'ଭାରତର ରାଷ୍ଟ୍ରୀୟ ପକ୍ଷୀ କେଉଁଟି?',
@@ -292,6 +307,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'What is the tall mountain range in the north of India?',
       'ଭାରତର ଉତ୍ତରରେ ଥିବା ଉଚ୍ଚ ପର୍ବତମାଳାର ନାମ କଣ?',
@@ -311,6 +327,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which lake in Odisha is the largest coastal lagoon in Asia?',
       'ଓଡ଼ିଶାର କେଉଁ ହ୍ରଦ ଏସିଆର ସବୁଠାରୁ ବଡ଼ ଉପକୂଳ ଲଗୁନ୍?',
@@ -330,6 +347,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'Who helps us when we are ill?',
       'ଅସୁସ୍ଥ ହେଲେ କିଏ ଆମକୁ ସାହାଯ୍ୟ କରନ୍ତି?',
@@ -349,6 +367,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'What does a map show us?',
       'ମାନଚିତ୍ର ଆମକୁ କଣ ଦେଖାଏ?',
@@ -368,6 +387,7 @@ final socialPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'The Taj Mahal was built by which emperor?',
       'ତାଜମହଲ କେଉଁ ସମ୍ରାଟ ନିର୍ମାଣ କରିଥିଲେ?',

@@ -2,11 +2,12 @@ import '../quiz_models.dart';
 
 // ─── Science · Classes 3–5 ────────────────────────────────────────────────────
 
-QuizQuestion _q(Tri p, List<Tri> o, int a, Tri e) =>
-    QuizQuestion.tri(QuizSubject.science, QuizBand.primary, p, o, a, e);
+const _k = QuizKit(QuizSubject.science, QuizBand.primary);
+final _q = _k.choice;
 
 final sciencePrimary = <QuizQuestion>[
   _q(
+    'Living world',
     (
       'Which part of a plant absorbs water from the soil?',
       'ଉଦ୍ଭିଦର କେଉଁ ଅଂଶ ମାଟିରୁ ପାଣି ଶୋଷେ?',
@@ -26,6 +27,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Which gas do plants take in to make food?',
       'ଖାଦ୍ୟ ତିଆରି କରିବାକୁ ଉଦ୍ଭିଦ କେଉଁ ଗ୍ୟାସ୍ ନିଏ?',
@@ -45,6 +47,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Which animal gives us milk?',
       'କେଉଁ ପଶୁ ଆମକୁ କ୍ଷୀର ଦିଏ?',
@@ -64,6 +67,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'How many legs does an insect have?',
       'ଏକ କୀଟର କେତୋଟି ପାଦ ଥାଏ?',
@@ -78,6 +82,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which sense organ helps us to see?',
       'କେଉଁ ଇନ୍ଦ୍ରିୟ ଆମକୁ ଦେଖିବାରେ ସାହାଯ୍ୟ କରେ?',
@@ -93,6 +98,7 @@ final sciencePrimary = <QuizQuestion>[
     ('We see with our eyes.', 'ଆମେ ଆଖିରେ ଦେଖୁ।', 'हम आँखों से देखते हैं।'),
   ),
   _q(
+    'Living world',
     (
       'What do we call animals that eat only plants?',
       'କେବଳ ଉଦ୍ଭିଦ ଖାଉଥିବା ପ୍ରାଣୀଙ୍କୁ କଣ କହନ୍ତି?',
@@ -112,6 +118,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Which of these is a source of light?',
       'ଏଥି ମଧ୍ୟରୁ କେଉଁଟି ଆଲୋକର ଉତ୍ସ?',
@@ -131,6 +138,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Water turns into ice at which temperature?',
       'କେଉଁ ତାପମାତ୍ରାରେ ପାଣି ବରଫ ହୁଏ?',
@@ -150,6 +158,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'What is the process of water changing into vapour called?',
       'ପାଣି ବାଷ୍ପରେ ପରିଣତ ହେବାକୁ କଣ କହନ୍ତି?',
@@ -169,6 +178,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Earth & space',
     (
       'Which planet do we live on?',
       'ଆମେ କେଉଁ ଗ୍ରହରେ ବାସ କରୁ?',
@@ -184,6 +194,7 @@ final sciencePrimary = <QuizQuestion>[
     ('We live on Earth.', 'ଆମେ ପୃଥିବୀରେ ବାସ କରୁ।', 'हम पृथ्वी पर रहते हैं।'),
   ),
   _q(
+    'Human body',
     (
       'What do we need to breathe?',
       'ନିଃଶ୍ୱାସ ନେବାକୁ ଆମକୁ କଣ ଦରକାର?',
@@ -203,6 +214,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which food gives us energy to work and play?',
       'କେଉଁ ଖାଦ୍ୟ ଆମକୁ କାମ ଓ ଖେଳିବାକୁ ଶକ୍ତି ଦିଏ?',
@@ -222,6 +234,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which vitamin do we get from sunlight?',
       'ସୂର୍ଯ୍ୟାଲୋକରୁ ଆମେ କେଉଁ ଭିଟାମିନ୍ ପାଉ?',
@@ -241,6 +254,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'A magnet attracts which of these?',
       'ଚୁମ୍ବକ ଏଥି ମଧ୍ୟରୁ କାହାକୁ ଆକର୍ଷଣ କରେ?',
@@ -260,6 +274,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which of these floats on water?',
       'ଏଥି ମଧ୍ୟରୁ କଣ ପାଣିରେ ଭାସେ?',
@@ -279,6 +294,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Earth & space',
     (
       'What is the Earth’s natural satellite?',
       'ପୃଥିବୀର ପ୍ରାକୃତିକ ଉପଗ୍ରହ କଣ?',
@@ -298,6 +314,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Which animal lays eggs?',
       'କେଉଁ ପ୍ରାଣୀ ଅଣ୍ଡା ଦିଏ?',
@@ -317,6 +334,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which sound-making part is in our throat?',
       'ଆମ ଗଳାରେ କେଉଁ ଅଂଶ ଧ୍ୱନି ସୃଷ୍ଟି କରେ?',
@@ -336,6 +354,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'What do we call a house made by birds?',
       'ପକ୍ଷୀ ତିଆରି କରୁଥିବା ଘରକୁ କଣ କହନ୍ତି?',
@@ -355,6 +374,7 @@ final sciencePrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which of these is a solid?',
       'ଏଥି ମଧ୍ୟରୁ କେଉଁଟି କଠିନ?',

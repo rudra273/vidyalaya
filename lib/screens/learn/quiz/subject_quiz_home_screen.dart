@@ -13,7 +13,8 @@ import '../../../widgets/pressable.dart';
 // ─── Subject quiz hub ─────────────────────────────────────────────────────────
 //
 // Pick a class band (defaulting to the student's highest selected class), then
-// a subject. Each row shows the student's best score for that subject + band.
+// a subject, then "All topics" or a single topic. Each row shows the student's
+// best mixed-round score for that subject + band.
 
 Color quizSubjectAccent(BuildContext context, QuizSubject subject) {
   final dark = Theme.of(context).brightness == Brightness.dark;
@@ -21,6 +22,7 @@ Color quizSubjectAccent(BuildContext context, QuizSubject subject) {
     QuizSubject.science => dark ? AppColors.cScienceDark : AppColors.cScience,
     QuizSubject.social => dark ? AppColors.cTimelineDark : AppColors.cTimeline,
     QuizSubject.english => dark ? AppColors.cEnglishDark : AppColors.cEnglish,
+    QuizSubject.maths => dark ? AppColors.cMathsDark : AppColors.cMaths,
   };
 }
 
@@ -28,6 +30,7 @@ IconData quizSubjectIcon(QuizSubject subject) => switch (subject) {
   QuizSubject.science => Icons.science_rounded,
   QuizSubject.social => Icons.public_rounded,
   QuizSubject.english => Icons.menu_book_rounded,
+  QuizSubject.maths => Icons.calculate_rounded,
 };
 
 class SubjectQuizHomeScreen extends ConsumerStatefulWidget {
@@ -46,6 +49,60 @@ class _SubjectQuizHomeScreenState extends ConsumerState<SubjectQuizHomeScreen> {
   void initState() {
     super.initState();
     _band = QuizBand.forClasses(ref.read(exploreClassSelectionProvider));
+  }
+
+  /// Opens a round straight away when the bank has one topic; otherwise asks.
+  Future<void> _pickTopic(QuizSubject subject) async {
+    final base = '/learn/quiz/${subject.name}/${_band.name}';
+    final topics = quizTopics(subject, _band);
+    if (topics.length < 2) {
+      context.push(base);
+      return;
+    }
+    final accent = quizSubjectAccent(context, subject);
+    // `''` stands for "All topics"; `null` means the sheet was dismissed.
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 12),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                '${subject.label} · ${_band.label}',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: AppFontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.shuffle_rounded, color: accent),
+              title: const Text('All topics'),
+              subtitle: const Text('Mixed round · counts for best score'),
+              onTap: () => Navigator.pop(context, ''),
+            ),
+            for (final t in topics)
+              ListTile(
+                leading: Icon(Icons.label_outline_rounded, color: accent),
+                title: Text(t),
+                subtitle: Text(
+                  '${quizBank(subject, _band, topic: t).length} questions',
+                ),
+                onTap: () => Navigator.pop(context, t),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    context.push(
+      picked.isEmpty
+          ? base
+          : '$base?topic=${Uri.encodeQueryComponent(picked)}',
+    );
   }
 
   @override
@@ -98,7 +155,7 @@ class _SubjectQuizHomeScreenState extends ConsumerState<SubjectQuizHomeScreen> {
                 best: progress.bestFor(quizToolId(subject, _band)),
                 onTap: () {
                   Haptics.light(ref);
-                  context.push('/learn/quiz/${subject.name}/${_band.name}');
+                  _pickTopic(subject);
                 },
               ),
             ),

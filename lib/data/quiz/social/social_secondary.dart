@@ -2,11 +2,12 @@ import '../quiz_models.dart';
 
 // ─── Social Science · Classes 9–10 ────────────────────────────────────────────
 
-QuizQuestion _q(Tri p, List<Tri> o, int a, Tri e) =>
-    QuizQuestion.tri(QuizSubject.social, QuizBand.secondary, p, o, a, e);
+const _k = QuizKit(QuizSubject.social, QuizBand.secondary);
+final _q = _k.choice;
 
 final socialSecondary = <QuizQuestion>[
   _q(
+    'History',
     (
       'The French Revolution began in which year?',
       'ଫରାସୀ ବିପ୍ଳବ କେଉଁ ବର୍ଷ ଆରମ୍ଭ ହେଲା?',
@@ -26,6 +27,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Which slogan is linked to the French Revolution?',
       'କେଉଁ ସ୍ଲୋଗାନ୍ ଫରାସୀ ବିପ୍ଳବ ସହ ଜଡ଼ିତ?',
@@ -49,6 +51,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'The Constitution of India came into force on…',
       'ଭାରତର ସମ୍ବିଧାନ କେବେ କାର୍ଯ୍ୟକାରୀ ହେଲା?',
@@ -68,6 +71,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'Who chaired the Drafting Committee of the Constitution?',
       'ସମ୍ବିଧାନର ଖସଡ଼ା କମିଟିର ଅଧ୍ୟକ୍ଷ କିଏ ଥିଲେ?',
@@ -87,6 +91,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'How many Fundamental Rights does the Constitution list today?',
       'ସମ୍ବିଧାନ ବର୍ତ୍ତମାନ କେତୋଟି ମୌଳିକ ଅଧିକାର ତାଲିକାଭୁକ୍ତ କରିଛି?',
@@ -106,6 +111,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     ('The Lok Sabha members are…', 'ଲୋକସଭା ସଦସ୍ୟମାନେ…', 'लोकसभा के सदस्य…'),
     [
       (
@@ -137,6 +143,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Economy',
     (
       'Which sector includes agriculture, mining and fishing?',
       'କେଉଁ କ୍ଷେତ୍ରରେ କୃଷି, ଖଣି ଓ ମାଛଧରା ଅନ୍ତର୍ଭୁକ୍ତ?',
@@ -156,6 +163,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Economy',
     ('GDP stands for…', 'GDP ର ପୂର୍ଣ୍ଣ ରୂପ କଣ?', 'GDP का पूर्ण रूप क्या है?'),
     [
       ('Gross Domestic Product', 'ମୋଟ ଘରୋଇ ଉତ୍ପାଦ', 'सकल घरेलू उत्पाद'),
@@ -171,6 +179,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Which movement is associated with the slogan “Do or Die”?',
       'କେଉଁ ଆନ୍ଦୋଳନ “କରିବା କିମ୍ବା ମରିବା” ସ୍ଲୋଗାନ୍ ସହ ଜଡ଼ିତ?',
@@ -190,6 +199,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'The Tropic of Cancer passes through which Indian state?',
       'କର୍କଟ କ୍ରାନ୍ତି ରେଖା ଭାରତର କେଉଁ ରାଜ୍ୟ ଦେଇ ଗତି କରେ?',
@@ -209,6 +219,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which is the highest peak in India?',
       'ଭାରତର ସର୍ବୋଚ୍ଚ ଶିଖର କେଉଁଟି?',
@@ -228,6 +239,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'The Industrial Revolution first began in which country?',
       'ଶିଳ୍ପ ବିପ୍ଳବ ପ୍ରଥମେ କେଉଁ ଦେଶରେ ଆରମ୍ଭ ହେଲା?',
@@ -247,6 +259,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'Who is the constitutional head of the Indian Union?',
       'ଭାରତୀୟ ସଂଘର ସାମ୍ବିଧାନିକ ମୁଖ୍ୟ କିଏ?',
@@ -266,6 +279,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which crop is known as the “golden fibre”?',
       'କେଉଁ ଫସଲକୁ “ସୁନେଲି ତନ୍ତୁ” କୁହାଯାଏ?',
@@ -285,6 +299,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'Which dynasty built the Lingaraj Temple?',
       'ଲିଙ୍ଗରାଜ ମନ୍ଦିର କେଉଁ ବଂଶର ରାଜାମାନେ ନିର୍ମାଣ କରିଥିଲେ?',
@@ -308,6 +323,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Economy',
     ('What is inflation?', 'ମୁଦ୍ରାସ୍ଫୀତି କଣ?', 'मुद्रास्फीति क्या है?'),
     [
       ('A fall in all prices', 'ସମସ୍ତ ମୂଲ୍ୟରେ ହ୍ରାସ', 'सभी कीमतों में गिरावट'),
@@ -327,6 +343,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Economy',
     (
       'Who is the head of the Reserve Bank of India?',
       'ଭାରତୀୟ ରିଜର୍ଭ ବ୍ୟାଙ୍କର ମୁଖ୍ୟଙ୍କୁ କଣ କୁହାଯାଏ?',
@@ -346,6 +363,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'The two World Wars were fought in…',
       'ଦୁଇଟି ବିଶ୍ୱଯୁଦ୍ଧ କେଉଁ ବର୍ଷରେ ଲଢ଼ାଯାଇଥିଲା?',
@@ -365,6 +383,7 @@ final socialSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'What does a democratic government mean?',
       'ଗଣତାନ୍ତ୍ରିକ ସରକାର ଅର୍ଥ କଣ?',

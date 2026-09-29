@@ -2,17 +2,15 @@ import '../quiz_models.dart';
 
 // ─── English · Classes 6–8 ───
 
-QuizQuestion _q(Tri p, List<String> o, int a, Tri e) => QuizQuestion.tri(
-  QuizSubject.english,
-  QuizBand.middle,
-  p,
-  [for (final s in o) (s, s, s)],
-  a,
-  e,
-);
+const _k = QuizKit(QuizSubject.english, QuizBand.middle);
+
+/// English options read the same in every language.
+QuizQuestion _q(String topic, Tri p, List<String> o, int a, Tri e) =>
+    _k.choice(topic, p, [for (final s in o) (s, s, s)], a, e);
 
 final englishMiddle = <QuizQuestion>[
   _q(
+    'Tenses & voice',
     (
       'Which sentence is in the passive voice?',
       'କେଉଁ ବାକ୍ୟ ଭାବବାଚ୍ୟ (passive voice)ରେ ଅଛି?',
@@ -32,6 +30,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Choose the correct form: If it rains, we ___ at home.',
       'ସଠିକ୍ ରୂପ ବାଛ: If it rains, we ___ at home.',
@@ -46,6 +45,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the synonym of “rapid”?',
       '“rapid” ର ସମାର୍ଥକ ଶବ୍ଦ କଣ?',
@@ -56,6 +56,7 @@ final englishMiddle = <QuizQuestion>[
     ('Rapid means fast.', 'Rapid ର ଅର୍ଥ ଦ୍ରୁତ।', 'Rapid का अर्थ तेज़ है।'),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the antonym of “ancient”?',
       '“ancient” ର ବିପରୀତ ଶବ୍ଦ କଣ?',
@@ -70,6 +71,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Choose the correct preposition: He is good ___ mathematics.',
       'ସଠିକ୍ ପ୍ରିପୋଜିସନ୍ ବାଛ: He is good ___ mathematics.',
@@ -84,6 +86,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which is a compound sentence?',
       'କେଉଁଟି ଯୌଗିକ ବାକ୍ୟ (compound sentence)?',
@@ -103,6 +106,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Identify the adverb: She sang beautifully.',
       'Adverb ଚିହ୍ନାଅ: She sang beautifully.',
@@ -117,6 +121,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Choose the correct past tense: He ___ his homework yesterday.',
       'ସଠିକ୍ ଅତୀତ କାଳ ବାଛ: He ___ his homework yesterday.',
@@ -131,6 +136,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     (
       'Which word is spelt correctly?',
       'କେଉଁ ଶବ୍ଦର ବନାନ ଠିକ୍?',
@@ -145,6 +151,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Idioms & figures',
     (
       'What does the idiom “a piece of cake” mean?',
       '“a piece of cake” ବାକ୍ୟାଂଶର ଅର୍ଥ କଣ?',
@@ -159,6 +166,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     ('Choose the correct sentence.', 'ସଠିକ୍ ବାକ୍ୟ ବାଛ।', 'सही वाक्य चुनें।'),
     [
       'Each of the boys have a pen.',
@@ -174,6 +182,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which word is a conjunction?',
       'କେଉଁ ଶବ୍ଦ ସଂଯୋଜକ (conjunction)?',
@@ -188,6 +197,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Change to indirect speech: He said, “I am tired.”',
       'ପରୋକ୍ଷ କଥନକୁ ବଦଳାଅ: He said, “I am tired.”',
@@ -207,6 +217,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which is the plural of “analysis”?',
       '“analysis” ର ବହୁବଚନ କଣ?',
@@ -221,6 +232,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Idioms & figures',
     (
       'Identify the figure of speech: “The wind whispered.”',
       'ଅଳଙ୍କାର ଚିହ୍ନାଅ: “The wind whispered.”',
@@ -235,6 +247,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Choose the correct article: He is ___ honest man.',
       'ସଠିକ୍ ଆର୍ଟିକିଲ୍ ବାଛ: He is ___ honest man.',
@@ -249,6 +262,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is a synonym of “brave”?',
       '“brave” ର ସମାର୍ଥକ ଶବ୍ଦ କଣ?',
@@ -263,6 +277,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which is a proper noun?',
       'କେଉଁଟି ନାମବାଚକ ସଂଜ୍ଞା (proper noun)?',
@@ -277,6 +292,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Fill in the blank: I have lived here ___ 2015.',
       'ଶୂନ୍ୟସ୍ଥାନ ପୂରଣ କର: I have lived here ___ 2015.',
@@ -291,6 +307,7 @@ final englishMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the meaning of “benevolent”?',
       '“benevolent” ର ଅର୍ଥ କଣ?',

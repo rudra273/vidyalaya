@@ -2,11 +2,12 @@ import '../quiz_models.dart';
 
 // ─── Social Science · Classes 6–8 ─────────────────────────────────────────────
 
-QuizQuestion _q(Tri p, List<Tri> o, int a, Tri e) =>
-    QuizQuestion.tri(QuizSubject.social, QuizBand.middle, p, o, a, e);
+const _k = QuizKit(QuizSubject.social, QuizBand.middle);
+final _q = _k.choice;
 
 final socialMiddle = <QuizQuestion>[
   _q(
+    'History',
     (
       'Which ancient civilisation is known for Harappa and Mohenjo-daro?',
       'ହରପ୍ପା ଓ ମହେଞ୍ଜୋଦାରୋ କେଉଁ ପ୍ରାଚୀନ ସଭ୍ୟତା ସହ ଜଡ଼ିତ?',
@@ -26,6 +27,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Which religion did Ashoka adopt after the Kalinga war?',
       'କଳିଙ୍ଗ ଯୁଦ୍ଧ କେଉଁ ସମ୍ରାଟ ଅଶୋକଙ୍କୁ ବଦଳାଇ ଦେଲା — ସେ କେଉଁ ଧର୍ମ ଗ୍ରହଣ କଲେ?',
@@ -45,6 +47,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'The Kalinga war was fought in which present-day state?',
       'କଳିଙ୍ଗ ଯୁଦ୍ଧ ବର୍ତ୍ତମାନର କେଉଁ ରାଜ୍ୟରେ ହୋଇଥିଲା?',
@@ -64,6 +67,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Who founded the Mauryan empire?',
       'ମୌର୍ଯ୍ୟ ସାମ୍ରାଜ୍ୟର ପ୍ରତିଷ୍ଠାତା କିଏ?',
@@ -83,6 +87,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'The imaginary line that divides the Earth into Northern and Southern Hemispheres is…',
       'ପୃଥିବୀକୁ ଉତ୍ତର ଓ ଦକ୍ଷିଣ ଗୋଲାର୍ଦ୍ଧରେ ବିଭକ୍ତ କରୁଥିବା କାଳ୍ପନିକ ରେଖା କେଉଁଟି?',
@@ -102,6 +107,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which is the largest continent?',
       'ସବୁଠାରୁ ବଡ଼ ମହାଦେଶ କେଉଁଟି?',
@@ -121,6 +127,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which river is called the “Sorrow of Odisha”?',
       'କେଉଁ ନଦୀକୁ “ଓଡ଼ିଶାର ଦୁଃଖ” କୁହାଯାଏ?',
@@ -140,6 +147,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which type of soil is best for growing cotton?',
       'କପା ଚାଷ ପାଇଁ କେଉଁ ମାଟି ସବୁଠାରୁ ଉପଯୁକ୍ତ?',
@@ -159,6 +167,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Our heritage',
     (
       'Who wrote the Indian national anthem?',
       'ଭାରତର ଜାତୀୟ ସଙ୍ଗୀତ କିଏ ଲେଖିଥିଲେ?',
@@ -182,6 +191,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'Who is the head of the state government?',
       'ରାଜ୍ୟ ସରକାରର ମୁଖ୍ୟ କିଏ?',
@@ -201,6 +211,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Civics',
     (
       'At what age can an Indian citizen vote?',
       'ଭାରତୀୟ ନାଗରିକ କେଉଁ ବୟସରେ ଭୋଟ୍ ଦେଇପାରିବ?',
@@ -220,6 +231,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which is the Earth’s layer we live on?',
       'ଆମେ ପୃଥିବୀର କେଉଁ ସ୍ତରରେ ବାସ କରୁ?',
@@ -239,6 +251,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Which Mughal emperor built the Red Fort in Delhi?',
       'ଦିଲ୍ଲୀର ଲାଲକିଲ୍ଲା କେଉଁ ମୁଗଲ ସମ୍ରାଟ ନିର୍ମାଣ କରିଥିଲେ?',
@@ -258,6 +271,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Economy',
     (
       'What is the main occupation of people in Indian villages?',
       'ଭାରତୀୟ ଗ୍ରାମର ଲୋକଙ୍କ ମୁଖ୍ୟ ବୃତ୍ତି କଣ?',
@@ -277,6 +291,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Monsoon winds in India bring rain from which direction mainly?',
       'ଭାରତରେ ମୌସୁମୀ ପବନ ମୁଖ୍ୟତଃ କେଉଁ ଦିଗରୁ ବର୍ଷା ଆଣେ?',
@@ -296,6 +311,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Who was the first Prime Minister of India?',
       'ଭାରତର ପ୍ରଥମ ପ୍ରଧାନମନ୍ତ୍ରୀ କିଏ ଥିଲେ?',
@@ -315,6 +331,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'History',
     (
       'Which movement did Gandhi start in 1930 with the Dandi March?',
       'ଗାନ୍ଧୀ ୧୯୩୦ରେ ଡାଣ୍ଡି ଯାତ୍ରା ସହ କେଉଁ ଆନ୍ଦୋଳନ ଆରମ୍ଭ କଲେ?',
@@ -334,6 +351,7 @@ final socialMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Geography',
     (
       'Which planet is called the “Blue Planet”?',
       'କେଉଁ ଗ୍ରହକୁ “ନୀଳ ଗ୍ରହ” କୁହାଯାଏ?',

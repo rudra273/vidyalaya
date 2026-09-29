@@ -317,7 +317,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const MathFractionsScreen(),
       ),
-      // ── Subject quizzes ──
+      // ── Subject quizzes. `?topic=` narrows a round to one topic. ──
       GoRoute(
         path: '/learn/quiz',
         parentNavigatorKey: _rootNavigatorKey,
@@ -334,6 +334,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => SubjectQuizScreen(
           subject: _quizSubject(state.pathParameters['subject'])!,
           band: _quizBand(state.pathParameters['band'])!,
+          topic: state.uri.queryParameters['topic'],
         ),
       ),
       // ── Brain games (Home "Games" tile). `?daily=1` plays today's challenge.
