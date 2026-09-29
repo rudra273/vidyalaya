@@ -10,7 +10,7 @@ const remainingInteractiveDiagrams = [
       hi: 'बाहरी कान से भीतरी कान तक ध्वनि की यात्रा को समझें।',
       or: 'ବାହ୍ୟ କାନରୁ ଅନ୍ତଃକର୍ଣ୍ଣ ପର୍ଯ୍ୟନ୍ତ ଶବ୍ଦର ଯାତ୍ରାକୁ ବୁଝନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/human_ear.png',
+    imagePath: 'assets/diagrams/interactive/human_ear.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -82,7 +82,7 @@ const remainingInteractiveDiagrams = [
       hi: 'मानव मस्तिष्क के तीन प्रमुख भागों को जानें।',
       or: 'ମାନବ ମସ୍ତିଷ୍କର ତିନିଟି ପ୍ରମୁଖ ଅଂଶକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/human_brain.png',
+    imagePath: 'assets/diagrams/interactive/human_brain.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -138,7 +138,7 @@ const remainingInteractiveDiagrams = [
       hi: 'मूत्र तंत्र में मूत्र बनने और बाहर निकलने की प्रक्रिया को समझें।',
       or: 'ମୂତ୍ରତନ୍ତ୍ରରେ ମୂତ୍ର ଗଠନ ଓ ନିଷ୍କାସନ ପ୍ରକ୍ରିୟାକୁ ବୁଝନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/excretory_system.png',
+    imagePath: 'assets/diagrams/interactive/excretory_system.webp',
     aspectRatio: 2 / 3,
     labels: [
       InteractiveDiagramLabel(
@@ -206,7 +206,7 @@ const remainingInteractiveDiagrams = [
       hi: 'ओडिशा के 30 जिलों और दो प्रमुख जल विशेषताओं को जानें।',
       or: 'ଓଡ଼ିଶାର ୩୦ଟି ଜିଲ୍ଲା ଓ ଦୁଇଟି ପ୍ରମୁଖ ଜଳ ବୈଶିଷ୍ଟ୍ୟକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/odisha_districts.png',
+    imagePath: 'assets/diagrams/interactive/odisha_districts.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -276,7 +276,7 @@ const remainingInteractiveDiagrams = [
       hi: 'पृथ्वी पर स्थान खोजने के लिए उपयोग की जाने वाली काल्पनिक रेखाओं को जानें।',
       or: 'ପୃଥିବୀରେ ସ୍ଥାନ ନିର୍ଣ୍ଣୟ ପାଇଁ ବ୍ୟବହୃତ କାଳ୍ପନିକ ରେଖାଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/latitudes_longitudes.png',
+    imagePath: 'assets/diagrams/interactive/latitudes_longitudes.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -370,7 +370,7 @@ const remainingInteractiveDiagrams = [
       hi: 'सूर्य, आठ ग्रहों और क्षुद्रग्रह पट्टी को क्रम से जानें।',
       or: 'ସୂର୍ଯ୍ୟ, ଆଠଟି ଗ୍ରହ ଓ ଗ୍ରହାଣୁ ବଳୟକୁ କ୍ରମରେ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/solar_system.png',
+    imagePath: 'assets/diagrams/interactive/solar_system.webp',
     aspectRatio: 3,
     labels: [
       InteractiveDiagramLabel(
@@ -492,7 +492,7 @@ const remainingInteractiveDiagrams = [
       hi: 'मिट्टी की सतह से आधार शैल तक की परतों को जानें।',
       or: 'ମାଟି ପୃଷ୍ଠରୁ ଶିଳାସ୍ତର ପର୍ଯ୍ୟନ୍ତ ଥିବା ସ୍ତରଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/soil_profile.png',
+    imagePath: 'assets/diagrams/interactive/soil_profile.webp',
     aspectRatio: 2 / 3,
     labels: [
       InteractiveDiagramLabel(
@@ -550,7 +550,7 @@ const remainingInteractiveDiagrams = [
       hi: 'उत्तल और अवतल लेंस समानांतर प्रकाश किरणों को कैसे मोड़ते हैं, इसकी तुलना करें।',
       or: 'ଉତ୍ତଳ ଓ ଅବତଳ ଲେନ୍ସ ସମାନ୍ତର ଆଲୋକ ରଶ୍ମିକୁ କିପରି ବଙ୍କା କରେ ତାହା ତୁଳନା କରନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/lens_refraction.png',
+    imagePath: 'assets/diagrams/interactive/lens_refraction.webp',
     aspectRatio: 2.5,
     labels: [
       InteractiveDiagramLabel(
@@ -624,7 +624,7 @@ const remainingInteractiveDiagrams = [
       hi: 'दंड चुंबक के चारों ओर चुंबकीय क्षेत्र को जानें।',
       or: 'ଦଣ୍ଡ ଚୁମ୍ବକ ଚାରିପାଖର ଚୁମ୍ବକୀୟ କ୍ଷେତ୍ରକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/magnetic_field.png',
+    imagePath: 'assets/diagrams/interactive/magnetic_field.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -694,7 +694,7 @@ const remainingInteractiveDiagrams = [
       hi: 'उत्तोलक, चरखी और नत तल की तुलना करें।',
       or: 'ଲିଭର୍, ପୁଲି ଓ ଆନତ ତଳକୁ ତୁଳନା କରନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/simple_machines.png',
+    imagePath: 'assets/diagrams/interactive/simple_machines.webp',
     aspectRatio: 2.4,
     labels: [
       InteractiveDiagramLabel(
@@ -772,7 +772,7 @@ const remainingInteractiveDiagrams = [
       hi: 'सामान्य कोणों और भुजाओं के आधार पर त्रिभुजों की तुलना करें।',
       or: 'ସାଧାରଣ କୋଣ ଓ ବାହୁ ଅନୁଯାୟୀ ତ୍ରିଭୁଜଗୁଡ଼ିକୁ ତୁଳନା କରନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/angles_triangles.png',
+    imagePath: 'assets/diagrams/interactive/angles_triangles.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -866,7 +866,7 @@ const remainingInteractiveDiagrams = [
       hi: 'वृत्त का वर्णन करने वाली रेखाओं, क्षेत्रों और बिंदुओं को जानें।',
       or: 'ବୃତ୍ତକୁ ବର୍ଣ୍ଣନା କରୁଥିବା ରେଖା, କ୍ଷେତ୍ର ଓ ବିନ୍ଦୁଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/circle_parts.png',
+    imagePath: 'assets/diagrams/interactive/circle_parts.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -954,7 +954,7 @@ const remainingInteractiveDiagrams = [
       hi: 'सामान्य ठोसों की तुलना करें और उनके फलक, किनारे व शीर्ष पहचानें।',
       or: 'ସାଧାରଣ ଘନବସ୍ତୁକୁ ତୁଳନା କରି ସେମାନଙ୍କ ପୃଷ୍ଠ, ଧାର ଓ ଶୀର୍ଷ ଚିହ୍ନନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/solid_shapes.png',
+    imagePath: 'assets/diagrams/interactive/solid_shapes.webp',
     aspectRatio: 3,
     labels: [
       InteractiveDiagramLabel(

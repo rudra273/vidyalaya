@@ -16,9 +16,9 @@ Work top to bottom; tick items as they land.
 ## 0. App size (do before adding diagrams)
 Text content is cheap (all quizzes ≈ 540 KB source, ~0.2% of the APK). The size
 comes from images and fat APKs. Last `app-release.apk`: 105.7 MB.
-- [ ] Convert `assets/diagrams/interactive/` (31 images, 48 MB, mostly 1–3 MB PNGs) to WebP ~80% quality — target ≈ 5–8 MB; update paths in `lib/data/seed/interactive_diagrams*.dart` and check every diagram still renders
+- [x] Convert `assets/diagrams/interactive/` (31 images, 48 MB, mostly 1–3 MB PNGs) to WebP ~80% quality — target ≈ 5–8 MB; update paths in `lib/data/seed/interactive_diagrams*.dart` and check every diagram still renders
 - [ ] Ship with `flutter build appbundle --release` (Play Store) or `flutter build apk --release --split-per-abi` (sideload) instead of a fat APK
-- [ ] Rule for section 5: new diagrams must be WebP (or drawn in code / SVG), never raw PNG
+- [x] Rule for section 5: new diagrams must be WebP (or drawn in code / SVG), never raw PNG
 
 ## 2. Maths formulas (`lib/data/math/formulas/`)
 - [ ] Geometry: Heron's formula, frustum of a cone, area of a segment, area of a ring
