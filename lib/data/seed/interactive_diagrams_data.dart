@@ -64,7 +64,7 @@ const interactiveDiagrams = [
       hi: 'जंतु कोशिका के मुख्य भागों को जानें।',
       or: 'ପ୍ରାଣୀ କୋଷର ମୁଖ୍ୟ ଅଂଶଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/animal_cell.jpg',
+    imagePath: 'assets/diagrams/interactive/animal_cell.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -178,7 +178,7 @@ const interactiveDiagrams = [
       hi: 'पादप कोशिका की मुख्य संरचनाओं को जानें।',
       or: 'ଉଦ୍ଭିଦ କୋଷର ମୁଖ୍ୟ ଗଠନଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/plant_cell.png',
+    imagePath: 'assets/diagrams/interactive/plant_cell.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -286,7 +286,7 @@ const interactiveDiagrams = [
       hi: 'फूल के प्रजनन और सुरक्षात्मक भागों को जानें।',
       or: 'ଫୁଲର ପ୍ରଜନନ ଓ ସୁରକ୍ଷାକାରୀ ଅଂଶଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/flower_parts.png',
+    imagePath: 'assets/diagrams/interactive/flower_parts.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -394,7 +394,7 @@ const interactiveDiagrams = [
       hi: 'पत्ती के बाहरी भागों और रंध्रों को जानें।',
       or: 'ପତ୍ରର ବାହ୍ୟ ଅଂଶ ଓ ପତ୍ରରନ୍ଧ୍ରକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/leaf_structure.png',
+    imagePath: 'assets/diagrams/interactive/leaf_structure.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -458,7 +458,7 @@ const interactiveDiagrams = [
       hi: 'मानव नेत्र की मुख्य संरचनाओं से होकर प्रकाश की यात्रा को समझें।',
       or: 'ମାନବ ଚକ୍ଷୁର ମୁଖ୍ୟ ଗଠନ ମଧ୍ୟରେ ଆଲୋକର ଯାତ୍ରାକୁ ବୁଝନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/human_eye.png',
+    imagePath: 'assets/diagrams/interactive/human_eye.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -540,7 +540,7 @@ const interactiveDiagrams = [
       hi: 'मानव श्वसन तंत्र में वायु के मार्ग को समझें।',
       or: 'ମାନବ ଶ୍ୱସନ ତନ୍ତ୍ରରେ ବାୟୁର ଗତିପଥକୁ ବୁଝନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/respiratory_system.png',
+    imagePath: 'assets/diagrams/interactive/respiratory_system.webp',
     aspectRatio: 2 / 3,
     labels: [
       InteractiveDiagramLabel(
@@ -614,7 +614,7 @@ const interactiveDiagrams = [
       hi: 'पृथ्वी और वायुमंडल में जल की यात्रा को समझें।',
       or: 'ପୃଥିବୀ ଓ ବାୟୁମଣ୍ଡଳରେ ଜଳର ଯାତ୍ରାକୁ ବୁଝନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/water_cycle.jpg',
+    imagePath: 'assets/diagrams/interactive/water_cycle.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -714,7 +714,7 @@ const interactiveDiagrams = [
       hi: 'सूर्य से जीवों तक ऊर्जा के प्रवाह को समझें।',
       or: 'ସୂର୍ଯ୍ୟରୁ ଜୀବମାନଙ୍କ ମଧ୍ୟରେ ଶକ୍ତିର ପ୍ରବାହକୁ ବୁଝନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/food_chain.png',
+    imagePath: 'assets/diagrams/interactive/food_chain.webp',
     aspectRatio: 2.6667,
     labels: [
       InteractiveDiagramLabel(
@@ -792,7 +792,7 @@ const interactiveDiagrams = [
       hi: 'जानें कि भोजन पाचन तंत्र से कैसे गुजरता है।',
       or: 'ଖାଦ୍ୟ ପାଚନ ତନ୍ତ୍ର ମଧ୍ୟରେ କିପରି ଯାଏ ତାହା ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/human_digestive_system.png',
+    imagePath: 'assets/diagrams/interactive/human_digestive_system.webp',
     aspectRatio: 0.6667,
     labels: [
       InteractiveDiagramLabel(
@@ -898,7 +898,7 @@ const interactiveDiagrams = [
       hi: 'हृदय के कक्षों और प्रमुख रक्त वाहिकाओं को जानें।',
       or: 'ହୃତ୍‌ପିଣ୍ଡର ପ୍ରକୋଷ୍ଠ ଓ ମୁଖ୍ୟ ରକ୍ତନଳୀଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/human_heart.png',
+    imagePath: 'assets/diagrams/interactive/human_heart.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -1016,7 +1016,7 @@ const interactiveDiagrams = [
       hi: 'देखें कि पौधे प्रकाश, जल और कार्बन डाइऑक्साइड से भोजन कैसे बनाते हैं।',
       or: 'ଉଦ୍ଭିଦ ଆଲୋକ, ଜଳ ଓ ଅଙ୍ଗାରକାମ୍ଳରୁ ଖାଦ୍ୟ କିପରି ତିଆରି କରେ ଦେଖନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/photosynthesis.png',
+    imagePath: 'assets/diagrams/interactive/photosynthesis.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -1102,7 +1102,7 @@ const interactiveDiagrams = [
       hi: 'भारत के चुनिंदा राज्यों, राजधानियों और प्रमुख नदियों को जानें।',
       or: 'ଭାରତର ଚୟନିତ ରାଜ୍ୟ, ରାଜଧାନୀ ଓ ପ୍ରମୁଖ ନଦୀଗୁଡ଼ିକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/india_states_map.png',
+    imagePath: 'assets/diagrams/interactive/india_states_map.webp',
     aspectRatio: 2 / 3,
     labels: [
       InteractiveDiagramLabel(
@@ -1240,7 +1240,7 @@ const interactiveDiagrams = [
       hi: 'पृथ्वी की पतली भूपर्पटी से गर्म आंतरिक क्रोड तक जाएँ।',
       or: 'ପୃଥିବୀର ପତଳା ଭୂତ୍ୱକରୁ ଉତ୍ତପ୍ତ ଅନ୍ତଃକେନ୍ଦ୍ର ପର୍ଯ୍ୟନ୍ତ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/earth_layers.png',
+    imagePath: 'assets/diagrams/interactive/earth_layers.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -1306,7 +1306,7 @@ const interactiveDiagrams = [
       hi: 'मैग्मा कक्ष से क्रेटर तक ज्वालामुखी के अंदर देखें।',
       or: 'ମ୍ୟାଗ୍ମା ପ୍ରକୋଷ୍ଠରୁ ଜ୍ୱାଳାମୁଖ ପର୍ଯ୍ୟନ୍ତ ଆଗ୍ନେୟଗିରି ଭିତରକୁ ଦେଖନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/volcano.png',
+    imagePath: 'assets/diagrams/interactive/volcano.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -1406,7 +1406,7 @@ const interactiveDiagrams = [
       hi: 'एक पूर्ण परिपथ में विद्युत धारा का मार्ग देखें।',
       or: 'ଏକ ସମ୍ପୂର୍ଣ୍ଣ ପରିପଥରେ ବିଦ୍ୟୁତ ପ୍ରବାହର ପଥ ଦେଖନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/electric_circuit.png',
+    imagePath: 'assets/diagrams/interactive/electric_circuit.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -1490,7 +1490,7 @@ const interactiveDiagrams = [
       hi: 'परमाणु के नाभिक, कणों और इलेक्ट्रॉन कोशों को जानें।',
       or: 'ପରମାଣୁର ନ୍ୟୁକ୍ଲିୟସ୍, କଣିକା ଓ ଇଲେକ୍ଟ୍ରନ୍ କକ୍ଷକୁ ଜାଣନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/atom_structure.png',
+    imagePath: 'assets/diagrams/interactive/atom_structure.webp',
     aspectRatio: 1,
     labels: [
       InteractiveDiagramLabel(
@@ -1562,7 +1562,7 @@ const interactiveDiagrams = [
       hi: 'समतल दर्पण पर आपतित और परावर्तित किरणों की तुलना करें।',
       or: 'ସମତଳ ଦର୍ପଣରେ ଆପତିତ ଓ ପ୍ରତିଫଳିତ ରଶ୍ମିକୁ ତୁଳନା କରନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/reflection_light.png',
+    imagePath: 'assets/diagrams/interactive/reflection_light.webp',
     aspectRatio: 1.5,
     labels: [
       InteractiveDiagramLabel(
@@ -1646,7 +1646,7 @@ const interactiveDiagrams = [
       hi: 'ठोस, द्रव और गैस में कणों की व्यवस्था की तुलना करें।',
       or: 'କଠିନ, ତରଳ ଓ ଗ୍ୟାସରେ କଣିକାର ବ୍ୟବସ୍ଥାକୁ ତୁଳନା କରନ୍ତୁ।',
     ),
-    imagePath: 'assets/diagrams/interactive/states_of_matter.png',
+    imagePath: 'assets/diagrams/interactive/states_of_matter.webp',
     aspectRatio: 2,
     labels: [
       InteractiveDiagramLabel(

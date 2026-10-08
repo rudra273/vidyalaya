@@ -2,17 +2,15 @@ import '../quiz_models.dart';
 
 // ─── English · Classes 9–10 ───
 
-QuizQuestion _q(Tri p, List<String> o, int a, Tri e) => QuizQuestion.tri(
-  QuizSubject.english,
-  QuizBand.secondary,
-  p,
-  [for (final s in o) (s, s, s)],
-  a,
-  e,
-);
+const _k = QuizKit(QuizSubject.english, QuizBand.secondary);
+
+/// English options read the same in every language.
+QuizQuestion _q(String topic, Tri p, List<String> o, int a, Tri e) =>
+    _k.choice(topic, p, [for (final s in o) (s, s, s)], a, e);
 
 final englishSecondary = <QuizQuestion>[
   _q(
+    'Grammar',
     ('Choose the correct sentence.', 'ସଠିକ୍ ବାକ୍ୟ ବାଛ।', 'सही वाक्य चुनें।'),
     [
       'Neither of them are coming.',
@@ -28,6 +26,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which sentence uses the subjunctive mood correctly?',
       'କେଉଁ ବାକ୍ୟ ସବଜଙ୍କ୍ଟିଭ୍ ମୁଡ୍ ଠିକ୍ ଭାବେ ବ୍ୟବହାର କରିଛି?',
@@ -47,6 +46,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Choose the correct reported speech: She said, “I will call you tomorrow.”',
       'ପରୋକ୍ଷ କଥନ ବାଛ: She said, “I will call you tomorrow.”',
@@ -66,6 +66,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the meaning of “ubiquitous”?',
       '“ubiquitous” ର ଅର୍ଥ କଣ?',
@@ -80,6 +81,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Idioms & figures',
     (
       'Identify the figure of speech: “Life is a journey.”',
       'ଅଳଙ୍କାର ଚିହ୍ନାଅ: “Life is a journey.”',
@@ -94,6 +96,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Which is the correct passive form of “They are building a bridge”?',
       '“They are building a bridge” ର ସଠିକ୍ ପ୍ୟାସିଭ୍ ରୂପ କେଉଁଟି?',
@@ -113,6 +116,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'Choose the word closest in meaning to “ephemeral”.',
       '“ephemeral” ର ସବୁଠାରୁ ପାଖ ଅର୍ଥର ଶବ୍ଦ ବାଛ।',
@@ -127,6 +131,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Fill in the blank: Hardly ___ the station when the train left.',
       'ଶୂନ୍ୟସ୍ଥାନ ପୂରଣ କର: Hardly ___ the station when the train left.',
@@ -141,6 +146,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which sentence contains a dangling modifier?',
       'କେଉଁ ବାକ୍ୟରେ ଡେଙ୍ଗଲିଂ ମଡିଫାୟର୍ ଅଛି?',
@@ -160,6 +166,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the antonym of “verbose”?',
       '“verbose” ର ବିପରୀତ ଶବ୍ଦ କଣ?',
@@ -174,6 +181,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     ('Choose the correct sentence.', 'ସଠିକ୍ ବାକ୍ୟ ବାଛ।', 'सही वाक्य चुनें।'),
     [
       'The team have won its match.',
@@ -189,6 +197,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'Which word is a homophone of “knight”?',
       '“knight” ର homophone କେଉଁଟି?',
@@ -203,6 +212,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     (
       'Which is the correct use of the semicolon?',
       'ସେମିକୋଲନ୍‌ର ସଠିକ୍ ବ୍ୟବହାର କେଉଁଟି?',
@@ -222,6 +232,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'Choose the correct word: The doctor’s advice had a great ___ on him.',
       'ସଠିକ୍ ଶବ୍ଦ ବାଛ: The doctor’s advice had a great ___ on him.',
@@ -236,6 +247,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Idioms & figures',
     (
       'What does the idiom “break the ice” mean?',
       '“break the ice” ବାକ୍ୟାଂଶର ଅର୍ଥ କଣ?',
@@ -255,6 +267,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Identify the tense: “By next June, she will have finished her course.”',
       'କାଳ ଚିହ୍ନାଅ: “By next June, she will have finished her course.”',
@@ -269,6 +282,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Choose the correct pair: “Either … ___”',
       'ସଠିକ୍ ଯୋଡ଼ି ବାଛ: “Either … ___”',
@@ -283,6 +297,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Idioms & figures',
     (
       'Which word is an example of onomatopoeia?',
       'କେଉଁ ଶବ୍ଦ ଅନୋମାଟୋପିଆର ଉଦାହରଣ?',
@@ -297,6 +312,7 @@ final englishSecondary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     (
       'Choose the sentence with correct punctuation.',
       'ସଠିକ୍ ବିରାମ ଚିହ୍ନ ଥିବା ବାକ୍ୟ ବାଛ।',

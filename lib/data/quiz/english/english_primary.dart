@@ -2,17 +2,15 @@ import '../quiz_models.dart';
 
 // ─── English · Classes 3–5 ───
 
-QuizQuestion _q(Tri p, List<String> o, int a, Tri e) => QuizQuestion.tri(
-  QuizSubject.english,
-  QuizBand.primary,
-  p,
-  [for (final s in o) (s, s, s)],
-  a,
-  e,
-);
+const _k = QuizKit(QuizSubject.english, QuizBand.primary);
+
+/// English options read the same in every language.
+QuizQuestion _q(String topic, Tri p, List<String> o, int a, Tri e) =>
+    _k.choice(topic, p, [for (final s in o) (s, s, s)], a, e);
 
 final englishPrimary = <QuizQuestion>[
   _q(
+    'Grammar',
     (
       'Choose the correct article: ___ apple a day keeps the doctor away.',
       'ସଠିକ୍ ଆର୍ଟିକିଲ୍ ବାଛ: ___ apple a day keeps the doctor away.',
@@ -27,6 +25,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which word is a noun?',
       'କେଉଁ ଶବ୍ଦଟି ବିଶେଷ୍ୟ (noun)?',
@@ -41,6 +40,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which word is a verb?',
       'କେଉଁ ଶବ୍ଦଟି କ୍ରିୟା (verb)?',
@@ -55,6 +55,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Choose the plural of “child”.',
       '“child” ର ବହୁବଚନ ବାଛ।',
@@ -69,6 +70,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'Choose the opposite of “hot”.',
       '“hot” ର ବିପରୀତ ଶବ୍ଦ ବାଛ।',
@@ -83,6 +85,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Fill in the blank: She ___ to school every day.',
       'ଶୂନ୍ୟସ୍ଥାନ ପୂରଣ କର: She ___ to school every day.',
@@ -97,6 +100,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which sentence is correct?',
       'କେଉଁ ବାକ୍ୟଟି ଠିକ୍?',
@@ -111,6 +115,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Choose the past tense of “play”.',
       '“play” ର ଅତୀତ କାଳ ରୂପ ବାଛ।',
@@ -125,6 +130,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the synonym of “big”?',
       '“big” ର ସମାର୍ଥକ ଶବ୍ଦ କଣ?',
@@ -139,6 +145,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which word is an adjective?',
       'କେଉଁ ଶବ୍ଦଟି ବିଶେଷଣ (adjective)?',
@@ -153,6 +160,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     ('Choose the correct spelling.', 'ସଠିକ୍ ବନାନ ବାଛ।', 'सही वर्तनी चुनें।'),
     ['Freind', 'Friend', 'Frend', 'Firend'],
     1,
@@ -163,6 +171,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     (
       'Which punctuation mark ends a question?',
       'କେଉଁ ଚିହ୍ନ ପ୍ରଶ୍ନ ଶେଷରେ ବସେ?',
@@ -177,6 +186,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Fill in the blank: The cat is sitting ___ the table.',
       'ଶୂନ୍ୟସ୍ଥାନ ପୂରଣ କର: The cat is sitting ___ the table.',
@@ -191,6 +201,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Which is a pronoun?',
       'କେଉଁଟି ସର୍ବନାମ (pronoun)?',
@@ -205,6 +216,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Grammar',
     (
       'Choose the plural of “box”.',
       '“box” ର ବହୁବଚନ ବାଛ।',
@@ -219,6 +231,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'What is the opposite of “up”?',
       '“up” ର ବିପରୀତ ଶବ୍ଦ କଣ?',
@@ -233,6 +246,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     (
       'Which word starts with a vowel?',
       'କେଉଁ ଶବ୍ଦ ସ୍ୱରବର୍ଣ୍ଣରେ ଆରମ୍ଭ ହୁଏ?',
@@ -247,6 +261,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Tenses & voice',
     (
       'Fill in the blank: I ___ a book now.',
       'ଶୂନ୍ୟସ୍ଥାନ ପୂରଣ କର: I ___ a book now.',
@@ -261,6 +276,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Punctuation & spelling',
     (
       'Which sentence starts with a capital letter correctly?',
       'କେଉଁ ବାକ୍ୟ ବଡ଼ ଅକ୍ଷରରେ ଠିକ୍ ଭାବେ ଆରମ୍ଭ?',
@@ -280,6 +296,7 @@ final englishPrimary = <QuizQuestion>[
     ),
   ),
   _q(
+    'Vocabulary',
     (
       'How many days are in a week?',
       'ଏକ ସପ୍ତାହରେ କେତେ ଦିନ?',

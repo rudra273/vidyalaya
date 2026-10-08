@@ -133,7 +133,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               content: 'We keep your account, profile, and conversation history for as long as your account is active. You can:\n\n'
                        '• Edit your profile details at any time from the Profile screen.\n'
                        '• Sign out to stop syncing data to your account.\n'
-                       '• Request deletion of your account and associated data by contacting us at the email below.',
+                       '• Request deletion of your account and associated data at https://rosmox.com/products/vidyakalp/delete-account (also available from Settings → Delete account), or by contacting us at the email below. We delete your account and all associated data within 30 days of your request.',
             ),
 
             _buildSection(

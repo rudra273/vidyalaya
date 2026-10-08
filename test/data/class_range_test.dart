@@ -19,8 +19,8 @@ void main() {
     expect(r.fitsAny(const <int>{}), isFalse);
   });
 
-  test('Class 1 gets Math and Cosmulator up front', () {
-    expect(toolsFor({1}), {'math', 'cosmulator'});
+  test('Class 1 gets Math, Cosmulator and Quiz up front', () {
+    expect(toolsFor({1}), {'math', 'cosmulator', 'quiz'});
   });
 
   test('Class 6 gets the lab and Python but not the periodic table', () {

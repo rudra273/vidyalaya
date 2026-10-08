@@ -2,11 +2,12 @@ import '../quiz_models.dart';
 
 // ─── Science · Classes 6–8 ────────────────────────────────────────────────────
 
-QuizQuestion _q(Tri p, List<Tri> o, int a, Tri e) =>
-    QuizQuestion.tri(QuizSubject.science, QuizBand.middle, p, o, a, e);
+const _k = QuizKit(QuizSubject.science, QuizBand.middle);
+final _q = _k.choice;
 
 final scienceMiddle = <QuizQuestion>[
   _q(
+    'Living world',
     (
       'What is the basic unit of life?',
       'ଜୀବନର ମୌଳିକ ଏକକ କଣ?',
@@ -26,6 +27,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Which part of the cell controls its activities?',
       'କୋଷର କେଉଁ ଅଂଶ ଏହାର କାର୍ଯ୍ୟ ନିୟନ୍ତ୍ରଣ କରେ?',
@@ -45,6 +47,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'Which pigment makes leaves green?',
       'କେଉଁ ରଞ୍ଜକ ପତ୍ରକୁ ସବୁଜ କରେ?',
@@ -64,6 +67,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which of these is a mixture?',
       'ଏଥି ମଧ୍ୟରୁ କେଉଁଟି ମିଶ୍ରଣ?',
@@ -83,6 +87,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which method separates salt from sea water?',
       'ସମୁଦ୍ର ଜଳରୁ ଲୁଣ ଅଲଗା କରିବାର ପଦ୍ଧତି କେଉଁଟି?',
@@ -102,6 +107,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     ('Which is the unit of force?', 'ବଳର ଏକକ କେଉଁଟି?', 'बल की इकाई कौन-सी है?'),
     [
       ('Newton', 'ନ୍ୟୁଟନ୍', 'न्यूटन'),
@@ -117,6 +123,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Sound cannot travel through which of these?',
       'ଧ୍ୱନି ଏଥିମଧ୍ୟରୁ କେଉଁଥିରେ ଯାଇପାରେ ନାହିଁ?',
@@ -136,6 +143,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Which mirror is used as a rear-view mirror in vehicles?',
       'ଗାଡ଼ିର ପଛପଟ ଦେଖିବା ଦର୍ପଣ ଭାବେ କେଉଁ ଦର୍ପଣ ବ୍ୟବହୃତ ହୁଏ?',
@@ -155,6 +163,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'What is the chemical formula of water?',
       'ପାଣିର ରାସାୟନିକ ସୂତ୍ର କଣ?',
@@ -174,6 +183,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Which acid is present in lemon juice?',
       'ଲେମ୍ବୁ ରସରେ କେଉଁ ଅମ୍ଳ ଥାଏ?',
@@ -193,6 +203,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which organ pumps blood around the body?',
       'କେଉଁ ଅଙ୍ଗ ଶରୀରରେ ରକ୍ତ ପମ୍ପ କରେ?',
@@ -212,6 +223,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Living world',
     (
       'What is the process of losing water vapour from leaves called?',
       'ପତ୍ରରୁ ଜଳୀୟ ବାଷ୍ପ ବାହାରିବାକୁ କଣ କହନ୍ତି?',
@@ -231,6 +243,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Which material is a good conductor of electricity?',
       'କେଉଁ ପଦାର୍ଥ ବିଦ୍ୟୁତର ଭଲ ପରିବାହୀ?',
@@ -250,6 +263,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Matter & materials',
     (
       'Rusting of iron needs which two things?',
       'ଲୁହା କଳଙ୍କି ହେବାକୁ କେଉଁ ଦୁଇଟି ଜିନିଷ ଦରକାର?',
@@ -269,6 +283,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Earth & space',
     (
       'What causes day and night on Earth?',
       'ପୃଥିବୀରେ ଦିନ ଓ ରାତି କାହିଁକି ହୁଏ?',
@@ -288,6 +303,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Earth & space',
     (
       'Which is the closest star to Earth?',
       'ପୃଥିବୀର ସବୁଠାରୁ ପାଖ ତାରା କେଉଁଟି?',
@@ -307,6 +323,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Which type of energy does a moving car have?',
       'ଚାଲୁଥିବା ଗାଡ଼ିରେ କେଉଁ ପ୍ରକାର ଶକ୍ତି ଥାଏ?',
@@ -326,6 +343,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'Which of these is a renewable source of energy?',
       'ଏଥି ମଧ୍ୟରୁ କେଉଁଟି ନବୀକରଣୀୟ ଶକ୍ତି ଉତ୍ସ?',
@@ -345,6 +363,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Human body',
     (
       'Which blood cells fight germs?',
       'କେଉଁ ରକ୍ତ କୋଷ ଜୀବାଣୁ ସହ ଲଢ଼େ?',
@@ -364,6 +383,7 @@ final scienceMiddle = <QuizQuestion>[
     ),
   ),
   _q(
+    'Force & energy',
     (
       'The speed of an object is calculated as…',
       'ଏକ ବସ୍ତୁର ବେଗ କିପରି ଗଣନା ହୁଏ?',

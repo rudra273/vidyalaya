@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../providers/clay_provider.dart';
@@ -9,6 +10,9 @@ import '../../providers/theme_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/support_section.dart';
+
+const _deleteAccountUrl =
+    'https://rosmox.com/products/vidyakalp/delete-account';
 
 /// **App Settings** — appearance, data, about.
 class SettingsScreen extends ConsumerWidget {
@@ -171,6 +175,16 @@ class SettingsScreen extends ConsumerWidget {
                       title: 'Privacy Policy',
                       sub: 'Our data & privacy commitments',
                       onTap: () => context.push('/privacy-policy'),
+                    ),
+                    ListRow(
+                      color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                      icon: Icons.delete_outline_rounded,
+                      title: 'Delete account',
+                      sub: 'Request deletion of your account & data',
+                      onTap: () => launchUrl(
+                        Uri.parse(_deleteAccountUrl),
+                        mode: LaunchMode.externalApplication,
+                      ),
                     ),
                     ListRow(
                       color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
