@@ -34,8 +34,15 @@ const Map<String, SubjectMeta> kSubjects = {
   'work': SubjectMeta('Work', Icons.work_rounded),
 };
 
-SubjectMeta subjectMeta(String key) =>
-    kSubjects[key.toLowerCase()] ?? const SubjectMeta('Subject', Icons.book_rounded);
+SubjectMeta subjectMeta(String key) {
+  final exact = kSubjects[key.toLowerCase()];
+  if (exact != null) return exact;
+  // A specific book subject (`hindi_malhar`) borrows its family's icon and
+  // glyph, but keeps the generic label so visible names don't change.
+  final family = kSubjects[canonicalSubjectKey(key)];
+  if (family == null) return const SubjectMeta('Subject', Icons.book_rounded);
+  return SubjectMeta('Subject', family.icon, null, family.glyph);
+}
 
 // ─── SubjectGlyph: script char, or the Material icon as fallback ──────────
 

@@ -115,7 +115,7 @@ class AppColors {
   // ─── Subject color mapping ───────────────────────────────────────────
   static Color subjectColor(String subject, Brightness brightness) {
     final dark = brightness == Brightness.dark;
-    switch (subject.toLowerCase()) {
+    switch (canonicalSubjectKey(subject)) {
       case 'odia':
         return dark ? cOdiaDark : cOdia;
       case 'english':
@@ -563,4 +563,37 @@ class AppTheme {
       ),
     );
   }
+}
+
+// ─── Subject keys ────────────────────────────────────────────────────────
+
+/// Maps a specific book subject (`hindi_malhar`, `maths_part_1`,
+/// `life_science`, `history_civics`) to the family key that icon and colour
+/// lookups are written for (`hindi`, `maths`, `science`, `social`). Keys that
+/// are already a family — or unknown — come back lower-cased and unchanged.
+String canonicalSubjectKey(String subject) {
+  final key = subject.trim().toLowerCase();
+  const families = [
+    'odia',
+    'english',
+    'hindi',
+    'sanskrit',
+    'maths',
+    'math',
+    'science',
+    'social_science',
+    'social',
+    'skill',
+    'work',
+  ];
+  if (families.contains(key)) return key;
+  for (final family in families) {
+    if (key.startsWith('${family}_')) return family;
+  }
+  if (key.endsWith('_science')) return 'science';
+  const socialParts = ['history', 'geography', 'civics', 'economics'];
+  if (socialParts.any((part) => key == part || key.startsWith('${part}_'))) {
+    return 'social';
+  }
+  return key;
 }

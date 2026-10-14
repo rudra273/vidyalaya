@@ -765,10 +765,13 @@ class UserPrefsRepository {
     if (jsonStr == null) return <RecentQuestion>[];
     try {
       final list = jsonDecode(jsonStr) as List;
+      // One entry per conversation: the list is stored newest first, so the
+      // first question seen for a subject is the latest one in that chat.
+      final seenSubjects = <String?>{};
       return list
           .whereType<Map<String, dynamic>>()
           .map(RecentQuestion.fromJson)
-          .where((q) => q.text.isNotEmpty)
+          .where((q) => q.text.isNotEmpty && seenSubjects.add(q.subject))
           .toList();
     } catch (_) {
       // Corrupt entry — drop it rather than breaking the AI tab.
@@ -776,8 +779,9 @@ class UserPrefsRepository {
     }
   }
 
-  /// Records one asked question, newest first. Re-asking the same thing moves
-  /// it back to the top instead of adding a duplicate.
+  /// Records one asked question, newest first. Each conversation (subject, or
+  /// the general chat when null) keeps only its latest question, so the AI tab
+  /// shows one card per chat rather than one per message.
   Future<void> recordRecentQuestion(
     String uid,
     String text, {
@@ -786,7 +790,7 @@ class UserPrefsRepository {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final questions = getRecentQuestions(uid)
-      ..removeWhere((q) => q.text.toLowerCase() == trimmed.toLowerCase());
+      ..removeWhere((q) => q.subject == subject);
     questions.insert(
       0,
       RecentQuestion(text: trimmed, subject: subject, askedAt: DateTime.now()),
