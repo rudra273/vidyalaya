@@ -24,7 +24,6 @@ import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../widgets/ai_markdown.dart';
-import '../../widgets/ncert_ai_notice.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
@@ -899,7 +898,6 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   @override
   Widget build(BuildContext context) {
     final profileClass = ref.watch(primaryClassProvider);
-    final isNcert = ref.watch(userBoardProvider) == 'ncert';
     final authState = ref.watch(authStateProvider);
     final accountState = ref.watch(backendAccountCacheProvider);
     final isSignedIn = authState.maybeWhen(
@@ -999,16 +997,6 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
                 });
               },
             ),
-            if (isNcert)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding,
-                  0,
-                  AppSpacing.screenPadding,
-                  8,
-                ),
-                child: NcertAiNotice(),
-              ),
             if (_isLoadingHistory)
               const LinearProgressIndicator(minHeight: 2)
             else if (_isRevalidating)
@@ -1771,9 +1759,6 @@ class _CitationChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final book = citation.bookName ?? citation.sourcePdf ?? 'Source';
-    final page = citation.pageLabel;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
@@ -1791,9 +1776,7 @@ class _CitationChip extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           Text(
-            page.isEmpty
-                ? '${citation.label} $book'
-                : '${citation.label} $book · $page',
+            '${citation.label} ${citation.sourceLabel}',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: cs.primary,
               fontWeight: AppFontWeight.semibold,

@@ -1,6 +1,161 @@
 {
   "boards": [
     {
+      "board": "ncert",
+      "classes": [
+        {
+          "class": 6,
+          "subjects": [
+            {
+              "subject": "english_poorvi",
+              "book_name": "Poorvi",
+              "language": "en"
+            },
+            {
+              "subject": "hindi_malhar",
+              "book_name": "Malhar",
+              "language": "hi"
+            },
+            {
+              "subject": "maths",
+              "book_name": "Ganita Prakash",
+              "language": "en"
+            },
+            {
+              "subject": "science",
+              "book_name": "Curiosity",
+              "language": "en"
+            },
+            {
+              "subject": "social",
+              "book_name": "Exploring Society: India and Beyond",
+              "language": "en"
+            }
+          ]
+        },
+        {
+          "class": 7,
+          "subjects": [
+            {
+              "subject": "english_poorvi",
+              "book_name": "Poorvi",
+              "language": "en"
+            },
+            {
+              "subject": "hindi_malhar",
+              "book_name": "Malhar",
+              "language": "hi"
+            },
+            {
+              "subject": "maths_part_1",
+              "book_name": "Ganita Prakash Part 1",
+              "language": "en"
+            },
+            {
+              "subject": "maths_part_2",
+              "book_name": "Ganita Prakash Part 2",
+              "language": "en"
+            },
+            {
+              "subject": "science",
+              "book_name": "Curiosity",
+              "language": "en"
+            },
+            {
+              "subject": "social_part_1",
+              "book_name": "Exploring Society: India and Beyond Part 1",
+              "language": "en"
+            },
+            {
+              "subject": "social_part_2",
+              "book_name": "Exploring Society: India and Beyond Part 2",
+              "language": "en"
+            }
+          ]
+        },
+        {
+          "class": 8,
+          "subjects": [
+            {
+              "subject": "english_poorvi",
+              "book_name": "Poorvi",
+              "language": "en"
+            },
+            {
+              "subject": "hindi_malhar",
+              "book_name": "Malhar",
+              "language": "hi"
+            },
+            {
+              "subject": "maths_part_1",
+              "book_name": "Ganita Prakash Part 1",
+              "language": "en"
+            },
+            {
+              "subject": "maths_part_2",
+              "book_name": "Ganita Prakash Part 2",
+              "language": "en"
+            },
+            {
+              "subject": "science",
+              "book_name": "Curiosity",
+              "language": "en"
+            },
+            {
+              "subject": "social_part_1",
+              "book_name": "Exploring Society: India and Beyond Part 1",
+              "language": "en"
+            },
+            {
+              "subject": "social_part_2",
+              "book_name": "Exploring Society: India and Beyond Part 2",
+              "language": "en"
+            }
+          ]
+        },
+        {
+          "class": 9,
+          "subjects": [
+            {
+              "subject": "english_kaveri",
+              "book_name": "Kaveri",
+              "language": "en"
+            },
+            {
+              "subject": "hindi_ganga",
+              "book_name": "Ganga",
+              "language": "hi"
+            },
+            {
+              "subject": "maths_part_1",
+              "book_name": "Ganita Manjari Part 1",
+              "language": "en"
+            },
+            {
+              "subject": "maths_part_2",
+              "book_name": "Ganita Manjari Part 2",
+              "language": "en"
+            },
+            {
+              "subject": "science",
+              "book_name": "Exploration",
+              "language": "en"
+            },
+            {
+              "subject": "social_part_1",
+              "book_name": "Understanding Society: India and Beyond Part 1",
+              "language": "en"
+            },
+            {
+              "subject": "social_part_2",
+              "book_name": "Understanding Society: India and Beyond Part 2",
+              "language": "en"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "board": "scert_odisha",
       "classes": [
         {

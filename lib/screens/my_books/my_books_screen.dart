@@ -13,6 +13,7 @@ import '../../data/seed/seed_data.dart'
 import '../../widgets/empty_state.dart';
 import '../../widgets/calm_widgets.dart';
 import 'widgets/filter_chips_bar.dart';
+import 'widgets/add_pdf_sheet.dart';
 import 'widgets/book_grid_card.dart';
 
 class MyBooksScreen extends ConsumerStatefulWidget {
@@ -53,6 +54,31 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
       context.pop();
     } else {
       context.go('/');
+    }
+  }
+
+  Future<void> _confirmRemove(Book book) async {
+    final remove = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove this book?'),
+        content: Text(
+          '"${book.title}" will be removed from your Library and deleted from this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (remove == true) {
+      await ref.read(userBooksProvider.notifier).remove(book);
     }
   }
 
@@ -124,6 +150,12 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconBox(
+                      icon: Icons.add_rounded,
+                      tooltip: 'Add a PDF from your device',
+                      onTap: () => pickAndAddPdf(context, ref),
+                    ),
+                    const SizedBox(width: 8),
+                    IconBox(
                       icon: Icons.filter_list_rounded,
                       tooltip: 'Filter library classes',
                       onTap: _showLibraryFilter,
@@ -184,6 +216,16 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
                         ctaLabel: 'Select Class',
                         onCtaTap: _showLibraryFilter,
                       )
+                    : allSelectedBooks.isEmpty && !isSearching
+                    ? EmptyState(
+                        icon: Icons.upload_file_rounded,
+                        title: 'Your library is empty',
+                        subtitle: selectedBoard == 'ncert'
+                            ? 'NCERT books can\'t be shared inside the app. Add your own PDFs from your device and read them here.'
+                            : 'Add your own PDFs from your device and read them here.',
+                        ctaLabel: 'Add a PDF',
+                        onCtaTap: () => pickAndAddPdf(context, ref),
+                      )
                     : filteredBooks.isEmpty
                     ? EmptyState(
                         icon: Icons.search_off_rounded,
@@ -227,6 +269,13 @@ class _MyBooksScreenState extends ConsumerState<MyBooksScreen> {
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) => BookGridCard(
                                     book: booksByClass[classNum]![index],
+                                    onRemove:
+                                        booksByClass[classNum]![index]
+                                            .isOfficial
+                                        ? null
+                                        : () => _confirmRemove(
+                                            booksByClass[classNum]![index],
+                                          ),
                                   ),
                                   childCount: booksByClass[classNum]!.length,
                                 ),

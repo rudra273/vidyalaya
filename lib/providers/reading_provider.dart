@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/book.dart';
-import '../data/seed/seed_data.dart';
 import 'books_provider.dart';
 import 'core_providers.dart';
 
@@ -11,7 +10,7 @@ class ReadingNotifier extends Notifier<Book?> {
     final repo = ref.read(userPrefsRepositoryProvider);
     final lastId = repo.getLastReadBookId();
     if (lastId == null) return null;
-    return getBookById(lastId);
+    return findBook(ref.read(libraryBooksProvider), lastId);
   }
 
   void setLastRead(Book book) {

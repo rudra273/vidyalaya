@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
-import '../data/seed/seed_data.dart';
+import '../providers/books_provider.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
@@ -417,7 +417,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final bookId = state.pathParameters['bookId']!;
-          final book = getBookById(bookId);
+          final book = findBook(ref.read(libraryBooksProvider), bookId);
           final pageStr = state.uri.queryParameters['page'];
           final initialPage = pageStr != null ? int.tryParse(pageStr) : null;
           return PdfViewerScreen(book: book!, initialPage: initialPage);

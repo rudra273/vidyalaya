@@ -438,6 +438,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         return;
       }
 
+      // A book the student added has no download source. If its file is gone
+      // (storage cleared), say so rather than fetching an empty URL.
+      if (widget.book.pdfUrl.isEmpty) {
+        throw Exception('Student-added file is missing');
+      }
+
       // Stream to a temp file and rename on success, so an interrupted
       // download never leaves a half-written .pdf that later reads as valid.
       final tmpFile = File('$filePath.part');
@@ -1049,9 +1055,17 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           const SizedBox(height: 24),
           Text('Failed to load PDF', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
-          Text('Please check your internet connection and try again.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color), textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(onPressed: _loadPdf, icon: const Icon(Icons.refresh), label: const Text('Retry')),
+          Text(
+            widget.book.isOfficial
+                ? 'Please check your internet connection and try again.'
+                : 'This file is no longer on your device. Remove it from the Library and add it again.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
+            textAlign: TextAlign.center,
+          ),
+          if (widget.book.isOfficial) ...[
+            const SizedBox(height: 24),
+            ElevatedButton.icon(onPressed: _loadPdf, icon: const Icon(Icons.refresh), label: const Text('Retry')),
+          ],
         ]),
       ),
     );

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/book.dart';
 import '../models/highlight.dart';
 import '../models/recent_question.dart';
 import '../models/note.dart';
@@ -31,10 +32,32 @@ class UserPrefsRepository {
   static const _pythonQuizScoresKey = 'python_quiz_scores';
   static const _pythonPlaygroundCodeKey = 'python_playground_code';
   static const _labAttemptsKey = 'lab_attempts';
+  static const _userBooksKey = 'user_imported_books';
 
   final SharedPreferences _prefs;
 
   UserPrefsRepository(this._prefs);
+
+  // ─── Books the student added from their own files ───────────────────────
+
+  List<Book> getUserBooks() {
+    final stored = _prefs.getString(_userBooksKey);
+    if (stored == null) return const [];
+    try {
+      return (jsonDecode(stored) as List<dynamic>)
+          .map((value) => Book.fromJson(value as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> setUserBooks(List<Book> books) async {
+    await _prefs.setString(
+      _userBooksKey,
+      jsonEncode(books.map((b) => b.toJson()).toList()),
+    );
+  }
 
   List<LabAttempt> getLabAttempts() {
     final stored = _prefs.getString(_labAttemptsKey);

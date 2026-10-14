@@ -84,6 +84,53 @@ void main() {
       expect(response.citations[2].pageNumbers, isEmpty);
     });
 
+    test('parses a chapter citation that carries no page', () {
+      final response = LearnAssistResponse.fromJson({
+        'answer': 'Answer [1]',
+        'citations': [
+          {
+            'label': '[1]',
+            'book_name': 'Ganita Prakash Part 1',
+            'chapter_no': 8,
+            'chapter_name': 'Working with Fractions',
+            'score': 0.8,
+            'chunk_ids': ['chunk_1'],
+          },
+        ],
+      });
+
+      final citation = response.citations.single;
+      expect(citation.chapterNo, 8);
+      expect(citation.chapterName, 'Working with Fractions');
+      expect(citation.pageNumbers, isEmpty);
+      expect(
+        citation.sourceLabel,
+        'Ganita Prakash Part 1 · Working with Fractions',
+      );
+    });
+
+    test('shows the book and page when a citation has no chapter', () {
+      const withPage = LearnAssistCitation(
+        label: '[1]',
+        bookName: 'Jasmine',
+        pageNumbers: [69],
+      );
+      const withoutPage = LearnAssistCitation(
+        label: '[2]',
+        bookName: 'Jasmine',
+      );
+      const bookOnlyChapter = LearnAssistCitation(
+        label: '[3]',
+        bookName: 'Ganita Prakash Part 1',
+        chapterName: '',
+      );
+
+      expect(withPage.sourceLabel, 'Jasmine · p. 69');
+      expect(withoutPage.sourceLabel, 'Jasmine');
+      expect(bookOnlyChapter.sourceLabel, 'Ganita Prakash Part 1');
+      expect(const LearnAssistCitation(label: '[4]').sourceLabel, 'Source');
+    });
+
     test('parses empty citations', () {
       final response = LearnAssistResponse.fromJson({
         'answer': 'Answer',
@@ -131,6 +178,8 @@ void main() {
         bookName: 'Science',
         sourcePdf: 'science.pdf',
         pageNumbers: [10, 11],
+        chapterNo: 3,
+        chapterName: 'Electricity',
         score: 0.85,
         chunkIds: ['chunk-1'],
       );
@@ -141,6 +190,8 @@ void main() {
       expect(roundTripped.bookName, citation.bookName);
       expect(roundTripped.sourcePdf, citation.sourcePdf);
       expect(roundTripped.pageNumbers, citation.pageNumbers);
+      expect(roundTripped.chapterNo, citation.chapterNo);
+      expect(roundTripped.chapterName, citation.chapterName);
       expect(roundTripped.score, citation.score);
       expect(roundTripped.chunkIds, citation.chunkIds);
     });

@@ -137,6 +137,10 @@ class LearnAssistCitation {
   final String? bookName;
   final String? sourcePdf;
   final List<int> pageNumbers;
+
+  /// Set by boards that cite a chapter instead of a page (NCERT).
+  final int? chapterNo;
+  final String? chapterName;
   final double? score;
   final List<String> chunkIds;
 
@@ -145,6 +149,8 @@ class LearnAssistCitation {
     this.bookName,
     this.sourcePdf,
     this.pageNumbers = const [],
+    this.chapterNo,
+    this.chapterName,
     this.score,
     this.chunkIds = const [],
   });
@@ -155,6 +161,8 @@ class LearnAssistCitation {
       bookName: json['book_name'] as String?,
       sourcePdf: json['source_pdf'] as String?,
       pageNumbers: _parsePageNumbers(json['page_no']),
+      chapterNo: json['chapter_no'] as int?,
+      chapterName: json['chapter_name'] as String?,
       score: _asDouble(json['score']),
       chunkIds: _asStringList(json['chunk_ids']),
     );
@@ -165,6 +173,8 @@ class LearnAssistCitation {
     'book_name': bookName,
     'source_pdf': sourcePdf,
     'page_no': pageNumbers,
+    'chapter_no': chapterNo,
+    'chapter_name': chapterName,
     'score': score,
     'chunk_ids': chunkIds,
   };
@@ -173,6 +183,16 @@ class LearnAssistCitation {
     if (pageNumbers.isEmpty) return '';
     if (pageNumbers.length == 1) return 'p. ${pageNumbers.first}';
     return 'pp. ${pageNumbers.join(', ')}';
+  }
+
+  /// What the chip shows after the label: "book · chapter" when the source
+  /// names a chapter, otherwise the book (or file) with its page, if any.
+  String get sourceLabel {
+    final book = bookName ?? sourcePdf ?? 'Source';
+    final chapter = chapterName;
+    if (chapter != null && chapter.isNotEmpty) return '$book · $chapter';
+    final page = pageLabel;
+    return page.isEmpty ? book : '$book · $page';
   }
 }
 

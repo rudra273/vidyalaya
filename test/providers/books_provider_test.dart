@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:vidyalaya/data/models/book.dart';
+import 'package:vidyalaya/data/seed/seed_data.dart';
 import 'package:vidyalaya/providers/books_provider.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
 import 'package:vidyalaya/providers/user_selection_provider.dart';
@@ -57,23 +59,65 @@ void main() {
     expect(books.every((book) => book.classNumber == 8), isTrue);
   });
 
-  test('NCERT temporarily shares the SCERT Odisha library content', () async {
+  test('NCERT has no official books, so its Library starts empty', () async {
     final container = await _container(board: 'ncert', classes: {8});
 
-    final books = container.read(selectedBooksProvider);
-    expect(books, isNotEmpty);
-    expect(books.every((book) => book.boardId == 'scert_odisha'), isTrue);
+    expect(container.read(selectedBooksProvider), isEmpty);
   });
 
-  test(
-    'switching to NCERT keeps the shared library content available',
-    () async {
-      final container = await _container(board: 'scert_odisha', classes: {8});
-      expect(container.read(selectedBooksProvider), isNotEmpty);
+  test('switching to NCERT empties the Library of official books', () async {
+    final container = await _container(board: 'scert_odisha', classes: {8});
+    expect(container.read(selectedBooksProvider), isNotEmpty);
 
-      container.read(userBoardProvider.notifier).setBoard('ncert');
+    container.read(userBoardProvider.notifier).setBoard('ncert');
 
-      expect(container.read(selectedBooksProvider), isNotEmpty);
-    },
-  );
+    expect(container.read(selectedBooksProvider), isEmpty);
+  });
+
+  test('NCERT students still pick from the shared class list', () {
+    expect(availableClassNumbersForBoard('ncert'), isNotEmpty);
+    expect(
+      availableClassNumbersForBoard('ncert'),
+      availableClassNumbersForBoard('scert_odisha'),
+    );
+  });
+
+  test('books the student added show for their board and class only', () async {
+    final own = Book(
+      id: 'user_1',
+      title: 'My Maths',
+      subject: 'maths',
+      classNumber: 8,
+      boardId: 'ncert',
+      pdfUrl: '',
+      coverEmoji: '📄',
+      isOfficial: false,
+    );
+    SharedPreferences.setMockInitialValues({
+      'selected_board': 'ncert',
+      'library_selected_classes': jsonEncode([8]),
+      'user_imported_books': jsonEncode([own.toJson()]),
+    });
+    final preferences = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [sharedPreferencesProvider.overrideWithValue(preferences)],
+    );
+    addTearDown(container.dispose);
+
+    expect(container.read(selectedBooksProvider).map((b) => b.id), ['user_1']);
+    expect(
+      findBook(container.read(libraryBooksProvider), 'user_1')?.title,
+      'My Maths',
+    );
+
+    container.read(libraryClassSelectionProvider.notifier).setClasses({9});
+    expect(container.read(selectedBooksProvider), isEmpty);
+
+    container.read(libraryClassSelectionProvider.notifier).setClasses({8});
+    container.read(userBoardProvider.notifier).setBoard('scert_odisha');
+    expect(
+      container.read(selectedBooksProvider).any((b) => b.id == 'user_1'),
+      isFalse,
+    );
+  });
 }
