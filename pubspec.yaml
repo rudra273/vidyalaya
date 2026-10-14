@@ -1,7 +1,7 @@
 name: vidyalaya
 description: "Vidya AI. A book reading app for Indian school students."
 publish_to: 'none'
-version: 1.1.0+6
+version: 1.1.1+7
 
 environment:
   sdk: ^3.11.5
