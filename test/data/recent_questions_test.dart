@@ -23,6 +23,21 @@ void main() {
     );
   });
 
+  test('keeps one recent question per conversation', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final repository = UserPrefsRepository(prefs);
+
+    await repository.recordRecentQuestion('u', 'how many chapters?',
+        subject: 'maths');
+    await repository.recordRecentQuestion('u', 'list them', subject: 'maths');
+    await repository.recordRecentQuestion('u', 'what is a cell?',
+        subject: 'science');
+
+    final recents = repository.getRecentQuestions('u');
+    expect(recents.map((q) => q.text), ['what is a cell?', 'list them']);
+  });
+
   test('unowned legacy recent questions are discarded', () async {
     SharedPreferences.setMockInitialValues({
       'recent_ai_questions': jsonEncode([

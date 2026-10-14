@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../data/seed/seed_data.dart';
+import '../../providers/books_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../widgets/empty_state.dart';
 
@@ -16,7 +16,7 @@ class BookmarksScreen extends ConsumerWidget {
 
     // Gather bookmarks grouped by subject
     final Map<String, List<_BookmarkEntry>> bySubject = {};
-    for (final book in allBooks) {
+    for (final book in ref.watch(libraryBooksProvider)) {
       final pages = repo.getBookmarks(book.id);
       if (pages.isNotEmpty) {
         final entries = pages

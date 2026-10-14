@@ -7,7 +7,10 @@ import '../../../widgets/calm_widgets.dart';
 class BookGridCard extends StatefulWidget {
   final Book book;
 
-  const BookGridCard({super.key, required this.book});
+  /// Set for books the student added themselves; shows a remove menu.
+  final VoidCallback? onRemove;
+
+  const BookGridCard({super.key, required this.book, this.onRemove});
 
   @override
   State<BookGridCard> createState() => _BookGridCardState();
@@ -48,20 +51,33 @@ class _BookGridCardState extends State<BookGridCard> {
                 Container(
                   width: 7,
                   height: 7,
-                  decoration: BoxDecoration(
-                    color: col,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: col, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   meta.label,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontSize: AppFontSize.small,
-                        fontWeight: AppFontWeight.semibold,
-                        color: col,
-                      ),
+                    fontSize: AppFontSize.small,
+                    fontWeight: AppFontWeight.semibold,
+                    color: col,
+                  ),
                 ),
+                if (widget.onRemove != null) ...[
+                  const Spacer(),
+                  InkResponse(
+                    onTap: widget.onRemove,
+                    radius: 18,
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        semanticLabel: 'Remove book',
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],

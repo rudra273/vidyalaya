@@ -64,31 +64,28 @@ const List<Book> allBooks = [
 Set<int> get availableClassNumbers =>
     allBooks.map((b) => b.classNumber).toSet();
 
-/// NCERT is enabled while its own textbook catalog is being prepared. Until
-/// then it shares the available SCERT Odisha library content.
-const _sharedContentBoardIds = {'ncert'};
+/// NCERT students pick from the same class list as SCERT, but we do not host
+/// NCERT textbooks (republishing is not allowed). Their Library starts empty
+/// and holds the PDFs they add from their own files.
+const _sharedClassListBoardIds = {'ncert'};
 
-String _contentBoardId(String boardId) =>
-    _sharedContentBoardIds.contains(boardId) ? 'scert_odisha' : boardId;
+String _classListBoardId(String boardId) =>
+    _sharedClassListBoardIds.contains(boardId) ? 'scert_odisha' : boardId;
 
-/// Classes that have books for a specific board.
+/// Classes a student of [boardId] can choose from.
 Set<int> availableClassNumbersForBoard(String boardId) => allBooks
-    .where((b) => b.boardId == _contentBoardId(boardId))
+    .where((b) => b.boardId == _classListBoardId(boardId))
     .map((b) => b.classNumber)
     .toSet();
 
-/// Books for selected classes in one board.
-///
-/// NCERT temporarily uses the SCERT Odisha collection while its own catalog is
-/// being prepared.
+/// Official books for selected classes in one board. NCERT has none.
 List<Book> getBooksForBoardAndClasses(
   String boardId,
   Set<int> selectedClasses,
 ) => allBooks
     .where(
       (book) =>
-          book.boardId == _contentBoardId(boardId) &&
-          selectedClasses.contains(book.classNumber),
+          book.boardId == boardId && selectedClasses.contains(book.classNumber),
     )
     .toList();
 

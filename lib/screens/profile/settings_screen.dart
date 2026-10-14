@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/app_info.dart';
 import '../../app/theme.dart';
 import '../../providers/clay_provider.dart';
 import '../../providers/haptic_provider.dart';
@@ -215,7 +216,7 @@ class SettingsScreen extends ConsumerWidget {
                               )),
                   const SizedBox(height: 3),
                   Text(
-                    'Version 1.0.3',
+                    'Version $kAppVersionName',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: AppFontSize.small,
                         ),

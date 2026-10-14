@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/models/highlight.dart';
-import '../../data/seed/seed_data.dart';
+import '../../providers/books_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../widgets/empty_state.dart';
 
@@ -26,7 +26,8 @@ class SubjectNotesScreen extends ConsumerWidget {
     final (bgColor, textColor) = AppColors.getSubjectColor(subject);
 
     // Get all books for this subject and their highlights
-    final subjectBooks = allBooks.where((b) => b.subject == subject).toList();
+    final libraryBooks = ref.watch(libraryBooksProvider);
+    final subjectBooks = libraryBooks.where((b) => b.subject == subject).toList();
     final Map<String, List<Highlight>> bookHighlights = {};
     for (final book in subjectBooks) {
       final hl = repo.getHighlights(book.id);
@@ -60,7 +61,7 @@ class SubjectNotesScreen extends ConsumerWidget {
               itemCount: bookHighlights.length,
               itemBuilder: (context, bookIndex) {
                 final bookId = bookHighlights.keys.elementAt(bookIndex);
-                final book = getBookById(bookId);
+                final book = findBook(libraryBooks, bookId);
                 final highlights = bookHighlights[bookId]!;
 
                 return Column(

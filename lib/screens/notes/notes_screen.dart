@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/models/highlight.dart';
 import '../../data/models/note.dart';
-import '../../data/seed/seed_data.dart';
+import '../../providers/books_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/pressable.dart';
@@ -34,7 +34,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
 
     // Gather all highlights grouped by subject
     final Map<String, List<Highlight>> bySubject = {};
-    for (final book in allBooks) {
+    final libraryBooks = ref.watch(libraryBooksProvider);
+    for (final book in libraryBooks) {
       final highlights = repo.getHighlights(book.id);
       if (highlights.isNotEmpty) {
         bySubject.putIfAbsent(book.subject, () => []).addAll(highlights);
@@ -130,7 +131,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                           final highlights = bySubject[subject]!;
                           final bookIds = highlights.map((h) => h.bookId).toSet();
                           final books = bookIds
-                              .map((id) => getBookById(id))
+                              .map((id) => findBook(libraryBooks, id))
                               .where((b) => b != null)
                               .toList();
                           final (bgColor, textColor) =
