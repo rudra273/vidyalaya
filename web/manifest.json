@@ -1,11 +1,11 @@
 {
-    "name": "Vidya AI",
-    "short_name": "Vidya AI",
+    "name": "Vidyakalp",
+    "short_name": "Vidyakalp",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#ECF1EC",
+    "theme_color": "#16855A",
+    "description": "Vidyakalp. A learning companion for Indian school students.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

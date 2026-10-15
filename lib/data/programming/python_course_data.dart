@@ -2,6 +2,7 @@ import 'python_models.dart';
 import 'python_beginner_data.dart';
 import 'python_intermediate_data.dart';
 import 'python_advanced_data.dart';
+import 'python_more_data.dart';
 
 // ─── Python course (aggregated) ───────────────────────────────────────────────
 //
@@ -12,6 +13,7 @@ const List<PythonChapter> pythonChapters = [
   ...pythonBeginnerChapters,
   ...pythonIntermediateChapters,
   ...pythonAdvancedChapters,
+  ...pythonMoreChapters,
 ];
 
 /// Total lesson count across the course, used for the overall progress ring.

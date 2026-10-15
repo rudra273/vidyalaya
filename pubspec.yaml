@@ -1,5 +1,5 @@
 name: vidyalaya
-description: "Vidya AI. A book reading app for Indian school students."
+description: "Vidyakalp. A book reading app for Indian school students."
 publish_to: 'none'
 version: 1.1.1+7
 
@@ -39,7 +39,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.1
 
 flutter:
@@ -56,19 +56,35 @@ flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
   image_path: "assets/icon/vidyalaya.png"
+  adaptive_icon_background: "#ECF1EC"
+  adaptive_icon_foreground: "assets/icon/adaptive_foreground.png"
+  adaptive_icon_foreground_inset: 0
+  adaptive_icon_monochrome: "assets/icon/monochrome.png"
   remove_alpha_ios: true
   min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icon/maskable.png"
+    background_color: "#ECF1EC"
+    theme_color: "#16855A"
+  windows:
+    generate: true
+    image_path: "assets/icon/vidyalaya.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/icon/vidyalaya.png"
 
 flutter_native_splash:
-  # White background matching the logo's white backdrop.
-  color: "#FFFFFF"
+  # Sage background matching the vector logo and app theme.
+  color: "#ECF1EC"
   image: assets/icon/splash_mark.png
   android_12:
     # Android 12+ shows this icon inside the system's circular holder,
-    # with the wordmark branding strip pinned at the bottom of the screen.
+    # with the board caption pinned at the bottom of the screen.
     image: assets/icon/splash_mark.png
     branding: assets/icon/branding.png
-    color: "#FFFFFF"
-    icon_background_color: "#FFFFFF"
+    color: "#ECF1EC"
+    icon_background_color: "#ECF1EC"
   android: true
   ios: true

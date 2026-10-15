@@ -75,7 +75,7 @@ class _AppUpdateBannerState extends State<AppUpdateBanner>
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'A new version of Vidya AI is available.',
+                'A new version of Vidyakalp is available.',
                 style: TextStyle(color: colors.onSecondary),
               ),
             ),

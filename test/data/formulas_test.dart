@@ -48,7 +48,7 @@ void main() {
     });
 
     test('catalogue has grown to the Phase 3 target', () {
-      expect(allFormulas.length, greaterThanOrEqualTo(75));
+      expect(allFormulas.length, greaterThanOrEqualTo(95));
     });
 
     test('calculators return null (not an error) when inputs are empty', () {
@@ -325,6 +325,115 @@ void main() {
         'Series = 11 Ω, Parallel = 1 Ω',
       );
       expect(calc('electric-power', {'V': '220', 'I': '0.5'}), 'P = 110 W');
+    });
+
+    test('class 9–10 additions', () {
+      expect(
+        calc('frustum-cone', {'R': '10', 'r': '4', 'h': '8'}),
+        startsWith('l = 10, CSA = 439.823'),
+      );
+      expect(calc('segment-area', {'r': '10', 'θ (deg)': '60'}), 'A = 9.0586');
+      expect(calc('ring-area', {'R': '10', 'r': '6'}), 'A = 201.0619');
+      expect(
+        calc('grouped-median', {
+          'l': '0, 10, 20, 30',
+          'f': '5, 8, 15, 7',
+          'h': '10',
+        }),
+        'n = 35, cf = 13, Median = 23',
+      );
+      expect(
+        calc('grouped-mode', {
+          'l': '0, 10, 20, 30',
+          'f': '5, 8, 15, 7',
+          'h': '10',
+        }),
+        'Modal class starts at 20, Mode = 24.6667',
+      );
+      expect(
+        calc('roots-sum-product', {'a': '2', 'b': '-10', 'c': '12'}),
+        'α + β = 5, αβ = 6',
+      );
+      expect(
+        calc('linear-pair-consistency', {
+          'a₁': '2',
+          'b₁': '3',
+          'c₁': '-5',
+          'a₂': '4',
+          'b₂': '6',
+          'c₂': '-10',
+        }),
+        contains('infinitely many'),
+      );
+      expect(
+        calc('linear-pair-consistency', {
+          'a₁': '1',
+          'b₁': '1',
+          'c₁': '-5',
+          'a₂': '1',
+          'b₂': '-1',
+          'c₂': '-1',
+        }),
+        'Consistent, one solution: x = 3, y = 2',
+      );
+      expect(
+        calc('linear-pair-consistency', {
+          'a₁': '1',
+          'b₁': '2',
+          'c₁': '3',
+          'a₂': '2',
+          'b₂': '4',
+          'c₂': '9',
+        }),
+        contains('no solution'),
+      );
+      expect(
+        calc('heights-distances', {'d': '30', 'θ (deg)': '60', 'eye': '1.5'}),
+        'Height = 53.46 m, line of sight = 60 m',
+      );
+    });
+
+    test('class 10 physics', () {
+      expect(
+        calc('heat-energy', {'m': '2', 'c': '4200', 'ΔT': '30'}),
+        'Q = 252000 J',
+      );
+      expect(
+        calc('mirror-formula', {'f': '-15', 'u': '-30'}),
+        'v = -30 cm, m = -1 (real, same size)',
+      );
+      expect(
+        calc('lens-formula', {'f': '20', 'u': '-30'}),
+        'v = 60 cm, m = -2 (real, enlarged), P = 5 D',
+      );
+      expect(
+        calc('magnification', {'h′': '-6', 'h': '3'}),
+        'm = -2 (inverted, enlarged)',
+      );
+      expect(calc('refractive-index', {'v': '2'}), 'n = 1.5');
+      expect(calc('wave-speed', {'f': '340', 'λ': '1'}), 'v = 340 m/s');
+      expect(calc('wave-speed', {'v': '340', 'λ': '2'}), 'f = 170 Hz');
+    });
+
+    test('primary reference cards', () {
+      expect(
+        calc('divisibility-rules', {'n': '2376'}),
+        '2376 is divisible by 2, 3, 4, 6, 8, 9, 11',
+      );
+      expect(calc('roman-numerals', {'n': '2024'}), '2024 = MMXXIV');
+      expect(
+        calc('roman-numerals', {'n': '4000'}),
+        'Enter a number from 1 to 3999',
+      );
+      expect(
+        calc('place-value', {'n': '456789'}),
+        '4 → 400000,  5 → 50000,  6 → 6000,  7 → 700,  8 → 80,  9 → 9',
+      );
+      expect(
+        calc('squares-cubes', {'n': '64'}),
+        'n² = 4096, n³ = 262144, √n = 8, ∛n = 4',
+      );
+      expect(formulaById('bodmas')!.hasCalculator, isFalse);
     });
   });
 }

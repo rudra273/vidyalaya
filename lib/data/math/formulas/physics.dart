@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'formula_models.dart';
 
 // ─── Physics ──────────────────────────────────────────────────────────────────
@@ -285,6 +287,128 @@ const physicsFormulas = <FormulaData>[
     ],
     compute: _electricPower,
   ),
+  // ── Heat ──
+  FormulaData(
+    id: 'heat-energy',
+    titleEn: 'Heat Energy',
+    titleOr: 'ତାପ ଶକ୍ତି',
+    titleHi: 'ऊष्मा ऊर्जा',
+    formula: 'Q = m × c × ΔT',
+    category: _c,
+    descEn:
+        'Heat needed to change the temperature of a body: mass × specific heat capacity × temperature change. Water has c = 4200 J/kg·°C.',
+    descOr:
+        'ଶରୀରର ତାପମାତ୍ରା ବଦଳାଇବାକୁ ଆବଶ୍ୟକ ତାପ: ବସ୍ତୁତ୍ୱ × ନିର୍ଦ୍ଦିଷ୍ଟ ତାପଧାରଣ କ୍ଷମତା × ତାପମାତ୍ରା ପରିବର୍ତ୍ତନ। ପାଣିର c = 4200 J/kg·°C।',
+    descHi:
+        'किसी वस्तु का ताप बदलने के लिए आवश्यक ऊष्मा: द्रव्यमान × विशिष्ट ऊष्मा धारिता × ताप-परिवर्तन। पानी के लिए c = 4200 J/kg·°C।',
+    inputs: [
+      FormulaInput('m', 'Mass, kg (e.g. 2)'),
+      FormulaInput('c', 'Specific heat, J/kg·°C (e.g. 4200)'),
+      FormulaInput('ΔT', 'Temperature change, °C (e.g. 30)'),
+    ],
+    compute: _heat,
+  ),
+
+  // ── Light ──
+  FormulaData(
+    id: 'mirror-formula',
+    titleEn: 'Mirror Formula',
+    titleOr: 'ଦର୍ପଣ ସୂତ୍ର',
+    titleHi: 'दर्पण सूत्र',
+    formula: '1/v + 1/u = 1/f,   m = −v/u',
+    category: _c,
+    descEn:
+        'Relates object distance u, image distance v and focal length f of a spherical mirror. Use the Cartesian sign convention: distances measured against the incident light are negative, so a concave mirror has f < 0.',
+    descOr:
+        'ଗୋଲାକାର ଦର୍ପଣର ବସ୍ତୁ ଦୂରତା u, ପ୍ରତିବିମ୍ବ ଦୂରତା v ଓ ଫୋକସ୍ ଦୂରତା f ର ସମ୍ପର୍କ। କାର୍ତ୍ତେସୀୟ ଚିହ୍ନ ନିୟମ ବ୍ୟବହାର କର: ଆପତିତ ଆଲୋକର ବିପରୀତ ଦିଗରେ ମାପିଲେ ଦୂରତା ଋଣାତ୍ମକ, ତେଣୁ ଅବତଳ ଦର୍ପଣରେ f < 0।',
+    descHi:
+        'गोलीय दर्पण की वस्तु-दूरी u, प्रतिबिंब-दूरी v और फोकस दूरी f का संबंध। कार्तीय चिह्न परिपाटी लें: आपतित प्रकाश के विपरीत दिशा में मापी दूरी ऋणात्मक होती है, इसलिए अवतल दर्पण में f < 0।',
+    inputs: [
+      FormulaInput('f', 'Focal length, cm (e.g. -15)'),
+      FormulaInput('u', 'Object distance, cm (e.g. -30)'),
+    ],
+    compute: _mirror,
+  ),
+  FormulaData(
+    id: 'lens-formula',
+    titleEn: 'Lens Formula',
+    titleOr: 'ଲେନ୍ସ ସୂତ୍ର',
+    titleHi: 'लेंस सूत्र',
+    formula: '1/v − 1/u = 1/f,   m = v/u,   P = 1/f',
+    category: _c,
+    descEn:
+        'Relates object distance, image distance and focal length of a thin lens, with the Cartesian sign convention. A convex lens has f > 0; a concave lens has f < 0. Power P is in dioptres when f is in metres.',
+    descOr:
+        'ପତଳା ଲେନ୍ସର ବସ୍ତୁ ଦୂରତା, ପ୍ରତିବିମ୍ବ ଦୂରତା ଓ ଫୋକସ୍ ଦୂରତାର ସମ୍ପର୍କ (କାର୍ତ୍ତେସୀୟ ଚିହ୍ନ ନିୟମ)। ଉତ୍ତଳ ଲେନ୍ସରେ f > 0; ଅବତଳ ଲେନ୍ସରେ f < 0। f ମିଟରରେ ହେଲେ କ୍ଷମତା P ଡାୟପ୍ଟରରେ।',
+    descHi:
+        'पतले लेंस की वस्तु-दूरी, प्रतिबिंब-दूरी और फोकस दूरी का संबंध (कार्तीय चिह्न परिपाटी)। उत्तल लेंस में f > 0 और अवतल लेंस में f < 0। f मीटर में हो तो क्षमता P डायोप्टर में मिलती है।',
+    inputs: [
+      FormulaInput('f', 'Focal length, cm (e.g. 20)'),
+      FormulaInput('u', 'Object distance, cm (e.g. -30)'),
+    ],
+    compute: _lens,
+  ),
+  FormulaData(
+    id: 'magnification',
+    titleEn: 'Magnification',
+    titleOr: 'ବିବର୍ଦ୍ଧନ',
+    titleHi: 'आवर्धन',
+    formula: 'm = h′ / h',
+    category: _c,
+    descEn:
+        'Height of the image divided by height of the object. m > 1 means enlarged, m < 1 diminished, and a negative m means the image is inverted.',
+    descOr:
+        'ପ୍ରତିବିମ୍ବର ଉଚ୍ଚତା ÷ ବସ୍ତୁର ଉଚ୍ଚତା। m > 1 ହେଲେ ବଡ଼, m < 1 ହେଲେ ଛୋଟ, ଓ ଋଣାତ୍ମକ m ହେଲେ ପ୍ରତିବିମ୍ବ ଓଲଟା।',
+    descHi:
+        'प्रतिबिंब की ऊँचाई ÷ वस्तु की ऊँचाई। m > 1 हो तो बड़ा, m < 1 हो तो छोटा, और ऋणात्मक m का अर्थ है प्रतिबिंब उलटा है।',
+    inputs: [
+      FormulaInput('h′', 'Image height (e.g. -6)'),
+      FormulaInput('h', 'Object height (e.g. 3)'),
+    ],
+    compute: _magnification,
+  ),
+  FormulaData(
+    id: 'refractive-index',
+    titleEn: 'Refractive Index',
+    titleOr: 'ପ୍ରତିସରଣାଙ୍କ',
+    titleHi: 'अपवर्तनांक',
+    formula: 'n = c / v = sin i / sin r',
+    category: _c,
+    descEn:
+        'How much a medium slows light: speed of light in vacuum (3 × 10⁸ m/s) divided by its speed in the medium. Enter the speed v, or the angles of incidence i and refraction r.',
+    descOr:
+        'ମାଧ୍ୟମ ଆଲୋକକୁ କେତେ ଧୀର କରେ: ଶୂନ୍ୟରେ ଆଲୋକର ବେଗ (3 × 10⁸ m/s) ÷ ମାଧ୍ୟମରେ ତାର ବେଗ। ବେଗ v ଅଥବା ଆପତନ କୋଣ i ଓ ପ୍ରତିସରଣ କୋଣ r ଦିଅ।',
+    descHi:
+        'माध्यम प्रकाश को कितना धीमा करता है: निर्वात में प्रकाश की चाल (3 × 10⁸ m/s) ÷ माध्यम में उसकी चाल। चाल v या आपतन कोण i और अपवर्तन कोण r डालें।',
+    inputs: [
+      FormulaInput('v', 'Speed in medium, ×10⁸ m/s (e.g. 2)'),
+      FormulaInput('i (deg)', 'Angle of incidence (optional, e.g. 45)'),
+      FormulaInput('r (deg)', 'Angle of refraction (optional, e.g. 28)'),
+    ],
+    compute: _refractiveIndex,
+  ),
+
+  // ── Waves ──
+  FormulaData(
+    id: 'wave-speed',
+    titleEn: 'Wave Speed',
+    titleOr: 'ତରଙ୍ଗ ବେଗ',
+    titleHi: 'तरंग चाल',
+    formula: 'v = f × λ',
+    category: _c,
+    descEn:
+        'Speed of a wave = frequency × wavelength. Leave one box blank to find it.',
+    descOr:
+        'ତରଙ୍ଗର ବେଗ = କମ୍ପାଙ୍କ × ତରଙ୍ଗଦୈର୍ଘ୍ୟ। ବାହାର କରିବାକୁ ଗୋଟିଏ ଘର ଖାଲି ରଖ।',
+    descHi:
+        'तरंग की चाल = आवृत्ति × तरंगदैर्ध्य। जिसे ज्ञात करना हो उस खाने को खाली छोड़ें।',
+    inputs: [
+      FormulaInput('v', 'Speed, m/s (blank to find)'),
+      FormulaInput('f', 'Frequency, Hz (e.g. 340)'),
+      FormulaInput('λ', 'Wavelength, m (e.g. 1)'),
+    ],
+    compute: _waveSpeed,
+  ),
 ];
 
 // ─── Calculators ──────────────────────────────────────────────────────────────
@@ -391,4 +515,74 @@ String? _electricPower(FormulaValues v) {
   final volts = v.n('V'), i = v.n('I');
   if (volts == null || i == null) return null;
   return 'P = ${nice(volts * i)} W';
+}
+
+String? _heat(FormulaValues v) {
+  final m = v.n('m'), c = v.n('c'), dt = v.n('ΔT');
+  if (m == null || c == null || dt == null) return null;
+  return 'Q = ${nice(m * c * dt)} J';
+}
+
+/// Shared by the mirror (1/v + 1/u = 1/f) and lens (1/v − 1/u = 1/f) formulas,
+/// both in the Cartesian sign convention.
+String? _imageDistance(FormulaValues v, {required bool mirror}) {
+  final f = v.n('f'), u = v.n('u');
+  if (f == null || u == null) return null;
+  if (f == 0 || u == 0) return 'f and u cannot be 0';
+  final inv = mirror ? 1 / f - 1 / u : 1 / f + 1 / u;
+  if (inv.abs() < 1e-12) return 'Image forms at infinity';
+  final img = 1 / inv;
+  final m = mirror ? -img / u : img / u;
+  final kind = img * (mirror ? -1 : 1) > 0 ? 'real' : 'virtual';
+  final size = m.abs() > 1
+      ? 'enlarged'
+      : m.abs() < 1
+      ? 'diminished'
+      : 'same size';
+  final tail = mirror ? '' : ', P = ${nice(100 / f)} D';
+  return 'v = ${nice(img)} cm, m = ${nice(m)} ($kind, $size)$tail';
+}
+
+String? _mirror(FormulaValues v) => _imageDistance(v, mirror: true);
+
+String? _lens(FormulaValues v) => _imageDistance(v, mirror: false);
+
+String? _magnification(FormulaValues v) {
+  final hi = v.n('h′'), ho = v.n('h');
+  if (hi == null || ho == null || ho == 0) return null;
+  final m = hi / ho;
+  final note = m < 0 ? 'inverted' : 'erect';
+  final size = m.abs() > 1
+      ? 'enlarged'
+      : m.abs() < 1
+      ? 'diminished'
+      : 'same size';
+  return 'm = ${nice(m)} ($note, $size)';
+}
+
+String? _refractiveIndex(FormulaValues v) {
+  final speed = v.n('v');
+  if (speed != null) {
+    if (speed <= 0 || speed > 3) return 'Speed must be between 0 and 3';
+    return 'n = ${nice(3 / speed)}';
+  }
+  final i = v.n('i (deg)'), r = v.n('r (deg)');
+  if (i == null || r == null) return null;
+  final sinR = sin(rad(r));
+  if (sinR == 0) return null;
+  return 'n = ${nice(sin(rad(i)) / sinR)}';
+}
+
+String? _waveSpeed(FormulaValues v) {
+  final speed = v.n('v'), f = v.n('f'), wl = v.n('λ');
+  if (speed == null && f != null && wl != null) {
+    return 'v = ${nice(f * wl)} m/s';
+  }
+  if (f == null && speed != null && wl != null && wl != 0) {
+    return 'f = ${nice(speed / wl)} Hz';
+  }
+  if (wl == null && speed != null && f != null && f != 0) {
+    return 'λ = ${nice(speed / f)} m';
+  }
+  return null;
 }

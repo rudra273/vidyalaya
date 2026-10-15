@@ -34,7 +34,8 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             PageTitle(
               title: 'Settings',
-              onBack: () => context.canPop() ? context.pop() : context.go('/profile'),
+              onBack: () =>
+                  context.canPop() ? context.pop() : context.go('/profile'),
             ),
 
             const SizedBox(height: 12),
@@ -42,12 +43,14 @@ class SettingsScreen extends ConsumerWidget {
             // ── Appearance ────────────────────────────────────────
             const Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(label: 'Appearance'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: _ThemeSegmented(
                 current: themeMode,
                 onChanged: (m) =>
@@ -59,7 +62,8 @@ class SettingsScreen extends ConsumerWidget {
 
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: cs.surface,
@@ -72,7 +76,9 @@ class SettingsScreen extends ConsumerWidget {
                       ref.read(clayEnabledProvider.notifier).set(v),
                   activeThumbColor: cs.primary,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.cardPad, vertical: 2),
+                    horizontal: AppSpacing.cardPad,
+                    vertical: 2,
+                  ),
                   title: Text(
                     'Soft 3D look',
                     style: Theme.of(context).textTheme.titleMedium,
@@ -89,7 +95,8 @@ class SettingsScreen extends ConsumerWidget {
 
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: cs.surface,
@@ -105,7 +112,9 @@ class SettingsScreen extends ConsumerWidget {
                   },
                   activeThumbColor: cs.primary,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.cardPad, vertical: 2),
+                    horizontal: AppSpacing.cardPad,
+                    vertical: 2,
+                  ),
                   title: Text(
                     'Haptic feedback',
                     style: Theme.of(context).textTheme.titleMedium,
@@ -123,12 +132,14 @@ class SettingsScreen extends ConsumerWidget {
             // ── Data ──────────────────────────────────────────────
             const Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(label: 'Data'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: cs.surface,
@@ -155,12 +166,14 @@ class SettingsScreen extends ConsumerWidget {
             // ── About ─────────────────────────────────────────────
             const Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: SectionHead(label: 'About'),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding),
+                horizontal: AppSpacing.screenPadding,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: cs.surface,
@@ -170,8 +183,9 @@ class SettingsScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     ListRow(
-                      color:
-                          isDark ? AppColors.cScienceDark : AppColors.cScience,
+                      color: isDark
+                          ? AppColors.cScienceDark
+                          : AppColors.cScience,
                       icon: Icons.privacy_tip_outlined,
                       title: 'Privacy Policy',
                       sub: 'Our data & privacy commitments',
@@ -190,7 +204,7 @@ class SettingsScreen extends ConsumerWidget {
                     ListRow(
                       color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
                       icon: Icons.info_outline_rounded,
-                      title: 'About Vidya AI',
+                      title: 'About Vidyakalp',
                       sub: 'Learn more about the app',
                       onTap: () => context.push('/about'),
                       last: true,
@@ -203,23 +217,26 @@ class SettingsScreen extends ConsumerWidget {
             // ── App info ──────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
+                AppSpacing.screenPadding,
+                24,
+                AppSpacing.screenPadding,
+                0,
+              ),
               child: Column(
                 children: [
-                  Text('Vidya AI',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                fontSize: AppFontSize.title,
-                                color: isDark
-                                    ? AppColors.ink2Dark
-                                    : AppColors.ink2,
-                              )),
+                  Text(
+                    'Vidyakalp',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: AppFontSize.title,
+                      color: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                    ),
+                  ),
                   const SizedBox(height: 3),
                   Text(
                     'Version $kAppVersionName',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontSize: AppFontSize.small,
-                        ),
+                      fontSize: AppFontSize.small,
+                    ),
                   ),
                 ],
               ),

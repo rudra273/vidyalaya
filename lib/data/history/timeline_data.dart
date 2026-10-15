@@ -1,3 +1,6 @@
+import '../../providers/regional_language_provider.dart';
+import 'timeline_data_more.dart';
+
 class HistoricalEvent {
   final String year;
   final String title;
@@ -15,6 +18,15 @@ class HistoricalEvent {
   ///   state-level events.
   final String region;
 
+  /// Optional study hooks. [keyPerson] is the figure to remember for the event
+  /// (in all three languages); [classLevel] and [chapterRef] link it to the
+  /// class and textbook chapter that teach it. All are `null` until filled in.
+  final String? keyPerson;
+  final String? keyPersonOdia;
+  final String? keyPersonHindi;
+  final int? classLevel;
+  final String? chapterRef;
+
   const HistoricalEvent({
     required this.year,
     required this.title,
@@ -25,7 +37,19 @@ class HistoricalEvent {
     required this.descriptionHindi,
     required this.era,
     required this.region,
+    this.keyPerson,
+    this.keyPersonOdia,
+    this.keyPersonHindi,
+    this.classLevel,
+    this.chapterRef,
   });
+
+  /// The key person in the chosen app language, or `null` when none is set.
+  String? regionalKeyPerson(RegionalLanguage lang) => switch (lang) {
+    RegionalLanguage.english => keyPerson,
+    RegionalLanguage.odia => keyPersonOdia ?? keyPerson,
+    RegionalLanguage.hindi => keyPersonHindi ?? keyPerson,
+  };
 
   /// Signed year for ordering (BCE negative), parsed from [year]. Handles
   /// "320 CE", "c. 3100 BCE" and "12th century CE" (taken as its midpoint).
@@ -1263,4 +1287,7 @@ const List<HistoricalEvent> timelineEvents = [
     era: 'Modern',
     region: kRegionIndia,
   ),
+
+  // More events — see timeline_data_more.dart.
+  ...moreTimelineEvents,
 ];

@@ -31,7 +31,10 @@ import '../screens/learn/timeline_screen.dart';
 import '../screens/learn/diagrams_screen.dart';
 import '../screens/learn/interactive_diagram_viewer_screen.dart';
 import '../screens/learn/cosmulator_screen.dart';
+import '../data/seed/vocabulary_data.dart' show VocabularyLevel;
 import '../screens/learn/vocabulary_screen.dart';
+import '../screens/learn/vocabulary_play_screen.dart';
+import '../screens/learn/vocabulary_practice_screen.dart';
 import '../screens/learn/python/python_home_screen.dart';
 import '../screens/learn/python/python_chapter_screen.dart';
 import '../screens/learn/python/python_lesson_screen.dart';
@@ -44,6 +47,8 @@ import '../screens/learn/math/math_quiz_screen.dart';
 import '../screens/learn/math/math_drills_screen.dart';
 import '../screens/learn/math/math_number_sense_screen.dart';
 import '../screens/learn/math/math_fractions_screen.dart';
+import '../screens/learn/math/math_graph_screen.dart';
+import '../screens/learn/math/math_practice_screen.dart';
 import '../screens/learn/quiz/subject_quiz_home_screen.dart';
 import '../screens/learn/quiz/subject_quiz_screen.dart';
 import '../data/quiz/quiz_models.dart';
@@ -222,6 +227,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const VocabularyScreen(),
       ),
       GoRoute(
+        path: '/learn/vocabulary/practice',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const VocabularyPracticeScreen(),
+      ),
+      GoRoute(
+        path: '/learn/vocabulary/sets/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) =>
+            VocabularySetScreen(setId: state.pathParameters['id'] ?? ''),
+      ),
+      GoRoute(
+        path: '/learn/vocabulary/play',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => VocabularyPlayScreen(
+          source: state.uri.queryParameters['source'] ?? 'words',
+          mode: state.uri.queryParameters['mode'] ?? 'cards',
+          level: VocabularyLevel.values
+              .where((l) => l.name == state.uri.queryParameters['level'])
+              .firstOrNull,
+        ),
+      ),
+      GoRoute(
         path: '/learn/timeline',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const TimelineScreen(),
@@ -316,6 +343,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/learn/math/fractions',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const MathFractionsScreen(),
+      ),
+      GoRoute(
+        path: '/learn/math/clock-money',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => MathPracticeScreen.clockMoney(),
+      ),
+      GoRoute(
+        path: '/learn/math/word-problems',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => MathPracticeScreen.wordProblems(),
+      ),
+      GoRoute(
+        path: '/learn/math/graph',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MathGraphScreen(),
       ),
       // ── Subject quizzes. `?topic=` narrows a round to one topic. ──
       GoRoute(

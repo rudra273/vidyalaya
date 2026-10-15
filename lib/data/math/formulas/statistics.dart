@@ -15,6 +15,16 @@ const _data = [
   ),
 ];
 
+const _grouped = [
+  FormulaInput(
+    'l',
+    'Lower limit of each class (e.g. 0, 10, 20, 30)',
+    isList: true,
+  ),
+  FormulaInput('f', 'Frequency of each class (e.g. 5, 8, 15, 7)', isList: true),
+  FormulaInput('h', 'Class width (e.g. 10)'),
+];
+
 const statisticsFormulas = <FormulaData>[
   FormulaData(
     id: 'median',
@@ -96,6 +106,38 @@ const statisticsFormulas = <FormulaData>[
     ],
     compute: _probability,
   ),
+  FormulaData(
+    id: 'grouped-median',
+    titleEn: 'Median of Grouped Data',
+    titleOr: 'ଶ୍ରେଣୀବଦ୍ଧ ତଥ୍ୟର ମଧ୍ୟମା',
+    titleHi: 'वर्गीकृत आँकड़ों की माध्यिका',
+    formula: 'Median = l + ((n/2 − cf) / f) × h',
+    category: _c,
+    descEn:
+        'l = lower limit of the median class, n = total frequency, cf = cumulative frequency before it, f = its frequency, h = class width. Enter each class’s lower limit and frequency.',
+    descOr:
+        'l = ମଧ୍ୟମା ଶ୍ରେଣୀର ନିମ୍ନ ସୀମା, n = ମୋଟ ଆବୃତ୍ତି, cf = ତା ପୂର୍ବର ସଞ୍ଚୟୀ ଆବୃତ୍ତି, f = ତାର ଆବୃତ୍ତି, h = ଶ୍ରେଣୀ ପରିସର। ପ୍ରତ୍ୟେକ ଶ୍ରେଣୀର ନିମ୍ନ ସୀମା ଓ ଆବୃତ୍ତି ଦିଅ।',
+    descHi:
+        'l = माध्यिका वर्ग की निचली सीमा, n = कुल बारंबारता, cf = उससे पहले की संचयी बारंबारता, f = उसकी बारंबारता, h = वर्ग-माप। हर वर्ग की निचली सीमा और बारंबारता डालें।',
+    inputs: _grouped,
+    compute: _groupedMedian,
+  ),
+  FormulaData(
+    id: 'grouped-mode',
+    titleEn: 'Mode of Grouped Data',
+    titleOr: 'ଶ୍ରେଣୀବଦ୍ଧ ତଥ୍ୟର ବହୁଳକ',
+    titleHi: 'वर्गीकृत आँकड़ों का बहुलक',
+    formula: 'Mode = l + ((f₁ − f₀) / (2f₁ − f₀ − f₂)) × h',
+    category: _c,
+    descEn:
+        'The modal class is the one with the highest frequency. f₁ is its frequency, f₀ and f₂ are the frequencies of the classes before and after it.',
+    descOr:
+        'ସର୍ବାଧିକ ଆବୃତ୍ତି ଥିବା ଶ୍ରେଣୀ ବହୁଳକ ଶ୍ରେଣୀ। f₁ ତାର ଆବୃତ୍ତି, f₀ ଓ f₂ ତା ପୂର୍ବ ଓ ପରବର୍ତ୍ତୀ ଶ୍ରେଣୀର ଆବୃତ୍ତି।',
+    descHi:
+        'सबसे अधिक बारंबारता वाला वर्ग बहुलक वर्ग है। f₁ उसकी बारंबारता है, f₀ और f₂ उससे पहले और बाद के वर्गों की बारंबारताएँ हैं।',
+    inputs: _grouped,
+    compute: _groupedMode,
+  ),
 ];
 
 // ─── Calculators ──────────────────────────────────────────────────────────────
@@ -154,4 +196,40 @@ String? _probability(FormulaValues v) {
   }
   final p = fav / total;
   return 'P(E) = ${nice(p)}, P(not E) = ${nice(1 - p)}';
+}
+
+String? _groupedMedian(FormulaValues v) {
+  final ls = v.list('l'), fs = v.list('f'), h = v.n('h');
+  if (ls == null || fs == null || h == null) return null;
+  if (ls.length != fs.length) return 'Enter one frequency for each class';
+  if (h <= 0 || fs.any((f) => f < 0)) return null;
+  final n = fs.reduce((a, b) => a + b);
+  if (n <= 0) return null;
+  var cf = 0.0;
+  for (var i = 0; i < fs.length; i++) {
+    if (cf + fs[i] >= n / 2 && fs[i] > 0) {
+      final median = ls[i] + (n / 2 - cf) / fs[i] * h;
+      return 'n = ${nice(n)}, cf = ${nice(cf)}, Median = ${nice(median)}';
+    }
+    cf += fs[i];
+  }
+  return null;
+}
+
+String? _groupedMode(FormulaValues v) {
+  final ls = v.list('l'), fs = v.list('f'), h = v.n('h');
+  if (ls == null || fs == null || h == null) return null;
+  if (ls.length != fs.length) return 'Enter one frequency for each class';
+  if (h <= 0 || fs.any((f) => f < 0)) return null;
+  var m = 0;
+  for (var i = 1; i < fs.length; i++) {
+    if (fs[i] > fs[m]) m = i;
+  }
+  final f1 = fs[m];
+  final f0 = m > 0 ? fs[m - 1] : 0.0;
+  final f2 = m < fs.length - 1 ? fs[m + 1] : 0.0;
+  final denom = 2 * f1 - f0 - f2;
+  if (denom == 0) return null;
+  final mode = ls[m] + (f1 - f0) / denom * h;
+  return 'Modal class starts at ${nice(ls[m])}, Mode = ${nice(mode)}';
 }

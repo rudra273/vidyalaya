@@ -64,6 +64,28 @@ const mathTools = <MathTool>[
     route: '/learn/math/fractions',
   ),
   MathTool(
+    id: 'math-clock-money',
+    title: 'Clock & Money',
+    sub: 'Tell the time, count the change',
+    icon: Icons.access_time_rounded,
+    route: '/learn/math/clock-money',
+  ),
+  MathTool(
+    id: 'math-word-problems',
+    title: 'Word Problems',
+    sub: 'Turn a story into a sum',
+    icon: Icons.menu_book_rounded,
+    route: '/learn/math/word-problems',
+  ),
+  MathTool(
+    id: 'math-graph',
+    title: 'Graph Plotter',
+    sub: 'Draw y = mx + c, find where lines meet',
+    icon: Icons.show_chart_rounded,
+    route: '/learn/math/graph',
+    scored: false,
+  ),
+  MathTool(
     id: 'math-formulas',
     title: 'Formulas',
     sub: 'Reference & calculator',

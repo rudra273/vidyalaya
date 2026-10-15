@@ -43,7 +43,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text('A new version of Vidya AI is available.'),
+      find.text('A new version of Vidyakalp is available.'),
       findsOneWidget,
     );
     expect(find.text('Update'), findsOneWidget);

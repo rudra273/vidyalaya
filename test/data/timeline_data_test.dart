@@ -67,4 +67,45 @@ void main() {
     final keys = timelineEvents.map((e) => '${e.year}|${e.title}').toList();
     expect(keys.toSet().length, keys.length);
   });
+
+  test('key person is given in all three languages or not at all', () {
+    for (final e in timelineEvents) {
+      final set = [e.keyPerson, e.keyPersonOdia, e.keyPersonHindi];
+      expect(
+        set.every((p) => p != null) || set.every((p) => p == null),
+        isTrue,
+        reason: e.title,
+      );
+    }
+    expect(
+      timelineEvents.where((e) => e.keyPerson != null).length,
+      greaterThanOrEqualTo(30),
+    );
+  });
+
+  test('timeline covers the planned topics and more states', () {
+    expect(timelineEvents.length, greaterThanOrEqualTo(120));
+    for (final state in [
+      'Bihar',
+      'Gujarat',
+      'Assam',
+      'Uttar Pradesh',
+      'Rajasthan',
+    ]) {
+      expect(
+        timelineEvents.where((e) => e.region == state).length,
+        greaterThanOrEqualTo(3),
+        reason: state,
+      );
+    }
+    for (final year in [
+      '1793 CE',
+      '1932 CE',
+      '1956 CE',
+      '1991 CE',
+      '1998 CE',
+    ]) {
+      expect(timelineEvents.any((e) => e.year == year), isTrue, reason: year);
+    }
+  });
 }

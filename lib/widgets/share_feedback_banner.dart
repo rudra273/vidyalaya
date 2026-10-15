@@ -12,7 +12,7 @@ import 'pressable.dart';
 // ─── ShareFeedbackBanner: sticky share card at Home bottom ───────────────
 
 /// Permanent banner at the bottom of Home for sharing the app on WhatsApp.
-/// Until dismissed, it also shows an "Enjoying Vidya AI?" header with a
+/// Until dismissed, it also shows an "Enjoying Vidyakalp?" header with a
 /// Rate-us button; the close icon hides only that part, collapsing the
 /// banner into a compact share-only card. Rating stays reachable in
 /// Settings → Support.
@@ -71,9 +71,11 @@ class _FullBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Enjoying Vidya AI?',
-                    style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(fontSize: AppFontSize.title, height: 1.1),
+                    'Enjoying Vidyakalp?',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontSize: AppFontSize.title,
+                      height: 1.1,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -118,8 +120,7 @@ class _FullBanner extends ConsumerWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     border: Border.all(color: cs.outline),
-                    borderRadius:
-                        BorderRadius.circular(AppSpacing.tileRadius),
+                    borderRadius: BorderRadius.circular(AppSpacing.tileRadius),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -169,9 +170,11 @@ class _CompactShareRow extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Share Vidya AI',
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontSize: AppFontSize.content, height: 1.1),
+                'Share Vidyakalp',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: AppFontSize.content,
+                  height: 1.1,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -216,8 +219,10 @@ class _WhatsAppButton extends ConsumerWidget {
               'assets/icons/whatsapp.svg',
               width: 17,
               height: 17,
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              colorFilter: const ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              ),
             ),
             const SizedBox(width: 8),
             const Text(

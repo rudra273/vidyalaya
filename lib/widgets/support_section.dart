@@ -49,7 +49,7 @@ class SupportSection extends ConsumerWidget {
                 ListRow(
                   color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
                   icon: Icons.share_outlined,
-                  title: 'Share Vidya AI',
+                  title: 'Share Vidyakalp',
                   sub: 'Tell your friends about the app',
                   onTap: () {
                     Haptics.light(ref);
@@ -59,7 +59,7 @@ class SupportSection extends ConsumerWidget {
                 ListRow(
                   color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
                   icon: Icons.star_outline_rounded,
-                  title: 'Rate Vidya AI',
+                  title: 'Rate Vidyakalp',
                   sub: 'Rate us on the Play Store',
                   onTap: () {
                     Haptics.light(ref);

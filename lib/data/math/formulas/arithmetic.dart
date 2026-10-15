@@ -210,6 +210,98 @@ const arithmeticFormulas = <FormulaData>[
     ],
     compute: _hcfLcm,
   ),
+  FormulaData(
+    id: 'divisibility-rules',
+    titleEn: 'Divisibility Rules',
+    titleOr: 'ବିଭାଜ୍ୟତା ନିୟମ',
+    titleHi: 'विभाज्यता के नियम',
+    formula: '''2: last digit is even
+3: sum of digits divisible by 3
+4: last two digits divisible by 4
+5: last digit is 0 or 5
+6: divisible by both 2 and 3
+8: last three digits divisible by 8
+9: sum of digits divisible by 9
+10: last digit is 0
+11: (sum of odd-place digits) − (sum of even-place digits) is 0 or a multiple of 11''',
+    category: _c,
+    descEn:
+        'Quick tests to see whether a number divides exactly without doing the division. Enter a number to check it against all of them.',
+    descOr:
+        'ଭାଗ ନକରି ଜାଣିବାର ସହଜ ଉପାୟ କି ସଂଖ୍ୟାଟି ସମ୍ପୂର୍ଣ୍ଣ ଭାବେ ବିଭାଜ୍ୟ। ସବୁ ନିୟମରେ ଯାଞ୍ଚ କରିବାକୁ ଏକ ସଂଖ୍ୟା ଦିଅ।',
+    descHi:
+        'भाग किए बिना जानने की आसान जाँच कि कोई संख्या पूर्णतः विभाजित होती है या नहीं। सभी नियमों से जाँचने के लिए संख्या डालें।',
+    inputs: [FormulaInput('n', 'Whole number (e.g. 2376)')],
+    compute: _divisibility,
+  ),
+  FormulaData(
+    id: 'roman-numerals',
+    titleEn: 'Roman Numerals',
+    titleOr: 'ରୋମାନ ସଂଖ୍ୟା',
+    titleHi: 'रोमन अंक',
+    formula: 'I = 1, V = 5, X = 10, L = 50, C = 100, D = 500, M = 1000',
+    category: _c,
+    descEn:
+        'Seven letters make every Roman numeral. A smaller letter before a larger one is subtracted (IV = 4, IX = 9, XL = 40). Enter a number from 1 to 3999.',
+    descOr:
+        'ସାତୋଟି ଅକ୍ଷରରେ ସବୁ ରୋମାନ ସଂଖ୍ୟା ହୁଏ। ବଡ଼ ଅକ୍ଷର ପୂର୍ବରେ ଛୋଟ ଅକ୍ଷର ଥିଲେ ବିୟୋଗ ହୁଏ (IV = 4, IX = 9, XL = 40)। 1 ରୁ 3999 ମଧ୍ୟରେ ଏକ ସଂଖ୍ୟା ଦିଅ।',
+    descHi:
+        'सात अक्षरों से सभी रोमन अंक बनते हैं। बड़े अक्षर से पहले छोटा अक्षर हो तो घटाया जाता है (IV = 4, IX = 9, XL = 40)। 1 से 3999 के बीच संख्या डालें।',
+    inputs: [FormulaInput('n', 'Number, 1 to 3999 (e.g. 2024)')],
+    compute: _roman,
+  ),
+  FormulaData(
+    id: 'bodmas',
+    titleEn: 'BODMAS (Order of Operations)',
+    titleOr: 'BODMAS (କ୍ରିୟାର କ୍ରମ)',
+    titleHi: 'BODMAS (संक्रियाओं का क्रम)',
+    formula: '''B  Brackets  ( )
+O  Orders  (powers and roots)
+D  Division  ÷
+M  Multiplication  ×
+A  Addition  +
+S  Subtraction  −''',
+    category: _c,
+    descEn:
+        'Always work in this order. Division and multiplication have equal rank, as do addition and subtraction: do those from left to right. Example: 8 + 2 × 5 = 18, not 50.',
+    descOr:
+        'ସର୍ବଦା ଏହି କ୍ରମରେ କର। ଭାଗ ଓ ଗୁଣନର ସମାନ ମର୍ଯ୍ୟାଦା, ସେହିପରି ଯୋଗ ଓ ବିୟୋଗର ମଧ୍ୟ: ଏଗୁଡ଼ିକୁ ବାମରୁ ଡାହାଣକୁ କର। ଉଦାହରଣ: 8 + 2 × 5 = 18, 50 ନୁହେଁ।',
+    descHi:
+        'हमेशा इसी क्रम में हल करें। भाग और गुणा का दर्जा बराबर है, वैसे ही जोड़ और घटाव का: इन्हें बाएँ से दाएँ करें। उदाहरण: 8 + 2 × 5 = 18, 50 नहीं।',
+  ),
+  FormulaData(
+    id: 'place-value',
+    titleEn: 'Place Value',
+    titleOr: 'ସ୍ଥାନୀୟ ମୂଲ୍ୟ',
+    titleHi: 'स्थानीय मान',
+    formula:
+        'Ones · Tens · Hundreds · Thousands · Ten-Thousands · Lakhs · Ten-Lakhs · Crores',
+    category: _c,
+    descEn:
+        'The value of a digit depends on its place. In 4,56,789 the digit 5 is in the ten-thousands place, so its value is 50,000. Enter a number to see each digit’s value.',
+    descOr:
+        'ଅଙ୍କର ମୂଲ୍ୟ ତାର ସ୍ଥାନ ଉପରେ ନିର୍ଭର କରେ। 4,56,789 ରେ ଅଙ୍କ 5 ଅଯୁତ ସ୍ଥାନରେ, ତେଣୁ ତାର ମୂଲ୍ୟ 50,000। ପ୍ରତ୍ୟେକ ଅଙ୍କର ମୂଲ୍ୟ ଦେଖିବାକୁ ଏକ ସଂଖ୍ୟା ଦିଅ।',
+    descHi:
+        'अंक का मान उसके स्थान पर निर्भर करता है। 4,56,789 में अंक 5 दस हज़ार के स्थान पर है, इसलिए उसका मान 50,000 है। हर अंक का मान देखने के लिए संख्या डालें।',
+    inputs: [FormulaInput('n', 'Whole number (e.g. 456789)')],
+    compute: _placeValue,
+  ),
+  FormulaData(
+    id: 'squares-cubes',
+    titleEn: 'Squares & Cubes',
+    titleOr: 'ବର୍ଗ ଓ ଘନ',
+    titleHi: 'वर्ग और घन',
+    formula: 'n² = n × n,   n³ = n × n × n',
+    category: _c,
+    descEn:
+        'The square of a number is the number multiplied by itself; the cube multiplies it three times. Also shows the square root and cube root when they come out whole.',
+    descOr:
+        'ସଂଖ୍ୟାର ବର୍ଗ ହେଉଛି ତାକୁ ନିଜ ସହ ଗୁଣିବା; ଘନ ହେଉଛି ତିନିଥର ଗୁଣିବା। ବର୍ଗମୂଳ ଓ ଘନମୂଳ ପୂର୍ଣ୍ଣ ସଂଖ୍ୟା ହେଲେ ତାହା ମଧ୍ୟ ଦେଖାଏ।',
+    descHi:
+        'किसी संख्या का वर्ग उसे स्वयं से गुणा करना है; घन उसे तीन बार गुणा करना है। वर्गमूल और घनमूल पूर्ण संख्या हों तो वे भी दिखाता है।',
+    inputs: [FormulaInput('n', 'Number (e.g. 12)')],
+    compute: _squaresCubes,
+  ),
 ];
 
 // ─── Calculators ──────────────────────────────────────────────────────────────
@@ -290,3 +382,84 @@ String? _hcfLcm(FormulaValues v) {
 }
 
 int _gcd(int a, int b) => b == 0 ? a : _gcd(b, a % b);
+
+String? _wholeNumber(FormulaValues v) {
+  final n = v.n('n');
+  if (n == null || n < 0 || n != n.roundToDouble() || n > 999999999999) {
+    return null;
+  }
+  return n.toString();
+}
+
+String? _divisibility(FormulaValues v) {
+  final text = _wholeNumber(v);
+  if (text == null) return null;
+  final n = int.parse(text.replaceAll(RegExp(r'\.0$'), ''));
+  final by = [
+    for (final d in [2, 3, 4, 5, 6, 8, 9, 10, 11])
+      if (n % d == 0) d,
+  ];
+  return by.isEmpty
+      ? '$n is not divisible by 2, 3, 4, 5, 6, 8, 9, 10 or 11'
+      : '$n is divisible by ${by.join(', ')}';
+}
+
+String? _roman(FormulaValues v) {
+  final n = v.n('n');
+  if (n == null || n != n.roundToDouble()) return null;
+  if (n < 1 || n > 3999) return 'Enter a number from 1 to 3999';
+  const table = [
+    (1000, 'M'),
+    (900, 'CM'),
+    (500, 'D'),
+    (400, 'CD'),
+    (100, 'C'),
+    (90, 'XC'),
+    (50, 'L'),
+    (40, 'XL'),
+    (10, 'X'),
+    (9, 'IX'),
+    (5, 'V'),
+    (4, 'IV'),
+    (1, 'I'),
+  ];
+  var left = n.toInt();
+  final out = StringBuffer();
+  for (final (value, symbol) in table) {
+    while (left >= value) {
+      out.write(symbol);
+      left -= value;
+    }
+  }
+  return '${nice(n)} = $out';
+}
+
+String? _placeValue(FormulaValues v) {
+  final text = _wholeNumber(v);
+  if (text == null) return null;
+  final digits = text.replaceAll(RegExp(r'\.0$'), '');
+  final parts = <String>[];
+  for (var i = 0; i < digits.length; i++) {
+    final d = int.parse(digits[i]);
+    if (d == 0) continue;
+    final value = d * pow(10, digits.length - 1 - i).toInt();
+    parts.add('$d → $value');
+  }
+  return parts.isEmpty ? '0' : parts.join(',  ');
+}
+
+String? _squaresCubes(FormulaValues v) {
+  final n = v.n('n');
+  if (n == null) return null;
+  final out = StringBuffer('n² = ${nice(n * n)}, n³ = ${nice(n * n * n)}');
+  if (n >= 0) {
+    final sq = sqrt(n), cb = pow(n, 1 / 3).toDouble();
+    if ((sq - sq.roundToDouble()).abs() < 1e-9) {
+      out.write(', √n = ${nice(sq)}');
+    }
+    if ((cb - cb.roundToDouble()).abs() < 1e-9) {
+      out.write(', ∛n = ${nice(cb)}');
+    }
+  }
+  return out.toString();
+}
