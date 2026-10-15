@@ -80,10 +80,8 @@ flutter_native_splash:
   color: "#ECF1EC"
   image: assets/icon/splash_mark.png
   android_12:
-    # Android 12+ shows this icon inside the system's circular holder,
-    # with the board caption pinned at the bottom of the screen.
+    # The text-free book/V fits the system's circular splash mask.
     image: assets/icon/splash_mark.png
-    branding: assets/icon/branding.png
     color: "#ECF1EC"
     icon_background_color: "#ECF1EC"
   android: true
