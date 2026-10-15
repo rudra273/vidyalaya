@@ -41,12 +41,59 @@ class WhileStmt extends Stmt {
   const WhileStmt(this.condition, this.body, int line) : super(line);
 }
 
+/// `for x in items:` or, unpacking, `for key, value in d.items():`.
 class ForStmt extends Stmt {
-  final String varName;
+  final List<String> targets;
   final Expr iterable;
   final List<Stmt> body;
-  const ForStmt(this.varName, this.iterable, this.body, int line)
-      : super(line);
+  const ForStmt(this.targets, this.iterable, this.body, int line) : super(line);
+}
+
+/// `a, b = b, a` — assigns the items of a tuple/list to several names.
+class UnpackStmt extends Stmt {
+  final List<String> targets;
+  final Expr value;
+  const UnpackStmt(this.targets, this.value, int line) : super(line);
+}
+
+/// One `except` clause. An empty [types] list catches every error.
+class ExceptClause {
+  final List<String> types;
+  final String? asName;
+  final List<Stmt> body;
+  final int line;
+  const ExceptClause(this.types, this.asName, this.body, this.line);
+}
+
+class TryStmt extends Stmt {
+  final List<Stmt> body;
+  final List<ExceptClause> handlers;
+  final List<Stmt>? elseBody;
+  final List<Stmt>? finallyBody;
+  const TryStmt(
+    this.body,
+    this.handlers,
+    this.elseBody,
+    this.finallyBody,
+    int line,
+  ) : super(line);
+}
+
+/// `raise ValueError("message")`.
+class RaiseStmt extends Stmt {
+  final String kind;
+  final Expr? message;
+  const RaiseStmt(this.kind, this.message, int line) : super(line);
+}
+
+/// `import random` — the only module in the course.
+class ImportStmt extends Stmt {
+  final String module;
+  const ImportStmt(this.module, int line) : super(line);
+}
+
+class PassStmt extends Stmt {
+  const PassStmt(super.line);
 }
 
 class FuncDef extends Stmt {
@@ -81,9 +128,36 @@ class ListExpr extends Expr {
   const ListExpr(this.elements, int line) : super(line);
 }
 
+class TupleExpr extends Expr {
+  final List<Expr> elements;
+  const TupleExpr(this.elements, int line) : super(line);
+}
+
+/// `{key: value, ...}`.
+class DictExpr extends Expr {
+  final List<(Expr, Expr)> entries;
+  const DictExpr(this.entries, int line) : super(line);
+}
+
+/// `obj[start:stop]` — either end may be left out.
+class SliceExpr extends Expr {
+  final Expr object;
+  final Expr? start;
+  final Expr? stop;
+  const SliceExpr(this.object, this.start, this.stop, int line) : super(line);
+}
+
+/// An interpolated `{expr:spec}` piece of an f-string.
+class FStringField {
+  final Expr expr;
+  final String spec;
+  const FStringField(this.expr, this.spec);
+}
+
 /// f"...{expr}...": alternating literal chunks and embedded expressions.
 class FStringExpr extends Expr {
-  final List<Object> parts; // String (literal) or Expr (interpolated)
+  /// String (literal), Expr (interpolated), or FStringField (with a format).
+  final List<Object> parts;
   const FStringExpr(this.parts, int line) : super(line);
 }
 
@@ -115,10 +189,15 @@ class LogicalExpr extends Expr {
 class CallExpr extends Expr {
   final Expr callee; // NameExpr for a plain call, or AttrExpr for method call
   final List<Expr> args;
-  const CallExpr(this.callee, this.args, int line) : super(line);
+
+  /// Keyword arguments like `sep=""` — only a few built-ins accept them.
+  final List<(String, Expr)> kwargs;
+  const CallExpr(this.callee, this.args, int line, [this.kwargs = const []])
+    : super(line);
 }
 
-/// Attribute access, used only for the handful of methods we support (.append).
+/// Attribute access, used only for method calls like `.append()` and for
+/// module functions like `random.randint()`.
 class AttrExpr extends Expr {
   final Expr object;
   final String name;

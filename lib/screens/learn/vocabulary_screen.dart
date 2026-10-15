@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../data/seed/vocabulary_data.dart';
@@ -352,6 +353,11 @@ class _VocabularyScreenState extends ConsumerState<VocabularyScreen> {
       appBar: AppBar(
         title: const Text('Vocabulary'),
         actions: [
+          IconButton(
+            tooltip: 'Practise & word sets',
+            icon: const Icon(Icons.style_rounded),
+            onPressed: () => context.push('/learn/vocabulary/practice'),
+          ),
           RegionalLanguagePicker(
             current: lang,
             languages: const [RegionalLanguage.odia, RegionalLanguage.hindi],
@@ -985,6 +991,8 @@ class _WordCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(word.partOfSpeech, style: styles.partOfSpeech),
+              const SizedBox(width: 10),
+              Text(word.level.label, style: styles.partOfSpeech),
             ],
           ),
           const SizedBox(height: 2),
@@ -993,6 +1001,20 @@ class _WordCard extends StatelessWidget {
           Text(word.meaningEn, style: styles.meaningEn),
           const SizedBox(height: 6),
           Text(word.regionalMeaning(lang), style: styles.meaningRegional),
+          if (word.synonyms.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Similar: ${word.synonyms.join(', ')}',
+              style: styles.pronunciation,
+            ),
+          ],
+          if (word.antonyms.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Opposite: ${word.antonyms.join(', ')}',
+              style: styles.pronunciation,
+            ),
+          ],
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1006,7 +1028,16 @@ class _WordCard extends StatelessWidget {
                 Icon(Icons.format_quote_rounded, size: 15, color: styles.accent),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(word.sentence, style: styles.sentence),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(word.sentence, style: styles.sentence),
+                      if (word.regionalSentence(lang) case final translated?) ...[
+                        const SizedBox(height: 4),
+                        Text(translated, style: styles.sentence),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),

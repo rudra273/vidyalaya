@@ -60,18 +60,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     const SizedBox(height: 32),
 
                     // Header
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.asset(
-                        'assets/icon/vmark.png',
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      ),
+                    Image.asset(
+                      'assets/icon/vmark.png',
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.contain,
+                      semanticLabel: 'Vidyakalp logo',
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Welcome to Vidya AI',
+                      'Welcome to Vidyakalp',
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(fontWeight: AppFontWeight.bold),
                       textAlign: TextAlign.center,

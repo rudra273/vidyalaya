@@ -139,7 +139,7 @@ def build_screenshot(filename: str, source: Path, headline: str, subline: str) -
     draw = ImageDraw.Draw(background)
 
     pill_font = font(30)
-    pill_text = "VIDYA AI"
+    pill_text = "Vidyakalp"
     pill_box = draw.textbbox((0, 0), pill_text, font=pill_font)
     pill_width = pill_box[2] - pill_box[0] + 52
     pill_x = (1080 - pill_width) // 2
@@ -179,7 +179,7 @@ def build_feature_graphic() -> Path:
     canvas.alpha_composite(overlay)
     draw = ImageDraw.Draw(canvas)
 
-    draw.text((70, 72), "VIDYA AI", font=font(29), fill="#FFD76A")
+    draw.text((70, 72), "Vidyakalp", font=font(29), fill="#FFD76A")
     draw.multiline_text((66, 118), "Learn. Explore.\nGrow.", font=font(70), fill="#FFFFFF", spacing=-4)
     draw.text((70, 302), "AI-powered learning for every student", font=font(27), fill="#DDF5E7")
     draw.rounded_rectangle((70, 366, 365, 422), radius=28, fill="#F4C852")

@@ -93,7 +93,7 @@ class HomeScreen extends ConsumerWidget {
           // Shares PageTitle's metrics so the wordmark sits at exactly the
           // same height as the "AI Learning" / "Explore" / "Profile" titles.
           PageTitle(
-            title: 'Vidya AI',
+            title: 'Vidyakalp',
             sub: _greetingLine(firstName),
             // Both controls fit PageTitle's title row, so they centre on the
             // wordmark and the greeting runs full width underneath.

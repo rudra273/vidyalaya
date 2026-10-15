@@ -1,4 +1,5 @@
 import 'vocabulary/vocabulary_a.dart';
+import 'vocabulary/vocabulary_adverbs.dart';
 import 'vocabulary/vocabulary_b.dart';
 import 'vocabulary/vocabulary_c.dart';
 import 'vocabulary/vocabulary_d_f.dart';
@@ -23,14 +24,17 @@ const vocabularyWords = <VocabularyWord>[
   ...vocabularyWordsPR,
   ...vocabularyWordsS,
   ...vocabularyWordsTZ,
+  ...vocabularyWordsAdverbs,
 ];
 
 /// The word for [date] (defaults to today), chosen deterministically so it is
 /// the same for everyone on a given day and rotates through the list.
 VocabularyWord wordOfTheDay([DateTime? date]) {
   final d = date ?? DateTime.now();
-  final dayNumber = DateTime(d.year, d.month, d.day)
-      .difference(DateTime(2000))
-      .inDays;
+  final dayNumber = DateTime(
+    d.year,
+    d.month,
+    d.day,
+  ).difference(DateTime(2000)).inDays;
   return vocabularyWords[dayNumber % vocabularyWords.length];
 }

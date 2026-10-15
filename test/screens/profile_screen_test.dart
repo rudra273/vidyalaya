@@ -149,6 +149,7 @@ void main() {
     );
     expect(editAction.onAction, isNull);
     await tester.scrollUntilVisible(find.text('Sign out'), 200);
+    await tester.pump();
     expect(find.text('Sign out').hitTestable(), findsOneWidget);
   });
 

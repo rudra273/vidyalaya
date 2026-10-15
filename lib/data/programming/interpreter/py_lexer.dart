@@ -25,6 +25,13 @@ enum TokType {
   kwOr,
   kwNot,
   kwNone,
+  kwTry,
+  kwExcept,
+  kwFinally,
+  kwRaise,
+  kwImport,
+  kwAs,
+  kwPass,
   // operators & punctuation
   plus,
   minus,
@@ -47,6 +54,8 @@ enum TokType {
   rParen,
   lBracket,
   rBracket,
+  lBrace,
+  rBrace,
   comma,
   colon,
   dot,
@@ -91,13 +100,27 @@ const _keywords = <String, TokType>{
   'or': TokType.kwOr,
   'not': TokType.kwNot,
   'None': TokType.kwNone,
+  'try': TokType.kwTry,
+  'except': TokType.kwExcept,
+  'finally': TokType.kwFinally,
+  'raise': TokType.kwRaise,
+  'import': TokType.kwImport,
+  'as': TokType.kwAs,
+  'pass': TokType.kwPass,
 };
 
 // Real Python words that we deliberately don't teach yet. Hitting one gives a
 // friendly "not in our classroom" message instead of a confusing parse error.
 const _notYetKeywords = <String>{
-  'import', 'from', 'class', 'try', 'except', 'finally', 'raise', 'with',
-  'as', 'lambda', 'global', 'nonlocal', 'yield', 'assert', 'del', 'pass',
+  'from',
+  'class',
+  'with',
+  'lambda',
+  'global',
+  'nonlocal',
+  'yield',
+  'assert',
+  'del',
   'is',
 };
 
@@ -310,8 +333,9 @@ class Lexer {
       );
     }
     _advance(); // closing quote
-    _tokens.add(Token(TokType.string, buf.toString(), startLine,
-        value: buf.toString()));
+    _tokens.add(
+      Token(TokType.string, buf.toString(), startLine, value: buf.toString()),
+    );
   }
 
   void _lexFString() {
@@ -345,8 +369,9 @@ class Lexer {
     }
     _advance(); // closing quote
     // Keep the raw inner text; the parser turns {expr} pieces into real exprs.
-    _tokens.add(Token(TokType.fstring, buf.toString(), startLine,
-        raw: buf.toString()));
+    _tokens.add(
+      Token(TokType.fstring, buf.toString(), startLine, raw: buf.toString()),
+    );
   }
 
   String _escape() {
@@ -403,8 +428,11 @@ class Lexer {
       case '!':
         _advance();
         if (_match('=')) return _add(TokType.ne, '!=');
-        throw PyError("I don't understand `!` on its own.",
-            line: _line, hint: "Did you mean `!=` (not equal)?");
+        throw PyError(
+          "I don't understand `!` on its own.",
+          line: _line,
+          hint: "Did you mean `!=` (not equal)?",
+        );
       case '<':
         _advance();
         if (_match('=')) return _add(TokType.le, '<=');
@@ -429,6 +457,14 @@ class Lexer {
         _advance();
         if (_bracketDepth > 0) _bracketDepth--;
         return _add(TokType.rBracket, ']');
+      case '{':
+        _advance();
+        _bracketDepth++;
+        return _add(TokType.lBrace, '{');
+      case '}':
+        _advance();
+        if (_bracketDepth > 0) _bracketDepth--;
+        return _add(TokType.rBrace, '}');
       case ',':
         _advance();
         return _add(TokType.comma, ',');
@@ -439,10 +475,7 @@ class Lexer {
         _advance();
         return _add(TokType.dot, '.');
       default:
-        throw PyError(
-          "I don't understand the symbol `$c` here.",
-          line: _line,
-        );
+        throw PyError("I don't understand the symbol `$c` here.", line: _line);
     }
   }
 
@@ -464,8 +497,7 @@ class Lexer {
 
   bool get _atEnd => _pos >= _src.length;
   String get _peek => _src[_pos];
-  String _peekAt(int n) =>
-      (_pos + n) < _src.length ? _src[_pos + n] : ' ';
+  String _peekAt(int n) => (_pos + n) < _src.length ? _src[_pos + n] : ' ';
   void _advance() => _pos++;
 
   bool _match(String expected) {
@@ -478,6 +510,7 @@ class Lexer {
     final u = c.codeUnitAt(0);
     return u >= 48 && u <= 57;
   }
+
   static bool _isAlpha(String c) {
     final u = c.codeUnitAt(0);
     return (u >= 65 && u <= 90) || (u >= 97 && u <= 122) || u == 95;

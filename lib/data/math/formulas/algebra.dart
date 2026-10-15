@@ -242,6 +242,49 @@ const algebraFormulas = <FormulaData>[
     ],
     compute: _linear,
   ),
+  FormulaData(
+    id: 'roots-sum-product',
+    titleEn: 'Sum & Product of Roots',
+    titleOr: 'ମୂଳର ଯୋଗଫଳ ଓ ଗୁଣଫଳ',
+    titleHi: 'मूलों का योग और गुणनफल',
+    formula: 'α + β = −b/a,   αβ = c/a',
+    category: _c,
+    descEn:
+        'For ax² + bx + c = 0 the two roots α and β are linked to the coefficients, so you need not solve the equation.',
+    descOr:
+        'ax² + bx + c = 0 ର ଦୁଇଟି ମୂଳ α ଓ β ସହଗ ସହ ସମ୍ପର୍କିତ, ତେଣୁ ସମୀକରଣ ସମାଧାନ ନକରି ମଧ୍ୟ ଯୋଗଫଳ ଓ ଗୁଣଫଳ ମିଳେ।',
+    descHi:
+        'ax² + bx + c = 0 के दोनों मूल α और β गुणांकों से जुड़े होते हैं, इसलिए समीकरण हल किए बिना योग और गुणनफल मिल जाते हैं।',
+    inputs: [
+      FormulaInput('a', 'Coefficient a (e.g. 2)'),
+      FormulaInput('b', 'Coefficient b (e.g. -10)'),
+      FormulaInput('c', 'Constant c (e.g. 12)'),
+    ],
+    compute: _rootsSumProduct,
+  ),
+  FormulaData(
+    id: 'linear-pair-consistency',
+    titleEn: 'Pair of Linear Equations: Consistency',
+    titleOr: 'ଦୁଇଟି ରୈଖିକ ସମୀକରଣର ସଙ୍ଗତି',
+    titleHi: 'दो रैखिक समीकरणों की संगतता',
+    formula: 'a₁x + b₁y + c₁ = 0,  a₂x + b₂y + c₂ = 0',
+    category: _c,
+    descEn:
+        'a₁/a₂ ≠ b₁/b₂: one solution. a₁/a₂ = b₁/b₂ = c₁/c₂: infinitely many. a₁/a₂ = b₁/b₂ ≠ c₁/c₂: no solution.',
+    descOr:
+        'a₁/a₂ ≠ b₁/b₂: ଗୋଟିଏ ସମାଧାନ। a₁/a₂ = b₁/b₂ = c₁/c₂: ଅସଂଖ୍ୟ ସମାଧାନ। a₁/a₂ = b₁/b₂ ≠ c₁/c₂: କୌଣସି ସମାଧାନ ନାହିଁ।',
+    descHi:
+        'a₁/a₂ ≠ b₁/b₂: एक हल। a₁/a₂ = b₁/b₂ = c₁/c₂: अपरिमित रूप से अनेक हल। a₁/a₂ = b₁/b₂ ≠ c₁/c₂: कोई हल नहीं।',
+    inputs: [
+      FormulaInput('a₁', 'a₁ (e.g. 2)'),
+      FormulaInput('b₁', 'b₁ (e.g. 3)'),
+      FormulaInput('c₁', 'c₁ (e.g. -5)'),
+      FormulaInput('a₂', 'a₂ (e.g. 4)'),
+      FormulaInput('b₂', 'b₂ (e.g. 6)'),
+      FormulaInput('c₂', 'c₂ (e.g. -10)'),
+    ],
+    compute: _linearPair,
+  ),
 ];
 
 // ─── Calculators ──────────────────────────────────────────────────────────────
@@ -343,4 +386,29 @@ String? _linear(FormulaValues v) {
   if (a == null || b == null) return null;
   if (a == 0) return 'a cannot be 0';
   return 'x = ${nice(-b / a)}';
+}
+
+String? _rootsSumProduct(FormulaValues v) {
+  final a = v.n('a'), b = v.n('b'), c = v.n('c');
+  if (a == null || b == null || c == null) return null;
+  if (a == 0) return 'a cannot be 0';
+  return 'α + β = ${nice(-b / a)}, αβ = ${nice(c / a)}';
+}
+
+String? _linearPair(FormulaValues v) {
+  final a1 = v.n('a₁'), b1 = v.n('b₁'), c1 = v.n('c₁');
+  final a2 = v.n('a₂'), b2 = v.n('b₂'), c2 = v.n('c₂');
+  if (a1 == null || b1 == null || c1 == null) return null;
+  if (a2 == null || b2 == null || c2 == null) return null;
+  // Cross-multiplied so a zero coefficient never causes a division.
+  final det = a1 * b2 - a2 * b1;
+  if (det != 0) {
+    final x = (b1 * c2 - b2 * c1) / det;
+    final y = (c1 * a2 - c2 * a1) / det;
+    return 'Consistent, one solution: x = ${nice(x)}, y = ${nice(y)}';
+  }
+  final same = a1 * c2 - a2 * c1 == 0 && b1 * c2 - b2 * c1 == 0;
+  return same
+      ? 'Consistent, infinitely many solutions (coincident lines)'
+      : 'Inconsistent, no solution (parallel lines)';
 }

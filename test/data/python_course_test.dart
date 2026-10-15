@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vidyalaya/data/programming/interpreter/py_runner.dart';
 import 'package:vidyalaya/data/programming/python_course_data.dart';
+import 'package:vidyalaya/data/programming/python_more_data.dart';
 import 'package:vidyalaya/data/programming/python_models.dart';
 
 // ─── Content-integrity tests ──────────────────────────────────────────────────
@@ -21,10 +22,16 @@ void main() {
                 block.code,
                 presetInputs: block.presetInputs,
               );
-              expect(r.error, isNull,
-                  reason: 'errored: ${r.error}\ncode:\n${block.code}');
-              expect(r.output, block.expectedOutput,
-                  reason: 'output mismatch for ${lesson.id} block $i');
+              expect(
+                r.error,
+                isNull,
+                reason: 'errored: ${r.error}\ncode:\n${block.code}',
+              );
+              expect(
+                r.output,
+                block.expectedOutput,
+                reason: 'output mismatch for ${lesson.id} block $i',
+              );
             });
           }
         }
@@ -46,9 +53,13 @@ void main() {
                 block.starterCode,
                 presetInputs: block.presetInputs,
               );
-              expect(r.error, isNull,
-                  reason: 'starter errored: ${r.error}'
-                      '\ncode:\n${block.starterCode}');
+              expect(
+                r.error,
+                isNull,
+                reason:
+                    'starter errored: ${r.error}'
+                    '\ncode:\n${block.starterCode}',
+              );
             });
           }
         }
@@ -75,10 +86,16 @@ void main() {
     test('every quiz question is well-formed', () {
       for (final c in pythonChapters) {
         for (final q in c.quiz) {
-          expect(q.options.length, 4,
-              reason: 'quiz in ${c.id} must have 4 options');
-          expect(q.correctIndex, inInclusiveRange(0, 3),
-              reason: 'correctIndex out of range in ${c.id}');
+          expect(
+            q.options.length,
+            4,
+            reason: 'quiz in ${c.id} must have 4 options',
+          );
+          expect(
+            q.correctIndex,
+            inInclusiveRange(0, 3),
+            reason: 'correctIndex out of range in ${c.id}',
+          );
         }
       }
     });
@@ -89,5 +106,38 @@ void main() {
         expect(c.quiz, isNotEmpty, reason: '${c.id} has no quiz');
       }
     });
+  });
+
+  group('predict-the-output quizzes', () {
+    test('every chapter has at least one', () {
+      for (final c in pythonChapters) {
+        expect(
+          c.quiz.any((q) => q.type == PyQuizType.predictOutput),
+          isTrue,
+          reason: '${c.id} has no predict-the-output question',
+        );
+      }
+    });
+
+    // The older chapters summarise multi-line output in their answers, so the
+    // exact-match check covers the chapters whose answers were generated.
+    for (final chapter in pythonMoreChapters) {
+      for (var i = 0; i < chapter.quiz.length; i++) {
+        final q = chapter.quiz[i];
+        if (q.type != PyQuizType.predictOutput || q.code == null) continue;
+        test(
+          '${chapter.id} quiz $i: the marked answer is what the code prints',
+          () async {
+            final r = await PyRunner.run(q.code!);
+            expect(r.error, isNull, reason: 'errored: ${r.error}');
+            expect(
+              r.output.trim(),
+              q.options[q.correctIndex].trim(),
+              reason: 'wrong answer key for:\n${q.code}',
+            );
+          },
+        );
+      }
+    }
   });
 }

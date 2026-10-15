@@ -112,7 +112,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Vidya AI is built for students like you — '
+                              'Vidyakalp is built for students like you — '
                               'and your words decide what we build next.',
                               style: Theme.of(context)
                                   .textTheme

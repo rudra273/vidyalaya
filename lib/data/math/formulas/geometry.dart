@@ -402,6 +402,66 @@ const geometryFormulas = <FormulaData>[
     inputs: _r,
     compute: _hemisphere,
   ),
+  FormulaData(
+    id: 'frustum-cone',
+    titleEn: 'Frustum of a Cone',
+    titleOr: 'ଶଙ୍କୁର ଛିନ୍ନକ',
+    titleHi: 'शंकु का छिन्नक',
+    formula: 'V = ⅓πh(R² + Rr + r²),  l = √(h² + (R − r)²)\nCSA = πl(R + r)',
+    category: _c,
+    descEn:
+        'A cone with its top cut off by a plane parallel to the base. Gives the slant height, curved surface area and volume.',
+    descOr:
+        'ଭୂମି ସହ ସମାନ୍ତର ତଳରେ ଉପର ଅଂଶ କାଟିଦେଲେ ଯାହା ବଳେ। ତିର୍ଯ୍ୟକ ଉଚ୍ଚତା, ବକ୍ରପୃଷ୍ଠ କ୍ଷେତ୍ରଫଳ ଓ ଆୟତନ ଦିଏ।',
+    descHi:
+        'आधार के समांतर तल से ऊपरी भाग काट देने पर बना ठोस। तिर्यक ऊँचाई, वक्र पृष्ठीय क्षेत्रफल और आयतन देता है।',
+    inputs: [
+      FormulaInput('R', 'Bottom radius (e.g. 10)'),
+      FormulaInput('r', 'Top radius (e.g. 4)'),
+      FormulaInput('h', 'Height (e.g. 8)'),
+    ],
+    compute: _frustum,
+  ),
+  FormulaData(
+    id: 'segment-area',
+    titleEn: 'Area of a Segment of a Circle',
+    titleOr: 'ବୃତ୍ତଖଣ୍ଡର କ୍ଷେତ୍ରଫଳ',
+    titleHi: 'वृत्तखंड का क्षेत्रफल',
+    formula: 'A = (θ/360)πr² − ½r² sin θ',
+    category: _c,
+    descEn:
+        'The region between a chord and its arc: the area of the sector minus the area of the triangle formed with the centre.',
+    descOr:
+        'ଜ୍ୟା ଓ ତାହାର ଚାପ ମଧ୍ୟବର୍ତ୍ତୀ ଅଞ୍ଚଳ: ବୃତ୍ତକଳାର କ୍ଷେତ୍ରଫଳରୁ କେନ୍ଦ୍ର ସହ ଗଠିତ ତ୍ରିଭୁଜର କ୍ଷେତ୍ରଫଳ ବିୟୋଗ।',
+    descHi:
+        'जीवा और उसके चाप के बीच का क्षेत्र: त्रिज्यखंड के क्षेत्रफल में से केंद्र के साथ बने त्रिभुज का क्षेत्रफल घटाएँ।',
+    inputs: [
+      FormulaInput('r', 'Radius (e.g. 10)'),
+      FormulaInput('θ (deg)', 'Angle at centre in degrees (e.g. 60)'),
+    ],
+    compute: _segment,
+    diagram: FormulaDiagram.circle,
+  ),
+  FormulaData(
+    id: 'ring-area',
+    titleEn: 'Area of a Ring (Annulus)',
+    titleOr: 'ବଳୟର କ୍ଷେତ୍ରଫଳ',
+    titleHi: 'वलय का क्षेत्रफल',
+    formula: 'A = π(R² − r²)',
+    category: _c,
+    descEn:
+        'The area between two concentric circles, such as a washer or a circular path around a garden.',
+    descOr:
+        'ଦୁଇଟି ସମକେନ୍ଦ୍ରୀୟ ବୃତ୍ତ ମଧ୍ୟବର୍ତ୍ତୀ କ୍ଷେତ୍ର, ଯେପରି ୱାଶର ବା ବଗିଚା ଚାରିପାଖର ବୃତ୍ତାକାର ପଥ।',
+    descHi:
+        'दो संकेंद्रीय वृत्तों के बीच का क्षेत्र, जैसे वाशर या बगीचे के चारों ओर बना गोलाकार रास्ता।',
+    inputs: [
+      FormulaInput('R', 'Outer radius (e.g. 10)'),
+      FormulaInput('r', 'Inner radius (e.g. 6)'),
+    ],
+    compute: _ring,
+    diagram: FormulaDiagram.circle,
+  ),
 ];
 
 const _abc = [
@@ -559,4 +619,31 @@ String? _hemisphere(FormulaValues v) {
   if (r == null) return null;
   return 'CSA = ${nice(2 * pi * r * r)}, TSA = ${nice(3 * pi * r * r)}, '
       'V = ${nice(2 / 3 * pi * pow(r, 3))}';
+}
+
+String? _frustum(FormulaValues v) {
+  final bigR = v.n('R'), r = v.n('r'), h = v.n('h');
+  if (bigR == null || r == null || h == null) return null;
+  if (bigR <= 0 || r < 0 || h <= 0 || r >= bigR) {
+    return 'Use R > r ≥ 0 and h > 0';
+  }
+  final l = sqrt(h * h + (bigR - r) * (bigR - r));
+  return 'l = ${nice(l)}, CSA = ${nice(pi * l * (bigR + r))}, '
+      'V = ${nice(pi * h * (bigR * bigR + bigR * r + r * r) / 3)}';
+}
+
+String? _segment(FormulaValues v) {
+  final r = v.n('r'), deg = v.n('θ (deg)');
+  if (r == null || deg == null) return null;
+  if (r <= 0 || deg <= 0 || deg >= 360) return 'Use r > 0 and 0° < θ < 360°';
+  final sector = deg / 360 * pi * r * r;
+  final triangle = 0.5 * r * r * sin(rad(deg));
+  return 'A = ${nice(sector - triangle)}';
+}
+
+String? _ring(FormulaValues v) {
+  final bigR = v.n('R'), r = v.n('r');
+  if (bigR == null || r == null) return null;
+  if (r < 0 || bigR <= r) return 'Outer radius must be larger than inner';
+  return 'A = ${nice(pi * (bigR * bigR - r * r))}';
 }

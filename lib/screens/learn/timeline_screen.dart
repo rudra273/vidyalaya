@@ -542,6 +542,16 @@ class _EventCard extends StatelessWidget {
               context,
             ).textTheme.bodySmall?.copyWith(color: cs.onSurface, height: 1.5),
           ),
+          if (event.regionalKeyPerson(lang) case final person?) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Key person: $person',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.textMuted,
+                fontWeight: AppFontWeight.semibold,
+              ),
+            ),
+          ],
         ],
       ),
     );

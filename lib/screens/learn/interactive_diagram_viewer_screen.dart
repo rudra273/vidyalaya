@@ -82,7 +82,7 @@ class _InteractiveDiagramViewerScreenState
         image.dispose();
       }
       await Printing.layoutPdf(
-        name: 'Vidya AI - ${widget.diagram.id}',
+        name: 'Vidyakalp - ${widget.diagram.id}',
         onLayout: (format) async {
           final document = pw.Document();
           document.addPage(
@@ -406,7 +406,7 @@ class DiagramLabelSheet extends StatelessWidget {
                 left: 24,
                 right: 24,
                 child: Text(
-                  'Vidya AI',
+                  'Vidyakalp',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 20),
                 ),

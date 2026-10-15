@@ -178,6 +178,26 @@ tan    0     1/√3   1      √3     —''',
     descOr: 'ମାନକ କୋଣଗୁଡ଼ିକ ପାଇଁ sin, cos ଓ tan ର ମାନ, ଯାହା ମନେ ରଖିବା ଉଚିତ।',
     descHi: 'मानक कोणों के लिए sin, cos और tan के मान, जिन्हें याद रखना चाहिए।',
   ),
+  FormulaData(
+    id: 'heights-distances',
+    titleEn: 'Heights & Distances',
+    titleOr: 'ଉଚ୍ଚତା ଓ ଦୂରତା',
+    titleHi: 'ऊँचाई और दूरी',
+    formula: 'h = d × tan θ,   line of sight = d / cos θ',
+    category: _c,
+    descEn:
+        'Stand d metres from the foot of a tower and measure the angle of elevation θ to its top. Add your eye height to get the full height.',
+    descOr:
+        'ଗୋଟିଏ ଟାୱାରର ମୂଳରୁ d ମିଟର ଦୂରରେ ଠିଆ ହୋଇ ତା ଶିଖର ପ୍ରତି ଉନ୍ନତି କୋଣ θ ମାପ। ସମ୍ପୂର୍ଣ୍ଣ ଉଚ୍ଚତା ପାଇଁ ନିଜ ଆଖି ଉଚ୍ଚତା ଯୋଗ କର।',
+    descHi:
+        'मीनार के आधार से d मीटर दूर खड़े होकर उसके शिखर का उन्नयन कोण θ मापें। पूरी ऊँचाई के लिए अपनी आँख की ऊँचाई जोड़ें।',
+    inputs: [
+      FormulaInput('d', 'Distance from the base, m (e.g. 30)'),
+      FormulaInput('θ (deg)', 'Angle of elevation in degrees (e.g. 60)'),
+      FormulaInput('eye', 'Eye height, m (optional, e.g. 1.5)'),
+    ],
+    compute: _heightsDistances,
+  ),
 ];
 
 // ─── Calculators ──────────────────────────────────────────────────────────────
@@ -240,4 +260,14 @@ String? _identities(FormulaValues v) {
   final t = rad(deg);
   final s = sin(t), c = cos(t);
   return 'sin²θ + cos²θ = ${nice(s * s + c * c)}';
+}
+
+String? _heightsDistances(FormulaValues v) {
+  final d = v.n('d'), deg = v.n('θ (deg)');
+  if (d == null || deg == null) return null;
+  if (d <= 0 || deg <= 0 || deg >= 90) return 'Use d > 0 and 0° < θ < 90°';
+  final eye = v.n('eye') ?? 0;
+  final h = d * tan(rad(deg));
+  final sight = d / cos(rad(deg));
+  return 'Height = ${nice(h + eye, 2)} m, line of sight = ${nice(sight, 2)} m';
 }
