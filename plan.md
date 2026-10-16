@@ -1,6 +1,6 @@
 # Vidyakalp — Next Release Plan (high level)
 
-**Status:** Draft — iteration 1 (owner + Claude) done; next: second opinion.
+**Status:** Draft — iteration 2 (owner + Codex) agreed; see section 4 for the current timeline and dependencies.
 **Last updated:** 2026-10-16
 
 **How this plan is being made**
@@ -76,6 +76,9 @@ Can we do something to engage the student here? Ideas:
 
 ## 2. Decisions (from our discussion, 2026-10-16)
 
+_Historical iteration 1 decisions. Section 4 supersedes conflicts, including
+Championship ranking and automatic question generation._
+
 1. **One release per month, planned for the next 6 months.** Not one big
    release — we can't rush these things.
 2. **Most features are free, with daily limits.**
@@ -100,6 +103,9 @@ Can we do something to engage the student here? Ideas:
 ---
 
 ## 3. Claude's Thought
+
+_Preserved iteration 1 proposal. Use section 4 for the current agreed draft;
+its admin-authored question bank replaces the automatic generation below._
 
 ### 3.1 What the app is missing today (audit, 2026-10-16)
 
@@ -489,12 +495,270 @@ with Month 1 data, like the other limits in 3.6.
 
 ---
 
-## 4. Second opinion
+## 4. Second opinion — agreed draft (Codex + owner, 2026-10-16)
 
-_To be added._
+**Status:** Agreed direction for planning; implementation has not started from
+this document. This section supersedes conflicting proposals in sections 2–3,
+which remain as discussion history. Section 5 is reserved for the final plan.
+
+### 4.1 Decisions and changes from iteration 1
+
+- A team will deliver monthly releases, with parallel work across platform,
+  mobile, content and admin. This is not a single-developer estimate or one
+  large release. Months are targets; dependencies and release gates determine
+  what can ship.
+- The primary learning loop is **take a test → understand mistakes → practise
+  weak areas → see improvement → return tomorrow**. Competition supports it.
+- **Questions are admin-created and explicitly reviewed and approved.** The
+  backend must not autonomously generate or publish questions. AI drafting is
+  optional, initiated by an admin, and produces drafts only. Manual authoring
+  is a complete supported workflow.
+- The admin panel and editorial question bank are core Month 1–2 deliverables.
+  They replace the automatic batch-generation proposal in 3002.
+- Start with one complete board/class/subject pilot, selected by student demand
+  and content readiness, then expand reviewed coverage. Do not generate or
+  promise all 812 chapters upfront.
+- Keep one global Championship event hub, but rank participants within the
+  same board/class/paper cohort. Percentages from different papers are not
+  comparable. This replaces Decision 9's cross-class score ranking.
+- Global weekly XP rankings use equal, capped competitive opportunities for
+  Free and Plus. Extra paid usage and referral bonus usage do not earn extra
+  competitive XP. Personal learning progress still records all valid activity.
+- Move a simple version of weak-chapter practice (4008) into Month 3. Launch
+  the weekly XP leaderboard first; consider all-time rankings after feedback.
+- Most features remain free with limits. Manually granted Plus and Request
+  Plus support testing before billing. Interest requests inform packaging,
+  but do not establish willingness to pay.
+- **Payments and subscription activation (9001) are the final implementation
+  and release step.** If earlier milestones slip, billing moves later too.
+- Retain the Sunday 10 am–8 pm IST Championship window, the cap of 10 rewarded
+  invites per student, and teacher groups outside this six-month scope.
+
+### 4.2 Content ownership and publishing rules
+
+| Experience | Question selection and ownership |
+|---|---|
+| Weekly Championship / official mock test | Admin selects every question and publishes the exact paper |
+| Daily 5 | Admin schedules a set, or explicitly enables selection from the approved bank |
+| Custom chapter practice | Backend selects approved questions matching the student's choices |
+| Retry my mistakes | Backend selects previously missed, eligible approved questions |
+| AI Tutor | Dynamic teaching; formal scored checks use approved questions |
+
+Automatic selection is allowed; automatic question creation and publication
+are not. Personalized Daily 5 can vary by student, so competitive XP rewards
+capped completion rather than comparing accuracy on different sets.
+
+Editorial lifecycle: **draft → review → approved → included in a published
+or scheduled test**. Questions can also be withdrawn. Admins preview the actual
+student rendering before approval, including Odia, equations and images.
+Published question and paper versions are retained with attempts. Edits create
+new versions; they must not silently alter active tests or historical scores.
+Corrections require an explicit, audited decision about affected results.
+
+Each question contains its text, four options, correct answer, explanation,
+language, estimated difficulty, curriculum mapping and textbook evidence/reference.
+Chapter identity includes board, class, subject/book and edition, not just a
+chapter number. Difficulty labels are estimates until attempt data validates them.
+AI checking can assist reviewers but cannot replace editorial approval.
+
+### 4.3 Feature IDs and responsibility
+
+Existing feature IDs remain stable. 3002 now means the **admin-authored question
+bank**, not an autonomous test agent. 4008 moves forward from the backlog.
+The new **8xxx** range covers admin and editorial operations:
+
+| ID | Admin feature |
+|---|---|
+| 8001 | Admin access, author/reviewer/administrator roles and audit history |
+| 8002 | Curriculum and content-availability management |
+| 8003 | Question editor and bank, including image and maths support |
+| 8004 | Review, approval, versioning and student-view preview |
+| 8005 | Test/paper builder, preview, scheduling and publication |
+| 8006 | Bulk question import with validation and draft preview |
+| 8007 | Reports, corrections, withdrawal and affected-result review |
+| 8008 | Daily practice, revision content, announcements and notification templates |
+| 8009 | Championship scheduling, attempt review, results and certificates |
+| 8010 | Tutor objectives, lesson outlines and approved check-question management |
+| 8011 | Subscription support and entitlement administration |
+
+Editable content includes test instructions, explanations, revision notes,
+flashcards, announcements, relevant Home banners and notification templates.
+Ordinary interface labels stay in app localization files. Content management
+expands with each feature; this is not a general-purpose app layout editor.
+
+### 4.4 Timeline overview
+
+| Target | Theme | Student outcome | Release gate |
+|---|---|---|---|
+| Month 1 — Nov 2026 | Foundations, editorial admin and pilot | Clear AI limits, reliable progress and a small chapter-test pilot | Approved pilot content and reliable scoring |
+| Month 2 — Dec 2026 | Full tests and content expansion | Chapter/subject practice, exam mode, explanations and history | Reviewed coverage and resilient attempt handling |
+| Month 3 — Jan 2027 | Daily habit and improvement | Daily 5, weak-area practice, synced progress and weekly XP | Verified progress and equal competitive opportunities |
+| Month 4 — Feb 2027 | Competition and sharing | Championship, friend challenges, cards and invites | Reviewed common papers, fair rankings and working links |
+| Month 5 — Mar 2027 | Math and guided learning | Checked maths assistance and chapter Tutor | Agent evaluations and approved lesson content |
+| Month 6 — Apr 2027 | Speaking, then paid Plus | Speaking practice, followed by paid subscriptions | Validated quality/costs, then billing readiness |
+
+### 4.5 Month 1 — Foundations and a complete test pilot
+
+| IDs | Deliverable | Dependencies |
+|---|---|---|
+| 1001 | Analytics, crash reporting and rollout switches | Event definitions |
+| 1006 | Verify and fix audit bugs, including subject progress | Code verification of each finding |
+| 1003 | Shared AI-question allowance; separate test, Tutor and Speaking limits | Existing entitlements and usage accounting |
+| 1004 | Request Plus, source-feature interest tracking and manual approval | 1003, existing admin entitlement flow |
+| 1008 | AI usage/cost visibility, capacity protection and graceful failure | Provider usage instrumentation |
+| 1002 | Notification preferences, optional reminders and push infrastructure | Notification permissions and delivery setup |
+| 4001 | Ask about this textbook page | Existing image chat, 1003 |
+| 8001 | Admin roles and audit history | Existing authentication/admin system |
+| 8002 | Boards, classes, subjects, books, editions, chapters and availability | Content inventory, 8001 |
+| 6001 | SCERT ingestion in reviewed chapter batches | Inventory and chapter mapping |
+| 3001 | Chapter lookup and coverage catalog | Chapter metadata; 6001 for SCERT |
+| 8003, 3002 | Question editor and manually authored pilot bank | 8002, pilot chapter content |
+| 8004 | Review, approval, preview and question versions | 8003, 8001 |
+| 3003, 8005 | Core attempt/scoring service and basic admin paper builder | Approved pilot bank |
+| 3004 | Pilot UI: select chapter, answer MCQs and view results | 3003, 1003 |
+
+Platform, mobile, editorial and ingestion work can proceed in parallel. Assign
+both engineering and content owners. Pilot acceptance requires reviewed
+textbook evidence, correct scoring, usable language/rendering and submission
+retries that neither lose nor duplicate attempts. Plus approval can appear in
+account state before push delivery is ready; 1002 is not a hard dependency of
+1004. The pilot can be limited to selected accounts while coverage grows.
+
+### 4.6 Month 2 — Full tests and stronger editorial operations
+
+| IDs | Deliverable | Dependencies |
+|---|---|---|
+| 3002 | Expand approved coverage in prioritized subjects/classes | Successful pilot, content owners and chapter coverage |
+| 8006 | Template-based bulk import, validation and preview into drafts | 8003, 8004 |
+| 8005 | Full paper builder: questions, order, sections, duration, marks, preview and publication | Approved bank, 3003 |
+| 3003 | Save/resume, reliable retries and fixed question versions per attempt | Core test service |
+| 3004 | Chapter checklist, question count, difficulty, practice/exam modes | Sufficient approved bank, 3003 |
+| 3004 | Explanations, history, chapter breakdown and retry mistakes | Completed attempts |
+| 3005, 8007 | Student reports, editorial review, withdrawal and explicit score correction | Question versions and attempt history |
+| 3006 | Enable SCERT classes as reviewed content is ready | 6001, 3002, 3004 |
+| 4004 | Explore textbook quizzes from the same bank | 3003 |
+| 4002 | Explain wrong answers and Explore items through AI | Context handoff, 1003 |
+| 4003 | Save and share AI answers | Existing notes and sharing flows |
+
+Practice reveals answers after each question; exam mode reveals them at the
+end. Enforce that distinction on the server. Availability is driven by approved
+coverage: do not advertise a full subject test when only a few chapters are
+ready. Reports enter review; raw report counts alone do not determine correctness.
+
+### 4.7 Month 3 — Daily habit and visible improvement
+
+| IDs | Deliverable | Dependencies |
+|---|---|---|
+| 1005 | Server-side progress, streaks and verified XP | Activity definitions, test events and idempotent recording |
+| 4008 | Initial weak-chapter tracking and targeted practice | Test history, chapter mapping and approved bank |
+| 8008 | Daily-set scheduling, revision content and editable announcements/templates | 8001, approved content workflows |
+| 5001 | Daily 5, including personalized revision | 3002, 1005, initial 4008, 8008 |
+| 5002 | Milestones, freezes and optional reminders | 1005; 1002 for reminders |
+| 5003 | Weekly global XP leaderboard with equal earning caps | 1005, competition rules and public-profile review |
+| 4005 | Reviewed chapter notes and flashcards, available offline | 3001, 8008, editorial approval |
+
+Start with observable chapter performance, not a claim of scientifically
+measured mastery from a handful of answers. Keep competitive XP separate from
+personal activity totals. Confirm student identity/display and privacy rules
+before public rankings; first-name display alone is not the complete review.
+
+### 4.8 Month 4 — Competition and growth
+
+| IDs | Deliverable | Dependencies |
+|---|---|---|
+| 1007 | App links, challenge links and install-referral handling | Routing and hosted link destinations |
+| 8009 | Admin event scheduling, cohort/paper selection, attempt rules and results publication | 8005, 3003, audit history |
+| 5004 | Sunday Championship, one attempt, rankings within the same paper cohort | 8009, reviewed papers and competition rules |
+| 5005 | Share cards and milestone/top-performer certificates | Results, 8009; 1007 for actionable links |
+| 5006 | Friend challenges using the same approved question set | 3003, 1007 |
+| 5007 | Invite rewards after a qualifying first test | 1007, 1003, verified completion and duplicate prevention |
+| 2001 | Begin shared agent configuration and evaluation groundwork | Existing agent implementation, 1003 |
+
+Admins choose every Championship question. The backend handles scheduling,
+attempt enforcement and scoring. Use server timing and a defined tie policy;
+shuffling is helpful but does not establish cheating prevention. Admins review
+flagged attempts and audit any exclusion or score adjustment before final
+results/certificates. Questions and explanations should not be released early
+in a way that undermines the active event. Referral rewards are issued once
+per qualifying referral and do not increase competitive XP.
+
+### 4.9 Month 5 — Math and guided learning
+
+| IDs | Deliverable | Dependencies |
+|---|---|---|
+| 2001 | Shared agent routing, configuration, usage accounting and evaluations | Current agent system, 1003 |
+| 2002 | Math assistance with calculation tools and worked solutions | 2001, maths evaluation set |
+| 2002 | Check my working from a photo | Image input and evaluated maths workflow |
+| 8010 | Admin learning objectives, lesson outlines and check-question selection | 8002, 8004, chapter content |
+| 2003 | Guided chapter Tutor, checks and final practice | 2001, 3001, 3002, 8010 |
+| 4007 | Python error explanation and hints | Playground context, 1003 |
+| 2004 | Speaking prototype and device/language testing | Speech implementation choice, 2001 |
+
+Extend the existing agent system rather than creating a second framework.
+Tutor availability follows individual chapter readiness, not completion of
+all SCERT ingestion. Support pause/resume, alternative explanations and
+revisiting concepts when a student struggles. Formal scored checks use the
+approved bank. Verify the speech implementation before promising on-device
+processing or claiming no audio leaves the phone.
+
+### 4.10 Month 6 — Speaking, then payments as the final step
+
+| Order | IDs | Deliverable | Dependencies |
+|---|---|---|---|
+| 1 | 2004 | English speaking practice, role-plays and supportive corrections | Speech prototype, 2001, metering and quality evaluation |
+| 2 | 4006 | Vocabulary sentence practice | 1003, evaluated feedback |
+| 3 | — | Validate operating costs, free/Plus packaging and support flows | Usage across AI, tests, Tutor and Speaking |
+| **4 — final** | **9001, 8011** | **Payment integration, paid Plus activation and billing administration** | **Earlier release gates, stable entitlements, validated packaging and purchase lifecycle verification** |
+
+Use the payment method appropriate to each supported distribution platform;
+Android starts with Google Play Billing as proposed in iteration 1. Include
+server verification, restoration, renewal/cancellation, refunds/revocations,
+and defined expiry for manually granted Plus. Admins can inspect billing and
+entitlements and make audited authorized grants; provider billing records
+remain the source for purchase status. Request Plus becomes Get Plus only
+when billing is ready. Billing must not be brought forward to fill time while
+prerequisite learning features remain unfinished.
+
+### 4.11 Dependencies, delivery and acceptance
+
+Main dependency chains:
+
+1. Curriculum + chapter content → admin question authoring → review/approval
+   → test builder/service → student test experience.
+2. Test history + approved bank → weak-area practice → personalized Daily 5.
+3. Verified progress + equal competitive rules → weekly XP leaderboard.
+4. Test service + admin-selected common papers → Championship → final results
+   and certificates. Championship scoring does not depend on XP ranking.
+5. Link infrastructure + test service → challenges and qualifying referrals.
+6. Agent configuration + chapter content + admin lesson outlines → Tutor.
+7. Validated feature quality/costs + stable entitlements → **payments last**.
+
+Plan each release across platform/API, mobile, admin and editorial workstreams.
+Assign owners and acceptance criteria to each feature before implementation.
+Content preparation is a delivery dependency: every promised chapter needs
+sufficient approved questions and a reviewer. If a gate fails, reduce that
+release's coverage or move the feature; do not bypass approval to meet a date.
+
+Measure crashes and retention first, then test completion and question reports,
+returning practice participation and learning improvement, competition/sharing
+participation, Tutor/Speaking completion and costs, and finally paid conversion.
+Record baselines before setting numerical targets. Treat earlier audit claims
+as findings to verify, not universally confirmed facts.
+
+Remaining implementation choices include pilot scope, content owners, question
+coverage targets, competitive XP rules, Championship tie handling, exact limits,
+referral reward size and speech technology. They do not change the agreed
+admin-controlled publishing model or the payments-last sequence.
+
+Teacher groups, additional question types, pronunciation scoring, parent reports,
+full mastery maps, all-time rankings and full notes/bookmark cloud sync remain
+later scope unless explicitly reprioritized. Assess provider capacity and data
+handling before each relevant launch; a provider upgrade need not wait for
+student subscription billing.
 
 ---
 
 ## 5. Final plan
 
-_To be written after the iterations._
+_To be consolidated after the remaining planning choices. Section 4 is the
+current agreed draft and takes precedence over earlier conflicting proposals._
