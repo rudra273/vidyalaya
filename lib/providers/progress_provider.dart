@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../widgets/calm_widgets.dart';
 import 'core_providers.dart';
 
 /// Aggregated *learning* statistics (not reading alone): the streak counts any
@@ -42,23 +43,14 @@ class ProgressNotifier extends Notifier<ProgressStats> {
     final toolsOpened = repo.getToolsOpened();
     final pythonLessonsCompleted = repo.getPythonCompletedLessons().length;
 
-    // Standard subjects
-    final subjects = [
-      'Mathematics',
-      'Science',
-      'Odia',
-      'English',
-      'History',
-      'Geography',
-    ];
+    // Pages are saved under each book's own subject key; group them by
+    // subject so the dashboard shows one bar per subject the student reads.
     final subjectPages = <String, int>{};
-
-    for (final subject in subjects) {
-      final pages = repo.getSubjectPages(subject);
-      if (pages > 0) {
-        subjectPages[subject] = pages;
-      }
-    }
+    repo.getSubjectPagesByKey().forEach((key, pages) {
+      if (pages <= 0) return;
+      final label = subjectDisplayLabel(key);
+      subjectPages[label] = (subjectPages[label] ?? 0) + pages;
+    });
 
     return ProgressStats(
       currentStreak: currentStreak,

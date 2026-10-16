@@ -44,6 +44,22 @@ SubjectMeta subjectMeta(String key) {
   return SubjectMeta('Subject', family.icon, null, family.glyph);
 }
 
+/// Student-facing name for a stored subject key, one per subject family:
+/// `maths`, `math` and `math_algebra` are all "Maths"; keys with no family
+/// (`art`, `evs`) are title-cased from the key.
+String subjectDisplayLabel(String key) {
+  final family = canonicalSubjectKey(key);
+  final known = kSubjects[family];
+  if (known != null) return known.label;
+  const acronyms = {'evs', 'pe'};
+  if (acronyms.contains(family)) return family.toUpperCase();
+  return family
+      .split('_')
+      .where((word) => word.isNotEmpty)
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+      .join(' ');
+}
+
 // ─── SubjectGlyph: script char, or the Material icon as fallback ──────────
 
 /// Drop-in replacement for `Icon(meta.icon, ...)` at subject call sites.

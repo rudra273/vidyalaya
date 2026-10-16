@@ -574,8 +574,16 @@ class UserPrefsRepository {
     await _prefs.setInt(subjectKey, currentSubject + pages);
   }
 
-  int getSubjectPages(String subject) {
-    return _prefs.getInt('$_subjectProgressPrefix$subject') ?? 0;
+  /// Pages read per subject, keyed by the subject key each book was saved under
+  /// (`maths`, `math_algebra`, `social_science`, …). Callers group these into
+  /// subject families; reading every stored key means no subject is missed.
+  Map<String, int> getSubjectPagesByKey() {
+    return {
+      for (final key in _prefs.getKeys())
+        if (key.startsWith(_subjectProgressPrefix))
+          key.substring(_subjectProgressPrefix.length):
+              _prefs.getInt(key) ?? 0,
+    };
   }
 
   // ─── AI sessions & tools (learning activity) ──────────────────────────────
