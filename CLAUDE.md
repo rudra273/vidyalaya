@@ -51,6 +51,10 @@ Firebase Auth + Google Sign-In ([auth_repository.dart](lib/data/repositories/aut
 - **uid-scoped**: switching uid (or signing out) wipes the previous uid's cache namespace and resets in-flight request slots.
 - **History is keyed by `HistorySelector`** (channel + board + class + subject). A single shared request slot is keyed by selector so a slow fetch for one subject never clobbers another — switching subjects quickly was a real bug class here.
 
+### Rollout switches + crash reporting
+- **Switches are server-controlled.** `GET /config/v1` (vidyalaya-ai, `FEATURE_SWITCHES` env) returns this student's resolved booleans; [rollout_switches_provider.dart](lib/providers/rollout_switches_provider.dart) caches them per uid (stale-while-revalidate) and falls back to in-app defaults offline. Read a switch with `isEnabled(name, defaultValue:)`; `booksEnabledProvider` is the `books` switch. A new switch needs its default added in the API's `common/switches.py` (unknown names fail API boot).
+- **Crashlytics only, no Firebase Analytics.** [crash_reporting.dart](lib/data/services/crash_reporting.dart) is on in release builds only (debug: `--dart-define=CRASH_REPORTING=true`) and attaches no user ID, keys or logs. Usage analytics come from our own `learning_events` via `LearningEventService` (fixed allow-list, no free text). The manifest strips `AD_ID`; keep it that way.
+
 ### Routing — go_router
 Single `routerProvider` in [router.dart](lib/app/router.dart). A `ShellRoute` wraps the 4 bottom-nav tabs (`/`, `/explore`, `/library`, `/profile`) in `AppShell` with `NoTransitionPage`; everything else is a root-level route. A top-level `redirect` forces `/welcome` until onboarding completes. Legacy paths (`/learn`, `/my-books`, `/learn-ai`) redirect to current ones — preserve these so old deep links don't break.
 

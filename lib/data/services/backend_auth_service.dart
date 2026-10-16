@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'secure_http_client.dart';
 
 import '../models/learn_assist.dart';
+import '../models/rollout_switches.dart';
 import 'learn_assist_service.dart';
 
 class BackendUser {
@@ -420,6 +421,22 @@ class BackendAuthService {
       },
     );
     return LibraryPreferences.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<RolloutSwitches> rolloutSwitches() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/config/v1'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+
+    return RolloutSwitches.fromJson(_decodeJsonObject(response.body));
   }
 
   Future<LearnAssistUsage> usage() async {

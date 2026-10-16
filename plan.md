@@ -12,6 +12,32 @@ operating rules, remaining delivery decisions and later backlog. Feature IDs
 remain stable. Recommended defaults remain subject to the delivery decisions
 below; staffing, budgets and vendors are not yet confirmed.
 
+## Feature tracker and progress log
+
+**Tracker:** [Vidyakalp feature tracker (Google Sheet)](https://docs.google.com/spreadsheets/d/1chsbW_SRAsX1nch75yPQsOe6E7ZhNWlI7kYSyHpJ5LM/edit).
+**Progress log:** [steps.md](steps.md).
+
+This plan defines the scope; the sheet tracks delivery status. AI assistants
+working in this repository keep both current:
+
+- When work on a feature starts, moves to review, is blocked or finishes, update
+  its **Status** in the sheet's **Features** tab and add a dated line to
+  `steps.md` naming the feature ID and what changed.
+- When this plan changes (a feature added, moved, split or dropped; a gate or
+  decision changed), make the same change in the sheet and note it in `steps.md`.
+- Features tab columns: ID, Feature, Release, Scope, Lead workstream, Status,
+  Owner, Notes. One row per ID per release, so an ID that spans months has
+  several rows. Do not merge them.
+- Keep **Release** text exactly as it appears in the sheet (for example
+  `Month 2 (Dec 2026)`); the Roadmap tab's counts match on it.
+- Status values are limited to: Backlog, Not started, In progress, In review,
+  Blocked, Done, Deferred, Retired.
+- Do not change the Roadmap tab's formulas; its counts update from Features.
+  The Decisions tab mirrors section 14: update its Status and Outcome when a
+  decision is made.
+- Edit the existing sheet through the Google Sheets connector. Never create a
+  replacement file, since that would change the link.
+
 ## 1. Goal and product direction
 
 Make Vidyakalp a daily learning companion: **take a test → understand mistakes

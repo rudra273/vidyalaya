@@ -10,6 +10,7 @@ import 'app/theme.dart';
 import 'app/router.dart';
 import 'data/cache/cache_store.dart';
 import 'data/models/ingested_books.dart';
+import 'data/services/crash_reporting.dart';
 import 'providers/core_providers.dart';
 import 'providers/ingested_books_provider.dart';
 import 'providers/theme_provider.dart';
@@ -27,6 +28,7 @@ void main() async {
     ),
   );
   await Firebase.initializeApp();
+  await initCrashReporting();
   final prefs = await SharedPreferences.getInstance();
   await Hive.initFlutter();
   final cacheBox = await Hive.openBox<String>(CacheStore.boxName);

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/core_providers.dart';
 import '../providers/books_provider.dart';
+import '../providers/rollout_switches_provider.dart';
 import '../screens/ai/ai_hub_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/my_books/my_books_screen.dart';
@@ -76,7 +77,6 @@ const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.read(userPrefsRepositoryProvider);
-  final booksEnabled = ref.read(booksEnabledProvider);
   late final GoRouter router;
   router = GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -89,7 +89,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/welcome';
       }
 
-      if (!booksEnabled) {
+      if (!ref.read(booksEnabledProvider)) {
         final path = state.matchedLocation;
         final isBookRoute = _bookRoutePrefixes.any(
           (p) => path == p || path.startsWith('$p/'),
