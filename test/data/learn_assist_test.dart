@@ -45,6 +45,38 @@ void main() {
     });
   });
 
+  group('reset times', () {
+    test('usage reads when the allowance refills', () {
+      final usage = LearnAssistUsage.fromJson({
+        'date_ist': '2026-10-17',
+        'used': 2,
+        'limit': 3,
+        'remaining': 1,
+        'unlimited': false,
+        'resets_at': '2026-10-18T00:00:00+05:30',
+      });
+
+      expect(usage.resetsAt, DateTime.parse('2026-10-18T00:00:00+05:30'));
+      expect(
+        LearnAssistUsage.fromJson(usage.toJson()).resetsAt,
+        usage.resetsAt,
+      );
+    });
+
+    test('usage from an older server has no reset time', () {
+      final usage = LearnAssistUsage.fromJson({
+        'date_ist': '2026-10-17',
+        'used': 2,
+        'limit': 3,
+        'remaining': 1,
+        'unlimited': false,
+      });
+
+      expect(usage.resetsAt, isNull);
+      expect(usage.toJson().containsKey('resets_at'), isFalse);
+    });
+  });
+
   group('LearnAssistResponse', () {
     test('parses citations with int, array, and null page_no values', () {
       final response = LearnAssistResponse.fromJson({
@@ -668,6 +700,54 @@ void main() {
 
       expect(events, [isA<LearnAssistDoneEvent>()]);
       expect(forceRefreshValues, [false, true]);
+    });
+
+    test('an exhausted allowance says when it refreshes', () async {
+      final resetsLocalMidnight = DateTime(2026, 10, 18).toUtc();
+      final service = LearnAssistService(
+        idTokenProvider: ({required forceRefresh}) async => 'token',
+        client: MockClient(
+          (_) async => http.Response(
+            jsonEncode({
+              'error': {
+                'code': 'quota_exceeded',
+                'message': 'Daily LearnAssist quota exceeded.',
+                'retry_at_ist': resetsLocalMidnight.toIso8601String(),
+              },
+            }),
+            429,
+          ),
+        ),
+      );
+      const request = LearnAssistRequest(
+        message: 'Question',
+        board: 'scert_odisha',
+        classNo: 8,
+      );
+
+      await expectLater(
+        service.chat(request),
+        throwsA(
+          isA<LearnAssistApiException>()
+              .having((e) => e.code, 'code', 'quota_exceeded')
+              .having(
+                (e) => e.message,
+                'message',
+                "You've used all your questions for today. "
+                    'They refresh at midnight.',
+              ),
+        ),
+      );
+      await expectLater(
+        service.chatStream(request).toList(),
+        throwsA(
+          isA<LearnAssistApiException>().having(
+            (e) => e.message,
+            'message',
+            contains('They refresh at midnight.'),
+          ),
+        ),
+      );
     });
 
     test(

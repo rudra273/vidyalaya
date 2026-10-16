@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../utils/ai_labels.dart';
 import '../models/learn_assist.dart';
 import 'secure_http_client.dart';
 
@@ -101,12 +102,7 @@ class LearnAssistService {
     final decoded = _decodeJsonObject(response.body);
     final error = decoded['error'];
     if (error is Map<String, dynamic>) {
-      throw LearnAssistApiException(
-        error['code'] as String? ?? 'service_error',
-        response.statusCode == 401
-            ? 'Please sign in again.'
-            : error['message'] as String? ?? 'Something went wrong.',
-      );
+      throw _apiException(error, response.statusCode);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -168,12 +164,7 @@ class LearnAssistService {
       final decoded = _decodeJsonObject(body);
       final error = decoded['error'];
       if (error is Map<String, dynamic>) {
-        throw LearnAssistApiException(
-          error['code'] as String? ?? 'service_error',
-          response.statusCode == 401
-              ? 'Please sign in again.'
-              : error['message'] as String? ?? 'Something went wrong.',
-        );
+        throw _apiException(error, response.statusCode);
       }
       throw LearnAssistApiException(
         'service_error',
@@ -311,12 +302,7 @@ class LearnAssistService {
     final decoded = _decodeJsonObject(response.body);
     final error = decoded['error'];
     if (error is Map<String, dynamic>) {
-      throw LearnAssistApiException(
-        error['code'] as String? ?? 'service_error',
-        response.statusCode == 401
-            ? 'Please sign in again.'
-            : error['message'] as String? ?? 'Something went wrong.',
-      );
+      throw _apiException(error, response.statusCode);
     }
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -327,6 +313,31 @@ class LearnAssistService {
     }
 
     return response;
+  }
+
+  /// The student-facing error for a pre-flight failure. An exhausted allowance
+  /// says when it refills instead of repeating the server's generic wording.
+  LearnAssistApiException _apiException(
+    Map<String, dynamic> error,
+    int statusCode,
+  ) {
+    final code = error['code'] as String? ?? 'service_error';
+    if (statusCode == 401) {
+      return LearnAssistApiException(code, 'Please sign in again.');
+    }
+    if (code == 'quota_exceeded') {
+      final retryAt = error['retry_at_ist'];
+      final resets = retryAt is String ? DateTime.tryParse(retryAt) : null;
+      return LearnAssistApiException(
+        code,
+        "You've used all your questions for today. "
+        'They refresh ${refreshPhrase(resets)}.',
+      );
+    }
+    return LearnAssistApiException(
+      code,
+      error['message'] as String? ?? 'Something went wrong.',
+    );
   }
 
   Map<String, dynamic> _decodeJsonObject(String body) {

@@ -277,11 +277,12 @@ class AiHubScreen extends ConsumerWidget {
           'free',
     );
     if (usage.unlimited) return '$plan plan · Unlimited questions';
+    final refresh = refreshPhrase(usage.resetsAt);
     if (usage.remaining <= 0) {
-      return 'No questions left today — they refresh tomorrow';
+      return 'No questions left today — they refresh $refresh';
     }
     final word = usage.remaining == 1 ? 'question' : 'questions';
-    return '$plan plan · ${usage.remaining} $word left today';
+    return '$plan plan · ${usage.remaining} $word left · resets $refresh';
   }
 
   static bool _isDark(BuildContext c) =>

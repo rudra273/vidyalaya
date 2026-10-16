@@ -1152,7 +1152,11 @@ class _PlanUsageBadge extends StatelessWidget {
       usageLabel = '$plan · ${currentUsage.remaining} left';
     }
 
-    return Container(
+    final resetNote = currentUsage == null || currentUsage.unlimited
+        ? null
+        : 'Questions reset ${refreshPhrase(currentUsage.resetsAt)}';
+
+    final badge = Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
@@ -1180,6 +1184,15 @@ class _PlanUsageBadge extends StatelessWidget {
         ],
       ),
     );
+
+    // Tap the badge to see when the allowance refills.
+    return resetNote == null
+        ? badge
+        : Tooltip(
+            message: resetNote,
+            triggerMode: TooltipTriggerMode.tap,
+            child: badge,
+          );
   }
 }
 
@@ -2106,7 +2119,8 @@ String? _lowQuotaNote(LearnAssistUsage? usage) {
   if (usage == null || usage.unlimited) return null;
   if (usage.remaining > 2) return null;
   if (usage.remaining <= 0) {
-    return "That's all your free questions for today — they refresh tomorrow.";
+    return "That's all your free questions for today — they refresh "
+        '${refreshPhrase(usage.resetsAt)}.';
   }
   final word = usage.remaining == 1 ? 'question' : 'questions';
   return '${usage.remaining} $word left today.';

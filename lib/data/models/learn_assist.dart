@@ -203,21 +203,27 @@ class LearnAssistUsage {
   final int remaining;
   final bool unlimited;
 
+  /// When the daily allowance refills; null when an older server omits it.
+  final DateTime? resetsAt;
+
   const LearnAssistUsage({
     required this.dateIst,
     required this.used,
     required this.limit,
     required this.remaining,
     required this.unlimited,
+    this.resetsAt,
   });
 
   factory LearnAssistUsage.fromJson(Map<String, dynamic> json) {
+    final resetsAt = json['resets_at'];
     return LearnAssistUsage(
       dateIst: json['date_ist'] as String? ?? '',
       used: json['used'] as int? ?? 0,
       limit: json['limit'] as int? ?? 0,
       remaining: json['remaining'] as int? ?? 0,
       unlimited: json['unlimited'] as bool? ?? false,
+      resetsAt: resetsAt is String ? DateTime.tryParse(resetsAt) : null,
     );
   }
 
@@ -227,6 +233,7 @@ class LearnAssistUsage {
     'limit': limit,
     'remaining': remaining,
     'unlimited': unlimited,
+    if (resetsAt != null) 'resets_at': resetsAt!.toIso8601String(),
   };
 }
 
