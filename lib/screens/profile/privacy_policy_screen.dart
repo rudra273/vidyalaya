@@ -32,7 +32,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Effective Date: June 17, 2026',
+              'Effective Date: October 17, 2026',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: cs.onSurface.withValues(alpha: 0.6),
               ),
@@ -91,69 +91,94 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
             _buildSection(
               theme,
-              title: '6. Permissions We Request',
+              title: '6. Daily Limits and Activity Records',
               content:
-                  'Vidyakalp requests only the permissions needed for its features:\n\n'
-                  '• Internet: To download textbooks, sign in, and use AI features.\n'
-                  '• Camera & Photos: Used only when you choose to attach a photo to an AI question. We do not access your camera or gallery in the background, and we do not browse or upload your photo library.',
+                  'To keep Vidyakalp reliable and fair for everyone, our servers keep a few simple records linked to your account:\n\n'
+                  '• AI limits: how many AI questions you have used today, so we can apply the daily limit and show you how many are left and when the count resets.\n'
+                  '• AI request details: for each AI request, when it happened, how long it took, whether it worked, how large it was, and which AI service answered. These records do not contain the text of your questions or answers.\n'
+                  '• Activity events (only when you are signed in and online): when you open the app, finish setup, open a book or Explore item, or complete an exercise, along with the feature, board, and class. They contain nothing you type.\n\n'
+                  'We use these records to apply limits, find and fix problems, plan capacity, manage costs, and see which features are useful. We do not use them for advertising.',
             ),
 
             _buildSection(
               theme,
-              title: '7. How We Use Your Information',
+              title: '7. Requesting Plus',
+              content:
+                  'Plus gives higher limits, and eligible students can ask for it. When you tap Request Plus (in Profile, or when you reach a daily limit), we record that you asked, which screen you asked from, when, and the outcome. You do not type anything when you ask.\n\n'
+                  'Our team reviews each request by hand. If it is approved, your account shows Plus until its end date. If it is declined, you can ask again after 30 days. We may keep a short internal note with each decision.',
+            ),
+
+            _buildSection(
+              theme,
+              title: '8. Permissions We Request',
+              content:
+                  'Vidyakalp requests only the permissions needed for its features:\n\n'
+                  '• Internet: To download textbooks, sign in, and use AI features.\n'
+                  '• Camera & Photos: Used only when you choose to attach a photo to an AI question. We do not access your camera or gallery in the background, and we do not browse or upload your photo library.\n\n'
+                  'The app does not request or use the Android advertising ID.',
+            ),
+
+            _buildSection(
+              theme,
+              title: '9. How We Use Your Information',
               content:
                   'We use the information described above only to:\n\n'
                   '• Provide, secure, and operate your account.\n'
                   '• Deliver AI answers tailored to your class and syllabus.\n'
                   '• Save your conversations, profile, and usage so the app works across sessions.\n'
-                  '• Apply fair-use limits on AI requests.\n\n'
+                  '• Apply fair-use limits on AI requests and show you how many questions are left.\n'
+                  '• Review requests for Plus.\n'
+                  '• Find and fix crashes, keep the service reliable, and manage its running costs.\n\n'
                   'We do not sell your personal information, and we do not use it for advertising. The app contains no third-party ads.',
             ),
 
             _buildSection(
               theme,
-              title: '8. Third-Party Services',
+              title: '10. Third-Party Services',
               content:
                   'We rely on a small number of trusted service providers to operate Vidyakalp:\n\n'
-                  '• Google / Firebase: for sign-in and authentication.\n'
-                  '• Our AI backend and AI model provider: to process and answer your questions.\n\n'
+                  '• Google / Firebase: for sign-in and authentication, and Firebase Crashlytics for crash reports (see section 11).\n'
+                  '• AI model providers: Google (Gemini) and, for accounts with Plus, OpenRouter, which passes the request on to an AI model. They receive your question (with earlier messages from the same conversation where needed), any photo you attach, and your class, board, subject, and language, only to produce an answer.\n'
+                  '• Our own servers: which store your account, profile, conversations, and the records described above.\n\n'
                   'These providers process data only to deliver these services on our behalf and are subject to their own privacy and security commitments. We do not integrate advertising networks or data brokers.',
             ),
 
             _buildSection(
               theme,
-              title: '9. Cookies and Tracking Technologies',
+              title: '11. Cookies, Tracking and Crash Reports',
               content:
-                  'Vidyakalp is a native mobile application and does not use cookies, web beacons, or third-party advertising or analytics trackers to follow you across apps or websites. The app is ad-free.',
+                  'Vidyakalp is a native mobile application and does not use cookies, web beacons, or advertising trackers to follow you across apps or websites. The app is ad-free, and we do not use Google Analytics or any other third-party analytics service.\n\n'
+                  'To find and fix crashes, released versions of the app use Firebase Crashlytics, a Google service. When the app crashes, it sends a report with technical details: the error and where it happened in the app, your phone model, Android version, app version, and a random installation identifier created by Firebase. We do not attach your name, email address, account identifier, or anything you have typed, and crash reports are not linked to your account.',
             ),
 
             _buildSection(
               theme,
-              title: '10. Children\'s Privacy',
+              title: '12. Children\'s Privacy',
               content:
                   'Vidyakalp is intended for school students, and some users may be under the age of 13. We collect only the limited information needed to provide the service, as described above. Because signing in and AI features involve collecting personal information (such as name and email), we ask that a parent or guardian set up and supervise the use of these features for younger children, and provide consent where required by law (including COPPA and applicable Indian data protection rules).\n\nIf you believe a child has provided us personal information without appropriate consent, please contact us and we will delete it.',
             ),
 
             _buildSection(
               theme,
-              title: '11. Data Retention & Your Choices',
+              title: '13. Data Retention & Your Choices',
               content:
-                  'We keep your account, profile, and conversation history for as long as your account is active. You can:\n\n'
+                  'We keep your account, profile, conversation history, daily limit counts, activity records, and Plus requests for as long as your account is active. You can:\n\n'
                   '• Edit your profile details at any time from the Profile screen.\n'
                   '• Sign out to stop syncing data to your account.\n'
-                  '• Request deletion of your account and associated data at https://rosmox.com/products/vidyakalp/delete-account (also available from Settings → Delete account), or by contacting us at the email below. We delete your account and all associated data within 30 days of your request.',
+                  '• Request deletion of your account and associated data at https://rosmox.com/products/vidyakalp/delete-account (also available from Settings → Delete account), or by contacting us at the email below. We delete your account and all associated data within 30 days of your request.\n\n'
+                  'Crash reports are not linked to your account, so deleting your account does not remove them. Firebase keeps them for a limited period and then deletes them.',
             ),
 
             _buildSection(
               theme,
-              title: '12. Changes to This Policy',
+              title: '14. Changes to This Policy',
               content:
                   'As Vidyakalp evolves, we may update this Privacy Policy to reflect new features or legal requirements. When we make material changes, we will update the effective date above. You are advised to review this page periodically.',
             ),
 
             _buildSection(
               theme,
-              title: '13. Contact Us',
+              title: '15. Contact Us',
               content:
                   'If you have any questions, requests, or suggestions about this Privacy Policy or your data, please contact the developer team at rosmoxx@gmail.com.',
             ),
