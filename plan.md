@@ -66,9 +66,10 @@ The rules governing every release are:
 6. **Agents stay behind the scenes.** Students see tasks such as “Ask”,
    “Learn this chapter” and “Practise speaking”. Extend the existing
    LearnAssist system with routing by task and subject.
-7. **Paid production AI for all plans.** Chat primarily uses OpenRouter;
-   embeddings remain on Gemini with paid billing verified separately. A Free
-   student account does not imply use of an unpaid provider tier.
+7. **Paid production AI for all plans.** Free chat goes directly to Gemini;
+   Plus chat uses OpenRouter; embeddings remain on Gemini. The production
+   Gemini key is a paid one, so a Free student account does not use an
+   unpaid provider tier.
 8. **Treat student accounts as under 18.** Private ranks, no public student
    names or profiles, no student messaging, no personalised ads. Parent
    consent is scheduled for April, with method selection in March.
@@ -121,7 +122,7 @@ model must pass quality, language, safety, latency and cost checks.
 | 1003 | One shared AI-question allowance; separate test, Tutor and Speaking meters; show remaining allowance and reset time | API + App |
 | 1004 | Request Plus in Profile, limit sheets and Plus features; deduplicated requests, feature-interest counts, manual approval and account-state refresh | API + Admin + App |
 | 1008 | Usage, estimated cost and capacity dashboard for chat and embeddings; budget alerts and graceful provider failures | API + Admin |
-| 1011 | Paid AI routing for every student plan, paid Gemini embedding configuration, evaluated model selection and controlled provider settings | API |
+| 1011 | Paid AI routing for every student plan, paid Gemini embedding configuration, evaluated model selection and controlled provider settings — done by switching production to a paid Gemini key; no code change needed | API |
 | 4001 | Ask about this page: hand off the current textbook page and relevant context to AI chat | App + API |
 
 Request Plus records one pending request per student and tracks source-feature
@@ -138,6 +139,12 @@ route uses paid terms. Keep the current embedding model unless there is a
 separate evaluated migration; a billing change alone does not require
 re-embedding books. Provider accounts and billing must be checked operationally,
 because source code cannot prove their billing status.
+
+Free chat stays on direct Gemini and Plus/Pro on OpenRouter; the code already
+routes this way. The production Gemini key was switched to a paid one
+(17 October 2026), which covers Free chat and embeddings, so 1011 needed no
+code change. Chat reads `GOOGLE_API_KEY` before `GEMINI_API_KEY`; both must
+hold the paid key in production.
 
 **Private editorial tools and test pilot**
 
