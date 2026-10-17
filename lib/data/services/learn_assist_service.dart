@@ -332,6 +332,7 @@ class LearnAssistService {
         code,
         "You've used all your questions for today. "
         'They refresh ${refreshPhrase(resets)}.',
+        resetsAt: resets,
       );
     }
     return LearnAssistApiException(

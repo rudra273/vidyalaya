@@ -298,7 +298,10 @@ class LearnAssistApiException implements Exception {
   final String code;
   final String message;
 
-  const LearnAssistApiException(this.code, this.message);
+  /// For a refused question (`quota_exceeded`): when the allowance refills.
+  final DateTime? resetsAt;
+
+  const LearnAssistApiException(this.code, this.message, {this.resetsAt});
 
   @override
   String toString() => message;

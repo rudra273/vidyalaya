@@ -58,6 +58,9 @@ Firebase Auth + Google Sign-In ([auth_repository.dart](lib/data/repositories/aut
 ### AI allowance
 One shared daily allowance covers every AI chat; the server owns the count and returns `remaining` and `resets_at` with each answer and from `/me/usage`. The server charges a question when it starts and refunds it if it fails before any answer, so a failed turn is not spent and the app never adjusts the count itself. Reset wording comes from `refreshPhrase` in [ai_labels.dart](lib/utils/ai_labels.dart).
 
+### Plus requests
+Students ask for Plus; an admin approves by hand (Plus only, 30 days by default). [plus_provider.dart](lib/providers/plus_provider.dart) holds the status from `GET /me/plus` (cached per uid, refreshed on Profile open, when the Plus sheet opens and when the app returns to the foreground). When the server's plan differs from the one the app shows, it force-refreshes the account, so an approval changes the plan label and limits without a restart. The server's `available` flag is the kill switch: when false, requests and the Profile card hide. Students send only which screen they asked from ([PlusSource](lib/data/models/plus.dart)); never add free text. Copy stays general (no limits numbers) and declines stay neutral, with no reason shown. A refused question (`quota_exceeded`) opens the limit sheet once per limit.
+
 ### Routing — go_router
 Single `routerProvider` in [router.dart](lib/app/router.dart). A `ShellRoute` wraps the 4 bottom-nav tabs (`/`, `/explore`, `/library`, `/profile`) in `AppShell` with `NoTransitionPage`; everything else is a root-level route. A top-level `redirect` forces `/welcome` until onboarding completes. Legacy paths (`/learn`, `/my-books`, `/learn-ai`) redirect to current ones — preserve these so old deep links don't break.
 

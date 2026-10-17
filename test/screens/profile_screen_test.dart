@@ -10,6 +10,7 @@ import 'package:vidyalaya/data/services/backend_auth_service.dart';
 import 'package:vidyalaya/providers/auth_provider.dart';
 import 'package:vidyalaya/providers/avatar_provider.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
+import 'package:vidyalaya/providers/plus_provider.dart';
 import 'package:vidyalaya/screens/profile/profile_screen.dart';
 import 'package:vidyalaya/widgets/calm_widgets.dart';
 
@@ -36,6 +37,16 @@ const _initial = StudentProfile(
   avatarId: 'girl_1',
   revision: 3,
 );
+
+/// The Plus card is covered in plus_ui_test.dart; here it stays out of the way
+/// (no cache, no network).
+class _NoPlus extends PlusNotifier {
+  @override
+  PlusViewState build() => const PlusViewState();
+
+  @override
+  Future<void> refresh() async {}
+}
 
 class _Cache extends BackendAccountCache {
   StudentProfile? submitted;
@@ -108,6 +119,7 @@ void main() {
           firebaseAuthProvider.overrideWithValue(auth),
           authStateProvider.overrideWith((ref) => authChanges.stream),
           backendAccountCacheProvider.overrideWith(() => cache),
+          plusProvider.overrideWith(_NoPlus.new),
         ],
         child: MaterialApp.router(
           theme: theme.copyWith(

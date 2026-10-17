@@ -24,6 +24,16 @@ String refreshPhrase(DateTime? resetsAt) {
   return 'at $hour:$minute $period';
 }
 
+/// A short local date such as "12 Dec", for when Plus starts or ends.
+String shortDate(DateTime date) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  final local = date.toLocal();
+  return '${local.day} ${months[local.month - 1]}';
+}
+
 /// Identifies one book in the vector DB.
 ///
 /// A subject key alone does NOT identify a book: it is reused across classes and

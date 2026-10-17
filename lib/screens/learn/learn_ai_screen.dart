@@ -15,6 +15,7 @@ import '../../data/models/ingested_books.dart';
 import '../../data/seed/ai_suggestions.dart';
 import '../../data/models/answer_style.dart';
 import '../../data/models/learn_assist.dart';
+import '../../data/models/plus.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ingested_books_provider.dart';
@@ -24,6 +25,7 @@ import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../widgets/ai_markdown.dart';
+import '../plus/plus_sheet.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
   final String channel;
@@ -87,6 +89,10 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   /// the conversation carries its own tone, so repeating it every turn would
   /// just burn context.
   bool _styleHintSent = false;
+
+  /// The limit sheet opens once per limit, not on every refused send; a good
+  /// answer re-arms it.
+  bool _limitSheetShown = false;
 
   /// Index into [_messages] of the in-progress streamed answer, or null before
   /// the first token has arrived. Used to grow that one message in place
@@ -767,6 +773,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       // it here (rather than before the request) means a failed first send and
       // its retry still carry the style the student picked.
       _styleHintSent = true;
+      _limitSheetShown = false;
       // Count this as learning activity: bumps the AI-session counter and keeps
       // the learning streak alive, then refresh the stats so Home/Me update.
       await ref.read(userPrefsRepositoryProvider).recordAiSession();
@@ -788,6 +795,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         _finalizeStreamingMessage(_ChatMessage.error(error.message));
         _isSending = false;
       });
+      if (error.code == 'quota_exceeded') _offerPlus(error.resetsAt);
     } catch (_) {
       if (!mounted) return;
       Haptics.error(ref);
@@ -803,6 +811,19 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       flushTimer?.cancel();
     }
     _scrollToBottom();
+  }
+
+  /// A refused question is when Plus matters: say when the allowance refills and
+  /// let the student ask for Plus. Shown once per limit.
+  void _offerPlus(DateTime? resetsAt) {
+    if (_limitSheetShown || !mounted) return;
+    _limitSheetShown = true;
+    showPlusSheet(
+      context,
+      source: PlusSource.aiQuestions,
+      limitReached: true,
+      limitResetsAt: resetsAt,
+    );
   }
 
   /// Tapped suggestion: prefill the composer (don't auto-send) so the student

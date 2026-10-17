@@ -19,6 +19,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../providers/books_provider.dart';
+import '../../providers/plus_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/clay_provider.dart';
@@ -27,6 +28,7 @@ import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/support_section.dart';
+import 'widgets/plus_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -42,7 +44,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ensureProfile(forceRefresh: true);
+      if (!mounted) return;
+      _ensureProfile(forceRefresh: true);
+      // An approval since the last look shows up here.
+      ref.read(plusProvider.notifier).refresh();
     });
   }
 
@@ -239,6 +244,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: _buildAuthButton(authState),
                 ),
               ),
+
+            if (isSignedIn) const PlusCard(),
 
             // ── My Learning (tappable summary → /progress) ───────
             Padding(
