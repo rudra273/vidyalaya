@@ -7,10 +7,12 @@ import '../../app/app_info.dart';
 import '../../app/theme.dart';
 import '../../providers/clay_provider.dart';
 import '../../providers/haptic_provider.dart';
+import '../../providers/rollout_switches_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/support_section.dart';
+import 'widgets/settings_group.dart';
 
 const _deleteAccountUrl =
     'https://rosmox.com/products/vidyakalp/delete-account';
@@ -26,11 +28,27 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final clayOn = ref.watch(clayEnabledProvider);
     final hapticsOn = ref.watch(hapticsEnabledProvider);
+    final booksEnabled = ref.watch(booksEnabledProvider);
+
+    void setClay(bool v) => ref.read(clayEnabledProvider.notifier).set(v);
+    void setHaptics(bool v) {
+      ref.read(hapticsEnabledProvider.notifier).set(v);
+      // Fire one buzz on enable so the change is felt immediately.
+      if (v) Haptics.medium(ref);
+    }
+
+    const sectionTop = EdgeInsets.fromLTRB(
+      AppSpacing.screenPadding,
+      AppSpacing.sectionGap,
+      AppSpacing.screenPadding,
+      0,
+    );
+    const inset = EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding);
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: 32),
           children: [
             PageTitle(
               title: 'Settings',
@@ -38,179 +56,129 @@ class SettingsScreen extends ConsumerWidget {
                   context.canPop() ? context.pop() : context.go('/profile'),
             ),
 
-            const SizedBox(height: 12),
-
             // ── Appearance ────────────────────────────────────────
             const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                16,
+                AppSpacing.screenPadding,
+                0,
               ),
               child: SectionHead(label: 'Appearance'),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
+              padding: inset,
               child: _ThemeSegmented(
                 current: themeMode,
                 onChanged: (m) =>
                     ref.read(themeModeProvider.notifier).setThemeMode(m),
               ),
             ),
-
-            const SizedBox(height: 12),
-
+            const SizedBox(height: AppSpacing.stackGap),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  border: Border.all(color: cs.outline),
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                ),
-                child: SwitchListTile(
-                  value: clayOn,
-                  onChanged: (v) =>
-                      ref.read(clayEnabledProvider.notifier).set(v),
-                  activeThumbColor: cs.primary,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.cardPad,
-                    vertical: 2,
+              padding: inset,
+              child: SettingsGroup(
+                children: [
+                  SettingsRow(
+                    color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
+                    icon: Icons.layers_outlined,
+                    title: 'Soft 3D look',
+                    sub:
+                        'Adds gentle depth to cards. Turn off for a flat, plain look.',
+                    onTap: () => setClay(!clayOn),
+                    trailing: Switch(
+                      value: clayOn,
+                      onChanged: setClay,
+                      activeThumbColor: cs.primary,
+                    ),
                   ),
-                  title: Text(
-                    'Soft 3D look',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  SettingsRow(
+                    color: isDark ? AppColors.cOdiaDark : AppColors.cOdia,
+                    icon: Icons.vibration_rounded,
+                    title: 'Haptic feedback',
+                    sub: 'Subtle vibrations on taps and actions.',
+                    onTap: () => setHaptics(!hapticsOn),
+                    trailing: Switch(
+                      value: hapticsOn,
+                      onChanged: setHaptics,
+                      activeThumbColor: cs.primary,
+                    ),
                   ),
-                  subtitle: Text(
-                    'Adds gentle depth to cards. Turn off for a flat, plain look.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
+                ],
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  border: Border.all(color: cs.outline),
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                ),
-                child: SwitchListTile(
-                  value: hapticsOn,
-                  onChanged: (v) {
-                    ref.read(hapticsEnabledProvider.notifier).set(v);
-                    // Fire one buzz on enable so the change is felt immediately.
-                    if (v) Haptics.medium(ref);
-                  },
-                  activeThumbColor: cs.primary,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.cardPad,
-                    vertical: 2,
-                  ),
-                  title: Text(
-                    'Haptic feedback',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  subtitle: Text(
-                    'Subtle vibrations on taps and actions.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
 
             // ── Data ──────────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
+            // Downloads are offline books, so they hide with the books switch.
+            if (booksEnabled) ...[
+              const Padding(
+                padding: sectionTop,
+                child: SectionHead(label: 'Data'),
               ),
-              child: SectionHead(label: 'Data'),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  border: Border.all(color: cs.outline),
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                ),
-                child: ListRow(
-                  color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                  icon: Icons.file_download_outlined,
-                  title: 'Manage downloads',
-                  sub: 'Download or delete offline books',
-                  onTap: () => context.push('/manage-downloads'),
-                  last: true,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            const SupportSection(),
-
-            const SizedBox(height: 20),
-
-            // ── About ─────────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(label: 'About'),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: cs.surface,
-                  border: Border.all(color: cs.outline),
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                ),
-                child: Column(
+              Padding(
+                padding: inset,
+                child: SettingsGroup(
                   children: [
-                    ListRow(
+                    SettingsRow(
                       color: isDark
-                          ? AppColors.cScienceDark
-                          : AppColors.cScience,
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'Privacy Policy',
-                      sub: 'Our data & privacy commitments',
-                      onTap: () => context.push('/privacy-policy'),
-                    ),
-                    ListRow(
-                      color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                      icon: Icons.delete_outline_rounded,
-                      title: 'Delete account',
-                      sub: 'Request deletion of your account & data',
-                      onTap: () => launchUrl(
-                        Uri.parse(_deleteAccountUrl),
-                        mode: LaunchMode.externalApplication,
-                      ),
-                    ),
-                    ListRow(
-                      color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
-                      icon: Icons.info_outline_rounded,
-                      title: 'About Vidyakalp',
-                      sub: 'Learn more about the app',
-                      onTap: () => context.push('/about'),
-                      last: true,
+                          ? AppColors.cEnglishDark
+                          : AppColors.cEnglish,
+                      icon: Icons.file_download_outlined,
+                      title: 'Manage downloads',
+                      sub: 'Download or delete offline books',
+                      onTap: () => context.push('/manage-downloads'),
                     ),
                   ],
                 ),
+              ),
+            ],
+
+            const SupportSection(headingPadding: sectionTop),
+
+            // ── About ─────────────────────────────────────────────
+            const Padding(
+              padding: sectionTop,
+              child: SectionHead(label: 'About'),
+            ),
+            Padding(
+              padding: inset,
+              child: SettingsGroup(
+                children: [
+                  SettingsRow(
+                    color: isDark ? AppColors.cScienceDark : AppColors.cScience,
+                    icon: Icons.privacy_tip_outlined,
+                    title: 'Privacy Policy',
+                    sub: 'Our data & privacy commitments',
+                    onTap: () => context.push('/privacy-policy'),
+                  ),
+                  SettingsRow(
+                    color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
+                    icon: Icons.info_outline_rounded,
+                    title: 'About Vidyakalp',
+                    sub: 'Learn more about the app',
+                    onTap: () => context.push('/about'),
+                  ),
+                  // Leaves the app for the web form, so it says so and shows
+                  // an open-in-new mark instead of an in-app chevron.
+                  SettingsRow(
+                    color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+                    icon: Icons.delete_outline_rounded,
+                    title: 'Delete account',
+                    sub:
+                        'Opens our website, where you can ask us to delete '
+                        'your account and data.',
+                    trailing: Icon(
+                      Icons.open_in_new_rounded,
+                      size: 18,
+                      semanticLabel: 'Opens in browser',
+                      color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+                    ),
+                    onTap: () => launchUrl(
+                      Uri.parse(_deleteAccountUrl),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                  ),
+                ],
               ),
             ),
 
@@ -218,7 +186,7 @@ class SettingsScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screenPadding,
-                24,
+                28,
                 AppSpacing.screenPadding,
                 0,
               ),
@@ -234,9 +202,7 @@ class SettingsScreen extends ConsumerWidget {
                   const SizedBox(height: 3),
                   Text(
                     'Version $kAppVersionName',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: AppFontSize.small,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
               ),
@@ -334,9 +300,7 @@ class _Segment extends StatelessWidget {
               const SizedBox(height: 5),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: AppFontSize.body,
-                  fontWeight: AppFontWeight.semibold,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: active
                       ? cs.onPrimary
                       : (isDark ? AppColors.ink2Dark : AppColors.ink2),

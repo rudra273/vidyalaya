@@ -5,22 +5,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../data/avatars.dart';
+import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../utils/haptics.dart';
-import '../../providers/reading_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
 import '../../providers/games_progress_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../providers/rollout_switches_provider.dart';
 import '../../providers/vocabulary_provider.dart';
+import '../../widgets/ai_robot_mark.dart';
 import '../../widgets/home_ai_chat.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/share_feedback_banner.dart';
-import '../../data/models/book.dart';
 import '../../data/seed/vocabulary_data.dart';
 import '../../data/seed/warmup_data.dart';
 import '../../providers/user_selection_provider.dart';
@@ -42,19 +42,20 @@ void _navTap(
   }
 }
 
-/// AI-first Home — "Calm Scholar" layout.
-/// Wordmark → AI Learning (Ask card, with the AI tab one tap away) → Word of
-/// the day → Your books (Library, continue reading, recently added) →
-/// Study tools.
+/// AI-first Home.
+/// Greeting + notifications → streak week → AI card → interactive lessons
+/// (coming soon) → study tools → word of the day → warm-up → share.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recentBooks = ref.watch(recentBooksProvider);
     final booksEnabled = ref.watch(booksEnabledProvider);
     final streak = ref.watch(progressProvider).currentStreak;
     final dailyDone = ref.watch(gamesProgressProvider).dailyDoneToday;
+    final unread = ref.watch(notificationsUnreadCountProvider);
+    final classNo = ref.watch(primaryClassProvider);
+    final board = ref.watch(userBoardProvider);
     final user = ref
         .watch(authStateProvider)
         .maybeWhen(data: (u) => u, orElse: () => null);
@@ -62,6 +63,7 @@ class HomeScreen extends ConsumerWidget {
     final firstName = _firstName(user);
     final avatarLetter = (firstName.isNotEmpty ? firstName[0] : 'S')
         .toUpperCase();
+    final lateNight = _isLateNight();
 
     // One warm-up a day, pitched at the lowest class the student has selected
     // (null = draw from the whole pool) so it never lands above their level.
@@ -73,8 +75,6 @@ class HomeScreen extends ConsumerWidget {
           : (selectedClasses.toList()..sort()).first,
     );
 
-    final showRecentBooks = booksEnabled && recentBooks.isNotEmpty;
-
     // The AI card offers to resume the latest question — but only while it's
     // fresh. A week-old "Continue" reads as stale, not helpful.
     final recents = ref.watch(recentQuestionsProvider);
@@ -85,28 +85,52 @@ class HomeScreen extends ConsumerWidget {
         ? recents.first
         : null;
 
+    const pad = EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding);
+
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
         children: [
-          // ── top bar: wordmark + streak + avatar ─────────────────
-          // Shares PageTitle's metrics so the wordmark sits at exactly the
-          // same height as the "AI Learning" / "Explore" / "Profile" titles.
-          PageTitle(
-            title: 'Vidyakalp',
-            sub: _greetingLine(firstName),
-            // Both controls fit PageTitle's title row, so they centre on the
-            // wordmark and the greeting runs full width underneath.
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          // ── Greeting + notifications + avatar ───────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              18,
+              AppSpacing.screenPadding,
+              0,
+            ),
+            child: Row(
               children: [
-                if (streak > 0) ...[
-                  _StreakChip(
-                    streak: streak,
-                    onTap: () => _navTap(ref, context, '/progress'),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_greeting()}, $firstName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lateNight
+                            ? 'Rest now. Study fresh tomorrow.'
+                            : 'Class $classNo · ${boardLabel(board)}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: _muted(context),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                ],
+                ),
+                const SizedBox(width: 8),
+                _BellButton(
+                  unread: unread,
+                  onTap: () => _navTap(ref, context, '/notifications'),
+                ),
+                const SizedBox(width: 8),
                 _Avatar(
                   letter: avatarLetter,
                   avatar: ref.watch(selectedAvatarProvider),
@@ -116,14 +140,24 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Q&A Assist conversation entry ──────────────────────
-          const SizedBox(height: AppSpacing.sectionGap - 14),
+          // ── Streak week ──────────────────────────────────────────
+          const SizedBox(height: 18),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
+            padding: pad,
+            child: _StreakWeek(
+              streak: streak,
+              onTap: () => _navTap(ref, context, '/progress'),
             ),
+          ),
+
+          // ── AI card ──────────────────────────────────────────────
+          const SizedBox(height: 14),
+          Padding(
+            padding: pad,
             child: HomeAiChat(
+              mood: lateNight ? BotMood.resting : BotMood.idle,
               onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
+              onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
               resumeText: lastQuestion?.text,
               onResume: lastQuestion == null
                   ? null
@@ -135,140 +169,116 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Study tools ──────────────────────────────────────────
-          // Compact shortcuts below the Q&A entry.
+          // ── Interactive lessons (placeholder) ────────────────────
+          // Reserved for the upcoming interactive Maths / English / Science
+          // lessons. Until they ship, the cards say so instead of linking.
           const SizedBox(height: AppSpacing.sectionGap),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
+          const Padding(
+            padding: pad,
+            child: _SectionTitle(title: 'Interactive lessons', tag: 'Soon'),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 132,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: pad,
+              itemCount: _lessonPreviews.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) =>
+                  _LessonPreviewCard(preview: _lessonPreviews[i]),
             ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                const spacing = 9.0;
-                final tileWidth = (constraints.maxWidth - spacing * 2) / 3;
+          ),
+
+          // ── Study tools ──────────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(padding: pad, child: _SectionTitle(title: 'Study tools')),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 92,
+            child: Builder(
+              builder: (context) {
                 final dark = _isDark(context);
-                // Always six tiles — two full rows. With books off, Vocabulary
-                // takes the Books slot so the grid never has a gap.
-                final tools = [
-                  _MiniTool(
-                    color: dark ? AppColors.cHindiDark : AppColors.cHindi,
-                    icon: Icons.bookmark_rounded,
-                    label: 'Bookmarks',
-                    onTap: () => _navTap(ref, context, '/bookmarks'),
+                final tools = <_ToolItem>[
+                  if (booksEnabled)
+                    _ToolItem(
+                      'Books',
+                      Icons.menu_book_rounded,
+                      dark ? AppColors.cAiDark : AppColors.cAi,
+                      '/library',
+                    ),
+                  _ToolItem(
+                    'Quizzes',
+                    Icons.quiz_rounded,
+                    dark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                    '/learn/quiz',
                   ),
-                  _MiniTool(
-                    color: dark ? AppColors.cScienceDark : AppColors.cScience,
-                    icon: Icons.calendar_month_rounded,
-                    label: 'Timetable',
-                    onTap: () => _navTap(ref, context, '/timetable'),
+                  _ToolItem(
+                    'Notes',
+                    Icons.edit_note_rounded,
+                    dark ? AppColors.cSocialDark : AppColors.cSocial,
+                    '/notes',
                   ),
-                  _MiniTool(
-                    color: dark ? AppColors.cSocialDark : AppColors.cSocial,
-                    icon: Icons.edit_note_rounded,
-                    label: 'Notes',
-                    onTap: () => _navTap(ref, context, '/notes'),
+                  _ToolItem(
+                    'Timetable',
+                    Icons.calendar_month_rounded,
+                    dark ? AppColors.cScienceDark : AppColors.cScience,
+                    '/timetable',
                   ),
-                  booksEnabled
-                      ? _MiniTool(
-                          color: dark ? AppColors.cAiDark : AppColors.cAi,
-                          icon: Icons.menu_book_rounded,
-                          label: 'Books',
-                          onTap: () => _navTap(ref, context, '/library'),
-                        )
-                      : _MiniTool(
-                          color: dark ? AppColors.cAiDark : AppColors.cAi,
-                          icon: Icons.menu_book_outlined,
-                          label: 'Vocabulary',
-                          onTap: () =>
-                              _navTap(ref, context, '/learn/vocabulary'),
-                        ),
-                  // Same hue + icon as its Explore card, so it's recognisable.
-                  _MiniTool(
-                    color: dark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                    icon: Icons.quiz_rounded,
-                    label: 'Quizzes',
-                    onTap: () => _navTap(ref, context, '/learn/quiz'),
+                  if (booksEnabled)
+                    _ToolItem(
+                      'Bookmarks',
+                      Icons.bookmark_rounded,
+                      dark ? AppColors.cHindiDark : AppColors.cHindi,
+                      '/bookmarks',
+                    ),
+                  _ToolItem(
+                    'Vocabulary',
+                    Icons.translate_rounded,
+                    dark ? AppColors.cFormulasDark : AppColors.cFormulas,
+                    '/learn/vocabulary',
                   ),
-                  _MiniTool(
-                    color: dark ? AppColors.cMathsDark : AppColors.cMaths,
-                    icon: Icons.extension_rounded,
-                    label: 'Games',
+                  _ToolItem(
+                    'Games',
+                    Icons.extension_rounded,
+                    dark ? AppColors.cMathsDark : AppColors.cMaths,
+                    '/games',
                     // Dot until today's Daily Brain Challenge is done.
                     badge: !dailyDone,
-                    onTap: () => _navTap(ref, context, '/games'),
                   ),
                 ];
-                return Wrap(
-                  spacing: spacing,
-                  runSpacing: spacing,
-                  children: [
-                    for (final tool in tools)
-                      SizedBox(width: tileWidth, child: tool),
-                  ],
+                return ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: pad,
+                  itemCount: tools.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 6),
+                  itemBuilder: (context, i) => _ToolButton(
+                    item: tools[i],
+                    onTap: () => _navTap(ref, context, tools[i].route),
+                  ),
                 );
               },
             ),
           ),
 
           // ── Word of the day ──────────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'Word of the day'),
-          ),
+          const SizedBox(height: AppSpacing.sectionGap - 6),
+          const Padding(padding: pad, child: _SectionTitle(title: 'Word of the day')),
+          const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
+            padding: pad,
             child: _WordOfDayCard(
               word: wordOfTheDay(),
               regionalLang: ref.watch(dictionaryDefaultLanguageProvider),
             ),
           ),
 
-          // ── Your books ───────────────────────────────────────────
-          // Most-recently-opened first, so the row tracks what the student is
-          // actually reading. No continue-reading card — the first tile in
-          // this row is that book.
-          if (showRecentBooks) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(
-                label: 'Your books',
-                action: 'See all',
-                onAction: () => _navTap(ref, context, '/library'),
-              ),
-            ),
-            SizedBox(
-              height: 168,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                ),
-                itemCount: recentBooks.length > 8 ? 8 : recentBooks.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: AppSpacing.stackGap),
-                itemBuilder: (context, index) {
-                  return _RecentBookCard(book: recentBooks[index]);
-                },
-              ),
-            ),
-          ],
-
           // ── Today's warm-up ─────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: "Today's warm-up"),
-          ),
+          const Padding(padding: pad, child: _SectionTitle(title: "Today's warm-up")),
+          const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
+            padding: pad,
             child: WarmupCard(
               // Keyed by question id so the card resets its answered state when
               // the day rolls over while Home is still on screen.
@@ -279,10 +289,7 @@ class HomeScreen extends ConsumerWidget {
 
           // ── Share & rate ─────────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: ShareFeedbackBanner(),
-          ),
+          const Padding(padding: pad, child: ShareFeedbackBanner()),
         ],
       ),
     );
@@ -294,70 +301,438 @@ class HomeScreen extends ConsumerWidget {
     return 'Student';
   }
 
+  /// Late at night (and pre-dawn) Home nudges the student to rest instead of
+  /// pushing them to keep studying, and the bot rests too.
+  static bool _isLateNight() {
+    final h = DateTime.now().hour;
+    return h >= 22 || h < 5;
+  }
+
   static String _greeting() {
     final h = DateTime.now().hour;
+    if (h >= 22 || h < 5) return 'Good night';
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
-  }
-
-  /// Full greeting line, time-of-day aware. Late at night (and pre-dawn) we
-  /// nudge the student to rest instead of pushing them to keep studying.
-  static String _greetingLine(String firstName) {
-    final h = DateTime.now().hour;
-    if (h >= 22 || h < 5) {
-      return 'Good night, $firstName — time to rest, study fresh tomorrow.';
-    }
-    return '${_greeting()}, $firstName — let\'s keep learning.';
   }
 
   static bool _isDark(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark;
 }
 
-// ─── Streak chip (uses maths/coral hue per design) ──────────────────────
+Color _muted(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? AppColors.ink2Dark
+    : AppColors.ink2;
 
-class _StreakChip extends StatelessWidget {
-  final int streak;
-  final VoidCallback onTap;
+// ─── Section title ──────────────────────────────────────────────────────
 
-  const _StreakChip({required this.streak, required this.onTap});
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title, this.tag});
+
+  final String title;
+
+  /// Small pill after the title, e.g. "Soon".
+  final String? tag;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
-    final accent = isDark ? AppColors.cMathsDark : AppColors.cMaths;
+    return Semantics(
+      header: true,
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: AppFontWeight.bold,
+            ),
+          ),
+          if (tag != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: cs.secondary,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                tag!,
+                style: TextStyle(
+                  fontSize: AppFontSize.small,
+                  fontWeight: AppFontWeight.bold,
+                  color: cs.onSecondary,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Notifications bell ─────────────────────────────────────────────────
+
+class _BellButton extends StatelessWidget {
+  const _BellButton({required this.unread, required this.onTap});
+
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: '$streak day streak',
+      label: unread > 0 ? 'Notifications, $unread new' : 'Notifications',
       excludeSemantics: true,
       child: Pressable(
         onTap: onTap,
         scale: 0.92,
         child: Container(
-          height: 32,
-          padding: const EdgeInsets.fromLTRB(8, 0, 11, 0),
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(color: cs.surface, shape: BoxShape.circle),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(Icons.notifications_none_rounded, color: cs.onSurface),
+              if (unread > 0)
+                Positioned(
+                  top: 10,
+                  right: 11,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0884A),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cs.surface, width: 2),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Streak week ────────────────────────────────────────────────────────
+// The current streak, with this week's days ticked: every day inside the
+// streak (which always ends today, since opening the app records activity).
+
+class _StreakWeek extends StatelessWidget {
+  const _StreakWeek({required this.streak, required this.onTap});
+
+  final int streak;
+  final VoidCallback onTap;
+
+  static const _flame = Color(0xFFF0884A);
+  static const _flameInk = Color(0xFFA8501A);
+  static const _labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final today = DateTime.now();
+    final todayIndex = today.weekday - 1; // Monday = 0
+    final empty = dark ? AppColors.surface3Dark : AppColors.surface3;
+
+    return Semantics(
+      button: true,
+      label: '$streak day streak. Open progress',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
-            border: Border.all(color: accent.withValues(alpha: 0.26)),
-            borderRadius: BorderRadius.circular(999),
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.local_fire_department_rounded,
-                size: 16,
-                color: accent,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 20,
+                        color: _flame,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$streak',
+                        style: TextStyle(
+                          fontSize: AppFontSize.headingSmall,
+                          fontWeight: AppFontWeight.bold,
+                          color: dark ? _flame : _flameInk,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'day streak',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _muted(context),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    for (var i = 0; i < 7; i++)
+                      _day(
+                        context,
+                        label: _labels[i],
+                        done: i <= todayIndex && todayIndex - i < streak,
+                        isToday: i == todayIndex,
+                        empty: empty,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _day(
+    BuildContext context, {
+    required String label,
+    required bool done,
+    required bool isToday,
+    required Color empty,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: done ? _flame : empty,
+            shape: BoxShape.circle,
+            border: isToday && !done
+                ? Border.all(color: _flame, width: 2)
+                : null,
+          ),
+          child: done
+              ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
+              : null,
+        ),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: AppFontSize.small,
+            fontWeight: isToday ? AppFontWeight.bold : AppFontWeight.medium,
+            color: isToday
+                ? Theme.of(context).colorScheme.onSurface
+                : _muted(context),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Interactive lesson previews ────────────────────────────────────────
+
+class _LessonPreview {
+  const _LessonPreview(this.subject, this.glyph, this.light, this.dark);
+  final String subject;
+  final String glyph;
+  final Color light;
+  final Color dark;
+}
+
+const _lessonPreviews = [
+  _LessonPreview('Maths', 'π', AppColors.cMaths, AppColors.cMathsDark),
+  _LessonPreview('English', 'Aa', AppColors.cEnglish, AppColors.cEnglishDark),
+  _LessonPreview(
+    'Science',
+    'H₂O',
+    AppColors.cScience,
+    AppColors.cScienceDark,
+  ),
+];
+
+class _LessonPreviewCard extends StatelessWidget {
+  const _LessonPreviewCard({required this.preview});
+
+  final _LessonPreview preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final hue = dark ? preview.dark : preview.light;
+    return Semantics(
+      button: true,
+      label: 'Interactive ${preview.subject} lessons, coming soon',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: () {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Interactive ${preview.subject} lessons are coming soon.',
+                ),
+              ),
+            );
+        },
+        child: Container(
+          width: 150,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(
+              color: dark ? AppColors.surface3Dark : AppColors.hairline,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color.alphaBlend(
+                    hue.withValues(alpha: dark ? 0.2 : 0.14),
+                    cs.surface,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  preview.glyph,
+                  style: TextStyle(
+                    fontFamily: Theme.of(
+                      context,
+                    ).textTheme.headlineSmall?.fontFamily,
+                    fontSize: preview.glyph.length > 2 ? 14 : 19,
+                    fontWeight: AppFontWeight.semibold,
+                    color: hue,
+                  ),
+                ),
+              ),
+              const Spacer(),
               Text(
-                '$streak',
-                style: TextStyle(
-                  fontSize: AppFontSize.body,
-                  fontWeight: AppFontWeight.bold,
-                  color: accent,
+                preview.subject,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Coming soon',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: _muted(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Study tool button (horizontal row) ─────────────────────────────────
+
+class _ToolItem {
+  const _ToolItem(
+    this.label,
+    this.icon,
+    this.color,
+    this.route, {
+    this.badge = false,
+  });
+  final String label;
+  final IconData icon;
+  final Color color;
+  final String route;
+  final bool badge;
+}
+
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({required this.item, required this.onTap});
+
+  final _ToolItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Semantics(
+      button: true,
+      label: item.label,
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        child: SizedBox(
+          width: 76,
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: Color.alphaBlend(
+                        item.color.withValues(alpha: dark ? 0.18 : 0.13),
+                        cs.surface,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Icon(item.icon, size: 26, color: item.color),
+                  ),
+                  if (item.badge)
+                    Positioned(
+                      right: -1,
+                      top: -1,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          // A fixed alert red: a dot in the tile's own hue
+                          // vanished against its tinted background.
+                          color: AppColors.badge,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: AppFontWeight.semibold,
                 ),
               ),
             ],
@@ -387,8 +762,8 @@ class _Avatar extends StatelessWidget {
         onTap: onTap,
         scale: 0.92,
         child: Container(
-          width: 34,
-          height: 34,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             color: Color.alphaBlend(
               cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
@@ -404,8 +779,8 @@ class _Avatar extends StatelessWidget {
               ? ClipOval(
                   child: SvgPicture.asset(
                     avatar!.assetPath,
-                    width: 32,
-                    height: 32,
+                    width: 42,
+                    height: 42,
                   ),
                 )
               : Text(
@@ -614,124 +989,6 @@ class _ExampleSentence extends StatelessWidget {
           ),
           TextSpan(text: sentence.substring(idx + word.length)),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Mini tool tile (3-column grid) ─────────────────────────────────────
-
-class _MiniTool extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  /// Shows a small attention dot on the icon.
-  final bool badge;
-
-  const _MiniTool({
-    required this.color,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.badge = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        radius: AppSpacing.tileRadius,
-        blur: 13,
-        distance: 4,
-        child: Row(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Tile(color: color, icon: icon, size: 22, radius: 7),
-                if (badge)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        // A fixed alert red: a dot in the tile's own hue
-                        // vanished against its tinted background.
-                        color: AppColors.badge,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.surface,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 7),
-            // Scales down rather than truncating on narrow phones, where
-            // "Bookmarks" would otherwise lose its last letters.
-            Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: AppFontSize.small,
-                    fontWeight: AppFontWeight.semibold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Recently added book card (horizontal scroller item) ───────────────
-
-class _RecentBookCard extends ConsumerWidget {
-  final Book book;
-
-  const _RecentBookCard({required this.book});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final meta = subjectMeta(book.subject);
-    return Pressable(
-      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
-      child: SizedBox(
-        width: 106,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 130,
-              child: BookCover(subjectKey: book.subject, title: book.title),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              meta.label,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontSize: AppFontSize.small,
-                fontWeight: AppFontWeight.semibold,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.ink2Dark
-                    : AppColors.ink2,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme.dart';
 import '../../../providers/progress_provider.dart';
+import '../../../widgets/calm_widgets.dart';
 
 /// "My Learning" dashboard — the former Progress screen, merged into the Me
 /// (Profile) page and reframed around *learning* activity (AI + tools + reading)
 /// rather than reading alone. Drop into a scrolling Column.
 class LearningSummary extends ConsumerWidget {
   /// Whether to render the inline "My Learning" title. The standalone Progress
-  /// page sets this false (it shows the title in its app bar instead).
+  /// page sets this false (it shows the title in its header instead).
   final bool showHeader;
 
   const LearningSummary({super.key, this.showHeader = true});
@@ -19,120 +20,108 @@ class LearningSummary extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final ink2 = isDark ? AppColors.ink2Dark : AppColors.ink2;
     final stats = ref.watch(progressProvider);
 
-    final goalProgress =
-        (stats.pagesReadToday / _dailyGoalPages).clamp(0.0, 1.0);
-    final pagesRemaining =
-        (_dailyGoalPages - stats.pagesReadToday).clamp(0, _dailyGoalPages);
+    final goalProgress = (stats.pagesReadToday / _dailyGoalPages).clamp(
+      0.0,
+      1.0,
+    );
+    final pagesRemaining = (_dailyGoalPages - stats.pagesReadToday).clamp(
+      0,
+      _dailyGoalPages,
+    );
+
+    Color hue(Color light, Color dark) => isDark ? dark : light;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (showHeader) ...[
-          Text('My Learning', style: Theme.of(context).textTheme.headlineSmall),
+          Text('My Learning', style: theme.textTheme.headlineSmall),
           const SizedBox(height: 16),
         ],
 
-        // Headline learning stats.
+        // ── Headline learning stats ───────────────────────────
         Row(
           children: [
             Expanded(
               child: _StatCard(
-                icon: '🔥',
-                title: 'Streak',
+                icon: Icons.local_fire_department_rounded,
                 value: stats.currentStreak.toString(),
-                subtitle: 'Days',
-                color: Colors.orange,
-                isDark: isDark,
+                label: 'Day streak',
+                color: hue(AppColors.cMaths, AppColors.cMathsDark),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: _StatCard(
-                icon: '🤖',
-                title: 'AI',
+                icon: Icons.auto_awesome_rounded,
                 value: stats.aiSessions.toString(),
-                subtitle: 'Sessions',
-                color: Colors.teal,
-                isDark: isDark,
+                label: 'AI sessions',
+                color: hue(AppColors.cAi, AppColors.cAiDark),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: _StatCard(
-                icon: '🧪',
-                title: 'Tools',
+                icon: Icons.science_outlined,
                 value: stats.toolsOpened.toString(),
-                subtitle: 'Explored',
-                color: Colors.indigo,
-                isDark: isDark,
+                label: 'Tools explored',
+                color: hue(AppColors.cTutor, AppColors.cTutorDark),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
               child: _StatCard(
-                icon: '📖',
-                title: 'Pages',
+                icon: Icons.menu_book_rounded,
                 value: stats.totalPagesRead.toString(),
-                subtitle: 'Read',
-                color: Colors.blue,
-                isDark: isDark,
+                label: 'Pages read',
+                color: hue(AppColors.cEnglish, AppColors.cEnglishDark),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: _StatCard(
-                icon: '⏳',
-                title: 'Time',
+                icon: Icons.schedule_rounded,
                 value: (stats.totalStudySeconds / 3600).toStringAsFixed(1),
-                subtitle: 'Hours',
-                color: Colors.purple,
-                isDark: isDark,
+                label: 'Hours studied',
+                color: hue(AppColors.cPeriodic, AppColors.cPeriodicDark),
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.sectionGap),
 
-        // Daily learning goal ring.
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? cs.surface : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+        // ── Daily learning goal ring ──────────────────────────
+        const SectionHead(label: 'Today'),
+        _Card(
           child: Row(
             children: [
               SizedBox(
-                height: 100,
-                width: 100,
+                height: 92,
+                width: 92,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     CircularProgressIndicator(
                       value: 1.0,
-                      strokeWidth: 10,
-                      color: cs.surfaceContainerHighest,
+                      strokeWidth: 9,
+                      color: isDark
+                          ? AppColors.surface3Dark
+                          : AppColors.surface3,
                     ),
                     CircularProgressIndicator(
                       value: goalProgress,
-                      strokeWidth: 10,
+                      strokeWidth: 9,
                       strokeCap: StrokeCap.round,
                       color: cs.primary,
                     ),
@@ -142,20 +131,16 @@ class LearningSummary extends ConsumerWidget {
                         children: [
                           Text(
                             stats.pagesReadToday.toString(),
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(
-                                  fontWeight: AppFontWeight.bold,
-                                  color: cs.primary,
-                                ),
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: AppFontWeight.bold,
+                              color: cs.primary,
+                              height: 1.1,
+                            ),
                           ),
                           Text(
                             'pages',
-                            style: TextStyle(
-                              fontSize: AppFontSize.caption,
-                              color: AppColors.textMuted,
-                              fontWeight: AppFontWeight.bold,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: ink2,
                             ),
                           ),
                         ],
@@ -164,27 +149,21 @@ class LearningSummary extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Daily Learning Goal',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: AppFontWeight.bold),
+                      'Daily learning goal',
+                      style: theme.textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       pagesRemaining > 0
                           ? "You're $pagesRemaining pages away from today's goal. Keep going!"
                           : "Awesome! You've reached your daily goal!",
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textMuted,
-                            height: 1.4,
-                          ),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: ink2),
                     ),
                   ],
                 ),
@@ -193,46 +172,40 @@ class LearningSummary extends ConsumerWidget {
           ),
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.sectionGap),
 
-        Text(
-          'SUBJECT FOCUS',
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                letterSpacing: 1.2,
-                fontWeight: AppFontWeight.semibold,
-                color: AppColors.textMuted,
-              ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? cs.surface : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
+        // ── Subject focus ─────────────────────────────────────
+        const SectionHead(label: 'Subject focus'),
+        _Card(
           child: stats.subjectPages.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Read some books to see your subject focus here!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.textMuted),
-                    ),
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Tile(
+                        color: hue(AppColors.cEnglish, AppColors.cEnglishDark),
+                        icon: Icons.auto_stories_outlined,
+                        size: 36,
+                        iconSize: 20,
+                        radius: 11,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Read some books to see your subject focus here.',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: ink2,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : Column(
                   children: _buildSubjectBars(
                     stats.subjectPages,
                     stats.totalPagesRead,
+                    theme.brightness,
                   ),
                 ),
         ),
@@ -240,105 +213,124 @@ class LearningSummary extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildSubjectBars(Map<String, int> subjectPages, int totalPages) {
+  List<Widget> _buildSubjectBars(
+    Map<String, int> subjectPages,
+    int totalPages,
+    Brightness brightness,
+  ) {
     if (totalPages == 0) return [];
 
     final sortedEntries = subjectPages.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    final colors = <Color>[
-      Colors.blueAccent,
-      Colors.green,
-      Colors.orangeAccent,
-      Colors.redAccent,
-      Colors.purpleAccent,
-      Colors.teal,
-    ];
-
     final bars = <Widget>[];
     for (var i = 0; i < sortedEntries.length; i++) {
       final entry = sortedEntries[i];
       final ratio = entry.value / totalPages;
+      // Keys are display labels ("Maths", "Social"); the subject palette keys
+      // off the lower-cased family name, falling back to brand green.
+      final key = entry.key.toLowerCase().replaceAll(' ', '_');
 
       bars.add(
         _SubjectProgressBar(
           subject: entry.key,
           progress: ratio,
-          color: colors[i % colors.length],
+          color: AppColors.subjectColor(key, brightness),
         ),
       );
       if (i < sortedEntries.length - 1) {
-        bars.add(const SizedBox(height: 20));
+        bars.add(const SizedBox(height: 18));
       }
     }
     return bars;
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String icon;
-  final String title;
-  final String value;
-  final String subtitle;
-  final Color color;
-  final bool isDark;
+// ─── Card ─────────────────────────────────────────────────────────────────
+// The app's standard card: surface fill and card radius; a hairline edge in
+// light, none in dark (dark cards read by their lighter surface).
 
-  const _StatCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.subtitle,
-    required this.color,
-    required this.isDark,
+class _Card extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  const _Card({
+    required this.child,
+    this.padding = const EdgeInsets.all(AppSpacing.cardPad),
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: padding,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: isDark ? 0.15 : 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: isDark ? 0.3 : 0.2)),
+        color: cs.surface,
+        border: isDark ? null : Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: AppFontSize.small,
-                  fontWeight: AppFontWeight.bold,
-                  color: color,
-                ),
+      child: child,
+    );
+  }
+}
+
+// ─── Stat card ────────────────────────────────────────────────────────────
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Semantics(
+      label: '$value $label',
+      excludeSemantics: true,
+      child: _Card(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Tile(color: color, icon: icon, size: 34, iconSize: 19, radius: 10),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              maxLines: 1,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontSize: AppFontSize.heading,
+                fontWeight: AppFontWeight.bold,
+                height: 1.1,
               ),
-              Text(icon, style: const TextStyle(fontSize: AppFontSize.body)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: AppFontWeight.black,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-          ),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: AppFontSize.caption,
-              color: AppColors.textMuted,
-              fontWeight: AppFontWeight.semibold,
             ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: isDark ? AppColors.ink2Dark : AppColors.ink2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+// ─── Subject progress bar ─────────────────────────────────────────────────
 
 class _SubjectProgressBar extends StatelessWidget {
   final String subject;
@@ -353,7 +345,8 @@ class _SubjectProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,53 +354,23 @@ class _SubjectProgressBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              subject,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: AppFontWeight.semibold),
-            ),
+            Flexible(child: Text(subject, style: theme.textTheme.titleSmall)),
             Text(
               '${(progress * 100).toInt()}%',
-              style: TextStyle(
-                fontSize: AppFontSize.small,
-                fontWeight: AppFontWeight.bold,
-                color: color,
-              ),
+              style: theme.textTheme.labelLarge?.copyWith(color: color),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        Container(
-          height: 12,
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                flex: (progress * 100).toInt(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.4),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 100 - (progress * 100).toInt(),
-                child: const SizedBox(),
-              ),
-            ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+          child: LinearProgressIndicator(
+            value: progress.clamp(0.0, 1.0),
+            minHeight: 10,
+            color: color,
+            backgroundColor: isDark
+                ? AppColors.surface3Dark
+                : AppColors.surface3,
           ),
         ),
       ],

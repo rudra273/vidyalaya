@@ -14,6 +14,7 @@ import '../../providers/recent_questions_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
+import '../../widgets/ai_robot_mark.dart';
 import '../../widgets/ask_card.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/clay_card.dart';
@@ -97,8 +98,9 @@ class AiHubScreen extends ConsumerWidget {
               horizontal: AppSpacing.screenPadding,
             ),
             child: AiAskHero(
-              headline: 'Ask anything from your textbooks.',
-              sub: 'Clear answers in English, Odia or Hindi.',
+              headline: 'What shall we work on today?',
+              sub: 'Answers in English, Odia or Hindi.',
+              mood: _outOfQuestions(account) ? BotMood.resting : BotMood.idle,
               onAsk: (style) =>
                   _navTap(ref, context, '/learn/ai?focus=1&style=${style.key}'),
               onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
@@ -283,6 +285,11 @@ class AiHubScreen extends ConsumerWidget {
     }
     final word = usage.remaining == 1 ? 'question' : 'questions';
     return '$plan plan · ${usage.remaining} $word left · resets $refresh';
+  }
+
+  static bool _outOfQuestions(BackendAccountState account) {
+    final usage = account.usage.maybeWhen(data: (v) => v, orElse: () => null);
+    return usage != null && !usage.unlimited && usage.remaining <= 0;
   }
 
   static bool _isDark(BuildContext c) =>

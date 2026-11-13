@@ -10,6 +10,7 @@ import '../../../providers/user_selection_provider.dart';
 import '../../../utils/haptics.dart';
 import '../../../widgets/calm_widgets.dart';
 import '../../../widgets/pressable.dart';
+import '../../../widgets/ai_robot_mark.dart';
 
 // ─── Today's warm-up ──────────────────────────────────────────────────────
 // One multiple-choice question a day, from the static seed pool. A correct
@@ -128,13 +129,10 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
               if (_revealed)
                 Row(
                   children: [
-                    Icon(
-                      _wasCorrect
-                          ? Icons.check_circle_rounded
-                          : Icons.info_rounded,
-                      size: 15,
-                      color: _wasCorrect ? cs.primary : muted,
-                    ),
+                    if (_wasCorrect)
+                      const AiBot(size: 22, mood: BotMood.cheering)
+                    else
+                      Icon(Icons.info_rounded, size: 15, color: muted),
                     const SizedBox(width: 5),
                     Text(
                       _wasCorrect ? 'Correct' : 'Answer below',

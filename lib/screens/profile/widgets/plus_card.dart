@@ -21,39 +21,47 @@ class PlusCard extends ConsumerWidget {
     if (status == null || !_visible(status)) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final copy = plusCardCopy(status);
+    // The hero green in both themes: Plus is the one dark-green card on the
+    // page, so it reads as special without competing colours.
+    final bg = isDark ? AppColors.heroDark : AppColors.hero;
+    final iconBg = Color.alphaBlend(
+      AppColors.green500Dark.withValues(alpha: isDark ? 0.16 : 0.14),
+      bg,
+    );
+    const star = Color(0xFF7FE0B6);
+    const sub = Color(0xFFC9DDD2);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
-        16,
+        AppSpacing.stackGap,
         AppSpacing.screenPadding,
         0,
       ),
       child: Material(
-        color: cs.surface,
+        color: bg,
         shape: RoundedRectangleBorder(
-          side: BorderSide(color: cs.outline),
+          side: isDark
+              ? const BorderSide(color: AppColors.heroLineDark)
+              : BorderSide.none,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           onTap: () => showPlusSheet(context, source: PlusSource.profile),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.cardPad),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    Icons.workspace_premium_rounded,
-                    color: cs.primary,
-                  ),
+                  child: const Icon(Icons.star_rounded, color: star, size: 24),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -62,16 +70,22 @@ class PlusCard extends ConsumerWidget {
                     children: [
                       Text(
                         copy.title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: AppFontWeight.semibold,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: AppColors.heroInk,
                         ),
                       ),
                       const SizedBox(height: 2),
-                      Text(copy.subtitle, style: theme.textTheme.bodySmall),
+                      Text(
+                        copy.subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: sub,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded, color: sub),
               ],
             ),
           ),

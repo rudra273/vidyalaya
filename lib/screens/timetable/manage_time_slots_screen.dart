@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../app/theme.dart';
 import '../../data/models/time_slot.dart';
 import '../../providers/core_providers.dart';
 
@@ -159,12 +158,11 @@ class _ManageTimeSlotsScreenState extends ConsumerState<ManageTimeSlotsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Bell Schedule'),
       ),
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         itemCount: _timeSlots.length,
         itemBuilder: (context, index) {
           final slot = _timeSlots[index];

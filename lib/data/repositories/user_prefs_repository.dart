@@ -882,7 +882,11 @@ class UserPrefsRepository {
     final lastDate = _prefs.getString(_lastActiveDateKey);
 
     if (lastDate != today) {
-      await _prefs.setInt(_pagesReadTodayKey, 0);
+      // Claim today before the first await. Several screens ask for the
+      // streak on the first open of a day; SharedPreferences updates its
+      // cache synchronously, so writing the date first stops the other
+      // calls from counting the same new day again.
+      final claim = _prefs.setString(_lastActiveDateKey, today);
 
       int streak = _prefs.getInt(_currentStreakKey) ?? 0;
       if (lastDate != null) {
@@ -899,8 +903,37 @@ class UserPrefsRepository {
         streak = 1;
       }
 
-      await _prefs.setInt(_currentStreakKey, streak);
-      await _prefs.setString(_lastActiveDateKey, today);
+      final saveStreak = _prefs.setInt(_currentStreakKey, streak);
+      final resetPages = _prefs.setInt(_pagesReadTodayKey, 0);
+      await Future.wait([claim, saveStreak, resetPages]);
     }
+  }
+
+  // ─── Notifications inbox: seen notice ids ────────────────────────────────
+  //
+  // Ids of in-app notices the student has already seen. Kept oldest-first and
+  // capped, so ids for notices that stopped applying age out on their own.
+
+  static const _seenNoticeIdsKey = 'seen_notice_ids';
+  static const _maxSeenNoticeIds = 200;
+
+  Set<String> getSeenNoticeIds() =>
+      (_prefs.getStringList(_seenNoticeIdsKey) ?? const <String>[]).toSet();
+
+  Future<void> addSeenNoticeIds(Iterable<String> ids) async {
+    final list = _prefs.getStringList(_seenNoticeIdsKey) ?? <String>[];
+    final known = list.toSet();
+    var changed = false;
+    for (final id in ids) {
+      if (known.add(id)) {
+        list.add(id);
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    final trimmed = list.length > _maxSeenNoticeIds
+        ? list.sublist(list.length - _maxSeenNoticeIds)
+        : list;
+    await _prefs.setStringList(_seenNoticeIdsKey, trimmed);
   }
 }

@@ -13,6 +13,8 @@ import '../screens/profile/settings_screen.dart';
 import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/profile/about_screen.dart';
 import '../screens/profile/feedback_screen.dart';
+import '../screens/profile/help_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
 import '../screens/progress/progress_screen.dart';
 import '../screens/notes/notes_screen.dart';
 import '../screens/notes/subject_notes_screen.dart';
@@ -160,6 +162,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/feedback',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const FeedbackScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/help',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HelpScreen(),
       ),
       GoRoute(
         path: '/welcome',

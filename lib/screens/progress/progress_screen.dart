@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/calm_widgets.dart';
 import '../profile/widgets/learning_summary.dart';
 
 /// Standalone Progress page. Reached from the Profile "My Learning" row and the
@@ -11,22 +13,25 @@ class ProgressScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'My Learning',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screenPadding,
-            8,
-            AppSpacing.screenPadding,
-            40,
-          ),
-          child: const LearningSummary(showHeader: false),
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 40),
+          children: [
+            PageTitle(
+              title: 'My Learning',
+              onBack: () =>
+                  context.canPop() ? context.pop() : context.go('/profile'),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                16,
+                AppSpacing.screenPadding,
+                0,
+              ),
+              child: LearningSummary(showHeader: false),
+            ),
+          ],
         ),
       ),
     );

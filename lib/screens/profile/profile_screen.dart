@@ -21,14 +21,15 @@ import '../../providers/core_providers.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/plus_provider.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/rollout_switches_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../providers/clay_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/support_section.dart';
 import 'widgets/plus_card.dart';
+import 'widgets/settings_group.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -119,52 +120,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final progress = ref.watch(progressProvider);
     final books = ref.watch(selectedBooksProvider);
 
+    final booksEnabled = ref.watch(booksEnabledProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeMode = ref.watch(themeModeProvider);
+
+    const inset = EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding);
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: 32),
           children: [
             PageTitle(
               title: 'Profile',
               sub: 'Your account & learning',
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ThemeToggle(
-                    isDark: Theme.of(context).brightness == Brightness.dark,
-                    onTap: () => ref.read(themeModeProvider.notifier).toggle(),
-                  ),
-                  const SizedBox(width: 10),
-                  IconBox(
-                    icon: Icons.settings_rounded,
-                    tooltip: 'Settings',
-                    onTap: () => context.push('/settings'),
-                  ),
-                ],
+              trailing: IconBox(
+                icon: Icons.settings_rounded,
+                tooltip: 'Settings',
+                onTap: () => context.push('/settings'),
               ),
             ),
+            const SizedBox(height: 16),
 
-            // ── Student profile ─────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                16,
-                AppSpacing.screenPadding,
-                0,
-              ),
-              child: SectionHead(
-                label: 'Student profile',
-                action: 'Edit',
-                onAction: isInitialProfileLoad
-                    ? null
-                    : () => _showProfileEditor(cachedProfile),
-              ),
-            ),
+            // ── Student card ────────────────────────────────
             if (isInitialProfileLoad)
               const Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                  vertical: 8,
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  0,
+                  AppSpacing.screenPadding,
+                  12,
                 ),
                 child: Row(
                   children: [
@@ -181,53 +166,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screenPadding,
-                  8,
-                  AppSpacing.screenPadding,
                   0,
+                  AppSpacing.screenPadding,
+                  12,
                 ),
                 child: _ProfileSyncErrorBanner(
                   onRetry: () => _ensureProfile(forceRefresh: true),
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: _ProfileSummary(
-                identity: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _BigAvatar(
-                      letter: avatarLetter,
-                      avatar: ref.watch(selectedAvatarProvider),
-                      clay: ref.watch(clayEnabledProvider),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayName,
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(fontSize: AppFontSize.heading),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isSignedIn
-                                ? email
-                                : 'Class $selectedClass · ${_languageLabel(preferredLanguage)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              padding: inset,
+              child: _StudentCard(
+                avatar: _BigAvatar(
+                  letter: avatarLetter,
+                  avatar: ref.watch(selectedAvatarProvider),
+                  clay: ref.watch(clayEnabledProvider),
+                  size: 64,
                 ),
-                classNo: selectedClass,
-                board: board,
-                language: _languageLabel(preferredLanguage),
-                school: cachedProfile?.schoolName?.trim() ?? '',
+                name: displayName,
+                subtitle: isSignedIn ? email : 'Not signed in',
+                onEdit: isInitialProfileLoad
+                    ? null
+                    : () => _showProfileEditor(cachedProfile),
+                details: [
+                  'Class $selectedClass',
+                  boardLabel(board),
+                  _languageLabel(preferredLanguage),
+                  if ((cachedProfile?.schoolName?.trim() ?? '').isNotEmpty)
+                    cachedProfile!.schoolName!.trim(),
+                ],
               ),
             ),
 
@@ -247,27 +214,93 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             if (isSignedIn) const PlusCard(),
 
-            // ── My Learning (tappable summary → /progress) ───────
+            // ── Learning stats (tap → /progress) ─────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screenPadding,
-                24,
+                AppSpacing.stackGap,
                 AppSpacing.screenPadding,
                 0,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Row(
                 children: [
-                  SectionHead(
-                    label: 'My learning',
-                    action: 'View progress',
-                    onAction: () => context.push('/progress'),
+                  Expanded(
+                    child: _StatTile(
+                      value: '${progress.currentStreak}',
+                      label: 'Day streak',
+                      color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+                      onTap: () => context.push('/progress'),
+                    ),
                   ),
-                  _StatsStrip(
-                    streak: progress.currentStreak,
-                    aiSessions: progress.aiSessions,
-                    books: books.length,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _StatTile(
+                      value: '${progress.aiSessions}',
+                      label: 'AI sessions',
+                      color: isDark ? AppColors.cAiDark : AppColors.green700,
+                      onTap: () => context.push('/progress'),
+                    ),
+                  ),
+                  if (booksEnabled) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _StatTile(
+                        value: '${books.length}',
+                        label: 'My books',
+                        color: isDark
+                            ? AppColors.cEnglishDark
+                            : AppColors.cEnglish,
+                        onTap: () => context.push('/progress'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            // ── Shortcuts ───────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                AppSpacing.stackGap,
+                AppSpacing.screenPadding,
+                0,
+              ),
+              child: SettingsGroup(
+                children: [
+                  SettingsRow(
+                    color: isDark ? AppColors.cOdiaDark : AppColors.cOdia,
+                    icon: Icons.notifications_none_rounded,
+                    title: 'Notifications',
+                    onTap: () => context.push('/notifications'),
+                  ),
+                  SettingsRow(
+                    color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                    icon: Icons.insights_rounded,
+                    title: 'My progress',
                     onTap: () => context.push('/progress'),
+                  ),
+                  if (booksEnabled)
+                    SettingsRow(
+                      color: isDark
+                          ? AppColors.cEnglishDark
+                          : AppColors.cEnglish,
+                      icon: Icons.file_download_outlined,
+                      title: 'Downloads',
+                      onTap: () => context.push('/manage-downloads'),
+                    ),
+                  SettingsRow(
+                    color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
+                    icon: Icons.dark_mode_outlined,
+                    title: 'Appearance',
+                    value: _themeModeLabel(themeMode),
+                    onTap: () => context.push('/settings'),
+                  ),
+                  SettingsRow(
+                    color: isDark ? AppColors.cHindiDark : AppColors.cHindi,
+                    icon: Icons.help_outline_rounded,
+                    title: 'Help and feedback',
+                    onTap: () => context.push('/help'),
                   ),
                 ],
               ),
@@ -276,7 +309,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SupportSection(
               headingPadding: EdgeInsets.fromLTRB(
                 AppSpacing.screenPadding,
-                24,
+                AppSpacing.sectionGap,
                 AppSpacing.screenPadding,
                 0,
               ),
@@ -286,17 +319,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screenPadding,
-                  24,
+                  AppSpacing.stackGap,
                   AppSpacing.screenPadding,
                   0,
                 ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _buildAuthButton(authState),
-                ),
+                child: _buildAuthButton(authState),
               ),
-
-            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -360,6 +388,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       .split(' ')
       .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
       .join(' ');
+
+  static String _themeModeLabel(ThemeMode mode) => switch (mode) {
+    ThemeMode.system => 'System',
+    ThemeMode.light => 'Light',
+    ThemeMode.dark => 'Dark',
+  };
 
   static String _languageLabel(String code) =>
       const {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'}[code] ?? 'English';
@@ -842,126 +876,259 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
   }
 }
 
-// ─── Theme toggle (sun ↔ moon) ────────────────────────────────────────────
-//
-// A quick light/dark switch in the profile header. The icon cross-fades and
-// rotates between a warm sun and a cool crescent moon so the change feels
-// tactile, and the chip tints to match the active mode.
-
-class _ThemeToggle extends StatelessWidget {
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _ThemeToggle({required this.isDark, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    // Warm amber for the sun, cool indigo for the moon.
-    final accent = isDark ? const Color(0xFF9DB2E8) : const Color(0xFFE0A23B);
-
-    return Tooltip(
-      message: isDark ? 'Switch to light mode' : 'Switch to dark mode',
-      child: Pressable(
-        onTap: onTap,
-        scale: 0.92,
-        child: Container(
-          width: kPageTitleRowHeight,
-          height: kPageTitleRowHeight,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
-            border: Border.all(color: accent.withValues(alpha: 0.32)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 320),
-            switchInCurve: Curves.easeOutBack,
-            switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, animation) => RotationTransition(
-              turns: Tween<double>(begin: 0.6, end: 1).animate(animation),
-              child: ScaleTransition(scale: animation, child: child),
-            ),
-            child: Icon(
-              isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-              key: ValueKey(isDark),
-              size: 20,
-              color: accent,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ─── Big avatar (identity) ────────────────────────────────────────────────
 
 class _BigAvatar extends StatelessWidget {
   final String letter;
   final StudentAvatar? avatar;
   final bool clay;
+  final double size;
 
-  const _BigAvatar({required this.letter, this.avatar, this.clay = true});
+  const _BigAvatar({
+    required this.letter,
+    this.avatar,
+    this.clay = true,
+    this.size = 88,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Stack(
-      children: [
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-              cs.surface,
+    // Shadows scale with the avatar so the small card avatar keeps the same
+    // proportions as the large one in the edit sheet.
+    final depth = size / 88;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+          cs.surface,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark ? AppColors.green100Dark : AppColors.green100,
+        ),
+        boxShadow: clay
+            ? [
+                BoxShadow(
+                  color:
+                      (isDark ? AppColors.clayShadowDark : AppColors.clayShadow)
+                          .withValues(alpha: isDark ? 0.55 : 0.7),
+                  blurRadius: 16 * depth,
+                  offset: Offset(5 * depth, 5 * depth),
+                ),
+                BoxShadow(
+                  color:
+                      (isDark
+                              ? AppColors.clayHighlightDark
+                              : AppColors.clayHighlight)
+                          .withValues(alpha: isDark ? 0.30 : 0.9),
+                  blurRadius: 16 * depth,
+                  offset: Offset(-5 * depth, -5 * depth),
+                ),
+              ]
+            : null,
+      ),
+      alignment: Alignment.center,
+      child: avatar != null
+          ? ClipOval(
+              child: SvgPicture.asset(
+                avatar!.assetPath,
+                width: size - 2,
+                height: size - 2,
+              ),
+            )
+          : Text(
+              letter,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                fontSize: size >= 80
+                    ? AppFontSize.displayLarge
+                    : AppFontSize.displaySmall,
+                color: cs.primary,
+              ),
             ),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? AppColors.green100Dark : AppColors.green100,
-            ),
-            boxShadow: clay
-                ? [
-                    BoxShadow(
-                      color:
-                          (isDark
-                                  ? AppColors.clayShadowDark
-                                  : AppColors.clayShadow)
-                              .withValues(alpha: isDark ? 0.55 : 0.7),
-                      blurRadius: 16,
-                      offset: const Offset(5, 5),
+    );
+  }
+}
+
+// ─── Student card ─────────────────────────────────────────────────────────
+//
+// Avatar, name and email with an Edit pill, then class / board / language /
+// school as quiet chips. Light cards carry a hairline; dark cards read by
+// surface alone, like the rest of the app.
+
+class _StudentCard extends StatelessWidget {
+  final Widget avatar;
+  final String name;
+  final String subtitle;
+  final List<String> details;
+
+  /// Null while the first profile load is in flight (the pill disables).
+  final VoidCallback? onEdit;
+
+  const _StudentCard({
+    required this.avatar,
+    required this.name,
+    required this.subtitle,
+    required this.details,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final ink2 = isDark ? AppColors.ink2Dark : AppColors.ink2;
+    final chipBg = isDark ? AppColors.surface3Dark : AppColors.paper;
+    final pillEdge = isDark ? AppColors.surface3Dark : AppColors.hairline;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.cardPad),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        border: isDark ? null : Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              avatar,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontSize: AppFontSize.heading,
+                        height: 1.15,
+                      ),
                     ),
-                    BoxShadow(
-                      color:
-                          (isDark
-                                  ? AppColors.clayHighlightDark
-                                  : AppColors.clayHighlight)
-                              .withValues(alpha: isDark ? 0.30 : 0.9),
-                      blurRadius: 16,
-                      offset: const Offset(-5, -5),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: ink2),
                     ),
-                  ]
-                : null,
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: onEdit,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: cs.onSurface,
+                  side: BorderSide(color: pillEdge, width: 1.5),
+                  shape: const StadiumBorder(),
+                  minimumSize: const Size(0, 38),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  textStyle: theme.textTheme.labelLarge,
+                ),
+                child: const Text('Edit'),
+              ),
+            ],
           ),
-          alignment: Alignment.center,
-          child: avatar != null
-              ? ClipOval(
-                  child: SvgPicture.asset(
-                    avatar!.assetPath,
-                    width: 86,
-                    height: 86,
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final d in details)
+                Container(
+                  constraints: const BoxConstraints(minHeight: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                )
-              : Text(
-                  letter,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: AppFontSize.displayLarge,
-                    color: cs.primary,
+                  decoration: BoxDecoration(
+                    color: chipBg,
+                    borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+                  ),
+                  child: Text(
+                    d,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: cs.onSurface,
+                    ),
                   ),
                 ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Stat tile ────────────────────────────────────────────────────────────
+
+/// One small learning stat: a coloured number over a quiet label. Every tile
+/// opens the full progress page.
+class _StatTile extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _StatTile({
+    required this.value,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    return Semantics(
+      button: true,
+      label: '$value $label',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            border: isDark ? null : Border.all(color: cs.outline),
+            borderRadius: BorderRadius.circular(AppSpacing.tileRadius + 3),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                maxLines: 1,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: AppFontSize.heading,
+                  fontWeight: AppFontWeight.bold,
+                  height: 1.1,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -1053,141 +1220,12 @@ class _AvatarChoice extends StatelessWidget {
   }
 }
 
-// ─── Stats strip ──────────────────────────────────────────────────────────
-
-/// Tappable learning statistics; the section heading sits above the card.
-/// Tap-down dims the card before opening the full progress page.
-class _StatsStrip extends StatefulWidget {
-  final int streak;
-  final int aiSessions;
-  final int books;
-  final VoidCallback onTap;
-
-  const _StatsStrip({
-    required this.streak,
-    required this.aiSessions,
-    required this.books,
-    required this.onTap,
-  });
-
-  @override
-  State<_StatsStrip> createState() => _StatsStripState();
-}
-
-class _StatsStripState extends State<_StatsStrip> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 90),
-        opacity: _pressed ? 0.72 : 1,
-        child: ClayCard(
-          pressed: _pressed,
-          child: Row(
-            children: [
-              Expanded(
-                child: _Stat(
-                  color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-                  icon: Icons.local_fire_department_rounded,
-                  value: '${widget.streak}',
-                  label: 'Day streak',
-                ),
-              ),
-              _Divider(),
-              Expanded(
-                child: _Stat(
-                  color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                  icon: Icons.auto_awesome_rounded,
-                  value: '${widget.aiSessions}',
-                  label: 'AI sessions',
-                ),
-              ),
-              _Divider(),
-              Expanded(
-                child: _Stat(
-                  color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                  icon: Icons.menu_book_rounded,
-                  value: '${widget.books}',
-                  label: 'My books',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String value;
-  final String label;
-
-  const _Stat({
-    required this.color,
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 6),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: AppFontSize.heading,
-                height: 1,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: AppFontSize.small,
-            fontWeight: AppFontWeight.medium,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 30,
-      color: Theme.of(context).brightness == Brightness.dark
-          ? AppColors.hairline2Dark
-          : AppColors.hairline2,
-    );
-  }
-}
-
 // ─── Auth button (sign in / sign out) ─────────────────────────────────────
 //
-// A single understated pill under the identity block. Long-press signs out in
-// debug to copy the Firebase ID token (dev-only).
+// Signed out: a single understated pill under the identity card. Signed in: a
+// quiet full-width row at the foot of the page, so leaving the account is easy
+// to find but never shouts. Long-press on Sign out copies the Firebase ID
+// token in debug builds (dev-only).
 
 class _AuthButton extends StatelessWidget {
   final bool isSignedIn;
@@ -1212,8 +1250,29 @@ class _AuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dangerColor = isDark ? AppColors.cMathsDark : AppColors.cMaths;
-    final accent = isSignedIn ? dangerColor : cs.primary;
+
+    if (isSignedIn) {
+      final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
+      return SettingsGroup(
+        children: [
+          SettingsRow(
+            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+            icon: Icons.logout_rounded,
+            title: 'Sign out',
+            titleColor: muted,
+            showChevron: false,
+            trailing: isBusy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                : null,
+            onTap: isBusy ? null : onTap,
+            onLongPress: isBusy ? null : onLongPress,
+          ),
+        ],
+      );
+    }
 
     if (isBusy) {
       return const SizedBox.square(
@@ -1222,6 +1281,7 @@ class _AuthButton extends StatelessWidget {
       );
     }
 
+    final accent = cs.primary;
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -1235,15 +1295,11 @@ class _AuthButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
-              size: 16,
-              color: accent,
-            ),
+            Icon(Icons.login_rounded, size: 16, color: accent),
             const SizedBox(width: 7),
             Flexible(
               child: Text(
-                isSignedIn ? 'Sign out' : 'Sign in with Google',
+                'Sign in with Google',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: accent,
                   fontWeight: AppFontWeight.semibold,
@@ -1298,112 +1354,6 @@ class _ProfileSyncErrorBanner extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─── Profile summary (view mode) ─────────────────────────────────────────
-
-class _ProfileSummary extends StatelessWidget {
-  final Widget identity;
-  final int classNo;
-  final String board;
-  final String language;
-  final String school;
-
-  const _ProfileSummary({
-    required this.identity,
-    required this.classNo,
-    required this.board,
-    required this.language,
-    required this.school,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPad),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          identity,
-          const SizedBox(height: 20),
-          Divider(height: 1, color: cs.outline),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final singleColumn =
-                  constraints.maxWidth < 240 ||
-                  MediaQuery.textScalerOf(context).scale(AppFontSize.body) > 20;
-              final width = singleColumn
-                  ? constraints.maxWidth
-                  : (constraints.maxWidth - 16) / 2;
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(
-                      label: 'Class',
-                      value: 'Class $classNo',
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(
-                      label: 'Board',
-                      value: boardLabel(board),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(label: 'Language', value: language),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(
-                      label: 'School',
-                      value: school.isEmpty ? 'Not added' : school,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileDetail extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _ProfileDetail({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: AppFontWeight.semibold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
     );
   }
 }

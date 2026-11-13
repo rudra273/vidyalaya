@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,6 +25,7 @@ import '../../providers/core_providers.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../widgets/ai_markdown.dart';
+import '../../widgets/ai_robot_mark.dart';
 import '../plus/plus_sheet.dart';
 
 class LearnAiScreen extends ConsumerStatefulWidget {
@@ -960,6 +960,24 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     });
   }
 
+  // ─── Bot mood ───
+
+  BotMood _botMood(BackendAccountState account) {
+    if (_isSending) {
+      return _streamingMessageIndex == null
+          ? BotMood.thinking
+          : BotMood.answering;
+    }
+    final usage = account.usage.maybeWhen(data: (v) => v, orElse: () => null);
+    if (usage != null && !usage.unlimited && usage.remaining <= 0) {
+      return BotMood.resting;
+    }
+    if (_composerFocusNode.hasFocus && _messageController.text.isNotEmpty) {
+      return BotMood.listening;
+    }
+    return BotMood.idle;
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileClass = ref.watch(primaryClassProvider);
@@ -1021,9 +1039,29 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _channelTitle(widget.channel),
-          style: Theme.of(context).textTheme.headlineSmall,
+        title: Row(
+          children: [
+            // One face for the whole chat, reacting to the turn: listening
+            // while the student types, thinking until the first token,
+            // answering while it streams, resting once the day's questions
+            // are used up.
+            ListenableBuilder(
+              listenable: Listenable.merge([
+                _messageController,
+                _composerFocusNode,
+              ]),
+              builder: (context, _) =>
+                  AiBot(size: 30, mood: _botMood(accountState)),
+            ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                _channelTitle(widget.channel),
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+          ],
         ),
         actions: [
           _PlanUsageBadge(
@@ -1498,7 +1536,6 @@ class _EmptyChat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return LayoutBuilder(
@@ -1533,12 +1570,8 @@ class _EmptyChat extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(
-                        Icons.auto_awesome_rounded,
-                        size: 26,
-                        color: cs.primary,
-                      ),
-                      const SizedBox(height: 14),
+                      const Center(child: AiBot(size: 64)),
+                      const SizedBox(height: 18),
                       Text(
                         'What would you like to learn?',
                         style: Theme.of(context).textTheme.headlineMedium,
@@ -1705,11 +1738,13 @@ class _MessageView extends StatelessWidget {
           // Quiet marker so answers read as distinct blocks between user bubbles.
           Padding(
             padding: const EdgeInsets.only(bottom: 7),
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              size: 14,
-              color: cs.primary.withValues(alpha: 0.75),
-            ),
+            child: message.isStreaming
+                ? const AiBot(size: 22, mood: BotMood.answering)
+                : Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 14,
+                    color: cs.primary.withValues(alpha: 0.75),
+                  ),
           ),
           if (isError)
             Text(
@@ -1868,64 +1903,27 @@ class _CitationChip extends StatelessWidget {
   }
 }
 
-/// Three softly pulsing dots while the answer is being prepared.
-class _TypingIndicator extends StatefulWidget {
+/// The bot thinking, while the answer is being prepared.
+class _TypingIndicator extends StatelessWidget {
   const _TypingIndicator();
 
   @override
-  State<_TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<_TypingIndicator>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < 3; i++) ...[
-                if (i > 0) const SizedBox(width: 5),
-                Opacity(
-                  // Stagger each dot a third of a cycle apart.
-                  opacity:
-                      0.25 +
-                      0.75 *
-                          (0.5 -
-                              0.5 *
-                                  math.cos(
-                                    (_controller.value - i / 3) * 2 * math.pi,
-                                  )),
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: cs.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          );
-        },
+      child: Row(
+        children: [
+          const AiBot(size: 30, mood: BotMood.thinking),
+          const SizedBox(width: 12),
+          Text(
+            'Looking through your books…',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.ink2Dark
+                  : AppColors.ink2,
+            ),
+          ),
+        ],
       ),
     );
   }

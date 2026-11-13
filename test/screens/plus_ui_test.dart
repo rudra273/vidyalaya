@@ -5,6 +5,7 @@ import 'package:vidyalaya/data/models/plus.dart';
 import 'package:vidyalaya/providers/plus_provider.dart';
 import 'package:vidyalaya/screens/plus/plus_sheet.dart';
 import 'package:vidyalaya/screens/profile/widgets/plus_card.dart';
+import 'package:vidyalaya/widgets/chunky_button.dart';
 
 class _StubPlus extends PlusNotifier {
   _StubPlus(this.initial);
@@ -246,7 +247,7 @@ void main() {
     testWidgets('the button locks while the request is on its way', (tester) async {
       await pumpSheet(tester, _canAsk, requesting: true);
 
-      final button = tester.widget<FilledButton>(find.byType(FilledButton));
+      final button = tester.widget<ChunkyButton>(find.byType(ChunkyButton));
       expect(button.onPressed, isNull);
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });

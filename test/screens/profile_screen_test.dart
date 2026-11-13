@@ -11,8 +11,8 @@ import 'package:vidyalaya/providers/auth_provider.dart';
 import 'package:vidyalaya/providers/avatar_provider.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
 import 'package:vidyalaya/providers/plus_provider.dart';
+import 'package:vidyalaya/providers/rollout_switches_provider.dart';
 import 'package:vidyalaya/screens/profile/profile_screen.dart';
-import 'package:vidyalaya/widgets/calm_widgets.dart';
 
 class _User extends Fake implements User {
   @override
@@ -120,6 +120,7 @@ void main() {
           authStateProvider.overrideWith((ref) => authChanges.stream),
           backendAccountCacheProvider.overrideWith(() => cache),
           plusProvider.overrideWith(_NoPlus.new),
+          booksEnabledProvider.overrideWithValue(true),
         ],
         child: MaterialApp.router(
           theme: theme.copyWith(
@@ -156,10 +157,10 @@ void main() {
     await tester.pump();
     expect(find.text('Syncing your profile…'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    final editAction = tester.widget<SectionHead>(
-      find.widgetWithText(SectionHead, 'Edit'),
+    final editAction = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Edit'),
     );
-    expect(editAction.onAction, isNull);
+    expect(editAction.onPressed, isNull);
     await tester.scrollUntilVisible(find.text('Sign out'), 200);
     await tester.pump();
     expect(find.text('Sign out').hitTestable(), findsOneWidget);

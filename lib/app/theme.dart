@@ -16,7 +16,8 @@ class AppColors {
 
   static const Color ink = Color(0xFF16201B);
   static const Color ink2 = Color(0xFF4C564F);
-  static const Color ink3 = Color(0xFF8A938C);
+  // Darkened from #8A938C so muted text passes 4.5:1 on paper and surface.
+  static const Color ink3 = Color(0xFF66706A);
 
   static const Color hairline = Color(0xFFDCE6DC);
   static const Color hairline2 = Color(0xFFE6EDE5);
@@ -63,20 +64,20 @@ class AppColors {
   static const Color badge = Color(0xFFE5484D);
 
   // ─── DARK ─────────────────────────────────────────────────────────────
-  // Near-neutral charcoal with only a hint of green: a saturated green-black
-  // read murky on AMOLED, and cards need a clear step up from the page.
-  static const Color paperDark = Color(0xFF111614);
-  static const Color paper2Dark = Color(0xFF151B18);
-  static const Color surfaceDark = Color(0xFF1A211D);
-  static const Color surface2Dark = Color(0xFF212A25);
-  static const Color surface3Dark = Color(0xFF28322C);
+  // Neutral charcoal in three clear steps (page → card → raised), with green
+  // kept for accents only. Cards read by their lighter surface, not borders.
+  static const Color paperDark = Color(0xFF121413);
+  static const Color paper2Dark = Color(0xFF161917);
+  static const Color surfaceDark = Color(0xFF1C1F1D);
+  static const Color surface2Dark = Color(0xFF242826);
+  static const Color surface3Dark = Color(0xFF2A2E2B);
 
-  static const Color inkDark = Color(0xFFEBEEEA);
-  static const Color ink2Dark = Color(0xFFA6B1AA);
-  static const Color ink3Dark = Color(0xFF73807A);
+  static const Color inkDark = Color(0xFFF1F3F1);
+  static const Color ink2Dark = Color(0xFFB4BDB7);
+  static const Color ink3Dark = Color(0xFF98A39C);
 
-  static const Color hairlineDark = Color(0xFF2C3631);
-  static const Color hairline2Dark = Color(0xFF242D28);
+  static const Color hairlineDark = Color(0xFF2A2E2B);
+  static const Color hairline2Dark = Color(0xFF232624);
 
   // Claymorphism (dark)
   static const Color clayShadowDark = Color(0xFF070B09);
@@ -146,7 +147,9 @@ class AppColors {
   static const Color navy = ink;
   static const Color teal = green600;
   static const Color tealLight = green50;
-  static const Color textMuted = ink3;
+  // Used in both themes by legacy code, so it sits between the light and dark
+  // muted greys and stays readable on either background.
+  static const Color textMuted = Color(0xFF78827B);
   static final Color border = hairline;
 
   static const Color darkBackground = paperDark;
@@ -486,7 +489,6 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          side: const BorderSide(color: AppColors.hairlineDark),
         ),
       ),
       chipTheme: ChipThemeData(

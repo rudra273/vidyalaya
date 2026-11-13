@@ -49,12 +49,22 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     final isEmpty = notes.isEmpty && bySubject.isEmpty;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text('My Notes',
+            style: Theme.of(context).textTheme.headlineSmall),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back',
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openEditor('/note/new'),
         tooltip: 'New note',
         child: const Icon(Icons.edit_outlined),
       ),
       body: SafeArea(
+        top: false,
         child: isEmpty
             ? _buildEmptyState(context)
             : CustomScrollView(
@@ -62,15 +72,11 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                   // Header
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenPadding, 20, AppSpacing.screenPadding, 0),
+                        AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('My Notes',
-                              style:
-                                  Theme.of(context).textTheme.displaySmall),
-                          const SizedBox(height: 4),
                           Text(
                             _buildSummary(notes.length, totalHighlights,
                                 subjects.length),
@@ -123,7 +129,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                     ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 24),
+                        AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 96),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -178,9 +184,7 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       icon: Icons.edit_note_rounded,
       title: 'No notes yet',
       subtitle:
-          'Jot down a quick note, or open a book and use the highlighter to mark areas.',
-      ctaLabel: 'New note',
-      onCtaTap: () => _openEditor('/note/new'),
+          'Tap the pencil to jot down a quick note, or open a book and use the highlighter to mark areas.',
     );
   }
 }
@@ -195,7 +199,9 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label.toUpperCase(),
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.textMuted,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.ink3Dark
+                : AppColors.ink3,
             letterSpacing: 0.8,
             fontWeight: AppFontWeight.semibold,
           ),

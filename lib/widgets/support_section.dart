@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../app/theme.dart';
 import '../data/services/app_share.dart';
+import '../screens/profile/widgets/settings_group.dart';
 import '../utils/haptics.dart';
 import 'calm_widgets.dart';
 
@@ -24,7 +25,6 @@ class SupportSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -38,47 +38,39 @@ class SupportSection extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.screenPadding,
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: cs.surface,
-              border: Border.all(color: cs.outline),
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            ),
-            child: Column(
-              children: [
-                ListRow(
-                  color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-                  icon: Icons.share_outlined,
-                  title: 'Share Vidyakalp',
-                  sub: 'Tell your friends about the app',
-                  onTap: () {
-                    Haptics.light(ref);
-                    AppShare.shareApp();
-                  },
-                ),
-                ListRow(
-                  color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                  icon: Icons.star_outline_rounded,
-                  title: 'Rate Vidyakalp',
-                  sub: 'Rate us on the Play Store',
-                  onTap: () {
-                    Haptics.light(ref);
-                    AppShare.openPlayStore();
-                  },
-                ),
-                ListRow(
-                  color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                  icon: Icons.chat_bubble_outline_rounded,
-                  title: 'Send feedback',
-                  sub: 'Report bugs or request features',
-                  onTap: () {
-                    Haptics.light(ref);
-                    context.push('/feedback');
-                  },
-                  last: true,
-                ),
-              ],
-            ),
+          child: SettingsGroup(
+            children: [
+              SettingsRow(
+                color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
+                icon: Icons.share_outlined,
+                title: 'Share Vidyakalp',
+                sub: 'Tell your friends about the app',
+                onTap: () {
+                  Haptics.light(ref);
+                  AppShare.shareApp();
+                },
+              ),
+              SettingsRow(
+                color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                icon: Icons.star_outline_rounded,
+                title: 'Rate Vidyakalp',
+                sub: 'Rate us on the Play Store',
+                onTap: () {
+                  Haptics.light(ref);
+                  AppShare.openPlayStore();
+                },
+              ),
+              SettingsRow(
+                color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                icon: Icons.chat_bubble_outline_rounded,
+                title: 'Send feedback',
+                sub: 'Report bugs or request features',
+                onTap: () {
+                  Haptics.light(ref);
+                  context.push('/feedback');
+                },
+              ),
+            ],
           ),
         ),
       ],
