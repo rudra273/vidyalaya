@@ -17,7 +17,7 @@ import '../../utils/haptics.dart';
 import '../../widgets/ai_robot_mark.dart';
 import '../../widgets/ask_card.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/clay_card.dart';
+import '../../widgets/surface_card.dart';
 import '../../widgets/pressable.dart';
 
 /// Haptic tap → push, shared by every row on this page.
@@ -89,6 +89,7 @@ class AiHubScreen extends ConsumerWidget {
           PageTitle(
             title: 'AI Learning',
             sub: _statusLine(isSignedIn, account),
+            trailing: _PlanPill(account: account, isSignedIn: isSignedIn),
           ),
           const SizedBox(height: AppSpacing.sectionGap - 14),
 
@@ -126,7 +127,7 @@ class AiHubScreen extends ConsumerWidget {
             SizedBox(
               // Fits the eyebrow, two wrapped lines of question and the
               // timestamp without the text spilling over the row below.
-              height: 98,
+              height: 116,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(
@@ -190,13 +191,11 @@ class AiHubScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
-                  // Wider gutters than the flat tiles needed — the clay
-                  // shadows want room to fall before the next card starts.
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  // Leave room for the glyph and label on compact displays,
-                  // whose font metrics can otherwise overflow by a pixel.
-                  childAspectRatio: 1.4,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  // Fixed height fits the glyph and a two-line name such as
+                  // "Geography & Economics" at any width.
+                  mainAxisExtent: 108,
                 ),
                 itemCount: subjects.length,
                 itemBuilder: (context, index) {
@@ -265,7 +264,7 @@ class AiHubScreen extends ConsumerWidget {
 
   /// Plan + quota line under the page title. Falls back to a plain description
   /// while the account loads, so the header never jumps or shows a spinner.
-  static String _statusLine(bool isSignedIn, BackendAccountState account) {
+  static String? _statusLine(bool isSignedIn, BackendAccountState account) {
     if (!isSignedIn) return 'Sign in to ask questions';
 
     final usage = account.usage.maybeWhen(
@@ -281,10 +280,10 @@ class AiHubScreen extends ConsumerWidget {
     if (usage.unlimited) return '$plan plan · Unlimited questions';
     final refresh = refreshPhrase(usage.resetsAt);
     if (usage.remaining <= 0) {
-      return 'No questions left today — they refresh $refresh';
+      return 'No questions left today. They refresh $refresh.';
     }
-    final word = usage.remaining == 1 ? 'question' : 'questions';
-    return '$plan plan · ${usage.remaining} $word left · resets $refresh';
+    // The pill shows the count; the line only adds when it refreshes.
+    return 'Questions refresh $refresh';
   }
 
   static bool _outOfQuestions(BackendAccountState account) {
@@ -340,12 +339,10 @@ class _RecentQuestionCard extends StatelessWidget {
       onTap: onTap,
       scale: 0.97,
       child: SizedBox(
-        width: 208,
-        child: ClayCard(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-          radius: AppSpacing.tileRadius,
-          blur: 13,
-          distance: 4,
+        width: 250,
+        child: SurfaceCard(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          radius: 18,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -358,33 +355,32 @@ class _RecentQuestionCard extends StatelessWidget {
                             classNo: classNo,
                           ))
                     .toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: AppFontSize.caption + 1,
+                  fontSize: AppFontSize.small,
                   fontWeight: AppFontWeight.bold,
-                  letterSpacing: 0.8,
+                  letterSpacing: 0.5,
                   color: accent,
                 ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 6),
               Expanded(
                 child: Text(
                   question.text,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: AppFontSize.small,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     height: 1.35,
                     fontWeight: AppFontWeight.medium,
                   ),
                 ),
               ),
-              const SizedBox(height: 5),
               Text(
                 _ago(question.askedAt),
                 style: TextStyle(
-                  fontSize: AppFontSize.caption + 1,
-                  fontWeight: AppFontWeight.medium,
-                  color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+                  fontSize: AppFontSize.small + 1,
+                  color: isDark ? AppColors.ink2Dark : AppColors.ink2,
                 ),
               ),
             ],
@@ -397,7 +393,7 @@ class _RecentQuestionCard extends StatelessWidget {
 
 // ─── Rows and tiles ─────────────────────────────────────────────────────
 
-/// Bordered surface row: tinted tile + title + sub + chevron.
+/// Surface row: tinted tile + title + sub + chevron.
 class _HubRow extends StatelessWidget {
   final Color color;
   final IconData icon;
@@ -418,14 +414,12 @@ class _HubRow extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Pressable(
       onTap: onTap,
-      child: ClayCard(
+      child: SurfaceCard(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.cardPad - 4,
           vertical: 12,
         ),
         radius: AppSpacing.cardRadius,
-        blur: 13,
-        distance: 4,
         child: Row(
           children: [
             Tile(color: color, icon: icon, size: 38, radius: 11),
@@ -465,9 +459,7 @@ class _HubRow extends StatelessWidget {
 /// One ingested subject, as a coloured tile. Seven pill chips wrapped into an
 /// undifferentiated grey blob; a tile grid is scannable and matches Explore.
 ///
-/// Uses [ClayCard] with the same depth as Home's mini-tool grid, so both tile
-/// grids read as one surface — and both drop to flat cards together when
-/// claymorphism is turned off in Settings → Appearance.
+/// A [SurfaceCard] like Explore's tool cards, so the two grids match.
 class _SubjectTile extends ConsumerWidget {
   final String subject;
   final String board;
@@ -489,29 +481,28 @@ class _SubjectTile extends ConsumerWidget {
     return Pressable(
       onTap: onTap,
       scale: 0.96,
-      child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        radius: AppSpacing.tileRadius,
-        blur: 11,
-        distance: 3,
+      child: SurfaceCard(
+        padding: const EdgeInsets.fromLTRB(8, 14, 8, 10),
+        radius: 18,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Tile(
               color: color,
               icon: meta.icon,
               meta: meta,
-              size: 28,
-              radius: 9,
+              size: 44,
+              radius: 14,
             ),
-            const SizedBox(height: 6),
-            FittedBox(
-              fit: BoxFit.scaleDown,
+            const SizedBox(height: 8),
+            Expanded(
               child: Text(
                 formatSubject(subject, board: board, classNo: classNo),
-                maxLines: 1,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontSize: AppFontSize.caption,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontSize: AppFontSize.small + 1,
+                  height: 1.2,
                   fontWeight: AppFontWeight.semibold,
                 ),
               ),
@@ -536,20 +527,13 @@ class _StarterRow extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       scale: 0.98,
-      child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        radius: 13,
-        blur: 13,
-        distance: 4,
+      child: SurfaceCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        radius: 16,
         child: Row(
           children: [
             Expanded(
-              child: Text(
-                text,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontSize: AppFontSize.body),
-              ),
+              child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
             ),
             const SizedBox(width: 10),
             Icon(
@@ -577,14 +561,12 @@ class _TutorRow extends StatelessWidget {
     final accent = isDark ? AppColors.cTutorDark : AppColors.cTutor;
     return Pressable(
       onTap: onTap,
-      child: ClayCard(
+      child: SurfaceCard(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.cardPad - 4,
           vertical: 12,
         ),
         radius: AppSpacing.cardRadius,
-        blur: 13,
-        distance: 4,
         child: Row(
           children: [
             Tile(
@@ -630,6 +612,59 @@ class _TutorRow extends StatelessWidget {
               Icons.chevron_right_rounded,
               size: 18,
               color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Plan pill ──────────────────────────────────────────────────────────
+// "Plus · 49 left" beside the title. Tapping it says when questions refresh.
+
+class _PlanPill extends StatelessWidget {
+  const _PlanPill({required this.account, required this.isSignedIn});
+
+  final BackendAccountState account;
+  final bool isSignedIn;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!isSignedIn) return const SizedBox.shrink();
+    final usage = account.usage.maybeWhen(data: (v) => v, orElse: () => null);
+    if (usage == null) return const SizedBox.shrink();
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final plan = planLabel(
+      account.user.maybeWhen(data: (u) => u?.planKey, orElse: () => null) ??
+          'free',
+    );
+    final label = usage.unlimited ? plan : '$plan · ${usage.remaining} left';
+    final ink = dark ? AppColors.green500Dark : AppColors.green700;
+    return Tooltip(
+      message: usage.unlimited
+          ? 'Unlimited questions'
+          : 'Questions refresh ${refreshPhrase(usage.resetsAt)}',
+      triggerMode: TooltipTriggerMode.tap,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: dark ? AppColors.green100Dark : AppColors.green100,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.auto_awesome_rounded, size: 15, color: ink),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: AppFontSize.small + 1,
+                fontWeight: AppFontWeight.semibold,
+                color: ink,
+              ),
             ),
           ],
         ),

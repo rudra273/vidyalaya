@@ -95,7 +95,9 @@ class _AiAskHeroState extends State<AiAskHero> {
             label: _askLabel(_style),
             child: Material(
               color: Theme.of(context).scaffoldBackgroundColor,
-              shape: StadiumBorder(side: BorderSide(color: fieldEdge, width: 2)),
+              shape: StadiumBorder(
+                side: BorderSide(color: fieldEdge, width: 2),
+              ),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: () => widget.onAsk(_style),
@@ -226,7 +228,9 @@ class _StyleSwitch extends StatelessWidget {
                           ? AppFontWeight.bold
                           : AppFontWeight.medium,
                       color: style == selected
-                          ? (isDark ? AppColors.green500Dark : AppColors.green700)
+                          ? (isDark
+                                ? AppColors.green500Dark
+                                : AppColors.green700)
                           : cs.onSurface,
                     ),
                   ),

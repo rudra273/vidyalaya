@@ -108,7 +108,9 @@ class _AiBotState extends State<AiBot> with SingleTickerProviderStateMixin {
               clipBehavior: Clip.none,
               children: [
                 if (mood == BotMood.listening && !_still)
-                  Positioned.fill(child: _PulseRing(t: (s % 1.6) / 1.6, k: k)),
+                  Positioned.fill(
+                    child: _PulseRing(t: (s % 1.6) / 1.6, k: k),
+                  ),
                 Transform.translate(
                   offset: Offset(0, pose.lift * k),
                   child: Transform.rotate(
@@ -122,7 +124,8 @@ class _AiBotState extends State<AiBot> with SingleTickerProviderStateMixin {
                         k: k,
                         dark: dark,
                         dim: mood == BotMood.resting,
-                        glow: mood == BotMood.thinking ||
+                        glow:
+                            mood == BotMood.thinking ||
                             mood == BotMood.answering,
                         child: CustomPaint(
                           size: Size(29 * k, 22 * k),
@@ -137,8 +140,7 @@ class _AiBotState extends State<AiBot> with SingleTickerProviderStateMixin {
                     ),
                   ),
                 ),
-                if (mood == BotMood.cheering)
-                  ..._sparkles(s, k, still: _still),
+                if (mood == BotMood.cheering) ..._sparkles(s, k, still: _still),
                 if (mood == BotMood.resting) ..._zzz(s, k, dark, still: _still),
               ],
             );
@@ -231,7 +233,9 @@ class _Pose {
 
   static _Pose of(BotMood mood, double s, {required bool still}) {
     if (still) {
-      return mood == BotMood.listening ? const _Pose(tilt: -0.08) : const _Pose();
+      return mood == BotMood.listening
+          ? const _Pose(tilt: -0.08)
+          : const _Pose();
     }
     switch (mood) {
       case BotMood.idle:
@@ -267,10 +271,7 @@ class _Pose {
           );
         }
         final q = (t - 0.72) / 0.28;
-        return _Pose(
-          squashX: 1 + 0.04 * (1 - q),
-          squashY: 1 - 0.05 * (1 - q),
-        );
+        return _Pose(squashX: 1 + 0.04 * (1 - q), squashY: 1 - 0.05 * (1 - q));
       case BotMood.resting:
         return _Pose(lift: -1.5 * _wave(s / 5.6));
     }
@@ -402,7 +403,8 @@ class _VisorPainter extends CustomPainter {
         }
         if (!still) {
           // A soft light sweeping across the visor.
-          final x = ((seconds % 1.8) / 1.8) * (size.width * 1.6) - size.width * 0.3;
+          final x =
+              ((seconds % 1.8) / 1.8) * (size.width * 1.6) - size.width * 0.3;
           final rect = Rect.fromLTWH(x - 6 * k, 0, 12 * k, size.height);
           canvas.drawRect(
             rect,

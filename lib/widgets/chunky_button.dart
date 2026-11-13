@@ -74,7 +74,10 @@ class _ChunkyButtonState extends State<ChunkyButton> {
       mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (widget.leading != null) ...[widget.leading!, const SizedBox(width: 12)],
+        if (widget.leading != null) ...[
+          widget.leading!,
+          const SizedBox(width: 12),
+        ],
         Flexible(
           child: Text(
             widget.label,

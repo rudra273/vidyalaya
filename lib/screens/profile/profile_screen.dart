@@ -23,7 +23,6 @@ import '../../providers/plus_provider.dart';
 import '../../providers/progress_provider.dart';
 import '../../providers/rollout_switches_provider.dart';
 import '../../providers/user_selection_provider.dart';
-import '../../providers/clay_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/pressable.dart';
@@ -180,7 +179,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 avatar: _BigAvatar(
                   letter: avatarLetter,
                   avatar: ref.watch(selectedAvatarProvider),
-                  clay: ref.watch(clayEnabledProvider),
                   size: 64,
                 ),
                 name: displayName,
@@ -557,7 +555,6 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
                       _BigAvatar(
                         letter: letter,
                         avatar: avatarById(_avatarId),
-                        clay: ref.watch(clayEnabledProvider),
                       ),
                       Positioned(
                         right: 0,
@@ -881,13 +878,11 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
 class _BigAvatar extends StatelessWidget {
   final String letter;
   final StudentAvatar? avatar;
-  final bool clay;
   final double size;
 
   const _BigAvatar({
     required this.letter,
     this.avatar,
-    this.clay = true,
     this.size = 88,
   });
 
@@ -895,9 +890,6 @@ class _BigAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Shadows scale with the avatar so the small card avatar keeps the same
-    // proportions as the large one in the edit sheet.
-    final depth = size / 88;
     return Container(
       width: size,
       height: size,
@@ -910,26 +902,6 @@ class _BigAvatar extends StatelessWidget {
         border: Border.all(
           color: isDark ? AppColors.green100Dark : AppColors.green100,
         ),
-        boxShadow: clay
-            ? [
-                BoxShadow(
-                  color:
-                      (isDark ? AppColors.clayShadowDark : AppColors.clayShadow)
-                          .withValues(alpha: isDark ? 0.55 : 0.7),
-                  blurRadius: 16 * depth,
-                  offset: Offset(5 * depth, 5 * depth),
-                ),
-                BoxShadow(
-                  color:
-                      (isDark
-                              ? AppColors.clayHighlightDark
-                              : AppColors.clayHighlight)
-                          .withValues(alpha: isDark ? 0.30 : 0.9),
-                  blurRadius: 16 * depth,
-                  offset: Offset(-5 * depth, -5 * depth),
-                ),
-              ]
-            : null,
       ),
       alignment: Alignment.center,
       child: avatar != null

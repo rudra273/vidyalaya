@@ -101,10 +101,8 @@ void main() {
   Future<void> pumpProfile(
     WidgetTester tester, {
     Brightness brightness = Brightness.light,
-    bool clay = true,
     bool openEditor = true,
   }) async {
-    await prefs.setBool('clay_enabled', clay);
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final theme = ThemeData(brightness: brightness);
@@ -319,15 +317,11 @@ void main() {
   });
 
   for (final brightness in Brightness.values) {
-    for (final clay in [true, false]) {
-      testWidgets('Sheet lays out in $brightness with 3D=$clay', (
-        tester,
-      ) async {
-        await pumpProfile(tester, brightness: brightness, clay: clay);
-        expect(tester.takeException(), isNull);
-        await tapAction(tester, 'Cancel');
-        expect(tester.takeException(), isNull);
-      });
-    }
+    testWidgets('Sheet lays out in $brightness', (tester) async {
+      await pumpProfile(tester, brightness: brightness);
+      expect(tester.takeException(), isNull);
+      await tapAction(tester, 'Cancel');
+      expect(tester.takeException(), isNull);
+    });
   }
 }

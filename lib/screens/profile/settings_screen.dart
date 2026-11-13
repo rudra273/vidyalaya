@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_info.dart';
 import '../../app/theme.dart';
-import '../../providers/clay_provider.dart';
 import '../../providers/haptic_provider.dart';
 import '../../providers/rollout_switches_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -26,11 +25,9 @@ class SettingsScreen extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
-    final clayOn = ref.watch(clayEnabledProvider);
     final hapticsOn = ref.watch(hapticsEnabledProvider);
     final booksEnabled = ref.watch(booksEnabledProvider);
 
-    void setClay(bool v) => ref.read(clayEnabledProvider.notifier).set(v);
     void setHaptics(bool v) {
       ref.read(hapticsEnabledProvider.notifier).set(v);
       // Fire one buzz on enable so the change is felt immediately.
@@ -79,19 +76,6 @@ class SettingsScreen extends ConsumerWidget {
               padding: inset,
               child: SettingsGroup(
                 children: [
-                  SettingsRow(
-                    color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
-                    icon: Icons.layers_outlined,
-                    title: 'Soft 3D look',
-                    sub:
-                        'Adds gentle depth to cards. Turn off for a flat, plain look.',
-                    onTap: () => setClay(!clayOn),
-                    trailing: Switch(
-                      value: clayOn,
-                      onChanged: setClay,
-                      activeThumbColor: cs.primary,
-                    ),
-                  ),
                   SettingsRow(
                     color: isDark ? AppColors.cOdiaDark : AppColors.cOdia,
                     icon: Icons.vibration_rounded,

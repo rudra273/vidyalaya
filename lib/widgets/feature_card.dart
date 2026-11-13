@@ -74,10 +74,7 @@ class FeatureCard extends StatelessWidget {
       ),
     );
 
-    return GestureDetector(
-      onTap: _isComingSoon ? null : onTap,
-      child: card,
-    );
+    return GestureDetector(onTap: _isComingSoon ? null : onTap, child: card);
   }
 
   Widget _iconBadge() {
@@ -97,10 +94,7 @@ class FeatureCard extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _iconBadge(),
-            if (_isComingSoon) const _ComingSoonBadge(),
-          ],
+          children: [_iconBadge(), if (_isComingSoon) const _ComingSoonBadge()],
         ),
         const SizedBox(height: 12),
         Text(
@@ -134,8 +128,9 @@ class FeatureCard extends StatelessWidget {
                   Flexible(
                     child: Text(
                       data.title,
-                      style: Theme.of(context).textTheme.titleMedium
-                          ?.copyWith(fontWeight: AppFontWeight.bold),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: AppFontWeight.bold,
+                      ),
                     ),
                   ),
                   if (_isComingSoon) ...[

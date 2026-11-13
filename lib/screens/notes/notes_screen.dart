@@ -43,26 +43,33 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     }
 
     final subjects = bySubject.keys.toList()..sort();
-    final totalHighlights =
-        bySubject.values.fold(0, (sum, list) => sum + list.length);
+    final totalHighlights = bySubject.values.fold(
+      0,
+      (sum, list) => sum + list.length,
+    );
 
     final isEmpty = notes.isEmpty && bySubject.isEmpty;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Notes',
-            style: Theme.of(context).textTheme.headlineSmall),
+        title: Text(
+          'My Notes',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back',
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openEditor('/note/new'),
-        tooltip: 'New note',
-        child: const Icon(Icons.edit_outlined),
-      ),
+      // When there are no notes, the empty state's button takes this job.
+      floatingActionButton: isEmpty
+          ? null
+          : FloatingActionButton(
+              onPressed: () => _openEditor('/note/new'),
+              tooltip: 'New note',
+              child: const Icon(Icons.edit_outlined),
+            ),
       body: SafeArea(
         top: false,
         child: isEmpty
@@ -72,14 +79,21 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                   // Header
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenPadding, 8, AppSpacing.screenPadding, 0),
+                      AppSpacing.screenPadding,
+                      8,
+                      AppSpacing.screenPadding,
+                      0,
+                    ),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _buildSummary(notes.length, totalHighlights,
-                                subjects.length),
+                            _buildSummary(
+                              notes.length,
+                              totalHighlights,
+                              subjects.length,
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -91,30 +105,36 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                   if (notes.isNotEmpty)
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.screenPadding, 20, AppSpacing.screenPadding, 0),
+                        AppSpacing.screenPadding,
+                        20,
+                        AppSpacing.screenPadding,
+                        0,
+                      ),
                       sliver: SliverToBoxAdapter(
                         child: _SectionLabel(label: 'My notes'),
                       ),
                     ),
                   if (notes.isNotEmpty)
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(AppSpacing.screenPadding,
-                          12, AppSpacing.screenPadding, 0),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.screenPadding,
+                        12,
+                        AppSpacing.screenPadding,
+                        0,
+                      ),
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final note = notes[index];
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                  bottom: index < notes.length - 1 ? 12 : 0),
-                              child: _NoteCard(
-                                note: note,
-                                onTap: () => _openEditor('/note/${note.id}'),
-                              ),
-                            );
-                          },
-                          childCount: notes.length,
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final note = notes[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index < notes.length - 1 ? 12 : 0,
+                            ),
+                            child: _NoteCard(
+                              note: note,
+                              onTap: () => _openEditor('/note/${note.id}'),
+                            ),
+                          );
+                        }, childCount: notes.length),
                       ),
                     ),
 
@@ -122,43 +142,52 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
                   if (subjects.isNotEmpty)
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.screenPadding, 24, AppSpacing.screenPadding, 0),
+                        AppSpacing.screenPadding,
+                        24,
+                        AppSpacing.screenPadding,
+                        0,
+                      ),
                       sliver: SliverToBoxAdapter(
                         child: _SectionLabel(label: 'From your books'),
                       ),
                     ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenPadding, 12, AppSpacing.screenPadding, 96),
+                      AppSpacing.screenPadding,
+                      12,
+                      AppSpacing.screenPadding,
+                      96,
+                    ),
                     sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final subject = subjects[index];
-                          final highlights = bySubject[subject]!;
-                          final bookIds = highlights.map((h) => h.bookId).toSet();
-                          final books = bookIds
-                              .map((id) => findBook(libraryBooks, id))
-                              .where((b) => b != null)
-                              .toList();
-                          final (bgColor, textColor) =
-                              AppColors.getSubjectColor(subject);
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final subject = subjects[index];
+                        final highlights = bySubject[subject]!;
+                        final bookIds = highlights.map((h) => h.bookId).toSet();
+                        final books = bookIds
+                            .map((id) => findBook(libraryBooks, id))
+                            .where((b) => b != null)
+                            .toList();
+                        final (bgColor, textColor) = AppColors.getSubjectColor(
+                          subject,
+                        );
 
-                          return Padding(
-                            padding: EdgeInsets.only(
-                                bottom: index < subjects.length - 1 ? 12 : 0),
-                            child: _SubjectCard(
-                              subject: subject,
-                              highlightCount: highlights.length,
-                              bookNames: books.map((b) => b!.title).join(', '),
-                              emoji: books.isNotEmpty ? books.first!.coverEmoji : '📝',
-                              bgColor: bgColor,
-                              textColor: textColor,
-                              onTap: () => context.push('/notes/$subject'),
-                            ),
-                          );
-                        },
-                        childCount: subjects.length,
-                      ),
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: index < subjects.length - 1 ? 12 : 0,
+                          ),
+                          child: _SubjectCard(
+                            subject: subject,
+                            highlightCount: highlights.length,
+                            bookNames: books.map((b) => b!.title).join(', '),
+                            emoji: books.isNotEmpty
+                                ? books.first!.coverEmoji
+                                : '📝',
+                            bgColor: bgColor,
+                            textColor: textColor,
+                            onTap: () => context.push('/notes/$subject'),
+                          ),
+                        );
+                      }, childCount: subjects.length),
                     ),
                   ),
                 ],
@@ -174,7 +203,8 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
     }
     if (highlightCount > 0) {
       parts.add(
-          '$highlightCount highlight${highlightCount == 1 ? '' : 's'} across $subjectCount subject${subjectCount == 1 ? '' : 's'}');
+        '$highlightCount highlight${highlightCount == 1 ? '' : 's'} across $subjectCount subject${subjectCount == 1 ? '' : 's'}',
+      );
     }
     return parts.join(' · ');
   }
@@ -184,7 +214,9 @@ class _NotesScreenState extends ConsumerState<NotesScreen> {
       icon: Icons.edit_note_rounded,
       title: 'No notes yet',
       subtitle:
-          'Tap the pencil to jot down a quick note, or open a book and use the highlighter to mark areas.',
+          'Jot down a quick note, or highlight lines while you read a book.',
+      ctaLabel: 'New note',
+      onCtaTap: () => _openEditor('/note/new'),
     );
   }
 }
@@ -199,12 +231,12 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label.toUpperCase(),
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? AppColors.ink3Dark
-                : AppColors.ink3,
-            letterSpacing: 0.8,
-            fontWeight: AppFontWeight.semibold,
-          ),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? AppColors.ink3Dark
+            : AppColors.ink3,
+        letterSpacing: 0.8,
+        fontWeight: AppFontWeight.semibold,
+      ),
     );
   }
 }
@@ -259,7 +291,10 @@ class _NoteCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Text('📝', style: TextStyle(fontSize: AppFontSize.heading)),
+                child: Text(
+                  '📝',
+                  style: TextStyle(fontSize: AppFontSize.heading),
+                ),
               ),
             ),
             const SizedBox(width: 14),
@@ -312,10 +347,14 @@ class _SubjectCard extends StatelessWidget {
   });
 
   String _formatSubject(String s) {
-    return s.replaceAll('_', ' ').split(' ').map((w) {
-      if (w.isEmpty) return w;
-      return w[0].toUpperCase() + w.substring(1);
-    }).join(' ');
+    return s
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) {
+          if (w.isEmpty) return w;
+          return w[0].toUpperCase() + w.substring(1);
+        })
+        .join(' ');
   }
 
   @override
@@ -341,7 +380,10 @@ class _SubjectCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: AppFontSize.headingLarge)),
+                child: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: AppFontSize.headingLarge),
+                ),
               ),
             ),
             const SizedBox(width: 14),
@@ -351,9 +393,9 @@ class _SubjectCard extends StatelessWidget {
                 children: [
                   Text(
                     _formatSubject(subject),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: textColor,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: textColor),
                   ),
                   const SizedBox(height: 2),
                   Text(

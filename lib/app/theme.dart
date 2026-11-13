@@ -22,9 +22,10 @@ class AppColors {
   static const Color hairline = Color(0xFFDCE6DC);
   static const Color hairline2 = Color(0xFFE6EDE5);
 
-  // Claymorphism (light) — soft raised depth on accent surfaces
-  static const Color clayShadow = Color(0xFFC9D4C9);
-  static const Color clayHighlight = Color(0xFFFFFFFF);
+  // Card edge — the 3px solid line under raised cards in light mode, and the
+  // outline for inputs and chips. Dark cards use their lighter surface instead.
+  static const Color cardEdge = Color(0xFFD5E0D6);
+  static const Color fieldEdge = Color(0xFFC6D5C9);
 
   // Dark hero card (light theme)
   static const Color hero = Color(0xFF0F2A1F);
@@ -78,10 +79,6 @@ class AppColors {
 
   static const Color hairlineDark = Color(0xFF2A2E2B);
   static const Color hairline2Dark = Color(0xFF232624);
-
-  // Claymorphism (dark)
-  static const Color clayShadowDark = Color(0xFF070B09);
-  static const Color clayHighlightDark = Color(0xFF252E29);
 
   static const Color heroDark = Color(0xFF14241C);
   static const Color hero2Dark = Color(0xFF102019);
