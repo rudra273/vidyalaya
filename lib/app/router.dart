@@ -80,7 +80,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   late final GoRouter router;
   router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: ref.read(aiImageRecoveryProvider).initialLocation ?? '/',
     redirect: (context, state) {
       final isWelcome = state.matchedLocation == '/welcome';
       final hasCompleted = prefsRepo.getHasCompletedOnboarding();

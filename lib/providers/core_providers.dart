@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../data/cache/cache_store.dart';
+import '../data/services/ai_image_recovery.dart';
 import '../data/repositories/user_prefs_repository.dart';
 
 /// Provider for SharedPreferences instance.
@@ -19,4 +20,8 @@ final cacheStoreProvider = Provider<CacheStore>((ref) {
 /// Provider for the UserPrefsRepository.
 final userPrefsRepositoryProvider = Provider<UserPrefsRepository>((ref) {
   return UserPrefsRepository(ref.watch(sharedPreferencesProvider));
+});
+
+final aiImageRecoveryProvider = Provider<AiImageRecovery>((ref) {
+  return AiImageRecovery(ref.read(userPrefsRepositoryProvider));
 });

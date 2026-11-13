@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
 import 'app/router.dart';
 import 'data/cache/cache_store.dart';
+import 'data/repositories/user_prefs_repository.dart';
+import 'data/services/ai_image_recovery.dart';
 import 'data/models/ingested_books.dart';
 import 'data/services/crash_reporting.dart';
 import 'providers/core_providers.dart';
@@ -30,6 +33,8 @@ void main() async {
   await Firebase.initializeApp();
   await initCrashReporting();
   final prefs = await SharedPreferences.getInstance();
+  final imageRecovery = AiImageRecovery(UserPrefsRepository(prefs));
+  await imageRecovery.recover(FirebaseAuth.instance.currentUser?.uid);
   await Hive.initFlutter();
   final cacheBox = await Hive.openBox<String>(CacheStore.boxName);
   final cacheStore = CacheStore(cacheBox);
@@ -42,6 +47,7 @@ void main() async {
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
+        aiImageRecoveryProvider.overrideWithValue(imageRecovery),
         cacheStoreProvider.overrideWithValue(cacheStore),
         ingestedBooksProvider.overrideWithValue(ingestedBooks),
       ],

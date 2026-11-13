@@ -14,6 +14,7 @@ import '../../utils/haptics.dart';
 import '../../data/models/ingested_books.dart';
 import '../../data/seed/ai_suggestions.dart';
 import '../../data/models/answer_style.dart';
+import '../../data/models/ai_image_draft.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/models/plus.dart';
 import '../../data/services/backend_auth_service.dart';
@@ -131,7 +132,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   // A picked image staged in the composer, awaiting send (cleared after send).
   Uint8List? _pendingImageBytes;
   String? _pendingImageMediaType;
-  final _imagePicker = ImagePicker();
+  bool _isPickingImage = false;
 
   // Inline history (loaded into the top of the chat for the current conversation).
   bool _isLoadingHistory = false;
@@ -173,7 +174,35 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     if (prefill.isNotEmpty) {
       _messageController.text = prefill;
     }
-    if (widget.openCamera) {
+    final recovered = ref.read(aiImageRecoveryProvider).takeRecovered();
+    final draft = recovered?.draft;
+    final canRestore =
+        draft != null &&
+        draft.uid == ref.read(firebaseAuthProvider).currentUser?.uid &&
+        draft.board == _board &&
+        draft.classNo == _selectedClass &&
+        draft.channel == widget.channel;
+    if (canRestore) {
+      _messageController.text = draft.text;
+      _selectedSubject = draft.subject;
+      _languageMode = draft.language;
+      _languageSelectedManually = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        if (recovered!.file != null) {
+          try {
+            await _stageImage(recovered.file!);
+          } catch (_) {
+            if (mounted) {
+              _showSnack('Could not restore that image. Please pick it again.');
+            }
+          }
+        } else if (recovered.failed) {
+          _showSnack('Could not restore that image. Please pick it again.');
+        }
+      });
+    }
+    if (widget.openCamera && !canRestore) {
       // "Snap a photo" shortcut: land straight on the picker instead of the
       // keyboard, so the student never has to find the attach button.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -430,42 +459,57 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         ),
       ),
     );
-    if (source == null) return;
+    if (!mounted || source == null) return;
     await _pickImage(source);
   }
 
   Future<void> _pickImage(ImageSource source) async {
+    if (_isPickingImage) return;
+    _isPickingImage = true;
+    final recovery = ref.read(aiImageRecoveryProvider);
     try {
-      // Cap dimensions + recompress so a phone photo stays comfortably under the
-      // backend's ~10 MB encoded ceiling without an extra compression package.
-      final picked = await _imagePicker.pickImage(
+      await recovery.prefs.saveAiImageDraft(
+        AiImageDraft(
+          uid: ref.read(firebaseAuthProvider).currentUser?.uid,
+          board: _board,
+          classNo: _selectedClass,
+          channel: widget.channel,
+          subject: _selectedSubject,
+          text: _messageController.text,
+          language: _languageMode,
+          style: (_styleHintSent ? AnswerStyle.ask : widget.answerStyle).key,
+        ),
+      );
+      if (!mounted) return;
+      final picked = await recovery.picker.pickImage(
         source: source,
         maxWidth: 1600,
         maxHeight: 1600,
         imageQuality: 85,
       );
-      if (picked == null) return;
-
-      final bytes = await picked.readAsBytes();
-      // base64 inflates size ~4/3; check against the same encoded ceiling.
-      if ((bytes.length * 4 / 3) > _maxImageBase64Bytes) {
-        if (!mounted) return;
-        _showSnack('That image is too large. Please pick a smaller one.');
-        return;
-      }
-
-      if (!mounted) return;
-      setState(() {
-        _pendingImageBytes = bytes;
-        _pendingImageMediaType = _mediaTypeForPath(
-          picked.name,
-          picked.mimeType,
-        );
-      });
+      if (picked != null && mounted) await _stageImage(picked);
     } catch (_) {
-      if (!mounted) return;
-      _showSnack('Could not open that image. Please try again.');
+      if (mounted) _showSnack('Could not open that image. Please try again.');
+    } finally {
+      _isPickingImage = false;
+      await recovery.prefs.clearAiImageDraft();
     }
+  }
+
+  Future<void> _stageImage(XFile picked) async {
+    final bytes = await picked.readAsBytes();
+    // base64 inflates size ~4/3; check against the same encoded ceiling.
+    if ((bytes.length * 4 / 3) > _maxImageBase64Bytes) {
+      if (!mounted) return;
+      _showSnack('That image is too large. Please pick a smaller one.');
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _pendingImageBytes = bytes;
+      _pendingImageMediaType = _mediaTypeForPath(picked.name, picked.mimeType);
+    });
   }
 
   void _clearPendingImage() {

@@ -9,6 +9,11 @@ import 'package:vidyalaya/providers/auth_provider.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
 import 'package:vidyalaya/screens/onboarding/welcome_screen.dart';
 
+class _SignedOutAuth extends Fake implements FirebaseAuth {
+  @override
+  User? get currentUser => null;
+}
+
 void main() {
   testWidgets('welcome saves the preferred language with the class and board', (
     tester,
@@ -31,6 +36,7 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          firebaseAuthProvider.overrideWithValue(_SignedOutAuth()),
           authStateProvider.overrideWith((ref) => Stream<User?>.value(null)),
         ],
         child: MaterialApp.router(routerConfig: router),

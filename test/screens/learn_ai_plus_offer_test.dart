@@ -1,3 +1,7 @@
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:vidyalaya/data/models/ai_image_draft.dart';
+import 'package:vidyalaya/data/services/ai_image_recovery.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -23,6 +27,18 @@ import 'package:vidyalaya/providers/ingested_books_provider.dart';
 import 'package:vidyalaya/providers/learn_assist_provider.dart';
 import 'package:vidyalaya/providers/plus_provider.dart';
 import 'package:vidyalaya/screens/learn/learn_ai_screen.dart';
+
+class _RecoveryPicker extends Fake implements ImagePicker {
+  final bool withImage;
+  _RecoveryPicker(this.withImage);
+
+  @override
+  Future<LostDataResponse> retrieveLostData() async => withImage
+      ? LostDataResponse(files: [XFile.fromData(base64Decode(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='),
+          name: 'question.png', mimeType: 'image/png')])
+      : LostDataResponse.empty();
+}
 
 /// The cache's box in memory. Widget tests run on simulated time, where a real
 /// Hive file would never finish its I/O.
@@ -154,10 +170,25 @@ void main() {
     asked = 0;
   });
 
-  Future<void> pumpChat(WidgetTester tester) async {
+  Future<void> pumpChat(WidgetTester tester, {bool? recoveredImage}) async {
     // Created here, inside the test's own time, so its saves can finish.
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
+    final recovery = AiImageRecovery(_Repo(prefs),
+        picker: _RecoveryPicker(recoveredImage ?? false));
+    if (recoveredImage != null) {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await recovery.prefs.setPrimaryClass(6, uid: 'student-a');
+      await recovery.prefs.saveAiImageDraft(const AiImageDraft(
+          uid: 'student-a', board: 'scert_odisha', classNo: 6,
+          channel: 'learn_assist', subject: null, text: 'My restored question',
+          language: 'en', style: 'ask'));
+      try {
+        await recovery.recover('student-a');
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    }
     final service = LearnAssistService(
       idTokenProvider: ({required forceRefresh}) async => 'token',
       baseUrl: Uri.parse('https://example.test'),
@@ -183,7 +214,11 @@ void main() {
       }),
     );
     final router = GoRouter(
-      routes: [GoRoute(path: '/', builder: (_, _) => const LearnAiScreen())],
+      initialLocation: recovery.initialLocation ?? '/',
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const LearnAiScreen()),
+        GoRoute(path: '/learn/ai', builder: (_, _) => const LearnAiScreen(resume: true)),
+      ],
     );
     addTearDown(router.dispose);
     await tester.binding.setSurfaceSize(const Size(900, 1000));
@@ -192,6 +227,7 @@ void main() {
       ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
+          aiImageRecoveryProvider.overrideWithValue(recovery),
           userPrefsRepositoryProvider.overrideWithValue(_Repo(prefs)),
           cacheStoreProvider.overrideWithValue(CacheStore(_MemoryBox())),
           firebaseAuthProvider.overrideWithValue(_Auth()),
@@ -221,6 +257,16 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     await tester.pumpAndSettle();
+  }
+
+  for (final withImage in [true, false]) {
+    testWidgets('restart restores composer after picker (image=$withImage)', (tester) async {
+      await pumpChat(tester, recoveredImage: withImage);
+      expect(find.text('My restored question'), findsOneWidget);
+      expect(find.byType(Image), withImage ? findsOneWidget : findsNothing);
+      expect(UserPrefsRepository(prefs).getAiImageDraft(), isNull);
+      expect(asked, 0, reason: 'Recovery must never automatically send');
+    });
   }
 
   testWidgets('a refused question says when it refreshes and offers Plus', (tester) async {

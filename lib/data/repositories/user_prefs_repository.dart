@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/book.dart';
+import '../models/ai_image_draft.dart';
 import '../models/highlight.dart';
 import '../models/recent_question.dart';
 import '../models/note.dart';
@@ -11,6 +12,7 @@ import '../models/virtual_lab.dart';
 /// Repository for persisting user preferences (selected classes, last read book, etc.)
 /// Uses SharedPreferences — data survives cache clears but not app uninstall.
 class UserPrefsRepository {
+  static const _aiImageDraftKey = 'ai_image_draft';
   static const _selectedClassesKey = 'selected_classes';
   static const _exploreSelectionModeKey = 'explore_selection_mode';
   static const _librarySelectedClassesKey = 'library_selected_classes';
@@ -37,6 +39,26 @@ class UserPrefsRepository {
   final SharedPreferences _prefs;
 
   UserPrefsRepository(this._prefs);
+
+  AiImageDraft? getAiImageDraft() {
+    final value = _prefs.getString(_aiImageDraftKey);
+    if (value == null) return null;
+    try {
+      return AiImageDraft.fromJson(jsonDecode(value) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveAiImageDraft(AiImageDraft draft) async {
+    if (!await _prefs.setString(_aiImageDraftKey, jsonEncode(draft.toJson()))) {
+      throw StateError('Could not save image picker draft');
+    }
+  }
+
+  Future<void> clearAiImageDraft() async {
+    await _prefs.remove(_aiImageDraftKey);
+  }
 
   // ─── Books the student added from their own files ───────────────────────
 
