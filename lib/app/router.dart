@@ -117,6 +117,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: AiHubScreen()),
           ),
+          // The middle tab: the Q&A chat itself, with no hub in front of it.
+          GoRoute(
+            path: '/ask',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: LearnAiScreen(inShell: true)),
+          ),
           GoRoute(
             path: '/explore',
             pageBuilder: (context, state) =>

@@ -67,6 +67,9 @@ class _MemoryBox extends Fake implements Box<String> {
 class _User extends Fake implements User {
   @override
   String get uid => 'student-a';
+
+  @override
+  String? get displayName => 'Asha Patra';
 }
 
 class _Auth extends Fake implements FirebaseAuth {

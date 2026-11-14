@@ -309,7 +309,9 @@ void main() {
       for (final entry in cases.entries) {
         await pumpCard(tester, entry.key);
         expect(find.text(entry.value.$1), findsOneWidget, reason: '${entry.key.state}');
-        expect(find.text(entry.value.$2), findsOneWidget, reason: '${entry.key.state}');
+        // The card shows the title alone; the second line is the copy the
+        // Plus sheet uses for the same state.
+        expect(plusCardCopy(entry.key).subtitle, entry.value.$2, reason: '${entry.key.state}');
       }
     });
 
@@ -317,7 +319,7 @@ void main() {
       await pumpCard(tester, _status(PlusState.declined));
 
       expect(find.text("Plus isn't available right now"), findsOneWidget);
-      expect(find.text('You can ask again later.'), findsOneWidget);
+      expect(plusCardCopy(_status(PlusState.declined)).subtitle, 'You can ask again later.');
     });
 
     testWidgets('opens the sheet, and asking from it comes from Profile', (tester) async {

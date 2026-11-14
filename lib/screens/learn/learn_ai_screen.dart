@@ -16,6 +16,7 @@ import '../../data/models/answer_style.dart';
 import '../../data/models/ai_image_draft.dart';
 import '../../data/models/learn_assist.dart';
 import '../../data/models/plus.dart';
+import '../../data/models/recent_question.dart';
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ingested_books_provider.dart';
@@ -59,6 +60,10 @@ class LearnAiScreen extends ConsumerStatefulWidget {
   /// switch). Applied to the first message of this session only.
   final AnswerStyle answerStyle;
 
+  /// Shown as the middle tab of the app shell rather than pushed on top of
+  /// it: the header gets the sidebar button in place of a back arrow.
+  final bool inShell;
+
   const LearnAiScreen({
     super.key,
     this.channel = LearnAssistChannel.learnAssist,
@@ -68,6 +73,7 @@ class LearnAiScreen extends ConsumerStatefulWidget {
     this.openCamera = false,
     this.resume = false,
     this.answerStyle = AnswerStyle.ask,
+    this.inShell = false,
   });
 
   @override
@@ -78,6 +84,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   final _composerFocusNode = FocusNode();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   final List<_ChatMessage> _messages = [];
 
   late int _selectedClass;
@@ -143,11 +150,22 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   bool _historyLoadFailed = false;
   int? _historyNextBefore;
 
-  // After 30+ minutes away, the previous conversation stays tucked behind a
-  // "load previous chat" link so the student lands on a fresh start with
-  // suggestions, instead of scrolling old messages.
+  // A conversation whose last message is 30+ minutes old stays tucked behind
+  // a "Show previous chat" button, so the student lands on a fresh start with
+  // suggestions instead of scrolling old messages. This is judged per
+  // conversation (subject), from the saved messages themselves.
   static const _staleChatThreshold = Duration(minutes: 30);
+
+  /// The current conversation's saved messages are being kept off screen.
   bool _historyHidden = false;
+
+  /// The current conversation has saved messages to bring back. The button
+  /// shows only when this is true, never for a subject with no past chat.
+  bool _hasPreviousChat = false;
+
+  /// The student asked to see this conversation (the button, a resume card or
+  /// a sidebar row), so its age no longer hides it.
+  bool _historyRevealed = false;
 
   /// Board from the saved profile (single-board today, multi-board ready).
   String get _board => ref.read(userBoardProvider);
@@ -215,31 +233,55 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
         if (mounted) _composerFocusNode.requestFocus();
       });
     }
-    // Fresh-start rule: if the student last chatted more than 30 minutes ago,
-    // keep the previous conversation hidden behind a tap so the screen opens
-    // on suggestions. A brand-new user (no activity yet) has nothing to hide.
-    // A resume tap opts out — that student asked for this thread by name.
-    final lastActivity = ref
-        .read(userPrefsRepositoryProvider)
-        .getChatLastActivity(widget.channel);
-    _historyHidden =
-        !widget.resume &&
-        lastActivity != null &&
-        DateTime.now().difference(lastActivity) > _staleChatThreshold;
-    if (widget.resume && lastActivity != null) {
-      // Same bookkeeping "Load previous chat" does: the thread is on screen
-      // now, so backing out and reopening shouldn't hide it again.
-      ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
-    }
+    // A resume tap asked for this thread by name, so it opens in full however
+    // old it is. Otherwise [_loadHistory] applies the fresh-start rule.
+    _historyRevealed = widget.resume;
     _ensureAccountSummary();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadHistory());
   }
 
-  /// Student tapped "Load previous chat": reveal and fetch the conversation.
+  /// Student tapped "Show previous chat": reveal and fetch the conversation.
   void _revealHistory() {
-    setState(() => _historyHidden = false);
-    ref.read(userPrefsRepositoryProvider).recordChatActivity(widget.channel);
+    setState(() {
+      _historyRevealed = true;
+      _historyHidden = false;
+    });
     _loadHistory();
+  }
+
+  /// Student picked a conversation in the sidebar: switch to that subject (or
+  /// stay, if it is already open) and show its saved messages.
+  void _openConversation(String? subject) {
+    if (_isSending) return;
+    if (subject == _selectedSubject) {
+      if (_historyHidden) _revealHistory();
+      return;
+    }
+    _switchConversation(() {
+      _selectedSubject = subject;
+      _historyRevealed = true;
+    });
+  }
+
+  /// True when [page] holds a conversation old enough to keep off screen.
+  bool _isStaleHistory(ChatHistoryPage? page) {
+    if (_historyRevealed || page == null || page.messages.isEmpty) return false;
+    // A question asked from this device in the last 30 minutes keeps the
+    // thread current, whatever clock the saved messages were stamped with.
+    final now = DateTime.now();
+    for (final asked in ref.read(recentQuestionsProvider)) {
+      if (asked.subject == _selectedSubject &&
+          now.difference(asked.askedAt) <= _staleChatThreshold) {
+        return false;
+      }
+    }
+    DateTime? newest;
+    for (final message in page.messages) {
+      final at = message.createdAt;
+      if (at != null && (newest == null || at.isAfter(newest))) newest = at;
+    }
+    // Undated messages can't be shown to be recent, so they count as old.
+    return newest == null || now.difference(newest) > _staleChatThreshold;
   }
 
   @override
@@ -256,6 +298,11 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
   void _switchConversation(VoidCallback applySelection) {
     if (_isSending) return;
     setState(() {
+      // A different conversation: judge its age afresh. [applySelection] may
+      // then mark it as asked-for (a sidebar row).
+      _historyRevealed = false;
+      _historyHidden = false;
+      _hasPreviousChat = false;
       applySelection();
       _messages.clear();
       // Drop the streaming slot: any in-flight [appendToken]/finalize would
@@ -322,6 +369,9 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     if (!mounted) return;
     Haptics.light(ref);
     setState(() {
+      // The saved history is kept, so whatever was on screen (or already
+      // tucked away) can still be brought back.
+      _hasPreviousChat = _hasPreviousChat || _messages.isNotEmpty;
       _messages.clear();
       _streamingMessageIndex = null;
       _historyNextBefore = null;
@@ -329,13 +379,13 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       // Land on the fresh-start empty state (suggestions) rather than reloading
       // the preserved history the student just chose to move past.
       _historyHidden = true;
+      _historyRevealed = false;
     });
     _showSnack('Started a fresh conversation.');
   }
 
   /// Load the first page of history for the current selector into the chat.
   Future<void> _loadHistory() async {
-    if (_historyHidden) return;
     final isSignedIn = ref.read(firebaseAuthProvider).currentUser != null;
     if (!isSignedIn) return;
 
@@ -343,12 +393,15 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final cache = ref.read(backendAccountCacheProvider.notifier);
     final cachedPage = cache.peekHistory(selector);
     if (cachedPage != null) {
+      final stale = _isStaleHistory(cachedPage);
       setState(() {
         _historyLoadFailed = false;
-        _historyNextBefore = cachedPage.nextBefore;
+        _historyHidden = stale;
+        _hasPreviousChat = cachedPage.messages.isNotEmpty;
+        _historyNextBefore = stale ? null : cachedPage.nextBefore;
         _messages
           ..clear()
-          ..addAll(_historyToMessages(cachedPage));
+          ..addAll(stale ? const [] : _historyToMessages(cachedPage));
         _streamingMessageIndex = null;
         _isLoadingHistory = false;
         _isRevalidating = true;
@@ -373,11 +426,16 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final historyErrored =
         page == null &&
         ref.read(backendAccountCacheProvider).history is AsyncError;
+    // Anything sent while this was loading makes the thread current again.
+    final stale =
+        _isStaleHistory(page) && !_messages.any((m) => !m.fromHistory);
     setState(() {
       _isRevalidating = false;
       _isLoadingHistory = false;
       _historyLoadFailed = historyErrored;
-      _historyNextBefore = page?.nextBefore;
+      _historyHidden = stale;
+      if (page != null) _hasPreviousChat = page.messages.isNotEmpty;
+      _historyNextBefore = stale ? null : page?.nextBefore;
       // Insert history ahead of anything sent while it was loading (rare race),
       // so live turns are never lost and history always reads above them.
       final live = _messages
@@ -385,7 +443,7 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
           .toList(growable: false);
       _messages
         ..clear()
-        ..addAll(_historyToMessages(page))
+        ..addAll(stale ? const [] : _historyToMessages(page))
         ..addAll(live);
       // The streaming bubble (if any) sits inside `live`; re-point its index to
       // its new position after the history block so finalize/append still land
@@ -997,6 +1055,22 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     // The local preference gives the picker an immediate profile-based value.
     // Once the latest profile arrives, use it too unless the student has
     // already chosen a language for this chat themselves.
+    // First name for the greeting: the student-edited profile name first,
+    // then the Google account name.
+    final authUser = authState.maybeWhen(data: (u) => u, orElse: () => null);
+    final profileName = accountState.uid == authUser?.uid
+        ? accountState.profile.maybeWhen(
+            data: (profile) => profile?.name?.trim(),
+            orElse: () => null,
+          )
+        : null;
+    final fullName = (profileName?.isNotEmpty ?? false)
+        ? profileName!
+        : (authUser?.displayName?.trim() ?? '');
+    final firstWord = fullName.split(' ').first;
+    final studentName = firstWord.isEmpty
+        ? null
+        : firstWord[0].toUpperCase() + firstWord.substring(1);
     final profileLanguage = accountState.profile.maybeWhen(
       data: (profile) => profile?.preferredLanguage,
       orElse: () => null,
@@ -1037,156 +1111,467 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
     final hasOlder = _historyNextBefore != null && !_isSending;
     final leadingCount = hasOlder ? 1 : 0;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            // One face for the whole chat, reacting to the turn: listening
-            // while the student types, thinking until the first token,
-            // answering while it streams, resting once the day's questions
-            // are used up.
-            ListenableBuilder(
-              listenable: Listenable.merge([
-                _messageController,
-                _composerFocusNode,
-              ]),
-              builder: (context, _) =>
-                  AiBot(size: 30, mood: _botMood(accountState)),
+    final subjectLabel = _selectedSubject == null
+        ? null
+        : formatSubject(
+            _selectedSubject!,
+            board: _board,
+            classNo: _selectedClass,
+          );
+
+    // As a tab the page has no header bar: the sidebar button, the count and
+    // the fresh-start button float over the chat, which fades out beneath
+    // them as it scrolls up.
+    Widget withFloatingHeader(Widget content) {
+      if (!widget.inShell) return content;
+      final paper = Theme.of(context).scaffoldBackgroundColor;
+      return Stack(
+        children: [
+          content,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 84,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [paper, paper.withValues(alpha: 0)],
+                    stops: const [0.35, 1],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
+          ),
+          Positioned(
+            top: 8,
+            left: 12,
+            right: 12,
+            child: Row(
+              children: [
+                _FloatingButton(
+                  glyph: const _SidebarGlyph(),
+                  tooltip: 'Chats',
+                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                ),
+                const Spacer(),
+                _PlanUsageBadge(
+                  isSignedIn: isSignedIn,
+                  user: accountState.user,
+                  usage: accountState.usage,
+                  floating: true,
+                ),
+                const SizedBox(width: 8),
+                _FloatingButton(
+                  glyph: const Icon(Icons.edit_square),
+                  tooltip: 'Start fresh',
+                  onPressed: _isSending ? null : _resetMemory,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final scaffold = Scaffold(
+      key: _scaffoldKey,
+      drawer: widget.inShell
+          ? _ChatSidebar(
+              chats: ref.watch(recentQuestionsProvider),
+              board: _board,
+              classNo: _selectedClass,
+              onNewChat: _isSending ? null : _resetMemory,
+              onOpen: _openConversation,
+            )
+          : null,
+      // Opened from elsewhere (the AI tab, Home), the page keeps its bar: a
+      // back arrow, its name, the count and a fresh start.
+      appBar: widget.inShell
+          ? null
+          : AppBar(
+              title: Text(
                 _channelTitle(widget.channel),
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
+              actions: [
+                _PlanUsageBadge(
+                  isSignedIn: isSignedIn,
+                  user: accountState.user,
+                  usage: accountState.usage,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_square),
+                  tooltip: 'Start fresh',
+                  // Disabled mid-turn: resetting memory while a response
+                  // streams would desync the on-screen bubble from the
+                  // (now-cleared) thread.
+                  onPressed: _isSending ? null : _resetMemory,
+                ),
+                const SizedBox(width: 8),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          _PlanUsageBadge(
-            isSignedIn: isSignedIn,
-            user: accountState.user,
-            usage: accountState.usage,
-          ),
-          IconButton(
-            icon: const Icon(Icons.restart_alt_rounded),
-            tooltip: 'Start fresh',
-            // Disabled mid-turn: resetting memory while a response streams would
-            // desync the on-screen bubble from the (now-cleared) thread.
-            onPressed: _isSending ? null : _resetMemory,
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
-        child: Column(
-          children: [
-            _ContextControls(
-              board: _board,
-              classNo: _selectedClass,
-              subjectOptions: subjectOptions,
-              selectedSubject: _selectedSubject,
-              subjectEnabled: !_isSending,
-              onSubjectChanged: (value) {
-                if (value == _selectedSubject) return;
-                _switchConversation(() => _selectedSubject = value);
-              },
-              languageMode: _languageMode,
-              onLanguageChanged: (value) {
-                setState(() {
-                  _languageMode = value;
-                  _languageSelectedManually = true;
-                });
-              },
-            ),
-            if (_isLoadingHistory)
-              const LinearProgressIndicator(minHeight: 2)
-            else if (_isRevalidating)
-              const _HistoryUpdatingBar()
-            else if (_historyLoadFailed)
-              _HistoryErrorBar(onRetry: _loadHistory),
-            Expanded(
-              child: _messages.isEmpty && !_isLoadingHistory && !_isSending
-                  ? _EmptyChat(
-                      suggestions: aiSuggestionsFor(_selectedSubject),
-                      onSuggestionTap: _applySuggestion,
-                      showLoadPrevious: _historyHidden && isSignedIn,
-                      onLoadPrevious: _revealHistory,
-                    )
-                  : ListView.separated(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.screenPadding,
-                        12,
-                        AppSpacing.screenPadding,
-                        16,
-                      ),
-                      itemCount:
-                          leadingCount +
-                          _messages.length +
-                          // The dots-only placeholder only makes sense before the
-                          // first token lands — once streaming has a message of
-                          // its own in _messages, this extra slot would trail it.
-                          (_isSending && _streamingMessageIndex == null
-                              ? 1
-                              : 0),
-                      separatorBuilder: (_, _) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        if (hasOlder && index == 0) {
-                          return _LoadOlderButton(
-                            isLoading: _isLoadingOlder,
-                            onPressed: _loadOlderHistory,
+        child: withFloatingHeader(
+          Column(
+            children: [
+              // Keep the retry bar clear of the floating buttons.
+              if (_historyLoadFailed && widget.inShell)
+                const SizedBox(height: 60),
+              if (_isLoadingHistory)
+                const LinearProgressIndicator(minHeight: 2)
+              else if (_isRevalidating)
+                const _HistoryUpdatingBar()
+              else if (_historyLoadFailed)
+                _HistoryErrorBar(onRetry: _loadHistory),
+              Expanded(
+                child: _messages.isEmpty && !_isLoadingHistory && !_isSending
+                    ? _EmptyChat(
+                        // The bot listens while the student types and rests
+                        // once the day's questions are used up.
+                        bot: ListenableBuilder(
+                          listenable: Listenable.merge([
+                            _messageController,
+                            _composerFocusNode,
+                          ]),
+                          builder: (context, _) =>
+                              AiBot(size: 72, mood: _botMood(accountState)),
+                        ),
+                        topInset: widget.inShell ? 56 : 0,
+                        studentName: studentName,
+                        subject: _selectedSubject,
+                        suggestions: aiSuggestionsFor(_selectedSubject),
+                        onSuggestionTap: _applySuggestion,
+                        showLoadPrevious:
+                            _historyHidden && _hasPreviousChat && isSignedIn,
+                        onLoadPrevious: _revealHistory,
+                      )
+                    : ListView.separated(
+                        controller: _scrollController,
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.screenPadding,
+                          // Start below the floating buttons.
+                          widget.inShell ? 68 : 12,
+                          AppSpacing.screenPadding,
+                          16,
+                        ),
+                        itemCount:
+                            leadingCount +
+                            _messages.length +
+                            // The dots-only placeholder only makes sense before the
+                            // first token lands — once streaming has a message of
+                            // its own in _messages, this extra slot would trail it.
+                            (_isSending && _streamingMessageIndex == null
+                                ? 1
+                                : 0),
+                        separatorBuilder: (_, _) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          if (hasOlder && index == 0) {
+                            return _LoadOlderButton(
+                              isLoading: _isLoadingOlder,
+                              onPressed: _loadOlderHistory,
+                            );
+                          }
+                          final messageIndex = index - leadingCount;
+                          if (_isSending &&
+                              _streamingMessageIndex == null &&
+                              messageIndex == _messages.length) {
+                            return _TypingIndicator(subject: subjectLabel);
+                          }
+                          final msg = _messages[messageIndex];
+                          // Action row shows only when not mid-send: copy on any
+                          // finished assistant answer; regenerate on the last one;
+                          // retry on an error bubble.
+                          final isLast = messageIndex == _messages.length - 1;
+                          final showActions =
+                              !_isSending &&
+                              !msg.isStreaming &&
+                              msg.role != _MessageRole.user;
+                          return _MessageView(
+                            message: msg,
+                            onCopy:
+                                showActions &&
+                                    msg.role == _MessageRole.assistant &&
+                                    msg.text.trim().isNotEmpty
+                                ? () =>
+                                      _copyMessage(aiAnswerPlainText(msg.text))
+                                : null,
+                            onRegenerate:
+                                showActions &&
+                                    isLast &&
+                                    msg.role == _MessageRole.assistant
+                                ? _retryLastTurn
+                                : null,
+                            onRetry:
+                                showActions &&
+                                    isLast &&
+                                    msg.role == _MessageRole.error
+                                ? _retryLastTurn
+                                : null,
                           );
-                        }
-                        final messageIndex = index - leadingCount;
-                        if (_isSending &&
-                            _streamingMessageIndex == null &&
-                            messageIndex == _messages.length) {
-                          return const _TypingIndicator();
-                        }
-                        final msg = _messages[messageIndex];
-                        // Action row shows only when not mid-send: copy on any
-                        // finished assistant answer; regenerate on the last one;
-                        // retry on an error bubble.
-                        final isLast = messageIndex == _messages.length - 1;
-                        final showActions =
-                            !_isSending &&
-                            !msg.isStreaming &&
-                            msg.role != _MessageRole.user;
-                        return _MessageView(
-                          message: msg,
-                          onCopy:
-                              showActions &&
-                                  msg.role == _MessageRole.assistant &&
-                                  msg.text.trim().isNotEmpty
-                              ? () => _copyMessage(aiAnswerPlainText(msg.text))
-                              : null,
-                          onRegenerate:
-                              showActions &&
-                                  isLast &&
-                                  msg.role == _MessageRole.assistant
-                              ? _retryLastTurn
-                              : null,
-                          onRetry:
-                              showActions &&
-                                  isLast &&
-                                  msg.role == _MessageRole.error
-                              ? _retryLastTurn
-                              : null,
-                        );
+                        },
+                      ),
+              ),
+              _Composer(
+                controller: _messageController,
+                focusNode: _composerFocusNode,
+                isSending: _isSending,
+                pendingImage: _pendingImageBytes,
+                onAttach: _showImageSourceSheet,
+                onRemoveImage: _clearPendingImage,
+                onSubmitted: _sendMessage,
+                controls: _ContextControls(
+                  board: _board,
+                  classNo: _selectedClass,
+                  subjectOptions: subjectOptions,
+                  selectedSubject: _selectedSubject,
+                  subjectEnabled: !_isSending,
+                  onSubjectChanged: (value) {
+                    if (value == _selectedSubject) return;
+                    _switchConversation(() => _selectedSubject = value);
+                  },
+                  languageMode: _languageMode,
+                  onLanguageChanged: (value) {
+                    setState(() {
+                      _languageMode = value;
+                      _languageSelectedManually = true;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (!widget.inShell) return scaffold;
+    // As a tab, Back closes the sidebar first; the shell handles the rest.
+    return BackButtonListener(
+      onBackButtonPressed: () async {
+        final state = _scaffoldKey.currentState;
+        if (state != null && state.isDrawerOpen) {
+          state.closeDrawer();
+          return true;
+        }
+        return false;
+      },
+      child: scaffold,
+    );
+  }
+}
+
+// ─── Floating header button ──────────────────────────────────────────────
+
+List<BoxShadow> _floatingShadow(bool isDark) => [
+  BoxShadow(
+    color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.10),
+    blurRadius: 12,
+    offset: const Offset(0, 3),
+  ),
+];
+
+/// A round button that sits over the chat rather than in a bar.
+class _FloatingButton extends StatelessWidget {
+  final Widget glyph;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  const _FloatingButton({
+    required this.glyph,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // White pill, matching the "left today" count beside it.
+    final fill = isDark ? AppColors.surface2Dark : AppColors.surface;
+    final ink = Theme.of(context).colorScheme.onSurface;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: _floatingShadow(isDark),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: glyph,
+        iconSize: 22,
+        tooltip: tooltip,
+        style: IconButton.styleFrom(
+          fixedSize: const Size(44, 44),
+          padding: EdgeInsets.zero,
+          foregroundColor: ink,
+          disabledForegroundColor: ink.withValues(alpha: 0.45),
+          backgroundColor: fill,
+          disabledBackgroundColor: fill,
+        ),
+      ),
+    );
+  }
+}
+
+/// The sidebar button's mark: two rounded strokes, the lower one shorter,
+/// drawn in the button's icon colour.
+class _SidebarGlyph extends StatelessWidget {
+  const _SidebarGlyph();
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = IconTheme.of(context);
+    final size = icon.size ?? 22;
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _SidebarGlyphPainter(
+        icon.color ?? Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
+}
+
+class _SidebarGlyphPainter extends CustomPainter {
+  final Color color;
+
+  const _SidebarGlyphPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = w * 0.11
+      ..strokeCap = StrokeCap.round;
+    final left = w * 0.18;
+    canvas.drawLine(Offset(left, h * 0.36), Offset(w * 0.82, h * 0.36), paint);
+    canvas.drawLine(Offset(left, h * 0.64), Offset(w * 0.56, h * 0.64), paint);
+  }
+
+  @override
+  bool shouldRepaint(_SidebarGlyphPainter old) => old.color != color;
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────
+// One row per subject the student has chatted in (each subject keeps a single
+// conversation), newest first: the subject as the title and the last question
+// asked there underneath. Tapping a row opens that conversation.
+
+class _ChatSidebar extends StatelessWidget {
+  final List<RecentQuestion> chats;
+  final String board;
+  final int classNo;
+  final VoidCallback? onNewChat;
+  final ValueChanged<String?> onOpen;
+
+  const _ChatSidebar({
+    required this.chats,
+    required this.board,
+    required this.classNo,
+    required this.onNewChat,
+    required this.onOpen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
+    final titleStyle = theme.textTheme.titleSmall?.copyWith(
+      fontSize: AppFontSize.content,
+      fontWeight: AppFontWeight.semibold,
+    );
+
+    // The Vidyakalp page colour, same as the bottom nav: never the white
+    // surface the default drawer would use.
+    final paper = isDark ? AppColors.paperDark : AppColors.paper;
+    return Drawer(
+      backgroundColor: paper,
+      // No tint or lift: the panel is the page colour exactly.
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      // Square edge: the panel is a slice of the page, not a floating sheet.
+      shape: const RoundedRectangleBorder(),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+              leading: const Icon(Icons.edit_square, size: 22),
+              title: Text('New chat', style: titleStyle),
+              enabled: onNewChat != null,
+              onTap: onNewChat == null
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                      onNewChat!();
+                    },
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+              child: Text(
+                'Your chats',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: AppFontWeight.bold,
+                  color: muted,
+                ),
+              ),
+            ),
+            if (chats.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                child: Text(
+                  'Subjects you ask about will show here.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: muted),
+                ),
+              )
+            else
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  itemCount: chats.length,
+                  itemBuilder: (context, index) {
+                    final chat = chats[index];
+                    final subject = chat.subject;
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 2,
+                      ),
+                      title: Text(
+                        subject == null
+                            ? 'All subjects'
+                            : formatSubject(
+                                subject,
+                                board: board,
+                                classNo: classNo,
+                              ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: titleStyle,
+                      ),
+                      subtitle: Text(
+                        chat.text,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: muted,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onOpen(subject);
                       },
-                    ),
-            ),
-            _Composer(
-              controller: _messageController,
-              focusNode: _composerFocusNode,
-              isSending: _isSending,
-              pendingImage: _pendingImageBytes,
-              onAttach: _showImageSourceSheet,
-              onRemoveImage: _clearPendingImage,
-              onSubmitted: _sendMessage,
-            ),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -1200,10 +1585,15 @@ class _PlanUsageBadge extends StatelessWidget {
   final AsyncValue<BackendUser?> user;
   final AsyncValue<LearnAssistUsage?> usage;
 
+  /// Drawn as a raised pill over the chat (the tab's floating header)
+  /// instead of a flat one inside an app bar.
+  final bool floating;
+
   const _PlanUsageBadge({
     required this.isSignedIn,
     required this.user,
     required this.usage,
+    this.floating = false,
   });
 
   @override
@@ -1252,35 +1642,38 @@ class _PlanUsageBadge extends StatelessWidget {
     } else if (currentUsage.unlimited) {
       usageLabel = '$plan · ∞';
     } else {
-      usageLabel = '$plan · ${currentUsage.remaining} left';
+      usageLabel = '${currentUsage.remaining} left today';
     }
 
     final resetNote = currentUsage == null || currentUsage.unlimited
         ? null
         : 'Questions reset ${refreshPhrase(currentUsage.resetsAt)}';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final badge = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      height: floating ? 44 : 32,
+      padding: EdgeInsets.symmetric(horizontal: floating ? 16 : 12),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.outlineVariant),
+        // Floating over the chat it is a white pill like the buttons beside
+        // it; inside an app bar it keeps the soft green.
+        color: floating
+            ? (isDark ? AppColors.surface2Dark : AppColors.surface)
+            : (isDark ? AppColors.green100Dark : AppColors.green100),
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: floating ? _floatingShadow(isDark) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            usageErrored
-                ? Icons.sync_problem_rounded
-                : Icons.workspace_premium_rounded,
-            size: 14,
-            color: usageErrored ? cs.error : cs.primary,
-          ),
-          const SizedBox(width: 5),
+          if (usageErrored) ...[
+            Icon(Icons.sync_problem_rounded, size: 14, color: cs.error),
+            const SizedBox(width: 5),
+          ],
           Text(
             usageLabel,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: cs.onSurface,
+              color: isDark ? AppColors.green500Dark : AppColors.green700,
               fontWeight: AppFontWeight.semibold,
             ),
           ),
@@ -1322,17 +1715,13 @@ class _ContextControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        6,
-        AppSpacing.screenPadding,
-        8,
-      ),
-      child: Row(
-        children: [
-          _MenuChip<String>(
-            icon: Icons.menu_book_rounded,
+    // Sits in the composer's toolbar; the chips shrink (and their labels
+    // ellipsize) on narrow screens so the send button always fits.
+    return Row(
+      children: [
+        Flexible(
+          flex: 3,
+          child: _MenuChip<String>(
             label: selectedSubject == null
                 ? 'All subjects'
                 : formatSubject(
@@ -1354,33 +1743,32 @@ class _ContextControls extends StatelessWidget {
               onSubjectChanged(value == 'all' ? null : value);
             },
           ),
-          const SizedBox(width: 8),
-          _MenuChip<String>(
-            icon: Icons.translate_rounded,
-            label: switch (languageMode) {
-              'en' => 'English',
-              'or' => 'Odia',
-              'hi' => 'Hindi',
-              _ => 'Auto',
-            },
-            value: languageMode,
-            options: const [
-              ('auto', 'Auto'),
-              ('en', 'English'),
-              ('or', 'Odia'),
-              ('hi', 'Hindi'),
-            ],
-            onSelected: onLanguageChanged,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 6),
+        _MenuChip<String>(
+          label: switch (languageMode) {
+            'en' => 'English',
+            'or' => 'Odia',
+            'hi' => 'Hindi',
+            _ => 'Auto',
+          },
+          value: languageMode,
+          options: const [
+            ('auto', 'Auto'),
+            ('en', 'English'),
+            ('or', 'Odia'),
+            ('hi', 'Hindi'),
+          ],
+          onSelected: onLanguageChanged,
+        ),
+      ],
     );
   }
 }
 
 /// A small pill that opens a popup menu — much lighter than a full dropdown.
 class _MenuChip<T> extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String label;
   final T value;
   final List<(T, String)> options;
@@ -1388,7 +1776,7 @@ class _MenuChip<T> extends StatelessWidget {
   final bool enabled;
 
   const _MenuChip({
-    required this.icon,
+    this.icon,
     required this.label,
     required this.value,
     required this.options,
@@ -1428,27 +1816,32 @@ class _MenuChip<T> extends StatelessWidget {
           ),
       ],
       child: Container(
-        height: 32,
-        padding: const EdgeInsets.symmetric(horizontal: 11),
+        height: 40,
+        padding: const EdgeInsets.only(left: 12, right: 6),
         decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-          border: Border.all(color: cs.outlineVariant),
+          color: isDark ? AppColors.surface3Dark : AppColors.surface2,
+          borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: muted),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: AppFontWeight.semibold,
-                color: cs.onSurface,
+            if (icon != null) ...[
+              Icon(icon, size: 16, color: muted),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: AppFontWeight.semibold,
+                  color: cs.onSurface,
+                ),
               ),
             ),
-            const SizedBox(width: 3),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: muted),
+            const SizedBox(width: 2),
+            Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: muted),
           ],
         ),
       ),
@@ -1522,21 +1915,95 @@ class _HistoryErrorBar extends StatelessWidget {
 /// Fresh-start screen: a quiet heading, tappable starter questions, and (when
 /// an older conversation is tucked away) a link to bring it back.
 class _EmptyChat extends StatelessWidget {
+  /// The bot that peeks over the front card.
+  final Widget bot;
+
+  /// Room to leave at the top for the floating header buttons.
+  final double topInset;
+
+  /// The student's first name for the greeting; null leaves it out.
+  final String? studentName;
+
+  /// The chosen subject, or null for all subjects (colours the cards).
+  final String? subject;
   final List<String> suggestions;
   final ValueChanged<String> onSuggestionTap;
   final bool showLoadPrevious;
   final VoidCallback onLoadPrevious;
 
   const _EmptyChat({
+    required this.bot,
+    this.topInset = 0,
+    this.studentName,
+    required this.subject,
     required this.suggestions,
     required this.onSuggestionTap,
     required this.showLoadPrevious,
     required this.onLoadPrevious,
   });
 
+  // The mixed starter set runs Maths, Science, English, in that order.
+  static const _mixedSubjects = ['maths', 'science', 'english'];
+  static const _mixedIcons = [
+    Icons.calculate_outlined,
+    Icons.science_outlined,
+    Icons.menu_book_outlined,
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    _StarterCard card(int i, {bool front = false}) {
+      return _StarterCard(
+        text: suggestions[i],
+        icon: subject == null
+            ? _mixedIcons[i % _mixedIcons.length]
+            : Icons.lightbulb_outline_rounded,
+        color: AppColors.subjectColor(
+          subject ?? _mixedSubjects[i % _mixedSubjects.length],
+          theme.brightness,
+        ),
+        front: front,
+        onTap: () => onSuggestionTap(suggestions[i]),
+      );
+    }
+
+    // Three starters fanned around the bot: two tilted behind, one in front.
+    final fan = SizedBox(
+      width: 340,
+      height: 250,
+      child: Stack(
+        children: [
+          if (suggestions.length > 1)
+            Positioned(
+              left: 0,
+              top: 8,
+              width: 150,
+              height: 132,
+              child: Transform.rotate(angle: -0.08, child: card(1)),
+            ),
+          if (suggestions.length > 2)
+            Positioned(
+              right: 0,
+              top: 4,
+              width: 150,
+              height: 132,
+              child: Transform.rotate(angle: 0.08, child: card(2)),
+            ),
+          Positioned(left: 134, top: 62, child: bot),
+          if (suggestions.isNotEmpty)
+            Positioned(
+              left: 82,
+              top: 118,
+              width: 176,
+              height: 132,
+              child: card(0, front: true),
+            ),
+        ],
+      ),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1544,55 +2011,42 @@ class _EmptyChat extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                12 + topInset,
+                AppSpacing.screenPadding,
+                12,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Text(
+                    studentName == null
+                        ? 'What are you stuck on?'
+                        : 'What are you stuck on, $studentName?',
+                    style: theme.textTheme.headlineLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  FittedBox(fit: BoxFit.scaleDown, child: fan),
                   if (showLoadPrevious)
                     Padding(
-                      padding: const EdgeInsets.only(top: 6, bottom: 12),
+                      padding: const EdgeInsets.only(top: 16),
                       child: TextButton.icon(
                         onPressed: onLoadPrevious,
                         style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 44),
                           foregroundColor: isDark
                               ? AppColors.ink2Dark
                               : AppColors.ink2,
-                          textStyle: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(fontWeight: AppFontWeight.semibold),
+                          textStyle: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: AppFontWeight.semibold,
+                          ),
                         ),
-                        icon: const Icon(Icons.history_rounded, size: 16),
-                        label: const Text('Load previous chat'),
+                        icon: const Icon(Icons.history_rounded, size: 18),
+                        label: const Text('Show previous chat'),
                       ),
                     ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Center(child: AiBot(size: 64)),
-                      const SizedBox(height: 18),
-                      Text(
-                        'What would you like to learn?',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Type a question or snap a photo of one.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 22),
-                      for (final suggestion in suggestions) ...[
-                        _SuggestionRow(
-                          text: suggestion,
-                          onTap: () => onSuggestionTap(suggestion),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -1603,45 +2057,88 @@ class _EmptyChat extends StatelessWidget {
   }
 }
 
-class _SuggestionRow extends StatelessWidget {
+/// One starter question on the fresh-start fan. The front card is brighter
+/// and outlined in green; the two behind it are quieter.
+class _StarterCard extends StatelessWidget {
   final String text;
+  final IconData icon;
+  final Color color;
+  final bool front;
   final VoidCallback onTap;
 
-  const _SuggestionRow({required this.text, required this.onTap});
+  const _StarterCard({
+    required this.text,
+    required this.icon,
+    required this.color,
+    required this.front,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(22);
 
-    return Material(
-      color: cs.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-        side: BorderSide(color: cs.outline),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  text,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(height: 1.3),
-                ),
+    return Semantics(
+      button: true,
+      label: text,
+      excludeSemantics: true,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: front
+              ? [
+                  BoxShadow(
+                    color: cs.primary.withValues(alpha: isDark ? 0.30 : 0.22),
+                    blurRadius: 28,
+                    offset: const Offset(0, 12),
+                    spreadRadius: -8,
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: cs.surface,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: front
+                  ? cs.primary
+                  : (isDark ? AppColors.hairlineDark : AppColors.hairline),
+              width: 1.5,
+            ),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: front
+                    ? MainAxisAlignment.spaceBetween
+                    : MainAxisAlignment.start,
+                children: [
+                  Icon(icon, size: 20, color: color),
+                  if (!front) const SizedBox(height: 8),
+                  Text(
+                    text,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      height: 1.25,
+                      fontSize: front ? 15 : 13,
+                      fontWeight: AppFontWeight.semibold,
+                      color: front
+                          ? cs.onSurface
+                          : (isDark ? AppColors.ink2Dark : AppColors.ink2),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Icon(
-                Icons.north_east_rounded,
-                size: 14,
-                color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -1688,12 +2185,16 @@ class _MessageView extends StatelessWidget {
           maxWidth: MediaQuery.sizeOf(context).width * 0.82,
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: cs.primary,
+            // A quiet neutral bubble: the answer, not the question, should
+            // carry the colour on the page.
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.surface2Dark
+                : AppColors.surface3,
             borderRadius: BorderRadius.circular(
-              16,
-            ).copyWith(bottomRight: const Radius.circular(5)),
+              20,
+            ).copyWith(bottomRight: const Radius.circular(6)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -1713,9 +2214,9 @@ class _MessageView extends StatelessWidget {
               if (hasText)
                 Text(
                   message.text,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onPrimary,
-                    height: 1.35,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: cs.onSurface,
+                    height: 1.4,
                   ),
                 ),
             ],
@@ -1735,17 +2236,13 @@ class _MessageView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Quiet marker so answers read as distinct blocks between user bubbles.
-          Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: message.isStreaming
-                ? const AiBot(size: 22, mood: BotMood.answering)
-                : Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 14,
-                    color: cs.primary.withValues(alpha: 0.75),
-                  ),
-          ),
+          // The bot shows only while it is still writing; a finished answer
+          // is plain text on the page.
+          if (message.isStreaming)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: AiBot(size: 24, mood: BotMood.answering),
+            ),
           if (isError)
             Text(
               message.text,
@@ -1788,7 +2285,7 @@ class _MessageView extends StatelessWidget {
                 if (onRegenerate != null)
                   _MessageAction(
                     icon: Icons.refresh_rounded,
-                    label: 'Regenerate',
+                    label: 'Try again',
                     onTap: onRegenerate!,
                   ),
                 if (onRetry != null)
@@ -1871,30 +2368,26 @@ class _CitationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = isDark ? AppColors.ink2Dark : AppColors.ink2;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Color.alphaBlend(cs.primary.withValues(alpha: 0.07), cs.surface),
+        color: isDark ? AppColors.surface2Dark : AppColors.surface3,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: cs.primary.withValues(alpha: 0.16)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.menu_book_rounded,
-            size: 11,
-            color: cs.primary.withValues(alpha: 0.8),
-          ),
+          Icon(Icons.menu_book_rounded, size: 13, color: ink),
           const SizedBox(width: 5),
           Text(
             '${citation.label} ${citation.sourceLabel}',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: cs.primary,
+              color: ink,
               fontWeight: AppFontWeight.semibold,
               letterSpacing: 0,
-              fontSize: AppFontSize.caption,
+              fontSize: AppFontSize.caption + 1,
             ),
           ),
         ],
@@ -1905,7 +2398,10 @@ class _CitationChip extends StatelessWidget {
 
 /// The bot thinking, while the answer is being prepared.
 class _TypingIndicator extends StatelessWidget {
-  const _TypingIndicator();
+  /// The subject being searched, or null when asking across all subjects.
+  final String? subject;
+
+  const _TypingIndicator({this.subject});
 
   @override
   Widget build(BuildContext context) {
@@ -1916,7 +2412,9 @@ class _TypingIndicator extends StatelessWidget {
           const AiBot(size: 30, mood: BotMood.thinking),
           const SizedBox(width: 12),
           Text(
-            'Looking through your books…',
+            subject == null
+                ? 'Looking through your books'
+                : 'Looking in your $subject book',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.ink2Dark
@@ -1938,6 +2436,9 @@ class _Composer extends StatelessWidget {
   final VoidCallback onRemoveImage;
   final VoidCallback onSubmitted;
 
+  /// The subject and language chips shown in the toolbar.
+  final Widget controls;
+
   const _Composer({
     required this.controller,
     required this.focusNode,
@@ -1946,23 +2447,17 @@ class _Composer extends StatelessWidget {
     required this.onAttach,
     required this.onRemoveImage,
     required this.onSubmitted,
+    required this.controls,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screenPadding,
-        10,
-        AppSpacing.screenPadding,
-        12,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        border: Border(top: BorderSide(color: cs.outlineVariant)),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1973,61 +2468,93 @@ class _Composer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          // One rounded surface: attach + field + send, like a modern chat bar.
+          // One card, two levels: the question on top, then the tools (photo,
+          // subject, language) and send underneath.
           Container(
-            padding: const EdgeInsets.fromLTRB(4, 4, 5, 4),
+            padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
             decoration: BoxDecoration(
               color: cs.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: cs.outline),
+              borderRadius: BorderRadius.circular(26),
+              border: isDark
+                  ? null
+                  : Border.all(color: AppColors.fieldEdge, width: 1.5),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  onPressed: isSending ? null : onAttach,
-                  icon: const Icon(Icons.add_photo_alternate_outlined),
-                  iconSize: 21,
-                  visualDensity: VisualDensity.compact,
-                  color: cs.onSurface.withValues(alpha: 0.55),
-                  tooltip: 'Attach image',
+                TextField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  minLines: 1,
+                  maxLines: 4,
+                  textInputAction: TextInputAction.send,
+                  enabled: !isSending,
+                  onSubmitted: (_) => onSubmitted(),
+                  style: theme.textTheme.bodyLarge,
+                  decoration: const InputDecoration(
+                    hintText: 'Ask a question',
+                    filled: false,
+                    isDense: true,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.fromLTRB(8, 10, 8, 12),
+                  ),
                 ),
-                Expanded(
-                  child: TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.send,
-                    enabled: !isSending,
-                    onSubmitted: (_) => onSubmitted(),
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    decoration: const InputDecoration(
-                      hintText: 'Ask a question…',
-                      filled: false,
-                      isDense: true,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 11,
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: isSending ? null : onAttach,
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      iconSize: 20,
+                      tooltip: 'Attach image',
+                      style: IconButton.styleFrom(
+                        fixedSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        foregroundColor: cs.onSurface,
+                        backgroundColor: isDark
+                            ? AppColors.surface3Dark
+                            : AppColors.surface3,
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 38,
-                  height: 38,
-                  child: IconButton.filled(
-                    onPressed: isSending ? null : onSubmitted,
-                    icon: const Icon(Icons.arrow_upward_rounded),
-                    iconSize: 19,
-                    padding: EdgeInsets.zero,
-                    tooltip: 'Send',
-                  ),
+                    const SizedBox(width: 6),
+                    Expanded(child: controls),
+                    const SizedBox(width: 6),
+                    // Green once there is something to send.
+                    ListenableBuilder(
+                      listenable: controller,
+                      builder: (context, _) {
+                        final ready =
+                            !isSending &&
+                            (controller.text.trim().isNotEmpty ||
+                                pendingImage != null);
+                        return IconButton(
+                          onPressed: isSending ? null : onSubmitted,
+                          icon: const Icon(Icons.arrow_upward_rounded),
+                          iconSize: 22,
+                          tooltip: 'Send',
+                          style: IconButton.styleFrom(
+                            fixedSize: const Size(44, 44),
+                            padding: EdgeInsets.zero,
+                            foregroundColor: ready
+                                ? cs.onPrimary
+                                : (isDark
+                                      ? AppColors.ink3Dark
+                                      : AppColors.ink3),
+                            backgroundColor: ready
+                                ? cs.primary
+                                : (isDark
+                                      ? AppColors.surface3Dark
+                                      : AppColors.surface3),
+                            disabledBackgroundColor: isDark
+                                ? AppColors.surface3Dark
+                                : AppColors.surface3,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
