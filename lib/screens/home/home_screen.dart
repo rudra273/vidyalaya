@@ -144,8 +144,8 @@ class HomeScreen extends ConsumerWidget {
             child: _SectionTitle(title: 'Study tools'),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            height: 92,
+          Padding(
+            padding: pad,
             child: Builder(
               builder: (context) {
                 final dark = _isDark(context);
@@ -197,16 +197,31 @@ class HomeScreen extends ConsumerWidget {
                     badge: !dailyDone,
                   ),
                 ];
-                return ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: pad,
-                  itemCount: tools.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 6),
-                  itemBuilder: (context, i) => _ToolButton(
-                    item: tools[i],
-                    onTap: () => _navTap(ref, context, tools[i].route),
-                  ),
-                );
+                // A grid of four per row, so every tool is on screen at
+                // once; a short last row keeps the columns lined up.
+                const perRow = 4;
+                final rows = <Widget>[];
+                for (var start = 0; start < tools.length; start += perRow) {
+                  if (rows.isNotEmpty) rows.add(const SizedBox(height: 14));
+                  rows.add(
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = start; i < start + perRow; i++)
+                          Expanded(
+                            child: i < tools.length
+                                ? _ToolButton(
+                                    item: tools[i],
+                                    onTap: () =>
+                                        _navTap(ref, context, tools[i].route),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+                return Column(children: rows);
               },
             ),
           ),
@@ -527,7 +542,7 @@ class _ToolButton extends StatelessWidget {
       child: Pressable(
         onTap: onTap,
         child: SizedBox(
-          width: 76,
+          width: double.infinity,
           child: Column(
             children: [
               Stack(
