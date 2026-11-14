@@ -30,8 +30,8 @@ void _navTap(WidgetRef ref, BuildContext context, String path) {
 }
 
 /// AI-first Home.
-/// Greeting + notifications → AI card → interactive lessons
-/// (coming soon) → study tools → word of the day → warm-up → share.
+/// Greeting + notifications → AI card → study tools → word of the day →
+/// warm-up → interactive lessons (coming soon) → share.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -134,27 +134,6 @@ class HomeScreen extends ConsumerWidget {
                       context,
                       recentQuestionResumePath(lastQuestion),
                     ),
-            ),
-          ),
-
-          // ── Interactive lessons (placeholder) ────────────────────
-          // Reserved for the upcoming interactive Maths / English / Science
-          // lessons. Until they ship, the cards say so instead of linking.
-          const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(
-            padding: pad,
-            child: _SectionTitle(title: 'Interactive lessons', tag: 'Soon'),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 132,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: pad,
-              itemCount: _lessonPreviews.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, i) =>
-                  _LessonPreviewCard(preview: _lessonPreviews[i]),
             ),
           ),
 
@@ -261,6 +240,28 @@ class HomeScreen extends ConsumerWidget {
               // the day rolls over while Home is still on screen.
               key: ValueKey(warmupQuestion.id),
               question: warmupQuestion,
+            ),
+          ),
+
+          // ── Interactive lessons (placeholder) ────────────────────
+          // Reserved for the upcoming interactive Maths / English / Science
+          // lessons. Until they ship, the cards say so instead of linking,
+          // and the section sits low on the page.
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: pad,
+            child: _SectionTitle(title: 'Interactive lessons', tag: 'Soon'),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 132,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: pad,
+              itemCount: _lessonPreviews.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) =>
+                  _LessonPreviewCard(preview: _lessonPreviews[i]),
             ),
           ),
 

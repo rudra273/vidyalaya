@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
-import '../../data/models/learn_assist.dart';
-import '../../data/models/recent_question.dart';
-import '../../data/seed/ai_suggestions.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/core_providers.dart';
 import '../../providers/ingested_books_provider.dart';
 import '../../providers/learn_assist_provider.dart';
 import '../../providers/recent_questions_provider.dart';
@@ -15,9 +11,9 @@ import '../../providers/user_selection_provider.dart';
 import '../../utils/ai_labels.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/ai_robot_mark.dart';
-import '../../widgets/ask_card.dart';
+import '../../widgets/agent_mark.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/surface_card.dart';
+import '../../widgets/chunky_button.dart';
 import '../../widgets/pressable.dart';
 
 /// Haptic tap → push, shared by every row on this page.
@@ -30,8 +26,9 @@ void _navTap(WidgetRef ref, BuildContext context, String path) {
 /// landing page, not the chat itself: every action here pushes the full-screen
 /// Q&A chat (`/learn/ai`), which keeps its own composer, history and streaming.
 ///
-/// Hero → Pick up where you left off → Snap a page → Ask about (subjects) →
-/// Try asking → More (Tutor).
+/// Pick up where you left off → Ask about a subject → Learn with a teacher
+/// (the AI agents, coming soon). Plain asking lives on the Ask tab, so there is no
+/// question field here.
 class AiHubScreen extends ConsumerWidget {
   const AiHubScreen({super.key});
 
@@ -73,14 +70,7 @@ class AiHubScreen extends ConsumerWidget {
     // subject at once — backend history is cached one conversation at a time.
     final recents = ref.watch(recentQuestionsProvider);
 
-    final lastChat = ref
-        .read(userPrefsRepositoryProvider)
-        .getChatLastActivity(LearnAssistChannel.learnAssist);
-    // Older than a day and "continue" stops meaning anything — the fresh-start
-    // rule in the chat will have tucked that conversation away anyway.
-    final showContinue =
-        lastChat != null &&
-        DateTime.now().difference(lastChat) < const Duration(days: 1);
+    final brightness = Theme.of(context).brightness;
 
     return SafeArea(
       child: ListView(
@@ -93,84 +83,55 @@ class AiHubScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.sectionGap - 14),
 
-          // ── Ask ──────────────────────────────────────────────────────
+          // ── Pick up where you left off ───────────────────────────────
+          // The latest chat, one tap away. With nothing asked yet the same
+          // card invites a first question instead.
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.screenPadding,
             ),
-            child: AiAskHero(
-              headline: 'What shall we work on today?',
-              sub: 'Answers in English, Odia or Hindi.',
-              mood: _outOfQuestions(account) ? BotMood.resting : BotMood.idle,
-              onAsk: (style) =>
-                  _navTap(ref, context, '/learn/ai?focus=1&style=${style.key}'),
-              onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
-            ),
+            child: recents.isEmpty
+                ? _ContinueCard(
+                    mood: _outOfQuestions(account)
+                        ? BotMood.resting
+                        : BotMood.idle,
+                    eyebrow: 'Learn Assist',
+                    title: 'Ask anything from your books',
+                    action: 'Ask a question',
+                    onTap: () {
+                      Haptics.light(ref);
+                      context.go('/ask');
+                    },
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SectionHead(
+                        label: 'Pick up where you left off',
+                        action: 'All chats',
+                        onAction: () {
+                          Haptics.light(ref);
+                          context.go('/ask');
+                        },
+                      ),
+                      _ContinueCard(
+                        mood: _outOfQuestions(account)
+                            ? BotMood.resting
+                            : BotMood.idle,
+                        eyebrow:
+                            '${recents.first.subject == null ? 'All subjects' : formatSubject(recents.first.subject!, board: board, classNo: classNo)}'
+                            ' · ${_ago(recents.first.askedAt)}',
+                        title: recents.first.text,
+                        action: 'Continue this chat',
+                        onTap: () => _navTap(
+                          ref,
+                          context,
+                          recentQuestionResumePath(recents.first),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
-
-          // ── Pick up where you left off ───────────────────────────────
-          // Real recent questions when we have them; the plain "continue"
-          // row is the fallback for a conversation started before this
-          // list existed.
-          if (recents.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(
-                label: 'Pick up where you left off',
-                action: 'Open chat',
-                onAction: () => _navTap(ref, context, '/learn/ai?resume=1'),
-              ),
-            ),
-            SizedBox(
-              // Fits the eyebrow, two wrapped lines of question and the
-              // timestamp without the text spilling over the row below.
-              height: 116,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                ),
-                itemCount: recents.length > 6 ? 6 : recents.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final question = recents[index];
-                  return _RecentQuestionCard(
-                    question: question,
-                    board: board,
-                    classNo: classNo,
-                    onTap: () => _navTap(
-                      ref,
-                      context,
-                      recentQuestionResumePath(question),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ] else if (showContinue) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            const Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(label: 'Continue'),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: _HubRow(
-                color: _isDark(context) ? AppColors.cAiDark : AppColors.cAi,
-                icon: Icons.forum_rounded,
-                title: 'Continue your chat',
-                sub: 'Last opened ${_ago(lastChat)}',
-                onTap: () => _navTap(ref, context, '/learn/ai?resume=1'),
-              ),
-            ),
-          ],
 
           // ── Ask about a subject ──────────────────────────────────────
           if (subjects.isNotEmpty) ...[
@@ -179,87 +140,135 @@ class AiHubScreen extends ConsumerWidget {
               padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
-              child: SectionHead(label: 'Ask about'),
+              child: SectionHead(label: 'Ask about a subject'),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  // Fixed height fits the glyph and a two-line name such as
-                  // "Geography & Economics" at any width.
-                  mainAxisExtent: 108,
+            for (final group in _groupSubjects(subjects))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  0,
+                  AppSpacing.screenPadding,
+                  14,
                 ),
-                itemCount: subjects.length,
-                itemBuilder: (context, index) {
-                  final subject = subjects[index];
-                  return _SubjectTile(
-                    subject: subject,
-                    board: board,
-                    classNo: classNo,
-                    onTap: () => _navTap(
-                      ref,
-                      context,
-                      '/learn/ai?subject=${Uri.encodeComponent(subject)}'
-                      '&focus=1',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      group.$1,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        fontWeight: AppFontWeight.semibold,
+                        color: brightness == Brightness.dark
+                            ? AppColors.ink2Dark
+                            : AppColors.ink2,
+                      ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final subject in group.$2)
+                          _SubjectChip(
+                            subject: subject,
+                            label: formatSubject(
+                              subject,
+                              board: board,
+                              classNo: classNo,
+                            ),
+                            onTap: () => _navTap(
+                              ref,
+                              context,
+                              '/learn/ai?subject='
+                              '${Uri.encodeComponent(subject)}&focus=1',
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
-
-          // ── Starter questions ────────────────────────────────────────
+          // ── Learn with a teacher ─────────────────────────────────────
+          // The AI agents, all still on their way, so the section sits at the
+          // bottom of the page until they open.
           const SizedBox(height: AppSpacing.sectionGap),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'Try asking'),
+            child: SectionHead(label: 'Learn with a teacher'),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: Column(
+          SizedBox(
+            height: 148,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
               children: [
-                for (final question in aiSuggestionsFor(null)) ...[
-                  _StarterRow(
-                    text: question,
-                    onTap: () => _navTap(
-                      ref,
-                      context,
-                      '/learn/ai?prefill=${Uri.encodeComponent(question)}',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                _AgentCard(
+                  agent: AiAgent.tutor,
+                  title: 'AI Tutor',
+                  sub: 'Teaches any subject',
+                  soon: true,
+                  onTap: () => _comingSoon(ref, context, 'AI Tutor'),
+                ),
+                const SizedBox(width: 10),
+                _AgentCard(
+                  agent: AiAgent.maths,
+                  title: 'Learn Maths',
+                  sub: 'Maths you work out by doing',
+                  soon: true,
+                  onTap: () => _comingSoon(ref, context, 'Learn Maths'),
+                ),
+                const SizedBox(width: 10),
+                _AgentCard(
+                  agent: AiAgent.english,
+                  title: 'Learn English',
+                  sub: 'Speak, read and write',
+                  soon: true,
+                  onTap: () => _comingSoon(ref, context, 'Learn English'),
+                ),
               ],
-            ),
-          ),
-
-          // ── More ─────────────────────────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap - 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'More'),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: _TutorRow(
-              onTap: () => _navTap(ref, context, '/learn-ai/tutor'),
             ),
           ),
         ],
       ),
     );
+  }
+
+  static void _comingSoon(WidgetRef ref, BuildContext context, String name) {
+    Haptics.light(ref);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('$name is coming soon.')));
+  }
+
+  /// Subjects in their families, in a fixed order, so fourteen chips read as
+  /// three short groups instead of one long run.
+  static List<(String, List<String>)> _groupSubjects(List<String> subjects) {
+    const languages = {'english', 'hindi', 'odia', 'sanskrit'};
+    const mathsScience = {'maths', 'math', 'science'};
+    const social = {'social', 'social_science'};
+    final groups = <String, List<String>>{
+      'Languages': [],
+      'Maths and Science': [],
+      'Social Science': [],
+      'More': [],
+    };
+    for (final subject in subjects) {
+      final family = canonicalSubjectKey(subject);
+      final name = languages.contains(family)
+          ? 'Languages'
+          : mathsScience.contains(family)
+          ? 'Maths and Science'
+          : social.contains(family)
+          ? 'Social Science'
+          : 'More';
+      groups[name]!.add(subject);
+    }
+    return [
+      for (final entry in groups.entries)
+        if (entry.value.isNotEmpty) (entry.key, entry.value),
+    ];
   }
 
   /// Plan + quota line under the page title. Falls back to a plain description
@@ -282,17 +291,14 @@ class AiHubScreen extends ConsumerWidget {
     if (usage.remaining <= 0) {
       return 'No questions left today. They refresh $refresh.';
     }
-    // The pill shows the count; the line only adds when it refreshes.
-    return 'Questions refresh $refresh';
+    // The pill shows the count (tap it for when they refresh).
+    return null;
   }
 
   static bool _outOfQuestions(BackendAccountState account) {
     final usage = account.usage.maybeWhen(data: (v) => v, orElse: () => null);
     return usage != null && !usage.unlimited && usage.remaining <= 0;
   }
-
-  static bool _isDark(BuildContext c) =>
-      Theme.of(c).brightness == Brightness.dark;
 }
 
 /// Coarse "how long ago" label — minutes, hours, days, then weeks.
@@ -311,75 +317,167 @@ String _ago(DateTime then) {
   return '$weeks week${weeks == 1 ? '' : 's'} ago';
 }
 
-// ─── Recent question card (horizontal scroller item) ────────────────────
+// ─── Continue card ──────────────────────────────────────────────────────
 
-class _RecentQuestionCard extends StatelessWidget {
-  final RecentQuestion question;
-  final String board;
-  final int classNo;
-  final VoidCallback onTap;
-
-  const _RecentQuestionCard({
-    required this.question,
-    required this.board,
-    required this.classNo,
+/// The Learn Assist bot, the last question (or an invitation to ask the
+/// first), and one button.
+class _ContinueCard extends StatelessWidget {
+  const _ContinueCard({
+    required this.mood,
+    required this.eyebrow,
+    required this.title,
+    required this.action,
     required this.onTap,
   });
 
+  final BotMood mood;
+  final String eyebrow;
+  final String title;
+  final String action;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subject = question.subject;
-    final accent = subject == null
-        ? cs.primary
-        : AppColors.subjectColor(subject, Theme.of(context).brightness);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: isDark ? null : Border.all(color: cs.outline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              AiBot(size: 48, mood: mood),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      eyebrow,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: AppFontWeight.semibold,
+                        color: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontSize: 18,
+                        height: 1.3,
+                        fontWeight: AppFontWeight.semibold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ChunkyButton(label: action, height: 52, onPressed: onTap),
+        ],
+      ),
+    );
+  }
+}
 
-    return Pressable(
-      onTap: onTap,
-      scale: 0.97,
-      child: SizedBox(
-        width: 250,
-        child: SurfaceCard(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-          radius: 18,
+// ─── Agent card ─────────────────────────────────────────────────────────
+
+/// One AI teacher: its face, name and a line on what it does, on a soft card
+/// in its own colour. [soon] marks one that isn't open yet.
+class _AgentCard extends StatelessWidget {
+  const _AgentCard({
+    required this.agent,
+    required this.title,
+    required this.sub,
+    required this.onTap,
+    this.soon = false,
+  });
+
+  final AiAgent agent;
+  final String title;
+  final String sub;
+  final bool soon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final b = theme.brightness;
+    final isDark = b == Brightness.dark;
+    return Semantics(
+      button: true,
+      label: soon ? '$title, coming soon' : '$title. $sub',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        scale: 0.97,
+        child: Container(
+          width: 132,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: agent.tint(b),
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AgentMark(agent: agent, size: 44),
+                  const Spacer(),
+                  if (soon)
+                    Container(
+                      height: 22,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.surface3Dark
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Soon',
+                        style: TextStyle(
+                          fontSize: AppFontSize.small,
+                          fontWeight: AppFontWeight.bold,
+                          color: isDark ? AppColors.ink2Dark : AppColors.ink2,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const Spacer(),
               Text(
-                (subject == null
-                        ? 'Any subject'
-                        : formatSubject(
-                            subject,
-                            board: board,
-                            classNo: classNo,
-                          ))
-                    .toUpperCase(),
+                title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: AppFontSize.small,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontSize: AppFontSize.content,
                   fontWeight: AppFontWeight.bold,
-                  letterSpacing: 0.5,
-                  color: accent,
+                  color: agent.ink(b),
                 ),
               ),
-              const SizedBox(height: 6),
-              Expanded(
-                child: Text(
-                  question.text,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.35,
-                    fontWeight: AppFontWeight.medium,
-                  ),
-                ),
-              ),
+              const SizedBox(height: 3),
               Text(
-                _ago(question.askedAt),
-                style: TextStyle(
-                  fontSize: AppFontSize.small + 1,
+                sub,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  height: 1.3,
                   color: isDark ? AppColors.ink2Dark : AppColors.ink2,
                 ),
               ),
@@ -391,229 +489,59 @@ class _RecentQuestionCard extends StatelessWidget {
   }
 }
 
-// ─── Rows and tiles ─────────────────────────────────────────────────────
+// ─── Subject chip ───────────────────────────────────────────────────────
 
-/// Surface row: tinted tile + title + sub + chevron.
-class _HubRow extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String title;
-  final String sub;
-  final VoidCallback onTap;
-
-  const _HubRow({
-    required this.color,
-    required this.icon,
-    required this.title,
-    required this.sub,
+/// One subject the chat can open: its glyph in a tinted circle, then its name.
+class _SubjectChip extends StatelessWidget {
+  const _SubjectChip({
+    required this.subject,
+    required this.label,
     required this.onTap,
   });
+
+  final String subject;
+  final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Pressable(
-      onTap: onTap,
-      child: SurfaceCard(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.cardPad - 4,
-          vertical: 12,
-        ),
-        radius: AppSpacing.cardRadius,
-        child: Row(
-          children: [
-            Tile(color: color, icon: icon, size: 38, radius: 11),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: AppFontSize.content,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    sub,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: AppFontSize.small,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One ingested subject, as a coloured tile. Seven pill chips wrapped into an
-/// undifferentiated grey blob; a tile grid is scannable and matches Explore.
-///
-/// A [SurfaceCard] like Explore's tool cards, so the two grids match.
-class _SubjectTile extends ConsumerWidget {
-  final String subject;
-  final String board;
-  final int classNo;
-  final VoidCallback onTap;
-
-  const _SubjectTile({
-    required this.subject,
-    required this.board,
-    required this.classNo,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final meta = subjectMeta(subject);
-    final color = AppColors.subjectColor(subject, Theme.of(context).brightness);
-
-    return Pressable(
-      onTap: onTap,
-      scale: 0.96,
-      child: SurfaceCard(
-        padding: const EdgeInsets.fromLTRB(8, 14, 8, 10),
-        radius: 18,
-        child: Column(
-          children: [
-            Tile(
-              color: color,
-              icon: meta.icon,
-              meta: meta,
-              size: 44,
-              radius: 14,
-            ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Text(
-                formatSubject(subject, board: board, classNo: classNo),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontSize: AppFontSize.small + 1,
-                  height: 1.2,
-                  fontWeight: AppFontWeight.semibold,
+    return Material(
+      color: cs.surface,
+      shape: StadiumBorder(
+        side: isDark ? BorderSide.none : BorderSide(color: cs.outline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Tile(
+                color: AppColors.subjectColor(subject, theme.brightness),
+                icon: meta.icon,
+                meta: meta,
+                size: 32,
+                radius: 16,
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: AppFontWeight.semibold,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A starter question — opens the chat with it already typed in.
-class _StarterRow extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-
-  const _StarterRow({required this.text, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Pressable(
-      onTap: onTap,
-      scale: 0.98,
-      child: SurfaceCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-        radius: 16,
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(text, style: Theme.of(context).textTheme.bodyLarge),
-            ),
-            const SizedBox(width: 10),
-            Icon(
-              Icons.north_east_rounded,
-              size: 15,
-              color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Tutor row ───────────────────────────────────────────────────────────
-
-class _TutorRow extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _TutorRow({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark ? AppColors.cTutorDark : AppColors.cTutor;
-    return Pressable(
-      onTap: onTap,
-      child: SurfaceCard(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.cardPad - 4,
-          vertical: 12,
-        ),
-        radius: AppSpacing.cardRadius,
-        child: Row(
-          children: [
-            Tile(
-              color: accent,
-              icon: Icons.school_rounded,
-              size: 38,
-              radius: 11,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        'AI Tutor',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontSize: AppFontSize.content),
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        'Preview',
-                        style: TextStyle(
-                          fontSize: AppFontSize.caption,
-                          fontWeight: AppFontWeight.semibold,
-                          color: accent,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Step-by-step guided lessons, subject by subject',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: AppFontSize.small,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -621,7 +549,7 @@ class _TutorRow extends StatelessWidget {
 }
 
 // ─── Plan pill ──────────────────────────────────────────────────────────
-// "Plus · 49 left" beside the title. Tapping it says when questions refresh.
+// "49 left today" beside the title, worded as on the Ask tab. Tapping it says when questions refresh.
 
 class _PlanPill extends StatelessWidget {
   const _PlanPill({required this.account, required this.isSignedIn});
@@ -639,7 +567,7 @@ class _PlanPill extends StatelessWidget {
       account.user.maybeWhen(data: (u) => u?.planKey, orElse: () => null) ??
           'free',
     );
-    final label = usage.unlimited ? plan : '$plan · ${usage.remaining} left';
+    final label = usage.unlimited ? plan : '${usage.remaining} left today';
     final ink = dark ? AppColors.green500Dark : AppColors.green700;
     return Tooltip(
       message: usage.unlimited
@@ -656,8 +584,6 @@ class _PlanPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_awesome_rounded, size: 15, color: ink),
-            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
