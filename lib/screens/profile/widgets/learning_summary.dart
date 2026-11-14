@@ -50,15 +50,6 @@ class LearningSummary extends ConsumerWidget {
           children: [
             Expanded(
               child: _StatCard(
-                icon: Icons.local_fire_department_rounded,
-                value: stats.currentStreak.toString(),
-                label: 'Day streak',
-                color: hue(AppColors.cMaths, AppColors.cMathsDark),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatCard(
                 icon: Icons.auto_awesome_rounded,
                 value: stats.aiSessions.toString(),
                 label: 'AI sessions',

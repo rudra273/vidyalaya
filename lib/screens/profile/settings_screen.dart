@@ -71,7 +71,10 @@ class SettingsScreen extends ConsumerWidget {
                     ref.read(themeModeProvider.notifier).setThemeMode(m),
               ),
             ),
-            const SizedBox(height: AppSpacing.stackGap),
+            const Padding(
+              padding: sectionTop,
+              child: SectionHead(label: 'App preferences'),
+            ),
             Padding(
               padding: inset,
               child: SettingsGroup(
@@ -88,6 +91,12 @@ class SettingsScreen extends ConsumerWidget {
                       activeThumbColor: cs.primary,
                     ),
                   ),
+                  SettingsRow(
+                    color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                    icon: Icons.notifications_none_rounded,
+                    title: 'Notifications',
+                    onTap: () => context.push('/notifications'),
+                  ),
                 ],
               ),
             ),
@@ -97,7 +106,7 @@ class SettingsScreen extends ConsumerWidget {
             if (booksEnabled) ...[
               const Padding(
                 padding: sectionTop,
-                child: SectionHead(label: 'Data'),
+                child: SectionHead(label: 'Offline books'),
               ),
               Padding(
                 padding: inset,
@@ -118,11 +127,25 @@ class SettingsScreen extends ConsumerWidget {
             ],
 
             const SupportSection(headingPadding: sectionTop),
+            const SizedBox(height: AppSpacing.stackGap),
+            Padding(
+              padding: inset,
+              child: SettingsGroup(
+                children: [
+                  SettingsRow(
+                    color: cs.primary,
+                    icon: Icons.help_outline_rounded,
+                    title: 'Help and feedback',
+                    onTap: () => context.push('/help'),
+                  ),
+                ],
+              ),
+            ),
 
             // ── About ─────────────────────────────────────────────
             const Padding(
               padding: sectionTop,
-              child: SectionHead(label: 'About'),
+              child: SectionHead(label: 'Privacy & information'),
             ),
             Padding(
               padding: inset,

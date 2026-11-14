@@ -1,3 +1,4 @@
+import 'package:vidyalaya/screens/profile/widgets/settings_group.dart';
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -135,7 +136,7 @@ void main() {
     authChanges.add(auth.currentUser);
     await tester.pumpAndSettle();
     if (openEditor) {
-      await tester.tap(find.text('Edit'));
+      await tester.tap(find.widgetWithText(SettingsRow, 'Update profile'));
       await tester.pumpAndSettle();
     }
   }
@@ -155,10 +156,10 @@ void main() {
     await tester.pump();
     expect(find.text('Syncing your profile…'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    final editAction = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Edit'),
+    final editAction = tester.widget<SettingsRow>(
+      find.widgetWithText(SettingsRow, 'Update profile'),
     );
-    expect(editAction.onPressed, isNull);
+    expect(editAction.onTap, isNull);
     await tester.scrollUntilVisible(find.text('Sign out'), 200);
     await tester.pump();
     expect(find.text('Sign out').hitTestable(), findsOneWidget);
@@ -189,7 +190,7 @@ void main() {
     authChanges.add(null);
     await tester.pumpAndSettle();
     expect(find.text('Choose your avatar'), findsNothing);
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
     expect(cache.submitted, isNull);
   });
 
@@ -223,19 +224,19 @@ void main() {
     await tester.pump();
     await tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.text('Personal details'), findsOneWidget);
     final cancel = tester.widget<OutlinedButton>(
       find.widgetWithText(OutlinedButton, 'Cancel'),
     );
     expect(cancel.onPressed, isNull);
     cache.saving!.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
   });
 
   testWidgets('Cancel discards avatar and text changes', (tester) async {
     await pumpProfile(tester);
-    expect(find.text('Edit'), findsOneWidget);
+    expect(find.widgetWithText(SettingsRow, 'Update profile'), findsOneWidget);
     await tester.tap(find.byTooltip('Change avatar'));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Boy 2'));
@@ -244,7 +245,7 @@ void main() {
     await tapAction(tester, 'Cancel');
     expect(cache.submitted, isNull);
     expect(find.text('Asha'), findsOneWidget);
-    await tester.tap(find.text('Edit'));
+    await tester.tap(find.widgetWithText(SettingsRow, 'Update profile'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Change avatar'));
     await tester.pumpAndSettle();
@@ -269,7 +270,7 @@ void main() {
     expect(cache.submitted?.avatarId, 'boy_2');
     expect(cache.submitted?.name, 'New name');
     expect(cache.submitted?.revision, 3);
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
     final container = ProviderScope.containerOf(
       tester.element(find.byType(ProfileScreen)),
     );
@@ -287,7 +288,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Draft name');
     await tapAction(tester, 'Save profile');
-    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.text('Personal details'), findsOneWidget);
     expect(
       find.text("Couldn't save your profile. Please try again."),
       findsOneWidget,
@@ -308,7 +309,7 @@ void main() {
     auth.currentUser = null;
     authChanges.add(null);
     await tester.pumpAndSettle();
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
     final container = ProviderScope.containerOf(
       tester.element(find.byType(ProfileScreen)),
     );

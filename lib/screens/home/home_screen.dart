@@ -1,17 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../data/avatars.dart';
 import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../utils/haptics.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/avatar_provider.dart';
 import '../../providers/games_progress_provider.dart';
 import '../../providers/notifications_provider.dart';
-import '../../providers/progress_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../providers/rollout_switches_provider.dart';
@@ -28,22 +24,13 @@ import 'widgets/warmup_card.dart';
 
 /// Haptic tap → navigate, the pattern every Home tile shares. Uses `push` by
 /// default; pass [replace] for tabs that should swap the current route.
-void _navTap(
-  WidgetRef ref,
-  BuildContext context,
-  String path, {
-  bool replace = false,
-}) {
+void _navTap(WidgetRef ref, BuildContext context, String path) {
   Haptics.light(ref);
-  if (replace) {
-    context.go(path);
-  } else {
-    context.push(path);
-  }
+  context.push(path);
 }
 
 /// AI-first Home.
-/// Greeting + notifications → streak week → AI card → interactive lessons
+/// Greeting + notifications → AI card → interactive lessons
 /// (coming soon) → study tools → word of the day → warm-up → share.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -51,7 +38,6 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final booksEnabled = ref.watch(booksEnabledProvider);
-    final streak = ref.watch(progressProvider).currentStreak;
     final dailyDone = ref.watch(gamesProgressProvider).dailyDoneToday;
     final unread = ref.watch(notificationsUnreadCountProvider);
     final classNo = ref.watch(primaryClassProvider);
@@ -61,8 +47,6 @@ class HomeScreen extends ConsumerWidget {
         .maybeWhen(data: (u) => u, orElse: () => null);
 
     final firstName = _firstName(user);
-    final avatarLetter = (firstName.isNotEmpty ? firstName[0] : 'S')
-        .toUpperCase();
     final lateNight = _isLateNight();
 
     // One warm-up a day, pitched at the lowest class the student has selected
@@ -91,7 +75,7 @@ class HomeScreen extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
         children: [
-          // ── Greeting + notifications + avatar ───────────────────
+          // ── Greeting + notifications ───────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.screenPadding,
@@ -130,23 +114,7 @@ class HomeScreen extends ConsumerWidget {
                   unread: unread,
                   onTap: () => _navTap(ref, context, '/notifications'),
                 ),
-                const SizedBox(width: 8),
-                _Avatar(
-                  letter: avatarLetter,
-                  avatar: ref.watch(selectedAvatarProvider),
-                  onTap: () => _navTap(ref, context, '/profile', replace: true),
-                ),
               ],
-            ),
-          ),
-
-          // ── Streak week ──────────────────────────────────────────
-          const SizedBox(height: 18),
-          Padding(
-            padding: pad,
-            child: _StreakWeek(
-              streak: streak,
-              onTap: () => _navTap(ref, context, '/progress'),
             ),
           ),
 
@@ -192,7 +160,10 @@ class HomeScreen extends ConsumerWidget {
 
           // ── Study tools ──────────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(padding: pad, child: _SectionTitle(title: 'Study tools')),
+          const Padding(
+            padding: pad,
+            child: _SectionTitle(title: 'Study tools'),
+          ),
           const SizedBox(height: 12),
           SizedBox(
             height: 92,
@@ -263,7 +234,10 @@ class HomeScreen extends ConsumerWidget {
 
           // ── Word of the day ──────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap - 6),
-          const Padding(padding: pad, child: _SectionTitle(title: 'Word of the day')),
+          const Padding(
+            padding: pad,
+            child: _SectionTitle(title: 'Word of the day'),
+          ),
           const SizedBox(height: 10),
           Padding(
             padding: pad,
@@ -275,7 +249,10 @@ class HomeScreen extends ConsumerWidget {
 
           // ── Today's warm-up ─────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
-          const Padding(padding: pad, child: _SectionTitle(title: "Today's warm-up")),
+          const Padding(
+            padding: pad,
+            child: _SectionTitle(title: "Today's warm-up"),
+          ),
           const SizedBox(height: 10),
           Padding(
             padding: pad,
@@ -344,9 +321,9 @@ class _SectionTitle extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: AppFontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold),
           ),
           if (tag != null) ...[
             const SizedBox(width: 8),
@@ -420,134 +397,6 @@ class _BellButton extends StatelessWidget {
   }
 }
 
-// ─── Streak week ────────────────────────────────────────────────────────
-// The current streak, with this week's days ticked: every day inside the
-// streak (which always ends today, since opening the app records activity).
-
-class _StreakWeek extends StatelessWidget {
-  const _StreakWeek({required this.streak, required this.onTap});
-
-  final int streak;
-  final VoidCallback onTap;
-
-  static const _flame = Color(0xFFF0884A);
-  static const _flameInk = Color(0xFFA8501A);
-  static const _labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final today = DateTime.now();
-    final todayIndex = today.weekday - 1; // Monday = 0
-    final empty = dark ? AppColors.surface3Dark : AppColors.surface3;
-
-    return Semantics(
-      button: true,
-      label: '$streak day streak. Open progress',
-      excludeSemantics: true,
-      child: Pressable(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          ),
-          child: Row(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 20,
-                        color: _flame,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$streak',
-                        style: TextStyle(
-                          fontSize: AppFontSize.headingSmall,
-                          fontWeight: AppFontWeight.bold,
-                          color: dark ? _flame : _flameInk,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    'day streak',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _muted(context),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    for (var i = 0; i < 7; i++)
-                      _day(
-                        context,
-                        label: _labels[i],
-                        done: i <= todayIndex && todayIndex - i < streak,
-                        isToday: i == todayIndex,
-                        empty: empty,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _day(
-    BuildContext context, {
-    required String label,
-    required bool done,
-    required bool isToday,
-    required Color empty,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 26,
-          height: 26,
-          decoration: BoxDecoration(
-            color: done ? _flame : empty,
-            shape: BoxShape.circle,
-            border: isToday && !done
-                ? Border.all(color: _flame, width: 2)
-                : null,
-          ),
-          child: done
-              ? const Icon(Icons.check_rounded, size: 15, color: Colors.white)
-              : null,
-        ),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: AppFontSize.small,
-            fontWeight: isToday ? AppFontWeight.bold : AppFontWeight.medium,
-            color: isToday
-                ? Theme.of(context).colorScheme.onSurface
-                : _muted(context),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 // ─── Interactive lesson previews ────────────────────────────────────────
 
 class _LessonPreview {
@@ -561,12 +410,7 @@ class _LessonPreview {
 const _lessonPreviews = [
   _LessonPreview('Maths', 'π', AppColors.cMaths, AppColors.cMathsDark),
   _LessonPreview('English', 'Aa', AppColors.cEnglish, AppColors.cEnglishDark),
-  _LessonPreview(
-    'Science',
-    'H₂O',
-    AppColors.cScience,
-    AppColors.cScienceDark,
-  ),
+  _LessonPreview('Science', 'H₂O', AppColors.cScience, AppColors.cScienceDark),
 ];
 
 class _LessonPreviewCard extends StatelessWidget {
@@ -640,9 +484,9 @@ class _LessonPreviewCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 'Coming soon',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: _muted(context),
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: _muted(context)),
               ),
             ],
           ),
@@ -737,63 +581,6 @@ class _ToolButton extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  final String letter;
-  final StudentAvatar? avatar;
-  final VoidCallback onTap;
-
-  const _Avatar({required this.letter, this.avatar, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Semantics(
-      button: true,
-      label: 'Profile',
-      excludeSemantics: true,
-      child: Pressable(
-        onTap: onTap,
-        scale: 0.92,
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-              cs.surface,
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? AppColors.green100Dark : AppColors.green100,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: avatar != null
-              ? ClipOval(
-                  child: SvgPicture.asset(
-                    avatar!.assetPath,
-                    width: 42,
-                    height: 42,
-                  ),
-                )
-              : Text(
-                  letter,
-                  style: TextStyle(
-                    fontFamily: Theme.of(
-                      context,
-                    ).textTheme.displaySmall?.fontFamily,
-                    fontSize: AppFontSize.content,
-                    fontWeight: AppFontWeight.semibold,
-                    color: cs.primary,
-                  ),
-                ),
         ),
       ),
     );

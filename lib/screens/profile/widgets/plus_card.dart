@@ -23,15 +23,19 @@ class PlusCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final copy = plusCardCopy(status);
-    // The hero green in both themes: Plus is the one dark-green card on the
-    // page, so it reads as special without competing colours.
-    final bg = isDark ? AppColors.heroDark : AppColors.hero;
-    final iconBg = Color.alphaBlend(
-      AppColors.green500Dark.withValues(alpha: isDark ? 0.16 : 0.14),
-      bg,
-    );
-    const star = Color(0xFF7FE0B6);
-    const sub = Color(0xFFC9DDD2);
+    // Match the AI bot's green stops. Shade the light palette slightly
+    // so the light title remains readable over the bright end.
+    final foreground = isDark ? AppColors.onGreenDark : AppColors.heroInk;
+    final colors = isDark
+        ? const [AppColors.green500Dark, AppColors.green700Dark]
+        : [
+            Color.alphaBlend(
+              Colors.black.withValues(alpha: 0.22),
+              AppColors.green500,
+            ),
+            AppColors.green700,
+          ];
+    final iconBg = foreground.withValues(alpha: 0.15);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screenPadding,
@@ -40,53 +44,57 @@ class PlusCard extends ConsumerWidget {
         0,
       ),
       child: Material(
-        color: bg,
+        color: Colors.transparent,
         shape: RoundedRectangleBorder(
-          side: isDark
-              ? const BorderSide(color: AppColors.heroLineDark)
-              : BorderSide.none,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         ),
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => showPlusSheet(context, source: PlusSource.profile),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors,
+            ),
+          ),
+          child: InkWell(
+            onTap: () => showPlusSheet(context, source: PlusSource.profile),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: iconBg,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(
+                      Icons.star_rounded,
+                      color: foreground,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(Icons.star_rounded, color: star, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        copy.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppColors.heroInk,
-                        ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      copy.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontSize: AppFontSize.content,
+                        fontWeight: AppFontWeight.semibold,
+                        color: foreground,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        copy.subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: sub,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right_rounded, color: sub),
-              ],
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: foreground,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

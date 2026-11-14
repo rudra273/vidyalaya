@@ -180,64 +180,74 @@ class _StyleSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final idleEdge = isDark ? AppColors.surface3Dark : const Color(0xFFC6D5C9);
+    final textStyle = Theme.of(context).textTheme.labelMedium;
+    const icons = {
+      AnswerStyle.ask: Icons.chat_bubble_outline_rounded,
+      AnswerStyle.simple: Icons.lightbulb_outline_rounded,
+      AnswerStyle.steps: Icons.format_list_numbered_rounded,
+    };
 
     return Semantics(
       label: 'Answer style',
       container: true,
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final style in AnswerStyle.values)
-            Semantics(
-              button: true,
-              selected: style == selected,
-              label: style.label,
-              excludeSemantics: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(style),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 140),
-                  // Padding, not a fixed height + alignment: an aligned
-                  // container stretches to the full Wrap width.
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: style == selected
-                        ? Color.alphaBlend(
-                            cs.primary.withValues(alpha: isDark ? 0.18 : 0.1),
-                            cs.surface,
-                          )
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: style == selected ? cs.primary : idleEdge,
-                      width: 2,
-                    ),
-                  ),
-                  child: Text(
-                    style.label,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: AppFontSize.small + 1,
-                      fontWeight: style == selected
-                          ? AppFontWeight.bold
-                          : AppFontWeight.medium,
+      child: Material(
+        color: isDark ? AppColors.paperDark : AppColors.surface2,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: [
+              for (final style in AnswerStyle.values)
+                Expanded(
+                  child: Semantics(
+                    selected: style == selected,
+                    button: true,
+                    child: Material(
                       color: style == selected
-                          ? (isDark
-                                ? AppColors.green500Dark
-                                : AppColors.green700)
-                          : cs.onSurface,
+                          ? (isDark ? AppColors.surface3Dark : cs.surface)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => onChanged(style),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 9,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                icons[style],
+                                size: 17,
+                                color: style == selected
+                                    ? cs.primary
+                                    : cs.onSurfaceVariant,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                style.label,
+                                textAlign: TextAlign.center,
+                                style: textStyle?.copyWith(
+                                  color: style == selected
+                                      ? cs.onSurface
+                                      : cs.onSurfaceVariant,
+                                  fontWeight: style == selected
+                                      ? AppFontWeight.bold
+                                      : AppFontWeight.medium,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

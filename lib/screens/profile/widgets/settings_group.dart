@@ -12,7 +12,13 @@ import '../../../widgets/calm_widgets.dart';
 class SettingsGroup extends StatelessWidget {
   final List<Widget> children;
 
-  const SettingsGroup({super.key, required this.children});
+  final bool showBorder;
+
+  const SettingsGroup({
+    super.key,
+    required this.children,
+    this.showBorder = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +42,9 @@ class SettingsGroup extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        side: isDark ? BorderSide.none : BorderSide(color: cs.outline),
+        side: showBorder && !isDark
+            ? BorderSide(color: cs.outline)
+            : BorderSide.none,
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: rows),
     );

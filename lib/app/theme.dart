@@ -35,6 +35,9 @@ class AppColors {
   static const Color heroLine = Color(0x14FFFFFF);
 
   // Brand green
+  static const Color streakSurface = Color(0xFFC7E7AF);
+  static const Color streakSurfaceDark = Color(0xFF30482D);
+
   static const Color green50 = Color(0xFFE9F4EE);
   static const Color green100 = Color(0xFFD3E8DC);
   static const Color green500 = Color(0xFF1F9F6A);
