@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/app_info.dart';
 import '../../app/theme.dart';
 import '../../providers/rollout_switches_provider.dart';
 import '../../widgets/calm_widgets.dart';
@@ -69,7 +68,7 @@ List<_Faq> _faqs({required bool booksEnabled}) => [
 
 // ─── Help screen ─────────────────────────────────────────────────────────
 
-/// **Help and feedback** — searchable FAQ, feedback links and app info.
+/// Searchable frequently asked questions.
 class HelpScreen extends ConsumerStatefulWidget {
   const HelpScreen({super.key});
 
@@ -98,12 +97,12 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Help and feedback', style: theme.textTheme.headlineSmall),
+        title: Text('FAQ', style: theme.textTheme.headlineSmall),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back',
           onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/profile'),
+              context.canPop() ? context.pop() : context.go('/settings'),
         ),
       ),
       body: SafeArea(
@@ -128,15 +127,6 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
               _NoMatches(query: _query.trim())
             else
               _FaqCard(faqs: faqs, expandFirst: query.isEmpty),
-
-            const SizedBox(height: 24),
-
-            // ── Still stuck? ─────────────────────────────────────
-            const SectionHead(label: 'Still stuck?'),
-            const _ContactCards(),
-
-            const SizedBox(height: 28),
-            const _FooterLinks(),
           ],
         ),
       ),
@@ -357,131 +347,3 @@ class _FaqItemState extends State<_FaqItem> {
 }
 
 // ─── Feedback cards ──────────────────────────────────────────────────────
-
-class _ContactCards extends StatelessWidget {
-  const _ContactCards();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: _ContactCard(
-              color: isDark ? AppColors.cAiDark : AppColors.cAi,
-              icon: Icons.chat_bubble_outline_rounded,
-              title: 'Send feedback',
-              sub: 'Ideas and suggestions',
-              onTap: () => context.push('/feedback'),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _ContactCard(
-              color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-              icon: Icons.warning_amber_rounded,
-              title: 'Report a problem',
-              sub: 'Something is not working',
-              onTap: () => context.push('/feedback'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ContactCard extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String title;
-  final String sub;
-  final VoidCallback onTap;
-
-  const _ContactCard({
-    required this.color,
-    required this.icon,
-    required this.title,
-    required this.sub,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Material(
-      color: cs.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        side: BorderSide(color: cs.outline),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Tile(color: color, icon: icon, size: 44, radius: 14),
-              const SizedBox(height: 10),
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontSize: AppFontSize.content,
-                  fontWeight: AppFontWeight.semibold,
-                  color: cs.onSurface,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(sub, style: theme.textTheme.bodySmall),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Footer: policy, about, version ──────────────────────────────────────
-
-class _FooterLinks extends StatelessWidget {
-  const _FooterLinks();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final linkStyle = theme.textTheme.labelLarge?.copyWith(
-      fontSize: AppFontSize.body,
-      fontWeight: AppFontWeight.semibold,
-      color: theme.colorScheme.primary,
-    );
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      children: [
-        TextButton(
-          onPressed: () => context.push('/privacy-policy'),
-          child: Text('Privacy Policy', style: linkStyle),
-        ),
-        TextButton(
-          onPressed: () => context.push('/about'),
-          child: Text('About', style: linkStyle),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'Version $kAppVersionName',
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: AppFontSize.body,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}

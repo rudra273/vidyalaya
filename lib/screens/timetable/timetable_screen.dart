@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
+import '../../providers/phone_reminders_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../data/models/timetable_period.dart';
 import '../../data/models/time_slot.dart';
@@ -60,8 +61,9 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
     super.dispose();
   }
 
-  void _saveData() {
-    ref.read(userPrefsRepositoryProvider).saveTimetable(_timetable);
+  Future<void> _saveData() async {
+    await ref.read(userPrefsRepositoryProvider).saveTimetable(_timetable);
+    if (mounted) await ref.read(phoneRemindersProvider.notifier).refresh();
   }
 
   Future<void> _manageTimeSlots() async {

@@ -13,6 +13,8 @@ import '../screens/profile/settings_screen.dart';
 import '../screens/profile/privacy_policy_screen.dart';
 import '../screens/profile/about_screen.dart';
 import '../screens/profile/feedback_screen.dart';
+import '../screens/profile/account_screen.dart';
+import '../screens/profile/notification_settings_screen.dart';
 import '../screens/profile/help_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/progress/progress_screen.dart';
@@ -142,6 +144,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/account',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AccountScreen(),
+      ),
+      GoRoute(
+        path: '/settings/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationSettingsScreen(),
       ),
       GoRoute(
         path: '/progress',

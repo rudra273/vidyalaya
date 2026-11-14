@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_info.dart';
 import '../../app/theme.dart';
 import '../../providers/haptic_provider.dart';
-import '../../providers/notifications_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/support_section.dart';
 import 'widgets/settings_group.dart';
-
-const _deleteAccountUrl =
-    'https://rosmox.com/products/vidyakalp/delete-account';
 
 /// **App Settings** — appearance, data, about.
 class SettingsScreen extends ConsumerWidget {
@@ -52,73 +47,10 @@ class SettingsScreen extends ConsumerWidget {
                   context.canPop() ? context.pop() : context.go('/profile'),
             ),
 
-            // ── Appearance ────────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                16,
-                AppSpacing.screenPadding,
-                0,
-              ),
-              child: SectionHead(label: 'Appearance'),
-            ),
             Padding(
-              padding: inset,
-              child: _ThemeSegmented(
-                current: themeMode,
-                onChanged: (m) =>
-                    ref.read(themeModeProvider.notifier).setThemeMode(m),
-              ),
-            ),
-            const Padding(
               padding: sectionTop,
-              child: SectionHead(label: 'App preferences'),
+              child: const SectionHead(label: 'Account & preferences'),
             ),
-            Padding(
-              padding: inset,
-              child: SettingsGroup(
-                showBorder: false,
-                children: [
-                  SettingsRow(
-                    color: isDark ? AppColors.cOdiaDark : AppColors.cOdia,
-                    icon: Icons.vibration_rounded,
-                    title: 'Haptic feedback',
-                    onTap: () => setHaptics(!hapticsOn),
-                    trailing: Switch(
-                      value: hapticsOn,
-                      onChanged: setHaptics,
-                      activeThumbColor: cs.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const Padding(
-              padding: sectionTop,
-              child: SectionHead(label: 'Notifications'),
-            ),
-            const Padding(
-              padding: inset,
-              child: SettingsGroup(
-                showBorder: false,
-                children: [
-                  _ReminderToggle(
-                    type: ReminderType.timetable,
-                    icon: Icons.calendar_today_outlined,
-                    title: 'Timetable reminders',
-                  ),
-                  _ReminderToggle(
-                    type: ReminderType.dailyChallenge,
-                    icon: Icons.psychology_outlined,
-                    title: 'Daily challenge reminders',
-                  ),
-                ],
-              ),
-            ),
-
-            const SupportSection(headingPadding: sectionTop),
-            const SizedBox(height: AppSpacing.stackGap),
             Padding(
               padding: inset,
               child: SettingsGroup(
@@ -126,18 +58,41 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   SettingsRow(
                     color: cs.primary,
-                    icon: Icons.help_outline_rounded,
-                    title: 'Help and feedback',
-                    onTap: () => context.push('/help'),
+                    icon: Icons.person_outline_rounded,
+                    title: 'Account',
+                    onTap: () => context.push('/settings/account'),
+                  ),
+                  SettingsRow(
+                    color: cs.primary,
+                    icon: Icons.palette_outlined,
+                    title: 'Appearance',
+                    trailing: _AppearanceSwitch(
+                      selected: themeMode,
+                      onChanged: ref
+                          .read(themeModeProvider.notifier)
+                          .setThemeMode,
+                    ),
+                  ),
+                  SettingsRow(
+                    color: isDark ? AppColors.cOdiaDark : AppColors.cOdia,
+                    icon: Icons.vibration_rounded,
+                    title: 'Haptic feedback',
+                    onTap: () => setHaptics(!hapticsOn),
+                    trailing: Switch(value: hapticsOn, onChanged: setHaptics),
+                  ),
+                  SettingsRow(
+                    color: cs.primary,
+                    icon: Icons.notifications_none_rounded,
+                    title: 'Notifications',
+                    onTap: () => context.push('/settings/notifications'),
                   ),
                 ],
               ),
             ),
-
-            // ── About ─────────────────────────────────────────────
-            const Padding(
+            const SupportSection(headingPadding: sectionTop),
+            Padding(
               padding: sectionTop,
-              child: SectionHead(label: 'Privacy & information'),
+              child: const SectionHead(label: 'About & privacy'),
             ),
             Padding(
               padding: inset,
@@ -155,22 +110,6 @@ class SettingsScreen extends ConsumerWidget {
                     icon: Icons.info_outline_rounded,
                     title: 'About Vidyakalp',
                     onTap: () => context.push('/about'),
-                  ),
-                  // The external-link icon indicates the web form opens in a browser.
-                  SettingsRow(
-                    color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-                    icon: Icons.delete_outline_rounded,
-                    title: 'Delete account',
-                    trailing: Icon(
-                      Icons.open_in_new_rounded,
-                      size: 18,
-                      semanticLabel: 'Opens in browser',
-                      color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-                    ),
-                    onTap: () => launchUrl(
-                      Uri.parse(_deleteAccountUrl),
-                      mode: LaunchMode.externalApplication,
-                    ),
                   ),
                 ],
               ),
@@ -208,129 +147,47 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-// ─── Theme segmented picker (System / Light / Dark) ──────────────────────
+class _AppearanceSwitch extends StatelessWidget {
+  const _AppearanceSwitch({required this.selected, required this.onChanged});
 
-class _ThemeSegmented extends StatelessWidget {
-  final ThemeMode current;
+  final ThemeMode selected;
   final ValueChanged<ThemeMode> onChanged;
 
-  const _ThemeSegmented({required this.current, required this.onChanged});
-
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.surface3Dark : AppColors.surface3;
-    return Container(
-      padding: const EdgeInsets.all(4),
+    final colors = Theme.of(context).colorScheme;
+    const options = [
+      (ThemeMode.system, Icons.brightness_auto_rounded, 'System'),
+      (ThemeMode.light, Icons.light_mode_outlined, 'Light'),
+      (ThemeMode.dark, Icons.dark_mode_outlined, 'Dark'),
+    ];
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          _Segment(
-            label: 'System',
-            icon: Icons.brightness_auto_rounded,
-            active: current == ThemeMode.system,
-            onTap: () => onChanged(ThemeMode.system),
-          ),
-          _Segment(
-            label: 'Light',
-            icon: Icons.light_mode_rounded,
-            active: current == ThemeMode.light,
-            onTap: () => onChanged(ThemeMode.light),
-          ),
-          _Segment(
-            label: 'Dark',
-            icon: Icons.dark_mode_rounded,
-            active: current == ThemeMode.dark,
-            onTap: () => onChanged(ThemeMode.dark),
-          ),
+          for (final (mode, icon, label) in options)
+            IconButton(
+              tooltip: label,
+              isSelected: mode == selected,
+              style: IconButton.styleFrom(
+                minimumSize: const Size.square(44),
+                padding: EdgeInsets.zero,
+                backgroundColor: mode == selected
+                    ? colors.primary
+                    : Colors.transparent,
+                foregroundColor: mode == selected
+                    ? colors.onPrimary
+                    : colors.onSurfaceVariant,
+              ),
+              iconSize: 19,
+              icon: Icon(icon),
+              onPressed: () => onChanged(mode),
+            ),
         ],
-      ),
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _Segment({
-    required this.label,
-    required this.icon,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: active ? cs.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(11),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 19,
-                color: active
-                    ? cs.onPrimary
-                    : (isDark ? AppColors.ink2Dark : AppColors.ink2),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: active
-                      ? cs.onPrimary
-                      : (isDark ? AppColors.ink2Dark : AppColors.ink2),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ReminderToggle extends ConsumerWidget {
-  const _ReminderToggle({
-    required this.type,
-    required this.icon,
-    required this.title,
-  });
-
-  final ReminderType type;
-  final IconData icon;
-  final String title;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final provider = reminderEnabledProvider(type);
-    final enabled = ref.watch(provider);
-    return SettingsRow(
-      color: Theme.of(context).colorScheme.primary,
-      icon: icon,
-      title: title,
-      trailing: Semantics(
-        label: title,
-        child: Switch(
-          value: enabled,
-          onChanged: ref.read(provider.notifier).set,
-        ),
       ),
     );
   }

@@ -8,9 +8,6 @@ import '../screens/profile/widgets/settings_group.dart';
 import '../utils/haptics.dart';
 import 'calm_widgets.dart';
 
-// ─── Support section ─────────────────────────────────────────────
-// Shared "Share / Rate / Send feedback" card. Rendered identically on the
-// Profile and Settings screens, so the card + its rows live here once.
 class SupportSection extends ConsumerWidget {
   /// Padding around the "Support" heading. Profile insets the top; Settings
   /// keeps a plain horizontal inset (its own spacer sits above).
@@ -32,7 +29,7 @@ class SupportSection extends ConsumerWidget {
       children: [
         Padding(
           padding: headingPadding,
-          child: const SectionHead(label: 'Support'),
+          child: const SectionHead(label: 'Help & support'),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -41,6 +38,21 @@ class SupportSection extends ConsumerWidget {
           child: SettingsGroup(
             showBorder: false,
             children: [
+              SettingsRow(
+                color: Theme.of(context).colorScheme.primary,
+                icon: Icons.help_outline_rounded,
+                title: 'FAQ',
+                onTap: () => context.push('/help'),
+              ),
+              SettingsRow(
+                color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                icon: Icons.flag_outlined,
+                title: 'Report a problem',
+                onTap: () {
+                  Haptics.light(ref);
+                  context.push('/feedback');
+                },
+              ),
               SettingsRow(
                 color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
                 icon: Icons.share_outlined,
@@ -57,15 +69,6 @@ class SupportSection extends ConsumerWidget {
                 onTap: () {
                   Haptics.light(ref);
                   AppShare.openPlayStore();
-                },
-              ),
-              SettingsRow(
-                color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                icon: Icons.chat_bubble_outline_rounded,
-                title: 'Send feedback',
-                onTap: () {
-                  Haptics.light(ref);
-                  context.push('/feedback');
                 },
               ),
             ],

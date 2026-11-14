@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,6 +18,7 @@ import 'data/services/crash_reporting.dart';
 import 'providers/core_providers.dart';
 import 'providers/ingested_books_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/phone_reminders_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,13 +65,27 @@ class VidyalayaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
 
+    final router = ref.watch(routerProvider);
+    ref.watch(phoneReminderNavigationProvider);
     return MaterialApp.router(
       title: 'Vidyakalp',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      routerConfig: ref.watch(routerProvider),
+      routerConfig: router,
     );
   }
 }
+
+final phoneReminderNavigationProvider = Provider<void>((ref) {
+  final router = ref.watch(routerProvider);
+  ref.watch(phoneRemindersProvider.notifier);
+  final subscription = ref
+      .read(phoneRemindersProvider.notifier)
+      .destinations
+      .listen((route) {
+        router.push<void>(route);
+      });
+  ref.onDispose(() => unawaited(subscription.cancel()));
+});
