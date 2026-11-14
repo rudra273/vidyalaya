@@ -72,91 +72,96 @@ class _ProfileActivityCardState extends State<ProfileActivityCard> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Weekly overview · Demo data',
-                  style: theme.textTheme.bodySmall,
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: theme.brightness == Brightness.dark
-                        ? AppColors.paperDark
-                        : AppColors.surface2,
-                    borderRadius: BorderRadius.circular(12),
+          _ComingSoon(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Weekly overview · Demo data',
+                    style: theme.textTheme.bodySmall,
                   ),
-                  child: Row(
-                    children: [
-                      for (final metric in _Metric.values)
-                        Expanded(
-                          child: Semantics(
-                            selected: metric == _metric,
-                            child: Material(
-                              color: metric == _metric
-                                  ? (theme.brightness == Brightness.dark
-                                        ? AppColors.surface3Dark
-                                        : Colors.white)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(9),
-                              child: InkWell(
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? AppColors.paperDark
+                          : AppColors.surface2,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        for (final metric in _Metric.values)
+                          Expanded(
+                            child: Semantics(
+                              selected: metric == _metric,
+                              child: Material(
+                                color: metric == _metric
+                                    ? (theme.brightness == Brightness.dark
+                                          ? AppColors.surface3Dark
+                                          : Colors.white)
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(9),
-                                onTap: () => setState(() => _metric = metric),
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minHeight: 44,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      metric.label,
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.labelMedium
-                                          ?.copyWith(
-                                            fontWeight: metric == _metric
-                                                ? FontWeight.w700
-                                                : FontWeight.w500,
-                                          ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(9),
+                                  onTap: () => setState(() => _metric = metric),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                      minHeight: 44,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        metric.label,
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                              fontWeight: metric == _metric
+                                                  ? FontWeight.w700
+                                                  : FontWeight.w500,
+                                            ),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 12),
+                  Semantics(
+                    liveRegion: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _metric.total,
+                          style: theme.textTheme.headlineSmall,
+                        ),
+                        Text(_metric.caption, style: theme.textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(_metric.total, style: theme.textTheme.headlineSmall),
-                      Text(_metric.caption, style: theme.textTheme.bodySmall),
+                      for (var i = 0; i < labels.length; i++)
+                        Expanded(
+                          child: _ActivityBar(
+                            day: labels[i],
+                            value: _metric.dailyValues[i],
+                            unit: _metric.unit,
+                            maximum: _metric.max,
+                          ),
+                        ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    for (var i = 0; i < labels.length; i++)
-                      Expanded(
-                        child: _ActivityBar(
-                          day: labels[i],
-                          value: _metric.dailyValues[i],
-                          unit: _metric.unit,
-                          maximum: _metric.max,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const Divider(height: 1),
@@ -200,6 +205,73 @@ class _ProfileActivityCardState extends State<ProfileActivityCard> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ─── Coming soon veil ───────────────────────────────────────────────────
+// The weekly numbers are demo data until the backend records them, so the
+// overview sits under a light blur with a "Coming soon" note: the shape of
+// the feature shows through, the made-up figures don't read as real. The
+// "My progress" row below stays clear and tappable.
+
+class _ComingSoon extends StatelessWidget {
+  const _ComingSoon({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ExcludeSemantics(
+          child: ExcludeFocus(
+            child: IgnorePointer(
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+                child: child,
+              ),
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ColoredBox(color: colors.surface.withValues(alpha: 0.35)),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.schedule_rounded, size: 16, color: colors.primary),
+              const SizedBox(width: 6),
+              Text(
+                'Coming soon',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
