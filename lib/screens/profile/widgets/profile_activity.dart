@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
@@ -42,9 +44,14 @@ enum _Metric {
 }
 
 class ProfileActivityCard extends StatefulWidget {
-  const ProfileActivityCard({super.key, required this.onProgress});
+  const ProfileActivityCard({
+    super.key,
+    required this.onProgress,
+    required this.locked,
+  });
 
   final VoidCallback onProgress;
+  final bool locked;
 
   @override
   State<ProfileActivityCard> createState() => _ProfileActivityCardState();
@@ -59,7 +66,7 @@ class _ProfileActivityCardState extends State<ProfileActivityCard> {
     final colors = theme.colorScheme;
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-    return Material(
+    final card = Material(
       color: colors.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
@@ -70,10 +77,6 @@ class _ProfileActivityCardState extends State<ProfileActivityCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Your learning activity',
-                  style: theme.textTheme.titleLarge,
-                ),
                 Text(
                   'Weekly overview · Demo data',
                   style: theme.textTheme.bodySmall,
@@ -162,6 +165,38 @@ class _ProfileActivityCardState extends State<ProfileActivityCard> {
             icon: Icons.insights_rounded,
             title: 'My progress',
             onTap: widget.onProgress,
+          ),
+        ],
+      ),
+    );
+
+    if (!widget.locked) return card;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          ExcludeSemantics(
+            child: ExcludeFocus(
+              child: IgnorePointer(
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: card,
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: ColoredBox(color: colors.surface.withValues(alpha: 0.50)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Sign in to view your learning activity',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleSmall,
+            ),
           ),
         ],
       ),

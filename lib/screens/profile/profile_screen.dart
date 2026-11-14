@@ -226,7 +226,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       onTap: () => context.push('/progress'),
                     ),
                     const SizedBox(height: 24),
+                    const SectionHead(label: 'Your learning activity'),
                     ProfileActivityCard(
+                      locked: !isSignedIn,
                       onProgress: () => context.push('/progress'),
                     ),
                     const SizedBox(height: 24),
