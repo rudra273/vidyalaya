@@ -140,7 +140,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 padding: EdgeInsets.only(
                   top: MediaQuery.paddingOf(context).top,
-                  bottom: 24,
+                  bottom: isSignedIn ? 24 : 12,
                 ),
                 child: Column(
                   children: [
@@ -199,7 +199,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     if (!isSignedIn)
                       Padding(
-                        padding: inset,
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenPadding,
+                          12,
+                          AppSpacing.screenPadding,
+                          0,
+                        ),
                         child: _buildAuthButton(authState),
                       ),
                   ],

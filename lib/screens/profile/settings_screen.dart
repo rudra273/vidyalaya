@@ -17,7 +17,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
     final hapticsOn = ref.watch(hapticsEnabledProvider);
@@ -47,9 +46,14 @@ class SettingsScreen extends ConsumerWidget {
                   context.canPop() ? context.pop() : context.go('/profile'),
             ),
 
-            Padding(
-              padding: sectionTop,
-              child: const SectionHead(label: 'Account & preferences'),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                AppSpacing.stackGap,
+                AppSpacing.screenPadding,
+                0,
+              ),
+              child: SectionHead(label: 'Account & preferences'),
             ),
             Padding(
               padding: inset,
@@ -57,13 +61,13 @@ class SettingsScreen extends ConsumerWidget {
                 showBorder: false,
                 children: [
                   SettingsRow(
-                    color: cs.primary,
+                    color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
                     icon: Icons.person_outline_rounded,
                     title: 'Account',
                     onTap: () => context.push('/settings/account'),
                   ),
                   SettingsRow(
-                    color: cs.primary,
+                    color: isDark ? AppColors.cHindiDark : AppColors.cHindi,
                     icon: Icons.palette_outlined,
                     title: 'Appearance',
                     trailing: _AppearanceSwitch(
@@ -81,7 +85,7 @@ class SettingsScreen extends ConsumerWidget {
                     trailing: Switch(value: hapticsOn, onChanged: setHaptics),
                   ),
                   SettingsRow(
-                    color: cs.primary,
+                    color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
                     icon: Icons.notifications_none_rounded,
                     title: 'Notifications',
                     onTap: () => context.push('/settings/notifications'),
@@ -161,34 +165,59 @@ class _AppearanceSwitch extends StatelessWidget {
       (ThemeMode.light, Icons.light_mode_outlined, 'Light'),
       (ThemeMode.dark, Icons.dark_mode_outlined, 'Dark'),
     ];
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final (mode, icon, label) in options)
-            IconButton(
-              tooltip: label,
-              isSelected: mode == selected,
-              style: IconButton.styleFrom(
-                minimumSize: const Size.square(44),
-                padding: EdgeInsets.zero,
-                backgroundColor: mode == selected
-                    ? colors.primary
-                    : Colors.transparent,
-                foregroundColor: mode == selected
-                    ? colors.onPrimary
-                    : colors.onSurfaceVariant,
-              ),
-              iconSize: 19,
-              icon: Icon(icon),
-              onPressed: () => onChanged(mode),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Positioned(
+          left: 3,
+          right: 3,
+          height: 34,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(17),
             ),
-        ],
-      ),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (mode, icon, label) in options)
+              Semantics(
+                selected: mode == selected,
+                child: Tooltip(
+                  message: label,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(22),
+                    onTap: () => onChanged(mode),
+                    child: SizedBox.square(
+                      dimension: 44,
+                      child: Center(
+                        child: Ink(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: mode == selected
+                                ? colors.primary
+                                : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            icon,
+                            size: 16,
+                            color: mode == selected
+                                ? colors.onPrimary
+                                : colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

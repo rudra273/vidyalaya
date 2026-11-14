@@ -39,13 +39,13 @@ class SupportSection extends ConsumerWidget {
             showBorder: false,
             children: [
               SettingsRow(
-                color: Theme.of(context).colorScheme.primary,
+                color: isDark ? AppColors.cScienceDark : AppColors.cScience,
                 icon: Icons.help_outline_rounded,
                 title: 'FAQ',
                 onTap: () => context.push('/help'),
               ),
               SettingsRow(
-                color: isDark ? AppColors.cAiDark : AppColors.cAi,
+                color: isDark ? AppColors.cPeriodicDark : AppColors.cPeriodic,
                 icon: Icons.flag_outlined,
                 title: 'Report a problem',
                 onTap: () {
