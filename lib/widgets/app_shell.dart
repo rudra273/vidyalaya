@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../utils/haptics.dart';
 import 'ai_robot_mark.dart';
 import 'app_update_banner.dart';
+import 'nav_icons.dart';
 import 'pressable.dart';
 
 /// Shell wrapper that provides the Calm Scholar bottom navigation for tab
@@ -18,12 +19,12 @@ class AppShell extends ConsumerWidget {
   /// The five tabs. Ask sits in the middle because asking a question is the
   /// app's core action: it opens the chat directly and shows the bot instead
   /// of an icon (a null icon below). Library is reached from Home.
-  static const List<(String, IconData?, String)> _tabs = [
-    ('/', Icons.home_rounded, 'Home'),
-    ('/ai', Icons.auto_awesome_rounded, 'AI'),
+  static const List<(String, NavIcon?, String)> _tabs = [
+    ('/', NavIcon.home, 'Home'),
+    ('/ai', NavIcon.ai, 'AI'),
     ('/ask', null, 'Ask'),
-    ('/explore', Icons.explore_rounded, 'Explore'),
-    ('/profile', Icons.person_rounded, 'Profile'),
+    ('/explore', NavIcon.explore, 'Explore'),
+    ('/profile', NavIcon.profile, 'Profile'),
   ];
 
   int _currentIndex(BuildContext context) {
@@ -129,7 +130,7 @@ class AppShell extends ConsumerWidget {
 
 class _NavBarItem extends StatelessWidget {
   /// Null shows the bot (the Ask tab).
-  final IconData? icon;
+  final NavIcon? icon;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
@@ -152,8 +153,8 @@ class _NavBarItem extends StatelessWidget {
       Theme.of(context).scaffoldBackgroundColor,
     );
 
-    // Icons only: the active tab is marked by its pill, and the label is
-    // kept for screen readers.
+    // Icons only: the active tab's icon fills in and sits in a pill; an
+    // idle one is an outline. The label is kept for screen readers.
     return Semantics(
       button: true,
       selected: isActive,
@@ -176,10 +177,11 @@ class _NavBarItem extends StatelessWidget {
               alignment: Alignment.center,
               child: icon == null
                   ? const AiBot(size: 30)
-                  : Icon(
-                      icon,
-                      size: 25,
+                  : NavIconView(
+                      icon: icon!,
+                      selected: isActive,
                       color: isActive ? activeColor : inactiveColor,
+                      behind: pill,
                     ),
             ),
           ),
