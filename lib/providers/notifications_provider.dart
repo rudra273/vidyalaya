@@ -58,6 +58,31 @@ class _NoticeClock extends Notifier<DateTime> {
 /// to "just now" on every rebuild.
 final _firstNoticedAtProvider = Provider<Map<String, DateTime>>((ref) => {});
 
+/// Optional in-app reminders. Account and AI allowance notices stay visible.
+enum ReminderType { timetable, dailyChallenge }
+
+final reminderEnabledProvider =
+    NotifierProvider.family<ReminderEnabled, bool, ReminderType>(
+      ReminderEnabled.new,
+    );
+
+class ReminderEnabled extends Notifier<bool> {
+  ReminderEnabled(this.type);
+
+  final ReminderType type;
+
+  String get _key => 'notification_reminder_${type.name}';
+
+  @override
+  bool build() => ref.watch(sharedPreferencesProvider).getBool(_key) ?? true;
+
+  Future<void> set(bool enabled) async {
+    if (await ref.read(sharedPreferencesProvider).setBool(_key, enabled)) {
+      if (ref.mounted) state = enabled;
+    }
+  }
+}
+
 // ─── Notices ─────────────────────────────────────────────────────────────
 
 /// Every notice that applies right now, newest first.
@@ -69,8 +94,10 @@ final notificationsProvider = Provider<List<AppNotice>>((ref) {
   final notices = <AppNotice>[
     ..._plusNotices(ref.watch(plusProvider).status, now, firstSeen),
     ?_aiAllowanceNotice(ref, firstSeen),
-    ?_timetableNotice(ref, now),
-    ?_challengeNotice(ref, now),
+    if (ref.watch(reminderEnabledProvider(ReminderType.timetable)))
+      ?_timetableNotice(ref, now),
+    if (ref.watch(reminderEnabledProvider(ReminderType.dailyChallenge)))
+      ?_challengeNotice(ref, now),
   ]..sort((a, b) => b.time.compareTo(a.time));
   return List.unmodifiable(notices);
 });
@@ -143,7 +170,8 @@ List<AppNotice> _plusNotices(
         AppNotice(
           id: id,
           title: 'Plus requested',
-          body: "We'll review it. You don't need to do anything: it shows "
+          body:
+              "We'll review it. You don't need to do anything: it shows "
               "up when it's added.",
           time: status.requestedAt ?? firstSeen(id),
           kind: AppNoticeKind.plus,
@@ -191,10 +219,7 @@ List<AppNotice> _plusNotices(
 
 // ─── AI allowance ────────────────────────────────────────────────────────
 
-AppNotice? _aiAllowanceNotice(
-  Ref ref,
-  DateTime Function(String id) firstSeen,
-) {
+AppNotice? _aiAllowanceNotice(Ref ref, DateTime Function(String id) firstSeen) {
   final usage = ref
       .watch(backendAccountCacheProvider)
       .usage

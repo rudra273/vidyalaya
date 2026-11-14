@@ -21,6 +21,7 @@ import '../../providers/books_provider.dart' show subjectFilterProvider;
 import '../../providers/core_providers.dart';
 import '../../providers/plus_provider.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/rollout_switches_provider.dart';
 import '../../providers/user_selection_provider.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../data/services/app_share.dart';
@@ -229,7 +230,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       showBorder: false,
                       children: [
                         SettingsRow(
-                          color: theme.colorScheme.primary,
+                          color: isDark
+                              ? AppColors.green500Dark
+                              : AppColors.green700,
                           icon: Icons.school_outlined,
                           title: 'Class & board',
                           sub: 'Class $selectedClass · ${boardLabel(board)}',
@@ -241,7 +244,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 ),
                         ),
                         SettingsRow(
-                          color: theme.colorScheme.primary,
+                          color: isDark
+                              ? AppColors.cTutorDark
+                              : AppColors.cTutor,
                           icon: Icons.translate_rounded,
                           title: 'Answer language',
                           sub: _languageLabel(preferredLanguage),
@@ -252,12 +257,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   section: _ProfileSection.language,
                                 ),
                         ),
-                        SettingsRow(
-                          color: theme.colorScheme.primary,
-                          icon: Icons.notifications_none_rounded,
-                          title: 'Notifications',
-                          onTap: () => context.push('/notifications'),
-                        ),
+                        if (ref.watch(booksEnabledProvider))
+                          SettingsRow(
+                            color: isDark
+                                ? AppColors.cEnglishDark
+                                : AppColors.cEnglish,
+                            icon: Icons.file_download_outlined,
+                            title: 'Manage downloads',
+                            sub: 'Download or delete offline books',
+                            onTap: () => context.push('/manage-downloads'),
+                          ),
                       ],
                     ),
                     if (isSignedIn) ...[
@@ -1134,7 +1143,7 @@ class _AuthButton extends StatelessWidget {
         showBorder: false,
         children: [
           SettingsRow(
-            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
+            color: cs.error,
             icon: Icons.logout_rounded,
             title: 'Sign out',
             titleColor: muted,

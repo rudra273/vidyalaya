@@ -445,10 +445,6 @@ class _LessonPreviewCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(
-              color: dark ? AppColors.surface3Dark : AppColors.hairline,
-              width: 1.5,
-            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -606,7 +602,6 @@ class _WordOfDayCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.cardPad - 2),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border.all(color: cs.outline),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: Column(

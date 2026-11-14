@@ -39,12 +39,12 @@ class SupportSection extends ConsumerWidget {
             horizontal: AppSpacing.screenPadding,
           ),
           child: SettingsGroup(
+            showBorder: false,
             children: [
               SettingsRow(
                 color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
                 icon: Icons.share_outlined,
                 title: 'Share Vidyakalp',
-                sub: 'Tell your friends about the app',
                 onTap: () {
                   Haptics.light(ref);
                   AppShare.shareApp();
@@ -54,7 +54,6 @@ class SupportSection extends ConsumerWidget {
                 color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
                 icon: Icons.star_outline_rounded,
                 title: 'Rate Vidyakalp',
-                sub: 'Rate us on the Play Store',
                 onTap: () {
                   Haptics.light(ref);
                   AppShare.openPlayStore();
@@ -64,7 +63,6 @@ class SupportSection extends ConsumerWidget {
                 color: isDark ? AppColors.cAiDark : AppColors.cAi,
                 icon: Icons.chat_bubble_outline_rounded,
                 title: 'Send feedback',
-                sub: 'Report bugs or request features',
                 onTap: () {
                   Haptics.light(ref);
                   context.push('/feedback');

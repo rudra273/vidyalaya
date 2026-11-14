@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/app_info.dart';
 import '../../app/theme.dart';
 import '../../providers/haptic_provider.dart';
-import '../../providers/rollout_switches_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
@@ -26,7 +26,6 @@ class SettingsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeMode = ref.watch(themeModeProvider);
     final hapticsOn = ref.watch(hapticsEnabledProvider);
-    final booksEnabled = ref.watch(booksEnabledProvider);
 
     void setHaptics(bool v) {
       ref.read(hapticsEnabledProvider.notifier).set(v);
@@ -78,12 +77,12 @@ class SettingsScreen extends ConsumerWidget {
             Padding(
               padding: inset,
               child: SettingsGroup(
+                showBorder: false,
                 children: [
                   SettingsRow(
                     color: isDark ? AppColors.cOdiaDark : AppColors.cOdia,
                     icon: Icons.vibration_rounded,
                     title: 'Haptic feedback',
-                    sub: 'Subtle vibrations on taps and actions.',
                     onTap: () => setHaptics(!hapticsOn),
                     trailing: Switch(
                       value: hapticsOn,
@@ -91,46 +90,39 @@ class SettingsScreen extends ConsumerWidget {
                       activeThumbColor: cs.primary,
                     ),
                   ),
-                  SettingsRow(
-                    color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                    icon: Icons.notifications_none_rounded,
-                    title: 'Notifications',
-                    onTap: () => context.push('/notifications'),
-                  ),
                 ],
               ),
             ),
 
-            // ── Data ──────────────────────────────────────────────
-            // Downloads are offline books, so they hide with the books switch.
-            if (booksEnabled) ...[
-              const Padding(
-                padding: sectionTop,
-                child: SectionHead(label: 'Offline books'),
+            const Padding(
+              padding: sectionTop,
+              child: SectionHead(label: 'Notifications'),
+            ),
+            const Padding(
+              padding: inset,
+              child: SettingsGroup(
+                showBorder: false,
+                children: [
+                  _ReminderToggle(
+                    type: ReminderType.timetable,
+                    icon: Icons.calendar_today_outlined,
+                    title: 'Timetable reminders',
+                  ),
+                  _ReminderToggle(
+                    type: ReminderType.dailyChallenge,
+                    icon: Icons.psychology_outlined,
+                    title: 'Daily challenge reminders',
+                  ),
+                ],
               ),
-              Padding(
-                padding: inset,
-                child: SettingsGroup(
-                  children: [
-                    SettingsRow(
-                      color: isDark
-                          ? AppColors.cEnglishDark
-                          : AppColors.cEnglish,
-                      icon: Icons.file_download_outlined,
-                      title: 'Manage downloads',
-                      sub: 'Download or delete offline books',
-                      onTap: () => context.push('/manage-downloads'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
 
             const SupportSection(headingPadding: sectionTop),
             const SizedBox(height: AppSpacing.stackGap),
             Padding(
               padding: inset,
               child: SettingsGroup(
+                showBorder: false,
                 children: [
                   SettingsRow(
                     color: cs.primary,
@@ -150,30 +142,25 @@ class SettingsScreen extends ConsumerWidget {
             Padding(
               padding: inset,
               child: SettingsGroup(
+                showBorder: false,
                 children: [
                   SettingsRow(
                     color: isDark ? AppColors.cScienceDark : AppColors.cScience,
                     icon: Icons.privacy_tip_outlined,
                     title: 'Privacy Policy',
-                    sub: 'Our data & privacy commitments',
                     onTap: () => context.push('/privacy-policy'),
                   ),
                   SettingsRow(
                     color: isDark ? AppColors.cTutorDark : AppColors.cTutor,
                     icon: Icons.info_outline_rounded,
                     title: 'About Vidyakalp',
-                    sub: 'Learn more about the app',
                     onTap: () => context.push('/about'),
                   ),
-                  // Leaves the app for the web form, so it says so and shows
-                  // an open-in-new mark instead of an in-app chevron.
+                  // The external-link icon indicates the web form opens in a browser.
                   SettingsRow(
                     color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
                     icon: Icons.delete_outline_rounded,
                     title: 'Delete account',
-                    sub:
-                        'Opens our website, where you can ask us to delete '
-                        'your account and data.',
                     trailing: Icon(
                       Icons.open_in_new_rounded,
                       size: 18,
@@ -233,12 +220,10 @@ class _ThemeSegmented extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.surface3Dark : AppColors.surface3;
-    final border = isDark ? AppColors.hairline2Dark : AppColors.hairline2;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: border),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -315,6 +300,36 @@ class _Segment extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderToggle extends ConsumerWidget {
+  const _ReminderToggle({
+    required this.type,
+    required this.icon,
+    required this.title,
+  });
+
+  final ReminderType type;
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final provider = reminderEnabledProvider(type);
+    final enabled = ref.watch(provider);
+    return SettingsRow(
+      color: Theme.of(context).colorScheme.primary,
+      icon: icon,
+      title: title,
+      trailing: Semantics(
+        label: title,
+        child: Switch(
+          value: enabled,
+          onChanged: ref.read(provider.notifier).set,
         ),
       ),
     );
