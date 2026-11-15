@@ -12,7 +12,7 @@ typedef FirebaseIdTokenProvider =
 
 class LearnAssistService {
   static final defaultBaseUrl = Uri.parse(
-    'https://vidyalaya-ai-llf1.onrender.com',
+    'https://vidyakalp.rosmox.com',
   );
 
   final http.Client _client;
