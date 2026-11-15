@@ -364,6 +364,14 @@ class _LearnAiScreenState extends ConsumerState<LearnAiScreen> {
       Haptics.error(ref);
       _showSnack(e.message);
       return;
+    } catch (_) {
+      // Any other failure (TLS, socket, timeout) must not escape silently.
+      if (!mounted) return;
+      Haptics.error(ref);
+      _showSnack(
+        'Could not start a fresh conversation. Check your connection and try again.',
+      );
+      return;
     }
 
     if (!mounted) return;

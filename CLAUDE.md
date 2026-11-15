@@ -28,7 +28,7 @@ dart run flutter_launcher_icons # regenerate launcher icons after changing asset
 ### Required build-time config
 - `GOOGLE_WEB_CLIENT_ID` is read via `String.fromEnvironment` in [auth_repository.dart](lib/data/repositories/auth_repository.dart). Pass it for Google sign-in to work: `flutter run --dart-define=GOOGLE_WEB_CLIENT_ID=...`
 - `android/app/google-services.json` is **gitignored** — it must exist locally for Firebase to initialize.
-- The AI backend base URL is hardcoded in [learn_assist_service.dart](lib/data/services/learn_assist_service.dart) (`defaultBaseUrl`, a Railway deployment). Services accept a `baseUrl` override, used in tests.
+- The AI backend base URL is hardcoded in [learn_assist_service.dart](lib/data/services/learn_assist_service.dart) (`defaultBaseUrl`, a Render deployment). Services accept a `baseUrl` override, used in tests.
 
 ## Architecture
 
@@ -38,6 +38,8 @@ Layered Flutter + Riverpod app. `lib/` layout: `app/` (router, theme), `data/` (
 All cross-cutting dependencies are providers. Two providers are **overridden in `main.dart`** (their unoverridden definitions throw `UnimplementedError`): `sharedPreferencesProvider` and `cacheStoreProvider`, because both need async init before `runApp`. See [core_providers.dart](lib/providers/core_providers.dart).
 
 `booksEnabledProvider` is a feature flag: when false, every book surface (Library tab, Home rows, continue-reading) hides cleanly, leaving AI + tools functional. Honor this flag when touching book UI.
+
+`aiAccessProvider` ([learn_assist_provider.dart](lib/providers/learn_assist_provider.dart)) decides AI per profile class: below class 6 it is `hidden` (AI and Ask tabs removed, AI routes redirect Home); class 6+ with no ingested textbook for that board + class is `comingSoon` (the AI tabs show a "coming soon" page via `AiGate`, other AI entry points hide); otherwise `available`. Wrap any new AI screen in `AiGate` and hide new AI shortcuts unless access is `available`.
 
 ### Two persistence layers — keep them distinct
 1. **SharedPreferences** ([user_prefs_repository.dart](lib/data/repositories/user_prefs_repository.dart)) — local user state: selected classes/board, reading position, bookmarks, highlights, notes, timetable, avatar, onboarding flag, regional language. Survives cache clear, not uninstall. All keys are private constants in this repo.

@@ -32,6 +32,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   String? _localPath;
   bool _isLoading = true;
   String? _error;
+  // True when the viewer itself rejected the local file (truncated/corrupt),
+  // so Retry should discard it and download again instead of reopening it.
+  bool _fileRejected = false;
   double _downloadProgress = 0;
   int _currentPage = 0;
   int _totalPages = 0;
@@ -433,6 +436,18 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       final filePath = '${booksDir.path}/${widget.book.id}.pdf';
       final file = File(filePath);
 
+      // The viewer could not open the saved copy: drop it so an official
+      // book downloads fresh. A student-added file has no source, so keep it.
+      if (_fileRejected) {
+        _fileRejected = false;
+        if (widget.book.isOfficial && widget.book.pdfUrl.isNotEmpty &&
+            file.existsSync()) {
+          try {
+            file.deleteSync();
+          } catch (_) {}
+        }
+      }
+
       if (file.existsSync() && file.lengthSync() > 0) {
         if (mounted) setState(() { _localPath = filePath; _isLoading = false; });
         return;
@@ -570,7 +585,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     }
                   },
                   onError: (error) {
-                    if (mounted) setState(() => _error = error.toString());
+                    if (mounted) {
+                      setState(() {
+                        _error = error.toString();
+                        _fileRejected = true;
+                      });
+                    }
                   },
                 ),
               ),
@@ -1057,7 +1077,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           const SizedBox(height: 8),
           Text(
             widget.book.isOfficial
-                ? 'Please check your internet connection and try again.'
+                ? (_fileRejected
+                    ? 'The saved copy of this book is damaged. Tap Retry to download it again.'
+                    : 'Please check your internet connection and try again.')
                 : 'This file is no longer on your device. Remove it from the Library and add it again.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
             textAlign: TextAlign.center,

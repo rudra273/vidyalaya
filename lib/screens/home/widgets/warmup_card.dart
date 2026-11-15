@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../data/seed/warmup_data.dart';
 import '../../../providers/core_providers.dart';
+import '../../../providers/learn_assist_provider.dart';
 import '../../../providers/progress_provider.dart';
 import '../../../providers/user_selection_provider.dart';
 import '../../../utils/haptics.dart';
@@ -92,6 +93,7 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final aiAvailable = ref.watch(aiAccessProvider) == AiAccess.available;
     final question = _question;
     final accent = AppColors.subjectColor(
       question.subject,
@@ -196,37 +198,41 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
             Row(
               children: [
                 Expanded(
-                  child: Pressable(
-                    onTap: () {
-                      Haptics.light(ref);
-                      context.push(
-                        '/learn/ai'
-                        '?prefill=${Uri.encodeComponent(question.question)}'
-                        '&style=simple',
-                      );
-                    },
-                    scale: 0.98,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 15,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            'Ask the AI to explain this',
-                            style: TextStyle(
-                              fontSize: AppFontSize.body,
-                              fontWeight: AppFontWeight.semibold,
-                              color: cs.primary,
-                            ),
+                  // The AI shortcut shows only when the AI can answer for
+                  // this class; otherwise the spacer keeps "Next" on the right.
+                  child: !aiAvailable
+                      ? const SizedBox.shrink()
+                      : Pressable(
+                          onTap: () {
+                            Haptics.light(ref);
+                            context.push(
+                              '/learn/ai'
+                              '?prefill=${Uri.encodeComponent(question.question)}'
+                              '&style=simple',
+                            );
+                          },
+                          scale: 0.98,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 15,
+                                color: cs.primary,
+                              ),
+                              const SizedBox(width: 7),
+                              Flexible(
+                                child: Text(
+                                  'Ask the AI to explain this',
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.body,
+                                    fontWeight: AppFontWeight.semibold,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(width: 8),
                 // Keep practising past the daily question.

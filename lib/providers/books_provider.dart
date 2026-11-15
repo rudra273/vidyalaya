@@ -94,7 +94,11 @@ class UserBooksNotifier extends Notifier<List<Book>> {
       for (final b in state)
         if (b.id != book.id) b,
     ];
-    await ref.read(userPrefsRepositoryProvider).setUserBooks(state);
+    final repo = ref.read(userPrefsRepositoryProvider);
+    await repo.setUserBooks(state);
+    // Drop its bookmarks, highlights and reading position too, so no list or
+    // "continue reading" card is left pointing at a book that is gone.
+    await repo.clearBookData(book.id);
     try {
       final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/books/${book.id}.pdf');

@@ -7,6 +7,7 @@ import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../utils/haptics.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/games_progress_provider.dart';
+import '../../providers/learn_assist_provider.dart';
 import '../../providers/notifications_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
@@ -42,6 +43,7 @@ class HomeScreen extends ConsumerWidget {
     final unread = ref.watch(notificationsUnreadCountProvider);
     final classNo = ref.watch(primaryClassProvider);
     final board = ref.watch(userBoardProvider);
+    final aiAvailable = ref.watch(aiAccessProvider) == AiAccess.available;
     final user = ref
         .watch(authStateProvider)
         .maybeWhen(data: (u) => u, orElse: () => null);
@@ -119,23 +121,26 @@ class HomeScreen extends ConsumerWidget {
           ),
 
           // ── AI card ──────────────────────────────────────────────
-          const SizedBox(height: 14),
-          Padding(
-            padding: pad,
-            child: HomeAiChat(
-              mood: lateNight ? BotMood.resting : BotMood.idle,
-              onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
-              onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
-              resumeText: lastQuestion?.text,
-              onResume: lastQuestion == null
-                  ? null
-                  : () => _navTap(
-                      ref,
-                      context,
-                      recentQuestionResumePath(lastQuestion),
-                    ),
+          // Only when the AI can answer for this class (see aiAccessProvider).
+          if (aiAvailable) ...[
+            const SizedBox(height: 14),
+            Padding(
+              padding: pad,
+              child: HomeAiChat(
+                mood: lateNight ? BotMood.resting : BotMood.idle,
+                onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
+                onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
+                resumeText: lastQuestion?.text,
+                onResume: lastQuestion == null
+                    ? null
+                    : () => _navTap(
+                        ref,
+                        context,
+                        recentQuestionResumePath(lastQuestion),
+                      ),
+              ),
             ),
-          ),
+          ],
 
           // ── Study tools ──────────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),

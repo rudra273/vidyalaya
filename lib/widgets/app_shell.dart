@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../app/theme.dart';
 import '../providers/auth_provider.dart';
+import '../providers/learn_assist_provider.dart';
 import '../utils/haptics.dart';
 import 'ai_robot_mark.dart';
 import 'app_update_banner.dart';
@@ -19,7 +20,7 @@ class AppShell extends ConsumerWidget {
   /// The five tabs. Ask sits in the middle because asking a question is the
   /// app's core action: it opens the chat directly and shows the bot instead
   /// of an icon (a null icon below). Library is reached from Home.
-  static const List<(String, NavIcon?, String)> _tabs = [
+  static const List<(String, NavIcon?, String)> _allTabs = [
     ('/', NavIcon.home, 'Home'),
     ('/ai', NavIcon.ai, 'AI'),
     ('/ask', null, 'Ask'),
@@ -27,10 +28,23 @@ class AppShell extends ConsumerWidget {
     ('/profile', NavIcon.profile, 'Profile'),
   ];
 
-  int _currentIndex(BuildContext context) {
+  /// Below class 6 there is no AI, so its two tabs are left out entirely.
+  static const List<(String, NavIcon?, String)> _tabsWithoutAi = [
+    ('/', NavIcon.home, 'Home'),
+    ('/explore', NavIcon.explore, 'Explore'),
+    ('/profile', NavIcon.profile, 'Profile'),
+  ];
+
+  static List<(String, NavIcon?, String)> _tabsFor(AiAccess access) =>
+      access == AiAccess.hidden ? _tabsWithoutAi : _allTabs;
+
+  int _currentIndex(
+    BuildContext context,
+    List<(String, NavIcon?, String)> tabs,
+  ) {
     final location = GoRouterState.of(context).uri.path;
-    for (int i = 0; i < _tabs.length; i++) {
-      if (location == _tabs[i].$1) return i;
+    for (int i = 0; i < tabs.length; i++) {
+      if (location == tabs[i].$1) return i;
     }
     return 0;
   }
@@ -42,7 +56,11 @@ class AppShell extends ConsumerWidget {
   ///   2. A route is pushed on top of the tab → let GoRouter pop it normally.
   ///   3. On a non-Home tab → go to the Home tab and consume the event.
   ///   4. On the Home tab → let the system handle it (exit the app).
-  Future<bool> _onBack(BuildContext context, WidgetRef ref) async {
+  Future<bool> _onBack(
+    BuildContext context,
+    WidgetRef ref,
+    List<(String, NavIcon?, String)> tabs,
+  ) async {
     // primaryFocus is never null (the root FocusScopeNode always holds focus),
     // so check that an actual text input is focused before unfocusing.
     final focus = FocusManager.instance.primaryFocus;
@@ -54,7 +72,7 @@ class AppShell extends ConsumerWidget {
     final router = GoRouter.of(context);
     if (router.canPop()) return false;
 
-    if (_currentIndex(context) != 0) {
+    if (_currentIndex(context, tabs) != 0) {
       context.go('/');
       return true;
     }
@@ -79,13 +97,14 @@ class AppShell extends ConsumerWidget {
       });
     }
 
-    final currentIndex = _currentIndex(context);
+    final tabs = _tabsFor(ref.watch(aiAccessProvider));
+    final currentIndex = _currentIndex(context, tabs);
     // The bar is part of the page: same colour, no line above it. It steps
     // aside while the keyboard is up so the chat keeps the room.
     final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return BackButtonListener(
-      onBackButtonPressed: () => _onBack(context, ref),
+      onBackButtonPressed: () => _onBack(context, ref, tabs),
       child: Scaffold(
         body: child,
         bottomNavigationBar: Column(
@@ -100,9 +119,9 @@ class AppShell extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
                     child: Row(
-                      children: List.generate(_tabs.length, (index) {
+                      children: List.generate(tabs.length, (index) {
                         final isActive = index == currentIndex;
-                        final tab = _tabs[index];
+                        final tab = tabs[index];
                         return Expanded(
                           child: _NavBarItem(
                             icon: tab.$2,

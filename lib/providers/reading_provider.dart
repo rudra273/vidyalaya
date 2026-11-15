@@ -8,9 +8,12 @@ class ReadingNotifier extends Notifier<Book?> {
   @override
   Book? build() {
     final repo = ref.read(userPrefsRepositoryProvider);
+    // Watch, so removing a student-added book clears a stale "continue
+    // reading" card instead of leaving it to open a missing book.
+    final books = ref.watch(libraryBooksProvider);
     final lastId = repo.getLastReadBookId();
     if (lastId == null) return null;
-    return findBook(ref.read(libraryBooksProvider), lastId);
+    return findBook(books, lastId);
   }
 
   void setLastRead(Book book) {

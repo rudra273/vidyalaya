@@ -25,9 +25,10 @@ import '../screens/bookmarks/bookmarks_screen.dart';
 import '../screens/downloads/manage_downloads_screen.dart';
 import '../screens/timetable/timetable_screen.dart';
 import '../screens/onboarding/welcome_screen.dart';
+import '../widgets/ai_gate.dart';
 import '../widgets/app_shell.dart';
+import '../providers/learn_assist_provider.dart';
 import '../screens/explore/explore_screen.dart';
-import '../screens/learn_ai/tutor_mock_screen.dart';
 import '../screens/learn/learn_ai_screen.dart';
 import '../data/math/formulas/formulas.dart' show formulaCategoryByName;
 import '../screens/learn/math_formulas_screen.dart';
@@ -79,6 +80,11 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 // paths redirect to Home so the feature is fully unreachable, not just hidden.
 const _bookRoutePrefixes = ['/library', '/my-books', '/reader', '/bookmarks'];
 
+// AI surfaces. Below class 6 there is no AI at all, so these redirect Home
+// (old links, notifications and recents included). For class 6+ without
+// textbooks yet, [AiGate] shows "coming soon" in their place instead.
+const _aiRoutes = ['/ai', '/ask', '/learn/ai'];
+
 final routerProvider = Provider<GoRouter>((ref) {
   final prefsRepo = ref.read(userPrefsRepositoryProvider);
   late final GoRouter router;
@@ -100,6 +106,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         );
         if (isBookRoute) return '/';
       }
+
+      if (ref.read(aiAccessProvider) == AiAccess.hidden &&
+          _aiRoutes.contains(state.matchedLocation)) {
+        return '/';
+      }
       return null;
     },
     routes: [
@@ -114,14 +125,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/ai',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: AiHubScreen()),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: AiGate(inShell: true, child: AiHubScreen()),
+            ),
           ),
           // The middle tab: the Q&A chat itself, with no hub in front of it.
           GoRoute(
             path: '/ask',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: LearnAiScreen(inShell: true)),
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: AiGate(inShell: true, child: LearnAiScreen(inShell: true)),
+            ),
           ),
           GoRoute(
             path: '/explore',
@@ -215,22 +228,21 @@ final routerProvider = Provider<GoRouter>((ref) {
           final answerStyle = AnswerStyle.fromKey(
             state.uri.queryParameters['style'],
           );
-          return LearnAiScreen(
-            channel: channel,
-            initialPrompt: prefill,
-            autofocus: autofocus,
-            initialSubject: subject,
-            openCamera: openCamera,
-            resume: resume,
-            answerStyle: answerStyle,
+          return AiGate(
+            child: LearnAiScreen(
+              channel: channel,
+              initialPrompt: prefill,
+              autofocus: autofocus,
+              initialSubject: subject,
+              openCamera: openCamera,
+              resume: resume,
+              answerStyle: answerStyle,
+            ),
           );
         },
       ),
-      GoRoute(
-        path: '/learn-ai/tutor',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const TutorMockScreen(),
-      ),
+      // Former mock tutor screen; kept as a redirect so old links still land.
+      GoRoute(path: '/learn-ai/tutor', redirect: (_, _) => '/learn/ai'),
       GoRoute(
         path: '/learn/math-formulas',
         parentNavigatorKey: _rootNavigatorKey,
@@ -487,12 +499,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/reader/:bookId',
         parentNavigatorKey: _rootNavigatorKey,
+        // A book that was removed (or renamed in a catalog update) can still
+        // be linked from old bookmarks, highlights or deep links.
+        redirect: (context, state) =>
+            findBook(
+                  ref.read(libraryBooksProvider),
+                  state.pathParameters['bookId']!,
+                ) ==
+                null
+            ? '/library'
+            : null,
         builder: (context, state) {
           final bookId = state.pathParameters['bookId']!;
           final book = findBook(ref.read(libraryBooksProvider), bookId);
           final pageStr = state.uri.queryParameters['page'];
           final initialPage = pageStr != null ? int.tryParse(pageStr) : null;
-          return PdfViewerScreen(book: book!, initialPage: initialPage);
+          if (book == null) return const _MissingBookScreen();
+          return PdfViewerScreen(book: book, initialPage: initialPage);
         },
       ),
     ],
@@ -509,3 +532,25 @@ QuizBand? _quizBand(String? name) =>
     QuizBand.values.where((b) => b.name == name).firstOrNull;
 
 bool _isDaily(GoRouterState state) => state.uri.queryParameters['daily'] == '1';
+
+/// Fallback if the reader is built for a book that has just gone missing
+/// (the route redirect normally sends these to the Library first).
+class _MissingBookScreen extends StatelessWidget {
+  const _MissingBookScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'This book is no longer in your Library.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}

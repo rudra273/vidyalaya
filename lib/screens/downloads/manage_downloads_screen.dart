@@ -105,6 +105,11 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
       _downloadingProgress[book.id] = 0.01; // Indicate start
     });
 
+    final filePath = '$_booksDirPath/${book.id}.pdf';
+    // Stream to a temp file and rename on success (same as the reader), so a
+    // large PDF is never held in memory and an interrupted download never
+    // leaves a half-written .pdf that later reads as a valid book.
+    final tmpFile = File('$filePath.part');
     final client = SecureHttpClient(http.Client());
     try {
       final request = http.Request('GET', Uri.parse(book.pdfUrl));
@@ -115,19 +120,32 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
       }
 
       final contentLength = response.contentLength ?? 0;
-      final bytes = <int>[];
-
-      await for (final chunk in response.stream) {
-        bytes.addAll(chunk);
-        if (contentLength > 0 && mounted) {
-          setState(() {
-            _downloadingProgress[book.id] = bytes.length / contentLength;
-          });
+      final sink = tmpFile.openWrite();
+      var received = 0;
+      // Only rebuild when the whole percent changes, not on every chunk.
+      var lastPercent = -1;
+      try {
+        await for (final chunk in response.stream) {
+          sink.add(chunk);
+          received += chunk.length;
+          if (contentLength > 0 && mounted) {
+            final percent = (received * 100) ~/ contentLength;
+            if (percent != lastPercent) {
+              lastPercent = percent;
+              setState(() {
+                // Keep a visible minimum so the row stays in "downloading".
+                _downloadingProgress[book.id] =
+                    percent == 0 ? 0.01 : percent / 100;
+              });
+            }
+          }
         }
+        await sink.flush();
+      } finally {
+        await sink.close();
       }
 
-      final file = File('$_booksDirPath/${book.id}.pdf');
-      await file.writeAsBytes(bytes);
+      await tmpFile.rename(filePath);
 
       if (mounted) {
         setState(() {
@@ -157,6 +175,11 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
       }
     } finally {
       client.close();
+      if (tmpFile.existsSync()) {
+        try {
+          tmpFile.deleteSync();
+        } catch (_) {}
+      }
     }
   }
 

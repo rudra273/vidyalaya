@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../data/services/feedback_service.dart';
-import '../../providers/auth_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 
@@ -33,15 +32,7 @@ class _FeedbackScreenState extends ConsumerState<FeedbackScreen> {
     Haptics.light(ref);
     setState(() => _isSending = true);
 
-    final user = ref
-        .read(authStateProvider)
-        .maybeWhen(data: (u) => u, orElse: () => null);
-
-    final ok = await FeedbackService.submit(
-      message: message,
-      name: user?.displayName,
-      email: user?.email,
-    );
+    final ok = await FeedbackService.submit(message: message);
 
     if (!mounted) return;
     setState(() => _isSending = false);

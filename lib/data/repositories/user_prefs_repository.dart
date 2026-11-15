@@ -81,6 +81,42 @@ class UserPrefsRepository {
     );
   }
 
+  /// Removes everything saved against [bookId] (reading position,
+  /// bookmarks, highlights, recents), used when the student removes a book
+  /// they added so nothing is left pointing at a book that no longer exists.
+  Future<void> clearBookData(String bookId) async {
+    await _prefs.remove('$_bookPagePrefix$bookId');
+    await _prefs.remove('$_bookmarksPrefix$bookId');
+    await _prefs.remove('$_highlightsPrefix$bookId');
+    if (getLastReadBookId() == bookId) {
+      await _prefs.remove(_lastReadBookIdKey);
+    }
+    final recent = getRecentBookIds();
+    if (recent.contains(bookId)) {
+      await _prefs.setStringList(
+        _recentBookIdsKey,
+        recent.where((id) => id != bookId).toList(),
+      );
+    }
+  }
+
+  // ─── Safe parsing ───────────────────────────────────────────────────────
+
+  /// Decodes the JSON stored under [key] with [parse]. Returns null when
+  /// nothing is stored. On a bad value (corrupt, wrong type, or a shape from
+  /// another app version) the key is dropped and null is returned, so one
+  /// broken value never turns the screen reading it into an error page.
+  T? _parseStored<T>(String key, T Function(Object? json) parse) {
+    try {
+      final jsonStr = _prefs.getString(key);
+      if (jsonStr == null) return null;
+      return parse(jsonDecode(jsonStr));
+    } catch (_) {
+      _prefs.remove(key);
+      return null;
+    }
+  }
+
   List<LabAttempt> getLabAttempts() {
     final stored = _prefs.getString(_labAttemptsKey);
     if (stored == null) return const [];
@@ -171,10 +207,11 @@ class UserPrefsRepository {
 
   Set<int> getSelectedClasses({String? uid}) {
     final key = uid == null ? _selectedClassesKey : '$uid:$_selectedClassesKey';
-    final jsonStr = _prefs.getString(key);
-    if (jsonStr == null) return {};
-    final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => e as int).toSet();
+    return _parseStored(
+          key,
+          (json) => (json as List).map((e) => e as int).toSet(),
+        ) ??
+        {};
   }
 
   Future<void> setSelectedClasses(Set<int> classes, {String? uid}) async {
@@ -200,10 +237,11 @@ class UserPrefsRepository {
     final key = uid == null
         ? _librarySelectedClassesKey
         : '$uid:$_librarySelectedClassesKey';
-    final jsonStr = _prefs.getString(key);
-    if (jsonStr == null) return {};
-    final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => e as int).toSet();
+    return _parseStored(
+          key,
+          (json) => (json as List).map((e) => e as int).toSet(),
+        ) ??
+        {};
   }
 
   Future<void> setLibrarySelectedClasses(
@@ -304,10 +342,11 @@ class UserPrefsRepository {
   // ─── Per-Book Bookmarks ─────────────────────────────────────────────────
 
   List<int> getBookmarks(String bookId) {
-    final jsonStr = _prefs.getString('$_bookmarksPrefix$bookId');
-    if (jsonStr == null) return [];
-    final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => e as int).toList()..sort();
+    return _parseStored(
+          '$_bookmarksPrefix$bookId',
+          (json) => (json as List).map((e) => e as int).toList()..sort(),
+        ) ??
+        [];
   }
 
   Future<void> setBookmarks(String bookId, List<int> pages) async {
@@ -332,12 +371,13 @@ class UserPrefsRepository {
   // ─── Per-Book Highlights ────────────────────────────────────────────────
 
   List<Highlight> getHighlights(String bookId) {
-    final jsonStr = _prefs.getString('$_highlightsPrefix$bookId');
-    if (jsonStr == null) return [];
-    final list = jsonDecode(jsonStr) as List;
-    return list
-        .map((e) => Highlight.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return _parseStored(
+          '$_highlightsPrefix$bookId',
+          (json) => (json as List)
+              .map((e) => Highlight.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ) ??
+        [];
   }
 
   List<Highlight> getHighlightsForPage(String bookId, int page) {
@@ -387,12 +427,14 @@ class UserPrefsRepository {
 
   /// All standalone notes, most recently updated first.
   List<Note> getNotes() {
-    final jsonStr = _prefs.getString(_notesKey);
-    if (jsonStr == null) return [];
-    final list = jsonDecode(jsonStr) as List;
-    final notes = list
-        .map((e) => Note.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final notes =
+        _parseStored(
+          _notesKey,
+          (json) => (json as List)
+              .map((e) => Note.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ) ??
+        <Note>[];
     notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return notes;
   }
@@ -449,8 +491,13 @@ class UserPrefsRepository {
   static const _timeSlotsKey = 'time_slots_data';
 
   List<TimeSlot> getTimeSlots() {
-    final jsonStr = _prefs.getString(_timeSlotsKey);
-    if (jsonStr == null) {
+    final stored = _parseStored(
+      _timeSlotsKey,
+      (json) => (json as List)
+          .map((e) => TimeSlot.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+    if (stored == null) {
       // Default time slots
       return [
         const TimeSlot(
@@ -499,10 +546,7 @@ class UserPrefsRepository {
         ),
       ];
     }
-    final list = jsonDecode(jsonStr) as List;
-    return list
-        .map((e) => TimeSlot.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return stored;
   }
 
   Future<void> saveTimeSlots(List<TimeSlot> slots) async {
@@ -511,16 +555,16 @@ class UserPrefsRepository {
   }
 
   Map<String, List<TimetablePeriod>> getTimetable() {
-    final jsonStr = _prefs.getString(_timetableKey);
-    if (jsonStr == null) return {};
-
-    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-    return map.map((key, value) {
-      final list = (value as List)
-          .map((e) => TimetablePeriod.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return MapEntry(key, list);
-    });
+    return _parseStored(
+          _timetableKey,
+          (json) => (json as Map<String, dynamic>).map((key, value) {
+            final list = (value as List)
+                .map((e) => TimetablePeriod.fromJson(e as Map<String, dynamic>))
+                .toList();
+            return MapEntry(key, list);
+          }),
+        ) ??
+        {};
   }
 
   Future<void> saveTimetable(
@@ -575,6 +619,42 @@ class UserPrefsRepository {
     await _prefs.setInt(_totalStudySecondsKey, current + seconds);
   }
 
+  // ─── Daily app use ──────────────────────────────────────────────────────
+  //
+  // Seconds the app was open in the foreground, per local day ('yyyy-MM-dd'),
+  // for the weekly Study time chart. Local only; the last few weeks are kept.
+
+  static const _dailyAppUseKey = 'daily_app_use_seconds';
+  static const _dailyAppUseKeepDays = 21;
+
+  static String dayKey(DateTime day) =>
+      '${day.year.toString().padLeft(4, '0')}-'
+      '${day.month.toString().padLeft(2, '0')}-'
+      '${day.day.toString().padLeft(2, '0')}';
+
+  /// Day key → seconds of app use.
+  Map<String, int> getDailyAppUseSeconds() {
+    return _parseStored(
+          _dailyAppUseKey,
+          (json) => (json as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, (v as num).toInt()),
+          ),
+        ) ??
+        {};
+  }
+
+  Future<void> addAppUseSeconds(DateTime day, int seconds) async {
+    if (seconds <= 0) return;
+    final usage = getDailyAppUseSeconds();
+    final key = dayKey(day);
+    usage[key] = (usage[key] ?? 0) + seconds;
+    final oldest = dayKey(
+      day.subtract(const Duration(days: _dailyAppUseKeepDays)),
+    );
+    usage.removeWhere((k, _) => k.compareTo(oldest) < 0);
+    await _prefs.setString(_dailyAppUseKey, jsonEncode(usage));
+  }
+
   int getTotalPagesRead() => _prefs.getInt(_totalPagesReadKey) ?? 0;
 
   int getPagesReadToday() {
@@ -603,8 +683,7 @@ class UserPrefsRepository {
     return {
       for (final key in _prefs.getKeys())
         if (key.startsWith(_subjectProgressPrefix))
-          key.substring(_subjectProgressPrefix.length):
-              _prefs.getInt(key) ?? 0,
+          key.substring(_subjectProgressPrefix.length): _prefs.getInt(key) ?? 0,
     };
   }
 
@@ -639,10 +718,11 @@ class UserPrefsRepository {
   // taking a quiz counts as learning, so it keeps the streak alive.
 
   Set<String> getPythonCompletedLessons() {
-    final jsonStr = _prefs.getString(_pythonCompletedLessonsKey);
-    if (jsonStr == null) return {};
-    final list = jsonDecode(jsonStr) as List;
-    return list.map((e) => e as String).toSet();
+    return _parseStored(
+          _pythonCompletedLessonsKey,
+          (json) => (json as List).map((e) => e as String).toSet(),
+        ) ??
+        {};
   }
 
   Future<void> markPythonLessonCompleted(String lessonId) async {
@@ -658,10 +738,13 @@ class UserPrefsRepository {
 
   /// chapterId → best number of correct answers.
   Map<String, int> getPythonQuizScores() {
-    final jsonStr = _prefs.getString(_pythonQuizScoresKey);
-    if (jsonStr == null) return {};
-    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-    return map.map((k, v) => MapEntry(k, v as int));
+    return _parseStored(
+          _pythonQuizScoresKey,
+          (json) => (json as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v as int),
+          ),
+        ) ??
+        {};
   }
 
   /// Records a quiz attempt, keeping only the best score for the chapter.
@@ -692,10 +775,13 @@ class UserPrefsRepository {
 
   /// toolId → best score achieved.
   Map<String, int> getMathBestScores() {
-    final jsonStr = _prefs.getString(_mathBestScoresKey);
-    if (jsonStr == null) return {};
-    final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-    return map.map((k, v) => MapEntry(k, v as int));
+    return _parseStored(
+          _mathBestScoresKey,
+          (json) => (json as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v as int),
+          ),
+        ) ??
+        {};
   }
 
   /// Records a finished round, keeping only the best score for [toolId].

@@ -51,7 +51,7 @@ void main() {
     expect(on.collectionEnabled, isTrue);
   });
 
-  test('framework and async errors are forwarded as fatal', () async {
+  test('framework errors are fatal, uncaught async errors are non-fatal', () async {
     final crashlytics = _FakeCrashlytics();
     await initCrashReporting(crashlytics: crashlytics, enabled: true);
 
@@ -64,7 +64,7 @@ void main() {
       StackTrace.current,
     );
     expect(handled, isTrue);
-    expect(crashlytics.recordedErrors.single.fatal, isTrue);
+    expect(crashlytics.recordedErrors.single.fatal, isFalse);
     expect(crashlytics.recordedErrors.single.error, isA<StateError>());
   });
 }

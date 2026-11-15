@@ -5,7 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/data/latest.dart' as zones;
+// latest_all keeps the old alias names (Asia/Calcutta, UTC, GMT…) that some
+// phones still report; plain `latest` drops them and the lookup would throw.
+import 'package:timezone/data/latest_all.dart' as zones;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../data/models/timetable_period.dart';
@@ -114,7 +116,7 @@ class PhoneReminders extends Notifier<PhoneReminderStatus> {
           return;
         }
 
-        final zone = tz.getLocation(
+        final zone = _localZone(
           (await FlutterTimezone.getLocalTimezone()).identifier,
         );
         if (_disposed) return;
@@ -239,4 +241,14 @@ List<PhoneReminder> planPhoneReminders({
   events.sort((a, b) => a.at.compareTo(b.at));
   final seen = <(DateTime, String)>{};
   return events.where((e) => seen.add((e.at, e.route))).take(60).toList();
+}
+
+/// Resolves the phone's zone name, falling back to India time when the name
+/// is unknown, so reminders still get scheduled instead of failing outright.
+tz.Location _localZone(String identifier) {
+  try {
+    return tz.getLocation(identifier);
+  } catch (_) {
+    return tz.getLocation('Asia/Kolkata');
+  }
 }

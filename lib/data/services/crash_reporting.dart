@@ -22,8 +22,11 @@ Future<void> initCrashReporting({
   );
 
   FlutterError.onError = reporter.recordFlutterFatalError;
+  // Uncaught async errors do not stop the app (most are a failed request the
+  // student never sees), so they are recorded as non-fatal. Counting them as
+  // crashes would make the crash-free rate read far worse than it is.
   PlatformDispatcher.instance.onError = (error, stack) {
-    reporter.recordError(error, stack, fatal: true);
+    reporter.recordError(error, stack, fatal: false);
     return true;
   };
 }
