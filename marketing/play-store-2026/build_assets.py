@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageCms, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 
 ROOT = Path("/Users/rudra/projects/vidyalaya")
@@ -141,10 +141,14 @@ def build_screenshot(filename: str, source: Path, headline: str, subline: str) -
     pill_font = font(30)
     pill_text = "Vidyakalp"
     pill_box = draw.textbbox((0, 0), pill_text, font=pill_font)
-    pill_width = pill_box[2] - pill_box[0] + 52
+    mark_size = 34
+    pill_width = pill_box[2] - pill_box[0] + mark_size + 42
     pill_x = (1080 - pill_width) // 2
-    draw.rounded_rectangle((pill_x, 58, pill_x + pill_width, 112), radius=27, fill=(255, 255, 255, 50), outline=(255, 255, 255, 95), width=2)
-    draw.text((pill_x + 26, 68), pill_text, font=pill_font, fill="#FFF2C6")
+    draw.rounded_rectangle((pill_x, 58, pill_x + pill_width, 112), radius=27, fill="#EAEFE9")
+    with Image.open(ROOT / "assets/icon/vmark.png") as mark:
+        mark = mark.resize((mark_size, mark_size), Image.Resampling.LANCZOS)
+        background.alpha_composite(mark, (pill_x + 12, 68))
+    draw.text((pill_x + 56, 68), pill_text, font=pill_font, fill="#16211C")
 
     centered_text(draw, headline, 137, font(68), "#FFFFFF", spacing=-2)
     centered_text(draw, subline, 298, font(29), "#E2F7EB")
@@ -210,16 +214,19 @@ def build_icon() -> Path:
     ).convert("RGBA")
     icon = source.resize((512, 512), Image.Resampling.LANCZOS)
     output = OUT / "app-icon-512x512.png"
-    icon.save(output, "PNG", optimize=True)
+    srgb = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    icon.save(output, "PNG", optimize=True, icc_profile=srgb)
     return output
 
 
 def build_contact_sheet(paths: list[Path]) -> Path:
     thumb_size = (270, 480)
-    sheet = Image.new("RGB", (thumb_size[0] * 3, thumb_size[1] * 3), "#102D23")
+    columns = 3 if len(paths) <= 9 else 5
+    rows = (len(paths) + columns - 1) // columns
+    sheet = Image.new("RGB", (thumb_size[0] * columns, thumb_size[1] * rows), "#102D23")
     for index, path in enumerate(paths):
         thumb = Image.open(path).convert("RGB").resize(thumb_size, Image.Resampling.LANCZOS)
-        sheet.paste(thumb, ((index % 3) * thumb_size[0], (index // 3) * thumb_size[1]))
+        sheet.paste(thumb, ((index % columns) * thumb_size[0], (index // columns) * thumb_size[1]))
     output = OUT / "screenshots-preview.jpg"
     sheet.save(output, "JPEG", quality=88, optimize=True)
     return output
