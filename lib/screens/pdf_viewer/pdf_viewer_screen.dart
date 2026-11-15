@@ -32,6 +32,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   String? _localPath;
   bool _isLoading = true;
   String? _error;
+  // True when the viewer itself rejected the local file (truncated/corrupt),
+  // so Retry should discard it and download again instead of reopening it.
+  bool _fileRejected = false;
   double _downloadProgress = 0;
   int _currentPage = 0;
   int _totalPages = 0;
@@ -433,6 +436,18 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
       final filePath = '${booksDir.path}/${widget.book.id}.pdf';
       final file = File(filePath);
 
+      // The viewer could not open the saved copy: drop it so an official
+      // book downloads fresh. A student-added file has no source, so keep it.
+      if (_fileRejected) {
+        _fileRejected = false;
+        if (widget.book.isOfficial && widget.book.pdfUrl.isNotEmpty &&
+            file.existsSync()) {
+          try {
+            file.deleteSync();
+          } catch (_) {}
+        }
+      }
+
       if (file.existsSync() && file.lengthSync() > 0) {
         if (mounted) setState(() { _localPath = filePath; _isLoading = false; });
         return;
@@ -570,7 +585,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     }
                   },
                   onError: (error) {
-                    if (mounted) setState(() => _error = error.toString());
+                    if (mounted) {
+                      setState(() {
+                        _error = error.toString();
+                        _fileRejected = true;
+                      });
+                    }
                   },
                 ),
               ),
@@ -607,9 +627,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   // ─── Top Bar ────────────────────────────────────────────────────────────
 
   Widget _buildTopBar(bool isBookmarked) {
-    final isDark = _colorFilter == 'dark';
-    final bgColor = isDark ? Colors.grey.shade900 : Theme.of(context).scaffoldBackgroundColor;
-    final iconDefault = isDark ? Colors.white54 : AppColors.textMuted;
+    final isDark = _colorFilter == 'dark' || Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.surfaceDark : Theme.of(context).colorScheme.surface;
+    final iconDefault = isDark ? AppColors.ink3Dark : AppColors.ink3;
 
     return SafeArea(
       bottom: false,
@@ -618,12 +638,12 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: bgColor,
-          border: Border(bottom: BorderSide(color: isDark ? Colors.white12 : AppColors.border)),
+          border: Border(bottom: BorderSide(color: isDark ? AppColors.hairlineDark : AppColors.hairline)),
         ),
         child: Row(
           children: [
             IconButton(
-              icon: Icon(Icons.arrow_back, color: isDark ? Colors.white70 : null),
+              icon: Icon(Icons.arrow_back, color: isDark ? AppColors.inkDark : AppColors.ink),
               onPressed: () => Navigator.of(context).pop(),
             ),
             Expanded(
@@ -635,14 +655,14 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     widget.book.title,
                     style: TextStyle(
                       fontSize: AppFontSize.content, fontWeight: AppFontWeight.semibold,
-                      color: isDark ? Colors.white : AppColors.navy,
+                      color: isDark ? AppColors.inkDark : AppColors.ink,
                     ),
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                   ),
                   if (_totalPages > 0)
                     Text(
                       'Page ${_currentPage + 1} of $_totalPages',
-                      style: TextStyle(fontSize: AppFontSize.caption, color: isDark ? Colors.white54 : AppColors.textMuted),
+                      style: TextStyle(fontSize: AppFontSize.caption, color: isDark ? AppColors.ink3Dark : AppColors.ink3),
                     ),
                 ],
               ),
@@ -668,7 +688,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
               onTap: _toggleBookmark,
             ),
             _buildTopBarBtn(
-              icon: Icons.list,
+              icon: Icons.bookmarks_outlined,
               isActive: _showBookmarks,
               activeColor: AppColors.teal,
               defaultColor: iconDefault,
@@ -703,14 +723,14 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   // ─── Bottom Bar ─────────────────────────────────────────────────────────
 
   Widget _buildBottomBar() {
-    final isDark = _colorFilter == 'dark';
-    final bgColor = isDark ? Colors.grey.shade900 : Colors.white;
-    final iconColor = isDark ? Colors.white54 : AppColors.textMuted;
+    final isDark = _colorFilter == 'dark' || Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final iconColor = isDark ? AppColors.ink3Dark : AppColors.ink3;
 
     return Container(
       decoration: BoxDecoration(
         color: bgColor,
-        border: Border(top: BorderSide(color: isDark ? Colors.white12 : AppColors.border)),
+        border: Border(top: BorderSide(color: isDark ? AppColors.hairlineDark : AppColors.hairline)),
       ),
       child: SafeArea(
         top: false,
@@ -724,7 +744,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                     trackHeight: 3,
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
                     activeTrackColor: AppColors.teal,
-                    inactiveTrackColor: isDark ? Colors.white12 : Colors.grey.shade200,
+                    inactiveTrackColor: isDark ? AppColors.hairlineDark : AppColors.hairline,
                     thumbColor: AppColors.teal,
                     overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                   ),
@@ -741,14 +761,14 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white10 : AppColors.surface,
+                    color: isDark ? AppColors.surface2Dark : AppColors.surface2,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '${_currentPage + 1}',
                     style: TextStyle(
                       fontSize: AppFontSize.body, fontWeight: AppFontWeight.semibold,
-                      color: isDark ? Colors.white70 : AppColors.navy,
+                      color: isDark ? AppColors.inkDark : AppColors.ink,
                     ),
                   ),
                 ),
@@ -773,10 +793,10 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   // ─── Controls Overlay ───────────────────────────────────────────────────
 
   Widget _buildControlsOverlay() {
-    final isDark = _colorFilter == 'dark';
-    final panelBg = isDark ? Colors.grey.shade900 : Colors.white;
-    final textColor = isDark ? Colors.white : AppColors.navy;
-    final mutedColor = isDark ? Colors.white54 : AppColors.textMuted;
+    final isDark = _colorFilter == 'dark' || Theme.of(context).brightness == Brightness.dark;
+    final panelBg = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final textColor = isDark ? AppColors.inkDark : AppColors.ink;
+    final mutedColor = isDark ? AppColors.ink3Dark : AppColors.ink3;
 
     return Positioned(
       left: 16, right: 16, bottom: 16,
@@ -819,7 +839,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                       trackHeight: 3,
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
                       activeTrackColor: AppColors.teal,
-                      inactiveTrackColor: isDark ? Colors.white12 : Colors.grey.shade200,
+                      inactiveTrackColor: isDark ? AppColors.hairlineDark : AppColors.hairline,
                       thumbColor: AppColors.teal,
                       overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                     ),
@@ -892,10 +912,10 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
   // ─── Bookmarks Panel ────────────────────────────────────────────────────
 
   Widget _buildBookmarksPanel() {
-    final isDark = _colorFilter == 'dark';
-    final panelBg = isDark ? Colors.grey.shade900 : Colors.white;
-    final textColor = isDark ? Colors.white : AppColors.navy;
-    final mutedColor = isDark ? Colors.white54 : AppColors.textMuted;
+    final isDark = _colorFilter == 'dark' || Theme.of(context).brightness == Brightness.dark;
+    final panelBg = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final textColor = isDark ? AppColors.inkDark : AppColors.ink;
+    final mutedColor = isDark ? AppColors.ink3Dark : AppColors.ink3;
 
     return Positioned(
       right: 0, top: 0, bottom: 0, width: 220,
@@ -917,7 +937,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                 ],
               ),
             ),
-            Divider(color: isDark ? Colors.white12 : AppColors.border, height: 1),
+            Divider(color: isDark ? AppColors.hairlineDark : AppColors.hairline, height: 1),
             Expanded(
               child: _bookmarks.isEmpty
                   ? Center(
@@ -935,7 +955,7 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: _bookmarks.length,
-                      separatorBuilder: (_, _) => Divider(color: isDark ? Colors.white10 : AppColors.border, height: 1, indent: 16, endIndent: 16),
+                      separatorBuilder: (_, _) => Divider(color: isDark ? AppColors.hairlineDark : AppColors.hairline, height: 1, indent: 16, endIndent: 16),
                       itemBuilder: (context, index) {
                         final page = _bookmarks[index];
                         final isCurrent = page == _currentPage;
@@ -1057,7 +1077,9 @@ class _PdfViewerScreenState extends ConsumerState<PdfViewerScreen> {
           const SizedBox(height: 8),
           Text(
             widget.book.isOfficial
-                ? 'Please check your internet connection and try again.'
+                ? (_fileRejected
+                    ? 'The saved copy of this book is damaged. Tap Retry to download it again.'
+                    : 'Please check your internet connection and try again.')
                 : 'This file is no longer on your device. Remove it from the Library and add it again.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color),
             textAlign: TextAlign.center,

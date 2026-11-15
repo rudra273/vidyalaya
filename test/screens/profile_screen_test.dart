@@ -1,3 +1,4 @@
+import 'package:vidyalaya/screens/profile/widgets/settings_group.dart';
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,8 +11,9 @@ import 'package:vidyalaya/data/services/backend_auth_service.dart';
 import 'package:vidyalaya/providers/auth_provider.dart';
 import 'package:vidyalaya/providers/avatar_provider.dart';
 import 'package:vidyalaya/providers/core_providers.dart';
+import 'package:vidyalaya/providers/plus_provider.dart';
+import 'package:vidyalaya/providers/rollout_switches_provider.dart';
 import 'package:vidyalaya/screens/profile/profile_screen.dart';
-import 'package:vidyalaya/widgets/calm_widgets.dart';
 
 class _User extends Fake implements User {
   @override
@@ -36,6 +38,16 @@ const _initial = StudentProfile(
   avatarId: 'girl_1',
   revision: 3,
 );
+
+/// The Plus card is covered in plus_ui_test.dart; here it stays out of the way
+/// (no cache, no network).
+class _NoPlus extends PlusNotifier {
+  @override
+  PlusViewState build() => const PlusViewState();
+
+  @override
+  Future<void> refresh() async {}
+}
 
 class _Cache extends BackendAccountCache {
   StudentProfile? submitted;
@@ -90,10 +102,8 @@ void main() {
   Future<void> pumpProfile(
     WidgetTester tester, {
     Brightness brightness = Brightness.light,
-    bool clay = true,
     bool openEditor = true,
   }) async {
-    await prefs.setBool('clay_enabled', clay);
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final theme = ThemeData(brightness: brightness);
@@ -108,6 +118,8 @@ void main() {
           firebaseAuthProvider.overrideWithValue(auth),
           authStateProvider.overrideWith((ref) => authChanges.stream),
           backendAccountCacheProvider.overrideWith(() => cache),
+          plusProvider.overrideWith(_NoPlus.new),
+          booksEnabledProvider.overrideWithValue(true),
         ],
         child: MaterialApp.router(
           theme: theme.copyWith(
@@ -124,7 +136,7 @@ void main() {
     authChanges.add(auth.currentUser);
     await tester.pumpAndSettle();
     if (openEditor) {
-      await tester.tap(find.text('Edit'));
+      await tester.tap(find.widgetWithText(SettingsRow, 'Update profile'));
       await tester.pumpAndSettle();
     }
   }
@@ -144,10 +156,10 @@ void main() {
     await tester.pump();
     expect(find.text('Syncing your profile…'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    final editAction = tester.widget<SectionHead>(
-      find.widgetWithText(SectionHead, 'Edit'),
+    final editAction = tester.widget<SettingsRow>(
+      find.widgetWithText(SettingsRow, 'Update profile'),
     );
-    expect(editAction.onAction, isNull);
+    expect(editAction.onTap, isNull);
     await tester.scrollUntilVisible(find.text('Sign out'), 200);
     await tester.pump();
     expect(find.text('Sign out').hitTestable(), findsOneWidget);
@@ -178,7 +190,7 @@ void main() {
     authChanges.add(null);
     await tester.pumpAndSettle();
     expect(find.text('Choose your avatar'), findsNothing);
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
     expect(cache.submitted, isNull);
   });
 
@@ -212,19 +224,19 @@ void main() {
     await tester.pump();
     await tester.binding.handlePopRoute();
     await tester.pump();
-    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.text('Personal details'), findsOneWidget);
     final cancel = tester.widget<OutlinedButton>(
       find.widgetWithText(OutlinedButton, 'Cancel'),
     );
     expect(cancel.onPressed, isNull);
     cache.saving!.complete();
     await tester.pumpAndSettle();
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
   });
 
   testWidgets('Cancel discards avatar and text changes', (tester) async {
     await pumpProfile(tester);
-    expect(find.text('Edit'), findsOneWidget);
+    expect(find.widgetWithText(SettingsRow, 'Update profile'), findsOneWidget);
     await tester.tap(find.byTooltip('Change avatar'));
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Boy 2'));
@@ -233,7 +245,7 @@ void main() {
     await tapAction(tester, 'Cancel');
     expect(cache.submitted, isNull);
     expect(find.text('Asha'), findsOneWidget);
-    await tester.tap(find.text('Edit'));
+    await tester.tap(find.widgetWithText(SettingsRow, 'Update profile'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Change avatar'));
     await tester.pumpAndSettle();
@@ -258,7 +270,7 @@ void main() {
     expect(cache.submitted?.avatarId, 'boy_2');
     expect(cache.submitted?.name, 'New name');
     expect(cache.submitted?.revision, 3);
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
     final container = ProviderScope.containerOf(
       tester.element(find.byType(ProfileScreen)),
     );
@@ -276,7 +288,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Draft name');
     await tapAction(tester, 'Save profile');
-    expect(find.text('Edit profile'), findsOneWidget);
+    expect(find.text('Personal details'), findsOneWidget);
     expect(
       find.text("Couldn't save your profile. Please try again."),
       findsOneWidget,
@@ -297,7 +309,7 @@ void main() {
     auth.currentUser = null;
     authChanges.add(null);
     await tester.pumpAndSettle();
-    expect(find.text('Edit profile'), findsNothing);
+    expect(find.text('Personal details'), findsNothing);
     final container = ProviderScope.containerOf(
       tester.element(find.byType(ProfileScreen)),
     );
@@ -306,15 +318,11 @@ void main() {
   });
 
   for (final brightness in Brightness.values) {
-    for (final clay in [true, false]) {
-      testWidgets('Sheet lays out in $brightness with 3D=$clay', (
-        tester,
-      ) async {
-        await pumpProfile(tester, brightness: brightness, clay: clay);
-        expect(tester.takeException(), isNull);
-        await tapAction(tester, 'Cancel');
-        expect(tester.takeException(), isNull);
-      });
-    }
+    testWidgets('Sheet lays out in $brightness', (tester) async {
+      await pumpProfile(tester, brightness: brightness);
+      expect(tester.takeException(), isNull);
+      await tapAction(tester, 'Cancel');
+      expect(tester.takeException(), isNull);
+    });
   }
 }

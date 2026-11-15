@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_info.dart';
 import '../../app/theme.dart';
+import '../../widgets/vidyakalp_logo.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -24,13 +25,7 @@ class AboutScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Vidyakalp',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: cs.primary,
-                fontWeight: AppFontWeight.bold,
-              ),
-            ),
+            const VidyakalpLogo(size: 40),
             const SizedBox(height: 8),
             Text(
               'Version $kAppVersionName',

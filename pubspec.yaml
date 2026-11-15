@@ -1,7 +1,7 @@
 name: vidyalaya
 description: "Vidyakalp. A book reading app for Indian school students."
 publish_to: 'none'
-version: 1.1.1+7
+version: 1.2.1+9
 
 environment:
   sdk: ^3.11.5
@@ -35,6 +35,10 @@ dependencies:
   markdown: ^7.3.1
   file_picker: ^11.0.3
   firebase_crashlytics: ^5.4.0
+  flutter_local_notifications: ^22.0.0
+  flutter_timezone: ^5.1.1
+  timezone: ^0.11.2
+  permission_handler: 12.0.1
 
 dev_dependencies:
   flutter_test:
@@ -57,10 +61,13 @@ flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
   image_path: "assets/icon/vidyalaya.png"
-  adaptive_icon_background: "#ECF1EC"
+  image_path_android: "assets/icon/vmark.png"
+  adaptive_icon_background: "assets/icon/adaptive_background.png"
   adaptive_icon_foreground: "assets/icon/adaptive_foreground.png"
   adaptive_icon_foreground_inset: 0
   adaptive_icon_monochrome: "assets/icon/monochrome.png"
+  image_path_ios_dark_transparent: "assets/icon/ios_dark.png"
+  image_path_ios_tinted_grayscale: "assets/icon/ios_tinted.png"
   remove_alpha_ios: true
   min_sdk_android: 21
   web:
@@ -70,20 +77,20 @@ flutter_launcher_icons:
     theme_color: "#16855A"
   windows:
     generate: true
-    image_path: "assets/icon/vidyalaya.png"
+    image_path: "assets/icon/vmark.png"
     icon_size: 256
   macos:
     generate: true
-    image_path: "assets/icon/vidyalaya.png"
+    image_path: "assets/icon/vmark.png"
 
 flutter_native_splash:
-  # Sage background matching the vector logo and app theme.
   color: "#ECF1EC"
+  color_dark: "#121413"
   image: assets/icon/splash_mark.png
   android_12:
-    # The text-free book/V fits the system's circular splash mask.
+    # The circular artwork is padded to fit the Android 12+ splash mask.
     image: assets/icon/splash_mark.png
     color: "#ECF1EC"
-    icon_background_color: "#ECF1EC"
+    color_dark: "#121413"
   android: true
   ios: true

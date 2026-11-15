@@ -24,12 +24,15 @@ const Map<String, SubjectMeta> kSubjects = {
   'maths': SubjectMeta('Maths', Icons.functions_rounded, 'ଗଣିତ ପ୍ରକାଶ'),
   'math': SubjectMeta('Maths', Icons.functions_rounded),
   'hindi': SubjectMeta('Hindi', Icons.menu_book_rounded, 'हिंदी कलिका', 'अ'),
-  'sanskrit':
-      SubjectMeta('Sanskrit', Icons.menu_book_rounded, 'संस्कृतकलिका', 'ॐ'),
+  'sanskrit': SubjectMeta(
+    'Sanskrit',
+    Icons.menu_book_rounded,
+    'संस्कृतकलिका',
+    'ॐ',
+  ),
   'science': SubjectMeta('Science', Icons.science_rounded, 'ଜିଜ୍ଞାସା'),
   'social': SubjectMeta('Social', Icons.public_rounded, 'ସମାଜ ବିଜ୍ଞାନ'),
-  'social_science':
-      SubjectMeta('Social', Icons.public_rounded, 'ସମାଜ ବିଜ୍ଞାନ'),
+  'social_science': SubjectMeta('Social', Icons.public_rounded, 'ସମାଜ ବିଜ୍ଞାନ'),
   'skill': SubjectMeta('Skill', Icons.handyman_rounded),
   'work': SubjectMeta('Work', Icons.work_rounded),
 };
@@ -42,6 +45,22 @@ SubjectMeta subjectMeta(String key) {
   final family = kSubjects[canonicalSubjectKey(key)];
   if (family == null) return const SubjectMeta('Subject', Icons.book_rounded);
   return SubjectMeta('Subject', family.icon, null, family.glyph);
+}
+
+/// Student-facing name for a stored subject key, one per subject family:
+/// `maths`, `math` and `math_algebra` are all "Maths"; keys with no family
+/// (`art`, `evs`) are title-cased from the key.
+String subjectDisplayLabel(String key) {
+  final family = canonicalSubjectKey(key);
+  final known = kSubjects[family];
+  if (known != null) return known.label;
+  const acronyms = {'evs', 'pe'};
+  if (acronyms.contains(family)) return family.toUpperCase();
+  return family
+      .split('_')
+      .where((word) => word.isNotEmpty)
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+      .join(' ');
 }
 
 // ─── SubjectGlyph: script char, or the Material icon as fallback ──────────
@@ -197,9 +216,7 @@ class BookCover extends StatelessWidget {
                   Color.alphaBlend(col.withValues(alpha: 0.09), cs.surface),
                 ],
               ),
-              border: Border.all(
-                color: col.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: col.withValues(alpha: 0.22)),
               borderRadius: BorderRadius.circular(radius),
             ),
           ),
@@ -242,14 +259,14 @@ class BookCover extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontSize: big ? AppFontSize.content : AppFontSize.small,
-                      fontWeight: AppFontWeight.semibold,
-                      height: 1.15,
-                      color: Color.alphaBlend(
-                        col.withValues(alpha: 0.72),
-                        inkColor,
-                      ),
-                    ),
+                  fontSize: big ? AppFontSize.content : AppFontSize.small,
+                  fontWeight: AppFontWeight.semibold,
+                  height: 1.15,
+                  color: Color.alphaBlend(
+                    col.withValues(alpha: 0.72),
+                    inkColor,
+                  ),
+                ),
               ),
             ),
         ],
@@ -258,7 +275,7 @@ class BookCover extends StatelessWidget {
   }
 }
 
-// ─── SectionHead: uppercase eyebrow + optional action ─────────────────────
+// ─── SectionHead: bold sentence-case title + optional action ──────────────
 
 class SectionHead extends StatelessWidget {
   final String label;
@@ -279,21 +296,29 @@ class SectionHead extends StatelessWidget {
     // link space out exactly like sections without one — and the link gets a
     // full-height tap target instead of just its glyphs.
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 28),
+        constraints: const BoxConstraints(minHeight: 32),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Flexible(
-              child: Text(label.toUpperCase(), style: kEyebrow(context)),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: AppFontWeight.bold,
+                  ),
+                ),
+              ),
             ),
             if (action != null)
               GestureDetector(
                 onTap: onAction,
                 behavior: HitTestBehavior.opaque,
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 28),
+                  constraints: const BoxConstraints(minHeight: 44),
                   padding: const EdgeInsets.only(left: 16),
                   alignment: Alignment.centerRight,
                   child: Text(
@@ -314,17 +339,6 @@ class SectionHead extends StatelessWidget {
     );
   }
 }
-
-TextStyle kEyebrow(BuildContext context) =>
-    Theme.of(context).textTheme.labelSmall?.copyWith(
-          fontSize: AppFontSize.small,
-          fontWeight: AppFontWeight.bold,
-          letterSpacing: 1.4,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.ink3Dark
-              : AppColors.ink3,
-        ) ??
-    const TextStyle();
 
 // ─── ListRow: a settings-style row ────────────────────────────────────────
 
@@ -361,9 +375,7 @@ class ListRow extends StatelessWidget {
           decoration: last
               ? null
               : BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: hair, width: 1),
-                  ),
+                  border: Border(bottom: BorderSide(color: hair, width: 1)),
                 ),
           padding: EdgeInsets.only(bottom: last ? 0 : 14),
           child: Row(
@@ -377,10 +389,10 @@ class ListRow extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: AppFontSize.content,
-                            fontWeight: AppFontWeight.semibold,
-                            color: cs.onSurface,
-                          ),
+                        fontSize: AppFontSize.content,
+                        fontWeight: AppFontWeight.semibold,
+                        color: cs.onSurface,
+                      ),
                     ),
                     if (sub != null) ...[
                       const SizedBox(height: 2),

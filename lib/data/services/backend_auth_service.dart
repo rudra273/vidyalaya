@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'secure_http_client.dart';
 
 import '../models/learn_assist.dart';
+import '../models/plus.dart';
 import '../models/rollout_switches.dart';
 import 'learn_assist_service.dart';
 
@@ -437,6 +438,44 @@ class BackendAuthService {
     );
 
     return RolloutSwitches.fromJson(_decodeJsonObject(response.body));
+  }
+
+  Future<PlusStatus> plusStatus() async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .get(
+              _baseUrl.resolve('/me/plus'),
+              headers: {'Authorization': 'Bearer $token'},
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+
+    return PlusStatus.fromJson(_decodeJsonObject(response.body));
+  }
+
+  /// Asks for Plus from [source] (one of [PlusSource]). Asking again from
+  /// another screen only records that screen; the server keeps one request.
+  Future<PlusStatus> requestPlus(String source) async {
+    final response = await _sendWithAuth(
+      forceRefresh: false,
+      requestBuilder: (token) {
+        return _client
+            .post(
+              _baseUrl.resolve('/me/plus/requests'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer $token',
+              },
+              body: jsonEncode({'source': source}),
+            )
+            .timeout(const Duration(seconds: 20));
+      },
+    );
+
+    return PlusStatus.fromJson(_decodeJsonObject(response.body));
   }
 
   Future<LearnAssistUsage> usage() async {

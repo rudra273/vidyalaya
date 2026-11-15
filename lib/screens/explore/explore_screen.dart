@@ -16,13 +16,31 @@ import '../../data/seed/seed_data.dart'
 import '../../data/services/backend_auth_service.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 
-/// The **Explore** tab — interactive learning tools, presented as a tasteful
-/// duotone grid (faint glyph backdrop, tinted tile, serif title).
-class ExploreScreen extends ConsumerWidget {
+/// The **Explore** tab — interactive learning tools: a search field, category
+/// chips, one featured tool and a two-column grid of tinted tool cards.
+class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
+
+  @override
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
+}
+
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
+  /// The tool shown in the "Try this week" card, while nothing is filtered.
+  static const _featuredId = 'virtual-lab';
+  static const _featuredBlurb = 'Six experiments you can run on your phone.';
+
+  final _search = TextEditingController();
+  String _query = '';
+  _ToolCategory? _category;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   void _showClassFilter(BuildContext context) {
     showModalBottomSheet<void>(
@@ -53,8 +71,15 @@ class ExploreScreen extends ConsumerWidget {
     context.push(tool.route);
   }
 
+  bool _matches(_Tool t) {
+    if (_category != null && t.category != _category) return false;
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    return t.title.toLowerCase().contains(q) || t.sub.toLowerCase().contains(q);
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final signedIn = ref
         .watch(authStateProvider)
         .maybeWhen(data: (user) => user != null, orElse: () => false);
@@ -76,14 +101,23 @@ class ExploreScreen extends ConsumerWidget {
     bool fits(_Tool t) =>
         classes.isEmpty ||
         (exploreToolClassRanges[t.id] ?? ClassRange.all).fitsAny(classes);
-    final forYou = tools.where(fits).toList();
-    final more = tools.where((t) => !fits(t)).toList();
+    final filtering = _query.trim().isNotEmpty || _category != null;
+    final featured = filtering
+        ? null
+        : tools.where((t) => t.id == _featuredId).firstOrNull;
+    final shown = tools.where((t) => t != featured && _matches(t)).toList();
+    final forYou = shown.where(fits).toList();
+    final more = shown.where((t) => !fits(t)).toList();
+    // While searching or filtering, every match shows in one grid, so a match
+    // for another class is never hidden in the collapsed section.
+    final grid = filtering ? [...forYou, ...more] : forYou;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 28),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
             PageTitle(
               title: 'Explore',
@@ -94,16 +128,321 @@ class ExploreScreen extends ConsumerWidget {
                 onTap: () => _showClassFilter(context),
               ),
             ),
-            const SizedBox(height: AppSpacing.sectionGap - 4),
+            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.screenPadding,
               ),
-              child: _Grid(items: forYou, onTap: (t) => _open(context, ref, t)),
+              child: _SearchField(
+                controller: _search,
+                onChanged: (v) => setState(() => _query = v),
+                onClear: () {
+                  _search.clear();
+                  setState(() => _query = '');
+                },
+              ),
             ),
-            if (more.isNotEmpty)
+            const SizedBox(height: 14),
+            _CategoryChips(
+              selected: _category,
+              onSelected: (c) {
+                Haptics.selection(ref);
+                setState(() => _category = c);
+              },
+            ),
+            const SizedBox(height: 16),
+            if (featured != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  0,
+                  AppSpacing.screenPadding,
+                  AppSpacing.stackGap + 4,
+                ),
+                child: _FeaturedCard(
+                  tool: featured,
+                  blurb: _featuredBlurb,
+                  onTap: () => _open(context, ref, featured),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.screenPadding,
+              ),
+              child: grid.isEmpty && (filtering || more.isEmpty)
+                  ? const _NoMatches()
+                  : _Grid(items: grid, onTap: (t) => _open(context, ref, t)),
+            ),
+            if (!filtering && more.isNotEmpty)
               _MoreTools(items: more, onTap: (t) => _open(context, ref, t)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Search + categories ─────────────────────────────────────────────────
+
+/// Outline colour of the search pill and unselected chips in light mode.
+const _lineLight = Color(0xFFC6D5C9);
+
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final muted = dark ? AppColors.ink2Dark : AppColors.ink2;
+    OutlineInputBorder pill(Color color) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+      borderSide: BorderSide(color: color, width: 2),
+    );
+    final idle = dark ? AppColors.surface3Dark : _lineLight;
+    final focus = dark ? AppColors.green500Dark : AppColors.green600;
+
+    return SizedBox(
+      height: 50,
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        textInputAction: TextInputAction.search,
+        textAlignVertical: TextAlignVertical.center,
+        style: TextStyle(fontSize: 15, color: cs.onSurface),
+        cursorColor: focus,
+        decoration: InputDecoration(
+          hintText: 'Search tools and topics',
+          hintStyle: TextStyle(fontSize: 15, color: muted),
+          isCollapsed: true,
+          filled: true,
+          fillColor: cs.surface,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          prefixIcon: Icon(Icons.search_rounded, size: 22, color: muted),
+          prefixIconConstraints: const BoxConstraints(minWidth: 48),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Clear search',
+                  onPressed: onClear,
+                  icon: Icon(Icons.close_rounded, size: 20, color: muted),
+                ),
+          border: pill(idle),
+          enabledBorder: pill(idle),
+          focusedBorder: pill(focus),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChips extends StatelessWidget {
+  final _ToolCategory? selected;
+  final ValueChanged<_ToolCategory?> onSelected;
+
+  const _CategoryChips({required this.selected, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final options = <_ToolCategory?>[null, ..._ToolCategory.values];
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.screenPadding,
+        ),
+        itemCount: options.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final c = options[i];
+          return _Chip(
+            label: c?.label ?? 'All',
+            selected: c == selected,
+            onTap: () => onSelected(c),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final ink = cs.onSurface;
+    final line = dark ? AppColors.surface3Dark : _lineLight;
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: Material(
+        color: selected ? ink : Colors.transparent,
+        shape: StadiumBorder(
+          side: BorderSide(color: selected ? ink : line, width: 2),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Center(
+              widthFactor: 1,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: AppFontSize.body,
+                  fontWeight: selected
+                      ? AppFontWeight.semibold
+                      : AppFontWeight.medium,
+                  color: selected ? cs.surface : ink,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NoMatches extends StatelessWidget {
+  const _NoMatches();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 36),
+      child: Column(
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 28,
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.45),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No tools match',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Featured tool ───────────────────────────────────────────────────────
+
+class _FeaturedCard extends StatelessWidget {
+  final _Tool tool;
+  final String blurb;
+  final VoidCallback onTap;
+
+  const _FeaturedCard({
+    required this.tool,
+    required this.blurb,
+    required this.onTap,
+  });
+
+  static const _label = Color(0xFF7FE0B6);
+  static const _body = Color(0xFFC9DDD2);
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return Semantics(
+      button: true,
+      label: 'Try this week: ${tool.title}. $blurb',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: dark ? AppColors.heroDark : AppColors.hero,
+            borderRadius: BorderRadius.circular(24),
+            border: dark ? Border.all(color: AppColors.heroLineDark) : null,
+            boxShadow: dark
+                ? null
+                : const [
+                    BoxShadow(
+                      color: AppColors.onGreenDark,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TRY THIS WEEK',
+                      style: TextStyle(
+                        fontSize: AppFontSize.small,
+                        fontWeight: AppFontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: _label,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      tool.title,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontSize: AppFontSize.heading,
+                            height: 1.15,
+                            color: AppColors.heroInk,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      blurb,
+                      style: const TextStyle(
+                        fontSize: AppFontSize.body,
+                        height: 1.35,
+                        color: _body,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.green100Dark,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                alignment: Alignment.center,
+                child: Icon(tool.icon, size: 38, color: _label),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -440,6 +779,8 @@ class _ToolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Semantics(
       button: true,
       enabled: true,
@@ -448,66 +789,49 @@ class _ToolCard extends StatelessWidget {
         onTap: onTap,
         // Every tile reserves room for a two-line description, so a longer
         // subtitle never makes its row taller than its neighbour.
-        child: SizedBox(
+        child: Container(
           height: 144,
-          child: ClayCard(
-            padding: const EdgeInsets.all(12),
-            blur: 13,
-            distance: 4,
-            child: Stack(
-              clipBehavior: Clip.hardEdge,
-              children: [
-                // faint glyph backdrop
-                Positioned(
-                  right: -16,
-                  bottom: -18,
-                  child: Icon(
-                    tool.icon,
-                    size: 92,
-                    // Kept faint so it never competes with the subtitle it
-                    // sits under; dark mode needs less to read the same.
-                    color: tool.color.withValues(
-                      alpha: Theme.of(context).brightness == Brightness.dark
-                          ? 0.07
-                          : 0.09,
-                    ),
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Tile(color: tool.color, icon: tool.icon, size: 46),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      tool.title,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            fontSize: AppFontSize.content,
-                            height: 1.12,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      tool.sub,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: AppFontSize.small,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            // A solid bottom edge in light; dark relies on the lighter
+            // surface alone.
+            boxShadow: dark
+                ? null
+                : const [
+                    BoxShadow(color: Color(0xFFD5E0D6), offset: Offset(0, 3)),
                   ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Tile(color: tool.color, icon: tool.icon, size: 44, radius: 14),
+              const SizedBox(height: 10),
+              Text(
+                tool.title,
+                style: TextStyle(
+                  fontSize: AppFontSize.content,
+                  fontWeight: AppFontWeight.semibold,
+                  height: 1.2,
+                  color: cs.onSurface,
                 ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                tool.sub,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.35,
+                  color: dark ? AppColors.ink2Dark : AppColors.ink2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -517,6 +841,18 @@ class _ToolCard extends StatelessWidget {
 
 // ─── Tool data ───────────────────────────────────────────────────────────
 
+/// The chip a tool sits under. Every tool has exactly one.
+enum _ToolCategory {
+  maths('Maths'),
+  science('Science'),
+  language('Language'),
+  coding('Coding'),
+  play('Play');
+
+  const _ToolCategory(this.label);
+  final String label;
+}
+
 class _Tool {
   final String id;
   final String title;
@@ -524,6 +860,7 @@ class _Tool {
   final IconData icon;
   final Color color;
   final String route;
+  final _ToolCategory category;
 
   const _Tool({
     required this.id,
@@ -531,6 +868,7 @@ class _Tool {
     required this.sub,
     required this.icon,
     required this.color,
+    required this.category,
     this.route = '',
   });
 }
@@ -544,6 +882,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.calculate_rounded,
     color: isDark ? AppColors.cMathHubDark : AppColors.cMathHub,
     route: '/learn/math',
+    category: _ToolCategory.maths,
   ),
   _Tool(
     id: 'diagrams',
@@ -552,6 +891,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.account_tree_rounded,
     color: isDark ? AppColors.cDiagramsDark : AppColors.cDiagrams,
     route: '/learn/diagrams',
+    category: _ToolCategory.science,
   ),
   _Tool(
     id: 'virtual-lab',
@@ -560,6 +900,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.science_rounded,
     color: isDark ? AppColors.cScienceDark : AppColors.cScience,
     route: '/labs',
+    category: _ToolCategory.science,
   ),
   _Tool(
     id: 'periodic-table',
@@ -568,6 +909,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.grid_view_rounded,
     color: isDark ? AppColors.cPeriodicDark : AppColors.cPeriodic,
     route: '/learn/periodic-table',
+    category: _ToolCategory.science,
   ),
   _Tool(
     id: 'cosmulator',
@@ -576,6 +918,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.public_rounded,
     color: isDark ? AppColors.cCosmosDark : AppColors.cCosmos,
     route: '/learn/cosmulator',
+    category: _ToolCategory.science,
   ),
   _Tool(
     id: 'quiz',
@@ -584,6 +927,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.quiz_rounded,
     color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
     route: '/learn/quiz',
+    category: _ToolCategory.play,
   ),
   _Tool(
     id: 'python',
@@ -592,6 +936,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.code_rounded,
     color: isDark ? AppColors.cPythonDark : AppColors.cPython,
     route: '/learn/python',
+    category: _ToolCategory.coding,
   ),
   _Tool(
     id: 'vocabulary',
@@ -600,6 +945,7 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.menu_book_outlined,
     color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
     route: '/learn/vocabulary',
+    category: _ToolCategory.language,
   ),
   _Tool(
     id: 'timeline',
@@ -608,5 +954,6 @@ List<_Tool> _tools(bool isDark) => [
     icon: Icons.timeline_rounded,
     color: isDark ? AppColors.cTimelineDark : AppColors.cTimeline,
     route: '/learn/timeline',
+    category: _ToolCategory.play,
   ),
 ];

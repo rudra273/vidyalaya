@@ -51,6 +51,7 @@ class RolloutSwitchesNotifier extends Notifier<RolloutSwitches> {
           .rolloutSwitches();
       // The student may have signed out or switched while this was in flight.
       if (!ref.mounted || _currentUid != uid) return;
+      if (fetched != state) state = fetched;
       await ref
           .read(cacheStoreProvider)
           .write(
@@ -58,9 +59,6 @@ class RolloutSwitchesNotifier extends Notifier<RolloutSwitches> {
             fetched,
             (value) => value.toJson(),
           );
-      if (ref.mounted && _currentUid == uid && fetched != state) {
-        state = fetched;
-      }
     } catch (_) {
       // Offline or server error: keep the cached or default switches.
     }

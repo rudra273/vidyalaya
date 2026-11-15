@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme.dart';
+import '../../../../widgets/ai_robot_mark.dart';
 
 // ─── Shared MCQ option tile ───────────────────────────────────────────────────
 //
@@ -185,16 +186,13 @@ class MathScorePage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              _stars == 3
-                  ? Icons.emoji_events_rounded
-                  : _stars >= 1
-                      ? Icons.celebration_rounded
-                      : Icons.fitness_center_rounded,
-              size: 64,
-              color: accent,
+            // The bot cheers any star; with none it stays calm and
+            // encouraging rather than looking let down.
+            AiBot(
+              size: 80,
+              mood: _stars >= 1 ? BotMood.cheering : BotMood.idle,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
             Text(
               'You got $correct / $total',
               style: Theme.of(context)

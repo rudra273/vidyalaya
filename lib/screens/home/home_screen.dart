@@ -1,26 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../data/avatars.dart';
+import '../../data/seed/seed_data.dart' show boardLabel;
 import '../../utils/haptics.dart';
-import '../../providers/reading_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/avatar_provider.dart';
 import '../../providers/games_progress_provider.dart';
-import '../../providers/progress_provider.dart';
+import '../../providers/learn_assist_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/recent_questions_provider.dart';
 import '../../providers/regional_language_provider.dart';
 import '../../providers/rollout_switches_provider.dart';
 import '../../providers/vocabulary_provider.dart';
+import '../../widgets/ai_robot_mark.dart';
 import '../../widgets/home_ai_chat.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/clay_card.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/share_feedback_banner.dart';
-import '../../data/models/book.dart';
+import '../../widgets/tool_glyph.dart';
 import '../../data/seed/vocabulary_data.dart';
 import '../../data/seed/warmup_data.dart';
 import '../../providers/user_selection_provider.dart';
@@ -28,40 +26,31 @@ import 'widgets/warmup_card.dart';
 
 /// Haptic tap → navigate, the pattern every Home tile shares. Uses `push` by
 /// default; pass [replace] for tabs that should swap the current route.
-void _navTap(
-  WidgetRef ref,
-  BuildContext context,
-  String path, {
-  bool replace = false,
-}) {
+void _navTap(WidgetRef ref, BuildContext context, String path) {
   Haptics.light(ref);
-  if (replace) {
-    context.go(path);
-  } else {
-    context.push(path);
-  }
+  context.push(path);
 }
 
-/// AI-first Home — "Calm Scholar" layout.
-/// Wordmark → AI Learning (Ask card, with the AI tab one tap away) → Word of
-/// the day → Your books (Library, continue reading, recently added) →
-/// Study tools.
+/// AI-first Home.
+/// Greeting + notifications → AI card → study tools → word of the day →
+/// warm-up → interactive lessons (coming soon) → share.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recentBooks = ref.watch(recentBooksProvider);
     final booksEnabled = ref.watch(booksEnabledProvider);
-    final streak = ref.watch(progressProvider).currentStreak;
     final dailyDone = ref.watch(gamesProgressProvider).dailyDoneToday;
+    final unread = ref.watch(notificationsUnreadCountProvider);
+    final classNo = ref.watch(primaryClassProvider);
+    final board = ref.watch(userBoardProvider);
+    final aiAvailable = ref.watch(aiAccessProvider) == AiAccess.available;
     final user = ref
         .watch(authStateProvider)
         .maybeWhen(data: (u) => u, orElse: () => null);
 
     final firstName = _firstName(user);
-    final avatarLetter = (firstName.isNotEmpty ? firstName[0] : 'S')
-        .toUpperCase();
+    final lateNight = _isLateNight();
 
     // One warm-up a day, pitched at the lowest class the student has selected
     // (null = draw from the whole pool) so it never lands above their level.
@@ -73,8 +62,6 @@ class HomeScreen extends ConsumerWidget {
           : (selectedClasses.toList()..sort()).first,
     );
 
-    final showRecentBooks = booksEnabled && recentBooks.isNotEmpty;
-
     // The AI card offers to resume the latest question — but only while it's
     // fresh. A week-old "Continue" reads as stale, not helpful.
     final recents = ref.watch(recentQuestionsProvider);
@@ -85,190 +72,196 @@ class HomeScreen extends ConsumerWidget {
         ? recents.first
         : null;
 
+    const pad = EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding);
+
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.only(bottom: 28),
         children: [
-          // ── top bar: wordmark + streak + avatar ─────────────────
-          // Shares PageTitle's metrics so the wordmark sits at exactly the
-          // same height as the "AI Learning" / "Explore" / "Profile" titles.
-          PageTitle(
-            title: 'Vidyakalp',
-            sub: _greetingLine(firstName),
-            // Both controls fit PageTitle's title row, so they centre on the
-            // wordmark and the greeting runs full width underneath.
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          // ── Greeting + notifications ───────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              18,
+              AppSpacing.screenPadding,
+              0,
+            ),
+            child: Row(
               children: [
-                if (streak > 0) ...[
-                  _StreakChip(
-                    streak: streak,
-                    onTap: () => _navTap(ref, context, '/progress'),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_greeting()}, $firstName',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lateNight
+                            ? 'Rest now. Study fresh tomorrow.'
+                            : 'Class $classNo · ${boardLabel(board)}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: _muted(context),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                ],
-                _Avatar(
-                  letter: avatarLetter,
-                  avatar: ref.watch(selectedAvatarProvider),
-                  onTap: () => _navTap(ref, context, '/profile', replace: true),
+                ),
+                const SizedBox(width: 8),
+                _BellButton(
+                  unread: unread,
+                  onTap: () => _navTap(ref, context, '/notifications'),
                 ),
               ],
             ),
           ),
 
-          // ── Q&A Assist conversation entry ──────────────────────
-          const SizedBox(height: AppSpacing.sectionGap - 14),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
+          // ── AI card ──────────────────────────────────────────────
+          // Only when the AI can answer for this class (see aiAccessProvider).
+          if (aiAvailable) ...[
+            const SizedBox(height: 14),
+            Padding(
+              padding: pad,
+              child: HomeAiChat(
+                mood: lateNight ? BotMood.resting : BotMood.idle,
+                onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
+                onCamera: () => _navTap(ref, context, '/learn/ai?camera=1'),
+                resumeText: lastQuestion?.text,
+                onResume: lastQuestion == null
+                    ? null
+                    : () => _navTap(
+                        ref,
+                        context,
+                        recentQuestionResumePath(lastQuestion),
+                      ),
+              ),
             ),
-            child: HomeAiChat(
-              onChat: () => _navTap(ref, context, '/learn/ai?focus=1'),
-              resumeText: lastQuestion?.text,
-              onResume: lastQuestion == null
-                  ? null
-                  : () => _navTap(
-                      ref,
-                      context,
-                      recentQuestionResumePath(lastQuestion),
-                    ),
-            ),
-          ),
+          ],
 
           // ── Study tools ──────────────────────────────────────────
-          // Compact shortcuts below the Q&A entry.
           const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(
+            padding: pad,
+            child: _SectionTitle(title: 'Study tools'),
+          ),
+          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                const spacing = 9.0;
-                final tileWidth = (constraints.maxWidth - spacing * 2) / 3;
+            padding: pad,
+            child: Builder(
+              builder: (context) {
                 final dark = _isDark(context);
-                // Always six tiles — two full rows. With books off, Vocabulary
-                // takes the Books slot so the grid never has a gap.
-                final tools = [
-                  _MiniTool(
-                    color: dark ? AppColors.cHindiDark : AppColors.cHindi,
-                    icon: Icons.bookmark_rounded,
-                    label: 'Bookmarks',
-                    onTap: () => _navTap(ref, context, '/bookmarks'),
+                final tools = <_ToolItem>[
+                  if (booksEnabled)
+                    _ToolItem(
+                      'Books',
+                      Icons.menu_book_rounded,
+                      dark ? AppColors.cAiDark : AppColors.cAi,
+                      '/library',
+                      glyph: ToolGlyph.books,
+                    ),
+                  _ToolItem(
+                    'Quizzes',
+                    Icons.quiz_rounded,
+                    dark ? AppColors.cEnglishDark : AppColors.cEnglish,
+                    '/learn/quiz',
+                    glyph: ToolGlyph.quizzes,
                   ),
-                  _MiniTool(
-                    color: dark ? AppColors.cScienceDark : AppColors.cScience,
-                    icon: Icons.calendar_month_rounded,
-                    label: 'Timetable',
-                    onTap: () => _navTap(ref, context, '/timetable'),
+                  _ToolItem(
+                    'Notes',
+                    Icons.edit_note_rounded,
+                    dark ? AppColors.cSocialDark : AppColors.cSocial,
+                    '/notes',
+                    glyph: ToolGlyph.notes,
                   ),
-                  _MiniTool(
-                    color: dark ? AppColors.cSocialDark : AppColors.cSocial,
-                    icon: Icons.edit_note_rounded,
-                    label: 'Notes',
-                    onTap: () => _navTap(ref, context, '/notes'),
+                  _ToolItem(
+                    'Timetable',
+                    Icons.calendar_month_rounded,
+                    dark ? AppColors.cScienceDark : AppColors.cScience,
+                    '/timetable',
+                    glyph: ToolGlyph.timetable,
                   ),
-                  booksEnabled
-                      ? _MiniTool(
-                          color: dark ? AppColors.cAiDark : AppColors.cAi,
-                          icon: Icons.menu_book_rounded,
-                          label: 'Books',
-                          onTap: () => _navTap(ref, context, '/library'),
-                        )
-                      : _MiniTool(
-                          color: dark ? AppColors.cAiDark : AppColors.cAi,
-                          icon: Icons.menu_book_outlined,
-                          label: 'Vocabulary',
-                          onTap: () =>
-                              _navTap(ref, context, '/learn/vocabulary'),
-                        ),
-                  // Same hue + icon as its Explore card, so it's recognisable.
-                  _MiniTool(
-                    color: dark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                    icon: Icons.quiz_rounded,
-                    label: 'Quizzes',
-                    onTap: () => _navTap(ref, context, '/learn/quiz'),
+                  if (booksEnabled)
+                    _ToolItem(
+                      'Bookmarks',
+                      Icons.bookmark_rounded,
+                      dark ? AppColors.cHindiDark : AppColors.cHindi,
+                      '/bookmarks',
+                      glyph: ToolGlyph.bookmarks,
+                    ),
+                  _ToolItem(
+                    'Vocabulary',
+                    Icons.translate_rounded,
+                    dark ? AppColors.cFormulasDark : AppColors.cFormulas,
+                    '/learn/vocabulary',
+                    glyph: ToolGlyph.vocabulary,
                   ),
-                  _MiniTool(
-                    color: dark ? AppColors.cMathsDark : AppColors.cMaths,
-                    icon: Icons.extension_rounded,
-                    label: 'Games',
+                  _ToolItem(
+                    'Games',
+                    Icons.extension_rounded,
+                    dark ? AppColors.cMathsDark : AppColors.cMaths,
+                    '/games',
                     // Dot until today's Daily Brain Challenge is done.
                     badge: !dailyDone,
-                    onTap: () => _navTap(ref, context, '/games'),
                   ),
                 ];
-                return Wrap(
-                  spacing: spacing,
-                  runSpacing: spacing,
-                  children: [
-                    for (final tool in tools)
-                      SizedBox(width: tileWidth, child: tool),
-                  ],
-                );
+                // A grid of four per row, so every tool is on screen at
+                // once; a short last row keeps the columns lined up.
+                const perRow = 4;
+                final rows = <Widget>[];
+                for (var start = 0; start < tools.length; start += perRow) {
+                  if (rows.isNotEmpty) rows.add(const SizedBox(height: 14));
+                  rows.add(
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = start; i < start + perRow; i++)
+                          Expanded(
+                            child: i < tools.length
+                                ? _ToolButton(
+                                    item: tools[i],
+                                    onTap: () =>
+                                        _navTap(ref, context, tools[i].route),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+                return Column(children: rows);
               },
             ),
           ),
 
           // ── Word of the day ──────────────────────────────────────
-          const SizedBox(height: AppSpacing.sectionGap),
+          const SizedBox(height: AppSpacing.sectionGap - 6),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: 'Word of the day'),
+            padding: pad,
+            child: _SectionTitle(title: 'Word of the day'),
           ),
+          const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
+            padding: pad,
             child: _WordOfDayCard(
               word: wordOfTheDay(),
               regionalLang: ref.watch(dictionaryDefaultLanguageProvider),
             ),
           ),
 
-          // ── Your books ───────────────────────────────────────────
-          // Most-recently-opened first, so the row tracks what the student is
-          // actually reading. No continue-reading card — the first tile in
-          // this row is that book.
-          if (showRecentBooks) ...[
-            const SizedBox(height: AppSpacing.sectionGap),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: SectionHead(
-                label: 'Your books',
-                action: 'See all',
-                onAction: () => _navTap(ref, context, '/library'),
-              ),
-            ),
-            SizedBox(
-              height: 168,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                ),
-                itemCount: recentBooks.length > 8 ? 8 : recentBooks.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(width: AppSpacing.stackGap),
-                itemBuilder: (context, index) {
-                  return _RecentBookCard(book: recentBooks[index]);
-                },
-              ),
-            ),
-          ],
-
           // ── Today's warm-up ─────────────────────────────────────
           const SizedBox(height: AppSpacing.sectionGap),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: SectionHead(label: "Today's warm-up"),
+            padding: pad,
+            child: _SectionTitle(title: "Today's warm-up"),
           ),
+          const SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.screenPadding,
-            ),
+            padding: pad,
             child: WarmupCard(
               // Keyed by question id so the card resets its answered state when
               // the day rolls over while Home is still on screen.
@@ -277,12 +270,31 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // ── Share & rate ─────────────────────────────────────────
+          // ── Interactive lessons (placeholder) ────────────────────
+          // Reserved for the upcoming interactive Maths / English / Science
+          // lessons. Until they ship, the cards say so instead of linking,
+          // and the section sits low on the page.
           const SizedBox(height: AppSpacing.sectionGap),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
-            child: ShareFeedbackBanner(),
+            padding: pad,
+            child: _SectionTitle(title: 'Interactive lessons', tag: 'Soon'),
           ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 132,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: pad,
+              itemCount: _lessonPreviews.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 12),
+              itemBuilder: (context, i) =>
+                  _LessonPreviewCard(preview: _lessonPreviews[i]),
+            ),
+          ),
+
+          // ── Share & rate ─────────────────────────────────────────
+          const SizedBox(height: AppSpacing.sectionGap),
+          const Padding(padding: pad, child: ShareFeedbackBanner()),
         ],
       ),
     );
@@ -294,71 +306,211 @@ class HomeScreen extends ConsumerWidget {
     return 'Student';
   }
 
+  /// Late at night (and pre-dawn) Home nudges the student to rest instead of
+  /// pushing them to keep studying, and the bot rests too.
+  static bool _isLateNight() {
+    final h = DateTime.now().hour;
+    return h >= 22 || h < 5;
+  }
+
   static String _greeting() {
     final h = DateTime.now().hour;
+    if (h >= 22 || h < 5) return 'Good night';
     if (h < 12) return 'Good morning';
     if (h < 17) return 'Good afternoon';
     return 'Good evening';
-  }
-
-  /// Full greeting line, time-of-day aware. Late at night (and pre-dawn) we
-  /// nudge the student to rest instead of pushing them to keep studying.
-  static String _greetingLine(String firstName) {
-    final h = DateTime.now().hour;
-    if (h >= 22 || h < 5) {
-      return 'Good night, $firstName — time to rest, study fresh tomorrow.';
-    }
-    return '${_greeting()}, $firstName — let\'s keep learning.';
   }
 
   static bool _isDark(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark;
 }
 
-// ─── Streak chip (uses maths/coral hue per design) ──────────────────────
+Color _muted(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark
+    ? AppColors.ink2Dark
+    : AppColors.ink2;
 
-class _StreakChip extends StatelessWidget {
-  final int streak;
-  final VoidCallback onTap;
+// ─── Section title ──────────────────────────────────────────────────────
 
-  const _StreakChip({required this.streak, required this.onTap});
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title, this.tag});
+
+  final String title;
+
+  /// Small pill after the title, e.g. "Soon".
+  final String? tag;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final cs = Theme.of(context).colorScheme;
-    final accent = isDark ? AppColors.cMathsDark : AppColors.cMaths;
+    return Semantics(
+      header: true,
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold),
+          ),
+          if (tag != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: cs.secondary,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                tag!,
+                style: TextStyle(
+                  fontSize: AppFontSize.small,
+                  fontWeight: AppFontWeight.bold,
+                  color: cs.onSecondary,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Notifications bell ─────────────────────────────────────────────────
+
+class _BellButton extends StatelessWidget {
+  const _BellButton({required this.unread, required this.onTap});
+
+  final int unread;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Semantics(
       button: true,
-      label: '$streak day streak',
+      label: unread > 0 ? 'Notifications, $unread new' : 'Notifications',
       excludeSemantics: true,
       child: Pressable(
         onTap: onTap,
         scale: 0.92,
         child: Container(
-          height: 32,
-          padding: const EdgeInsets.fromLTRB(8, 0, 11, 0),
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
-            border: Border.all(color: accent.withValues(alpha: 0.26)),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(color: cs.surface, shape: BoxShape.circle),
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Icon(
-                Icons.local_fire_department_rounded,
-                size: 16,
-                color: accent,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '$streak',
-                style: TextStyle(
-                  fontSize: AppFontSize.body,
-                  fontWeight: AppFontWeight.bold,
-                  color: accent,
+              Icon(Icons.notifications_none_rounded, color: cs.onSurface),
+              if (unread > 0)
+                Positioned(
+                  top: 10,
+                  right: 11,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0884A),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cs.surface, width: 2),
+                    ),
+                  ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Interactive lesson previews ────────────────────────────────────────
+
+class _LessonPreview {
+  const _LessonPreview(this.subject, this.glyph, this.light, this.dark);
+  final String subject;
+  final String glyph;
+  final Color light;
+  final Color dark;
+}
+
+const _lessonPreviews = [
+  _LessonPreview('Maths', 'π', AppColors.cMaths, AppColors.cMathsDark),
+  _LessonPreview('English', 'Aa', AppColors.cEnglish, AppColors.cEnglishDark),
+  _LessonPreview('Science', 'H₂O', AppColors.cScience, AppColors.cScienceDark),
+];
+
+class _LessonPreviewCard extends StatelessWidget {
+  const _LessonPreviewCard({required this.preview});
+
+  final _LessonPreview preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final hue = dark ? preview.dark : preview.light;
+    return Semantics(
+      button: true,
+      label: 'Interactive ${preview.subject} lessons, coming soon',
+      excludeSemantics: true,
+      child: Pressable(
+        onTap: () {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Interactive ${preview.subject} lessons are coming soon.',
+                ),
+              ),
+            );
+        },
+        child: Container(
+          width: 150,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color.alphaBlend(
+                    hue.withValues(alpha: dark ? 0.2 : 0.14),
+                    cs.surface,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  preview.glyph,
+                  style: TextStyle(
+                    fontFamily: Theme.of(
+                      context,
+                    ).textTheme.headlineSmall?.fontFamily,
+                    fontSize: preview.glyph.length > 2 ? 14 : 19,
+                    fontWeight: AppFontWeight.semibold,
+                    color: hue,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                preview.subject,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Coming soon',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: _muted(context)),
               ),
             ],
           ),
@@ -368,57 +520,112 @@ class _StreakChip extends StatelessWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
-  final String letter;
-  final StudentAvatar? avatar;
-  final VoidCallback onTap;
+// ─── Study tool button (horizontal row) ─────────────────────────────────
 
-  const _Avatar({required this.letter, this.avatar, required this.onTap});
+class _ToolItem {
+  const _ToolItem(
+    this.label,
+    this.icon,
+    this.color,
+    this.route, {
+    this.glyph,
+    this.badge = false,
+  });
+  final String label;
+
+  /// Shown when the tool has no drawn [glyph] (Games keeps its puzzle piece).
+  final IconData icon;
+
+  /// The tool's own bold picture.
+  final ToolGlyph? glyph;
+  final Color color;
+  final String route;
+  final bool badge;
+}
+
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({required this.item, required this.onTap});
+
+  final _ToolItem item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    // A white tile with the picture in the tool's own colour, so each tool
+    // reads at a glance without seven blocks of colour on the page.
+    final tile = dark ? AppColors.surface2Dark : Colors.white;
+    final edge = dark ? const Color(0xFF0A0C0B) : AppColors.cardEdge;
+    final ink = item.color;
     return Semantics(
       button: true,
-      label: 'Profile',
+      label: item.label,
       excludeSemantics: true,
       child: Pressable(
         onTap: onTap,
-        scale: 0.92,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-              cs.surface,
-            ),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? AppColors.green100Dark : AppColors.green100,
-            ),
-          ),
-          alignment: Alignment.center,
-          child: avatar != null
-              ? ClipOval(
-                  child: SvgPicture.asset(
-                    avatar!.assetPath,
-                    width: 32,
-                    height: 32,
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: tile,
+                      borderRadius: BorderRadius.circular(16),
+                      // A solid edge underneath, like the app's chunky
+                      // buttons.
+                      boxShadow: [
+                        BoxShadow(color: edge, offset: const Offset(0, 3)),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: item.glyph == null
+                        ? Icon(item.icon, size: 33, color: ink)
+                        : ToolGlyphView(
+                            glyph: item.glyph!,
+                            color: ink,
+                            behind: tile,
+                            size: 33,
+                          ),
                   ),
-                )
-              : Text(
-                  letter,
-                  style: TextStyle(
-                    fontFamily: Theme.of(
-                      context,
-                    ).textTheme.displaySmall?.fontFamily,
-                    fontSize: AppFontSize.content,
-                    fontWeight: AppFontWeight.semibold,
-                    color: cs.primary,
-                  ),
+                  if (item.badge)
+                    Positioned(
+                      right: -1,
+                      top: -1,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          // A fixed alert red: a dot in the tile's own hue
+                          // vanished against its tinted background.
+                          color: AppColors.badge,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: AppFontWeight.semibold,
                 ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -444,7 +651,6 @@ class _WordOfDayCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.cardPad - 2),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border.all(color: cs.outline),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: Column(
@@ -614,124 +820,6 @@ class _ExampleSentence extends StatelessWidget {
           ),
           TextSpan(text: sentence.substring(idx + word.length)),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Mini tool tile (3-column grid) ─────────────────────────────────────
-
-class _MiniTool extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  /// Shows a small attention dot on the icon.
-  final bool badge;
-
-  const _MiniTool({
-    required this.color,
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.badge = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: ClayCard(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        radius: AppSpacing.tileRadius,
-        blur: 13,
-        distance: 4,
-        child: Row(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Tile(color: color, icon: icon, size: 22, radius: 7),
-                if (badge)
-                  Positioned(
-                    right: -2,
-                    top: -2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        // A fixed alert red: a dot in the tile's own hue
-                        // vanished against its tinted background.
-                        color: AppColors.badge,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.surface,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 7),
-            // Scales down rather than truncating on narrow phones, where
-            // "Bookmarks" would otherwise lose its last letters.
-            Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: AppFontSize.small,
-                    fontWeight: AppFontWeight.semibold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Recently added book card (horizontal scroller item) ───────────────
-
-class _RecentBookCard extends ConsumerWidget {
-  final Book book;
-
-  const _RecentBookCard({required this.book});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final meta = subjectMeta(book.subject);
-    return Pressable(
-      onTap: () => _navTap(ref, context, '/reader/${book.id}'),
-      child: SizedBox(
-        width: 106,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 130,
-              child: BookCover(subjectKey: book.subject, title: book.title),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              meta.label,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontSize: AppFontSize.small,
-                fontWeight: AppFontWeight.semibold,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.ink2Dark
-                    : AppColors.ink2,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

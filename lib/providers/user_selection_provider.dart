@@ -3,7 +3,12 @@ import 'auth_provider.dart';
 import 'core_providers.dart';
 
 final accountUidProvider = Provider<String?>((ref) {
-  return ref.watch(authStateProvider).value?.uid;
+  final auth = ref.watch(authStateProvider);
+  // Firebase restores currentUser before its stream delivers the first event.
+  // Use that uid immediately so startup routes read the student's preferences.
+  return auth.isLoading
+      ? ref.read(firebaseAuthProvider).currentUser?.uid
+      : auth.value?.uid;
 });
 
 /// App-wide classes used by Explore and general learning content.

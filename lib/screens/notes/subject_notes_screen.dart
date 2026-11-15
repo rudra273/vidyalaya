@@ -175,7 +175,7 @@ class _HighlightTile extends StatelessWidget {
                       Text(
                         highlight.note!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.navy,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/user_selection_provider.dart';
 import '../../utils/haptics.dart';
 import '../../data/seed/seed_data.dart';
 import '../../data/models/book.dart';
@@ -13,11 +15,13 @@ class ManageDownloadsScreen extends ConsumerStatefulWidget {
   const ManageDownloadsScreen({super.key});
 
   @override
-  ConsumerState<ManageDownloadsScreen> createState() => _ManageDownloadsScreenState();
+  ConsumerState<ManageDownloadsScreen> createState() =>
+      _ManageDownloadsScreenState();
 }
 
 class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
   bool _isLoading = true;
+  int? _selectedClass;
   String? _booksDirPath;
   final Set<String> _downloadedBookIds = {};
   final Map<String, double> _downloadingProgress = {};
@@ -35,7 +39,8 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
     if (!booksDir.existsSync()) {
       booksDir.createSync(recursive: true);
     }
-    
+
+    if (!mounted) return;
     _booksDirPath = booksDir.path;
     _downloadedBookIds.clear();
 
@@ -51,12 +56,14 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
 
   Future<void> _deleteBook(Book book) async {
     if (_booksDirPath == null) return;
-    
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Book'),
-        content: Text('Are you sure you want to delete "${book.title}" from your device?'),
+        content: Text(
+          'Are you sure you want to delete "${book.title}" from your device?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -76,14 +83,17 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
     final file = File('$_booksDirPath/${book.id}.pdf');
     if (file.existsSync()) {
       await file.delete();
+      if (!mounted) return;
       setState(() {
         _downloadedBookIds.remove(book.id);
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${book.title} deleted.'),
-          duration: const Duration(seconds: 2),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${book.title} deleted.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     }
   }
@@ -95,6 +105,11 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
       _downloadingProgress[book.id] = 0.01; // Indicate start
     });
 
+    final filePath = '$_booksDirPath/${book.id}.pdf';
+    // Stream to a temp file and rename on success (same as the reader), so a
+    // large PDF is never held in memory and an interrupted download never
+    // leaves a half-written .pdf that later reads as a valid book.
+    final tmpFile = File('$filePath.part');
     final client = SecureHttpClient(http.Client());
     try {
       final request = http.Request('GET', Uri.parse(book.pdfUrl));
@@ -105,19 +120,32 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
       }
 
       final contentLength = response.contentLength ?? 0;
-      final bytes = <int>[];
-
-      await for (final chunk in response.stream) {
-        bytes.addAll(chunk);
-        if (contentLength > 0 && mounted) {
-          setState(() {
-            _downloadingProgress[book.id] = bytes.length / contentLength;
-          });
+      final sink = tmpFile.openWrite();
+      var received = 0;
+      // Only rebuild when the whole percent changes, not on every chunk.
+      var lastPercent = -1;
+      try {
+        await for (final chunk in response.stream) {
+          sink.add(chunk);
+          received += chunk.length;
+          if (contentLength > 0 && mounted) {
+            final percent = (received * 100) ~/ contentLength;
+            if (percent != lastPercent) {
+              lastPercent = percent;
+              setState(() {
+                // Keep a visible minimum so the row stays in "downloading".
+                _downloadingProgress[book.id] =
+                    percent == 0 ? 0.01 : percent / 100;
+              });
+            }
+          }
         }
+        await sink.flush();
+      } finally {
+        await sink.close();
       }
 
-      final file = File('$_booksDirPath/${book.id}.pdf');
-      await file.writeAsBytes(bytes);
+      await tmpFile.rename(filePath);
 
       if (mounted) {
         setState(() {
@@ -125,10 +153,12 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
           _downloadedBookIds.add(book.id);
         });
         Haptics.medium(ref);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('${book.title} downloaded successfully.'),
-          duration: const Duration(seconds: 2),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${book.title} downloaded successfully.'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -136,13 +166,20 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
           _downloadingProgress.remove(book.id);
         });
         Haptics.error(ref);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error downloading ${book.title}.'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error downloading ${book.title}.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     } finally {
       client.close();
+      if (tmpFile.existsSync()) {
+        try {
+          tmpFile.deleteSync();
+        } catch (_) {}
+      }
     }
   }
 
@@ -158,82 +195,139 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final downloadedBooks = allBooks.where((b) => _downloadedBookIds.contains(b.id)).toList();
-    final notDownloadedBooks = allBooks.where((b) => !_downloadedBookIds.contains(b.id)).toList();
+    final user = ref.watch(authStateProvider).value;
+    final account = ref.watch(backendAccountCacheProvider);
+    final profile = user != null && account.uid == user.uid
+        ? account.profile.value
+        : null;
+    final profileClass = profile?.classNo ?? ref.watch(primaryClassProvider);
+    final activeClass = _selectedClass ?? profileClass;
+    final classes = {
+      profileClass,
+      ...allBooks.map((book) => book.classNumber),
+    }.toList()..sort();
+    final downloadedBooks = allBooks
+        .where((book) => _downloadedBookIds.contains(book.id))
+        .toList();
+    final availableBooks = allBooks
+        .where(
+          (book) =>
+              book.classNumber == activeClass &&
+              !_downloadedBookIds.contains(book.id),
+        )
+        .toList();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Manage Downloads', style: Theme.of(context).textTheme.headlineSmall),
+        title: Text(
+          'Manage Downloads',
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          if (downloadedBooks.isNotEmpty) ...[
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              sliver: SliverToBoxAdapter(
-                child: Text('Downloaded (${downloadedBooks.length})', 
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold)),
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.screenPadding),
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Select class',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: activeClass,
+                    menuMaxHeight: 320,
+                    items: [
+                      for (final classNo in classes)
+                        DropdownMenuItem(
+                          value: classNo,
+                          child: Text('Class $classNo'),
+                        ),
+                    ],
+                    onChanged: (classNo) =>
+                        setState(() => _selectedClass = classNo),
+                  ),
+                ),
               ),
             ),
-            ..._buildBookGroups(downloadedBooks, true, isDark, cs),
-          ],
-          if (notDownloadedBooks.isNotEmpty) ...[
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 32, 16, 0),
-              sliver: SliverToBoxAdapter(
-                child: Text('Available for Download (${notDownloadedBooks.length})', 
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold)),
+            Expanded(
+              child: CustomScrollView(
+                key: ValueKey(activeClass),
+                slivers: [
+                  ..._buildBookSection(
+                    'Downloaded',
+                    downloadedBooks,
+                    true,
+                    isDark,
+                    cs,
+                  ),
+                  ..._buildBookSection(
+                    'Available for Download',
+                    availableBooks,
+                    false,
+                    isDark,
+                    cs,
+                  ),
+                  if (availableBooks.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                        child: Text(
+                          'No more books to download for Class $activeClass.',
+                        ),
+                      ),
+                    ),
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 30)),
+                ],
               ),
             ),
-            ..._buildBookGroups(notDownloadedBooks, false, isDark, cs),
           ],
-          const SliverPadding(padding: EdgeInsets.only(bottom: 30)),
-        ],
+        ),
       ),
     );
   }
 
-  List<Widget> _buildBookGroups(List<Book> books, bool isDownloaded, bool isDark, ColorScheme cs) {
+  List<Widget> _buildBookSection(
+    String title,
+    List<Book> books,
+    bool isDownloaded,
+    bool isDark,
+    ColorScheme cs,
+  ) {
     if (books.isEmpty) return [];
-    
-    final grouped = <int, List<Book>>{};
-    for (var b in books) {
-      grouped.putIfAbsent(b.classNumber, () => []).add(b);
-    }
-    
-    final sortedKeys = grouped.keys.toList()..sort();
-    final slivers = <Widget>[];
-    
-    for (var classNum in sortedKeys) {
-      slivers.add(
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-          sliver: SliverToBoxAdapter(
-            child: Text('Class $classNum', 
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: cs.onSurface,
-                fontWeight: AppFontWeight.semibold,
-              )),
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        sliver: SliverToBoxAdapter(
+          child: Text(
+            '$title (${books.length})',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: AppFontWeight.bold),
           ),
         ),
-      );
-      slivers.add(
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) => _buildBookItem(grouped[classNum]![index], isDownloaded, isDark, cs),
-            childCount: grouped[classNum]!.length,
-          ),
-        ),
-      );
-    }
-    return slivers;
+      ),
+      SliverList.builder(
+        itemCount: books.length,
+        itemBuilder: (context, index) =>
+            _buildBookItem(books[index], isDownloaded, isDark, cs),
+      ),
+    ];
   }
 
-  Widget _buildBookItem(Book book, bool isDownloaded, bool isDark, ColorScheme cs) {
+  Widget _buildBookItem(
+    Book book,
+    bool isDownloaded,
+    bool isDark,
+    ColorScheme cs,
+  ) {
     final progress = _downloadingProgress[book.id];
     final isDownloading = progress != null;
 
@@ -255,7 +349,10 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text(book.coverEmoji, style: const TextStyle(fontSize: AppFontSize.headingLarge)),
+              child: Text(
+                book.coverEmoji,
+                style: const TextStyle(fontSize: AppFontSize.headingLarge),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -270,7 +367,7 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                if (isDownloading) 
+                if (isDownloading)
                   LinearProgressIndicator(
                     value: progress > 0 ? progress : null,
                     backgroundColor: cs.outline,
@@ -280,7 +377,9 @@ class _ManageDownloadsScreenState extends ConsumerState<ManageDownloadsScreen> {
                   Text(
                     isDownloaded ? 'Downloaded' : 'Not downloaded',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isDownloaded ? AppColors.teal : AppColors.textMuted,
+                      color: isDownloaded
+                          ? AppColors.teal
+                          : AppColors.textMuted,
                     ),
                   ),
               ],

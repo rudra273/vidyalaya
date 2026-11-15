@@ -86,8 +86,11 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
         if (didPop) _save();
       },
       child: Scaffold(
-        backgroundColor: AppColors.background,
         appBar: AppBar(
+          title: Text(
+            widget.noteId == null ? 'New note' : 'Edit note',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
@@ -114,6 +117,7 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                   style: Theme.of(context).textTheme.displaySmall,
                   decoration: const InputDecoration(
                     hintText: 'Title',
+                    filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -132,7 +136,8 @@ class _NoteEditorScreenState extends ConsumerState<NoteEditorScreen> {
                     style: Theme.of(context).textTheme.bodyLarge,
                     decoration: const InputDecoration(
                       hintText: 'Start typing your note…',
-                      border: InputBorder.none,
+                      filled: false,
+                    border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 8),

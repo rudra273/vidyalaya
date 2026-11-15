@@ -17,16 +17,18 @@ import '../../data/seed/seed_data.dart'
 import '../../data/services/backend_auth_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/avatar_provider.dart';
+import '../../providers/books_provider.dart' show subjectFilterProvider;
 import '../../providers/core_providers.dart';
-import '../../providers/books_provider.dart';
+import '../../providers/plus_provider.dart';
 import '../../providers/progress_provider.dart';
+import '../../providers/rollout_switches_provider.dart';
 import '../../providers/user_selection_provider.dart';
-import '../../providers/clay_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../widgets/calm_widgets.dart';
-import '../../widgets/clay_card.dart';
-import '../../widgets/pressable.dart';
-import '../../widgets/support_section.dart';
+import '../../data/services/app_share.dart';
+import 'widgets/profile_activity.dart';
+import 'widgets/streak_week.dart';
+import 'widgets/plus_card.dart';
+import 'widgets/settings_group.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -42,7 +44,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ensureProfile(forceRefresh: true);
+      if (!mounted) return;
+      _ensureProfile(forceRefresh: true);
+      // An approval since the last look shows up here.
+      ref.read(plusProvider.notifier).refresh();
     });
   }
 
@@ -106,176 +111,106 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ? backendName
           : (firebaseName.isNotEmpty ? firebaseName : 'Student'),
     );
-    final email = user?.email ?? '—';
     final avatarLetter = displayName.isNotEmpty
         ? displayName[0].toUpperCase()
         : 'S';
 
     final progress = ref.watch(progressProvider);
-    final books = ref.watch(selectedBooksProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final edit = isInitialProfileLoad
+        ? null
+        : () => _showProfileEditor(cachedProfile);
+    const inset = EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding);
 
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            PageTitle(
-              title: 'Profile',
-              sub: 'Your account & learning',
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ThemeToggle(
-                    isDark: Theme.of(context).brightness == Brightness.dark,
-                    onTap: () => ref.read(themeModeProvider.notifier).toggle(),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        child: SafeArea(
+          top: false,
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 32),
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.green100Dark : AppColors.green100,
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(36),
                   ),
-                  const SizedBox(width: 10),
-                  IconBox(
-                    icon: Icons.settings_rounded,
-                    tooltip: 'Settings',
-                    onTap: () => context.push('/settings'),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Student profile ─────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                16,
-                AppSpacing.screenPadding,
-                0,
-              ),
-              child: SectionHead(
-                label: 'Student profile',
-                action: 'Edit',
-                onAction: isInitialProfileLoad
-                    ? null
-                    : () => _showProfileEditor(cachedProfile),
-              ),
-            ),
-            if (isInitialProfileLoad)
-              const Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding,
-                  vertical: 8,
                 ),
-                child: Row(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.paddingOf(context).top,
+                  bottom: isSignedIn ? 24 : 12,
+                ),
+                child: Column(
                   children: [
-                    SizedBox.square(
-                      dimension: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Syncing your profile…')),
-                  ],
-                ),
-              ),
-            if (profileSyncFailed)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding,
-                  8,
-                  AppSpacing.screenPadding,
-                  0,
-                ),
-                child: _ProfileSyncErrorBanner(
-                  onRetry: () => _ensureProfile(forceRefresh: true),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.screenPadding,
-              ),
-              child: _ProfileSummary(
-                identity: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _BigAvatar(
-                      letter: avatarLetter,
-                      avatar: ref.watch(selectedAvatarProvider),
-                      clay: ref.watch(clayEnabledProvider),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayName,
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(fontSize: AppFontSize.heading),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isSignedIn
-                                ? email
-                                : 'Class $selectedClass · ${_languageLabel(preferredLanguage)}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                    PageTitle(
+                      title: 'Profile',
+                      trailing: IconButton(
+                        icon: const Icon(Icons.settings_rounded),
+                        tooltip: 'Settings',
+                        onPressed: () => context.push('/settings'),
                       ),
                     ),
+                    // ── Student card ────────────────────────────────
+                    if (isInitialProfileLoad)
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.screenPadding,
+                          0,
+                          AppSpacing.screenPadding,
+                          12,
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox.square(
+                              dimension: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(child: Text('Syncing your profile…')),
+                          ],
+                        ),
+                      ),
+                    if (profileSyncFailed)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenPadding,
+                          0,
+                          AppSpacing.screenPadding,
+                          12,
+                        ),
+                        child: _ProfileSyncErrorBanner(
+                          onRetry: () => _ensureProfile(forceRefresh: true),
+                        ),
+                      ),
+                    Padding(
+                      padding: inset,
+                      child: _StudentCard(
+                        avatar: _BigAvatar(
+                          letter: avatarLetter,
+                          avatar: ref.watch(selectedAvatarProvider),
+                          size: 74,
+                        ),
+                        name: displayName,
+                        subtitle: 'Class $selectedClass · ${boardLabel(board)}',
+                        onEdit: edit,
+                      ),
+                    ),
+                    if (!isSignedIn)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.screenPadding,
+                          12,
+                          AppSpacing.screenPadding,
+                          0,
+                        ),
+                        child: _buildAuthButton(authState),
+                      ),
                   ],
                 ),
-                classNo: selectedClass,
-                board: board,
-                language: _languageLabel(preferredLanguage),
-                school: cachedProfile?.schoolName?.trim() ?? '',
               ),
-            ),
-
-            if (!isSignedIn)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screenPadding,
-                  12,
-                  AppSpacing.screenPadding,
-                  0,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _buildAuthButton(authState),
-                ),
-              ),
-
-            // ── My Learning (tappable summary → /progress) ───────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                24,
-                AppSpacing.screenPadding,
-                0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SectionHead(
-                    label: 'My learning',
-                    action: 'View progress',
-                    onAction: () => context.push('/progress'),
-                  ),
-                  _StatsStrip(
-                    streak: progress.currentStreak,
-                    aiSessions: progress.aiSessions,
-                    books: books.length,
-                    onTap: () => context.push('/progress'),
-                  ),
-                ],
-              ),
-            ),
-
-            const SupportSection(
-              headingPadding: EdgeInsets.fromLTRB(
-                AppSpacing.screenPadding,
-                24,
-                AppSpacing.screenPadding,
-                0,
-              ),
-            ),
-
-            if (isSignedIn)
+              if (isSignedIn) const PlusCard(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screenPadding,
@@ -283,14 +218,89 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   AppSpacing.screenPadding,
                   0,
                 ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _buildAuthButton(authState),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    StreakWeek(
+                      streak: progress.currentStreak,
+                      onTap: () => context.push('/progress'),
+                    ),
+                    const SizedBox(height: 24),
+                    const SectionHead(label: 'Your learning activity'),
+                    ProfileActivityCard(
+                      locked: !isSignedIn,
+                      onProgress: () => context.push('/progress'),
+                    ),
+                    const SizedBox(height: 24),
+                    const SectionHead(label: 'Your learning setup'),
+                    SettingsGroup(
+                      showBorder: false,
+                      children: [
+                        SettingsRow(
+                          color: isDark
+                              ? AppColors.green500Dark
+                              : AppColors.green700,
+                          icon: Icons.school_outlined,
+                          title: 'Class & board',
+                          sub: 'Class $selectedClass · ${boardLabel(board)}',
+                          onTap: edit == null || profileSyncFailed
+                              ? null
+                              : () => _showProfileEditor(
+                                  cachedProfile,
+                                  section: _ProfileSection.curriculum,
+                                ),
+                        ),
+                        SettingsRow(
+                          color: isDark
+                              ? AppColors.cTutorDark
+                              : AppColors.cTutor,
+                          icon: Icons.translate_rounded,
+                          title: 'Answer language',
+                          sub: _languageLabel(preferredLanguage),
+                          onTap: edit == null || profileSyncFailed
+                              ? null
+                              : () => _showProfileEditor(
+                                  cachedProfile,
+                                  section: _ProfileSection.language,
+                                ),
+                        ),
+                        if (ref.watch(booksEnabledProvider))
+                          SettingsRow(
+                            color: isDark
+                                ? AppColors.cEnglishDark
+                                : AppColors.cEnglish,
+                            icon: Icons.file_download_outlined,
+                            title: 'Manage downloads',
+                            sub: 'Download or delete offline books',
+                            onTap: () => context.push('/manage-downloads'),
+                          ),
+                      ],
+                    ),
+                    if (isSignedIn) ...[
+                      const SizedBox(height: 12),
+                      _buildAuthButton(authState),
+                    ],
+                    const SizedBox(height: 24),
+                    SettingsGroup(
+                      showBorder: false,
+                      children: [
+                        SettingsRow(
+                          color: theme.colorScheme.primary,
+                          icon: Icons.share_outlined,
+                          title: 'Share Vidyakalp',
+                          sub: 'Invite a friend to learn with you',
+                          onTap: () {
+                            Haptics.light(ref);
+                            AppShare.shareApp();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-
-            const SizedBox(height: 16),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -327,7 +337,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  Future<void> _showProfileEditor(StudentProfile? profile) async {
+  Future<void> _showProfileEditor(
+    StudentProfile? profile, {
+    _ProfileSection section = _ProfileSection.full,
+  }) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -341,7 +354,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => _ProfileEditSheet(profile: profile),
+      builder: (_) => _ProfileEditSheet(profile: profile, section: section),
     );
     if (mounted) setState(() {});
   }
@@ -417,10 +430,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 // ─── Profile editor ─────────────────────────────────────────────────────
 
+enum _ProfileSection {
+  full('Update profile', 'Save profile'),
+  curriculum('Class & board', 'Save learning setup'),
+  language('Answer language', 'Save language');
+
+  const _ProfileSection(this.title, this.saveLabel);
+  final String title;
+  final String saveLabel;
+}
+
 class _ProfileEditSheet extends ConsumerStatefulWidget {
   final StudentProfile? profile;
 
-  const _ProfileEditSheet({this.profile});
+  final _ProfileSection section;
+
+  const _ProfileEditSheet({this.profile, required this.section});
 
   @override
   ConsumerState<_ProfileEditSheet> createState() => _ProfileEditSheetState();
@@ -486,82 +511,140 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.viewInsetsOf(context).bottom,
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.screenPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Edit profile',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Cancel editing',
-                      onPressed: _isProfileSaving
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Stack(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.screenPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _BigAvatar(
-                        letter: letter,
-                        avatar: avatarById(_avatarId),
-                        clay: ref.watch(clayEnabledProvider),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.section.title,
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Cancel editing',
+                            onPressed: _isProfileSaving
+                                ? null
+                                : () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: IconButton.filled(
-                          tooltip: 'Change avatar',
-                          onPressed: _isProfileSaving
-                              ? null
-                              : _showAvatarPicker,
-                          iconSize: 16,
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.edit_rounded),
+                      const SizedBox(height: 8),
+                      if (widget.section == _ProfileSection.full)
+                        Center(
+                          child: Stack(
+                            children: [
+                              _BigAvatar(
+                                letter: letter,
+                                avatar: avatarById(_avatarId),
+                              ),
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: IconButton.filled(
+                                  tooltip: 'Change avatar',
+                                  onPressed: _isProfileSaving
+                                      ? null
+                                      : _showAvatarPicker,
+                                  iconSize: 16,
+                                  visualDensity: VisualDensity.compact,
+                                  icon: const Icon(Icons.edit_rounded),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                      const SizedBox(height: 16),
+                      if (_saveError != null) ...[
+                        Text(
+                          _saveError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      _StudentForm(
+                        section: widget.section,
+                        isSignedIn: _uid != null,
+                        isSaving: _isProfileSaving,
+                        selectedClass: _selectedClass,
+                        preferredLanguage: _preferredLanguage,
+                        board: _board,
+                        nameController: _nameController,
+                        schoolController: _schoolController,
+                        onClassChanged: (value) =>
+                            setState(() => _selectedClass = value),
+                        onLanguageChanged: (value) =>
+                            setState(() => _preferredLanguage = value),
+                        onBoardChanged: _selectBoardForEditing,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                if (_saveError != null) ...[
-                  Text(
-                    _saveError!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                _StudentForm(
-                  isSignedIn: _uid != null,
-                  isSaving: _isProfileSaving,
-                  selectedClass: _selectedClass,
-                  preferredLanguage: _preferredLanguage,
-                  board: _board,
-                  nameController: _nameController,
-                  schoolController: _schoolController,
-                  onClassChanged: (value) =>
-                      setState(() => _selectedClass = value),
-                  onLanguageChanged: (value) =>
-                      setState(() => _preferredLanguage = value),
-                  onBoardChanged: _selectBoardForEditing,
-                  onSave: _saveStudentProfile,
-                  onCancel: () => Navigator.of(context).pop(),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  8,
+                  AppSpacing.screenPadding,
+                  12,
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        // Cancel stays live even mid-load: it only drops back to the
+                        // summary, and a student must always be able to back out.
+                        onPressed: _isProfileSaving
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: _isProfileSaving
+                            ? null
+                            : _saveStudentProfile,
+                        icon: _isProfileSaving
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded, size: 18),
+                        label: Text(widget.section.saveLabel),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -781,6 +864,17 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
             // A deliberate retry applies this draft against the version the
             // student just reviewed, not an unrelated background refresh.
             _revision = latest.revision;
+            if (widget.section != _ProfileSection.full) {
+              _nameController.text = latest.name ?? '';
+              _schoolController.text = latest.schoolName ?? '';
+              _avatarId = latest.avatarId;
+              if (widget.section == _ProfileSection.language) {
+                _board = latest.board;
+                _selectedClass = latest.classNo;
+              } else {
+                _preferredLanguage = latest.preferredLanguage;
+              }
+            }
           }
         } else {
           setState(
@@ -835,124 +929,97 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
   }
 }
 
-// ─── Theme toggle (sun ↔ moon) ────────────────────────────────────────────
-//
-// A quick light/dark switch in the profile header. The icon cross-fades and
-// rotates between a warm sun and a cool crescent moon so the change feels
-// tactile, and the chip tints to match the active mode.
-
-class _ThemeToggle extends StatelessWidget {
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _ThemeToggle({required this.isDark, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    // Warm amber for the sun, cool indigo for the moon.
-    final accent = isDark ? const Color(0xFF9DB2E8) : const Color(0xFFE0A23B);
-
-    return Tooltip(
-      message: isDark ? 'Switch to light mode' : 'Switch to dark mode',
-      child: Pressable(
-        onTap: onTap,
-        scale: 0.92,
-        child: Container(
-          width: kPageTitleRowHeight,
-          height: kPageTitleRowHeight,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(accent.withValues(alpha: 0.12), cs.surface),
-            border: Border.all(color: accent.withValues(alpha: 0.32)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 320),
-            switchInCurve: Curves.easeOutBack,
-            switchOutCurve: Curves.easeIn,
-            transitionBuilder: (child, animation) => RotationTransition(
-              turns: Tween<double>(begin: 0.6, end: 1).animate(animation),
-              child: ScaleTransition(scale: animation, child: child),
-            ),
-            child: Icon(
-              isDark ? Icons.nightlight_round : Icons.wb_sunny_rounded,
-              key: ValueKey(isDark),
-              size: 20,
-              color: accent,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ─── Big avatar (identity) ────────────────────────────────────────────────
 
 class _BigAvatar extends StatelessWidget {
   final String letter;
   final StudentAvatar? avatar;
-  final bool clay;
+  final double size;
 
-  const _BigAvatar({required this.letter, this.avatar, this.clay = true});
+  const _BigAvatar({required this.letter, this.avatar, this.size = 88});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Stack(
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+          cs.surface,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark ? AppColors.green100Dark : AppColors.green100,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: avatar != null
+          ? ClipOval(
+              child: SvgPicture.asset(
+                avatar!.assetPath,
+                width: size - 2,
+                height: size - 2,
+              ),
+            )
+          : Text(
+              letter,
+              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                fontSize: size >= 80
+                    ? AppFontSize.displayLarge
+                    : AppFontSize.displaySmall,
+                color: cs.primary,
+              ),
+            ),
+    );
+  }
+}
+
+// ─── Student card ─────────────────────────────────────────────────────────
+//
+class _StudentCard extends StatelessWidget {
+  const _StudentCard({
+    required this.avatar,
+    required this.name,
+    required this.subtitle,
+    required this.onEdit,
+  });
+
+  final Widget avatar;
+  final String name;
+  final String subtitle;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
       children: [
-        Container(
-          width: 88,
-          height: 88,
-          decoration: BoxDecoration(
-            color: Color.alphaBlend(
-              cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-              cs.surface,
+        avatar,
+        const SizedBox(height: 8),
+        Text(
+          name,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineSmall,
+        ),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 16),
+        SettingsGroup(
+          showBorder: false,
+          children: [
+            SettingsRow(
+              color: theme.colorScheme.primary,
+              icon: Icons.edit_outlined,
+              title: 'Update profile',
+              onTap: onEdit,
             ),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isDark ? AppColors.green100Dark : AppColors.green100,
-            ),
-            boxShadow: clay
-                ? [
-                    BoxShadow(
-                      color:
-                          (isDark
-                                  ? AppColors.clayShadowDark
-                                  : AppColors.clayShadow)
-                              .withValues(alpha: isDark ? 0.55 : 0.7),
-                      blurRadius: 16,
-                      offset: const Offset(5, 5),
-                    ),
-                    BoxShadow(
-                      color:
-                          (isDark
-                                  ? AppColors.clayHighlightDark
-                                  : AppColors.clayHighlight)
-                              .withValues(alpha: isDark ? 0.30 : 0.9),
-                      blurRadius: 16,
-                      offset: const Offset(-5, -5),
-                    ),
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: avatar != null
-              ? ClipOval(
-                  child: SvgPicture.asset(
-                    avatar!.assetPath,
-                    width: 86,
-                    height: 86,
-                  ),
-                )
-              : Text(
-                  letter,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontSize: AppFontSize.displayLarge,
-                    color: cs.primary,
-                  ),
-                ),
+          ],
         ),
       ],
     );
@@ -1046,141 +1113,12 @@ class _AvatarChoice extends StatelessWidget {
   }
 }
 
-// ─── Stats strip ──────────────────────────────────────────────────────────
-
-/// Tappable learning statistics; the section heading sits above the card.
-/// Tap-down dims the card before opening the full progress page.
-class _StatsStrip extends StatefulWidget {
-  final int streak;
-  final int aiSessions;
-  final int books;
-  final VoidCallback onTap;
-
-  const _StatsStrip({
-    required this.streak,
-    required this.aiSessions,
-    required this.books,
-    required this.onTap,
-  });
-
-  @override
-  State<_StatsStrip> createState() => _StatsStripState();
-}
-
-class _StatsStripState extends State<_StatsStrip> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: widget.onTap,
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 90),
-        opacity: _pressed ? 0.72 : 1,
-        child: ClayCard(
-          pressed: _pressed,
-          child: Row(
-            children: [
-              Expanded(
-                child: _Stat(
-                  color: isDark ? AppColors.cMathsDark : AppColors.cMaths,
-                  icon: Icons.local_fire_department_rounded,
-                  value: '${widget.streak}',
-                  label: 'Day streak',
-                ),
-              ),
-              _Divider(),
-              Expanded(
-                child: _Stat(
-                  color: isDark ? AppColors.cAiDark : AppColors.cAi,
-                  icon: Icons.auto_awesome_rounded,
-                  value: '${widget.aiSessions}',
-                  label: 'AI sessions',
-                ),
-              ),
-              _Divider(),
-              Expanded(
-                child: _Stat(
-                  color: isDark ? AppColors.cEnglishDark : AppColors.cEnglish,
-                  icon: Icons.menu_book_rounded,
-                  value: '${widget.books}',
-                  label: 'My books',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  final Color color;
-  final IconData icon;
-  final String value;
-  final String label;
-
-  const _Stat({
-    required this.color,
-    required this.icon,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 6),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: AppFontSize.heading,
-                height: 1,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: AppFontSize.small,
-            fontWeight: AppFontWeight.medium,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 30,
-      color: Theme.of(context).brightness == Brightness.dark
-          ? AppColors.hairline2Dark
-          : AppColors.hairline2,
-    );
-  }
-}
-
 // ─── Auth button (sign in / sign out) ─────────────────────────────────────
 //
-// A single understated pill under the identity block. Long-press signs out in
-// debug to copy the Firebase ID token (dev-only).
+// Signed out: a single understated pill under the identity card. Signed in: a
+// quiet full-width row at the foot of the page, so leaving the account is easy
+// to find but never shouts. Long-press on Sign out copies the Firebase ID
+// token in debug builds (dev-only).
 
 class _AuthButton extends StatelessWidget {
   final bool isSignedIn;
@@ -1205,8 +1143,30 @@ class _AuthButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dangerColor = isDark ? AppColors.cMathsDark : AppColors.cMaths;
-    final accent = isSignedIn ? dangerColor : cs.primary;
+
+    if (isSignedIn) {
+      final muted = isDark ? AppColors.ink2Dark : AppColors.ink2;
+      return SettingsGroup(
+        showBorder: false,
+        children: [
+          SettingsRow(
+            color: cs.error,
+            icon: Icons.logout_rounded,
+            title: 'Sign out',
+            titleColor: muted,
+            showChevron: false,
+            trailing: isBusy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                : null,
+            onTap: isBusy ? null : onTap,
+            onLongPress: isBusy ? null : onLongPress,
+          ),
+        ],
+      );
+    }
 
     if (isBusy) {
       return const SizedBox.square(
@@ -1215,6 +1175,7 @@ class _AuthButton extends StatelessWidget {
       );
     }
 
+    final accent = cs.primary;
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -1223,20 +1184,15 @@ class _AuthButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Color.alphaBlend(accent.withValues(alpha: 0.10), cs.surface),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: accent.withValues(alpha: 0.28)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isSignedIn ? Icons.logout_rounded : Icons.login_rounded,
-              size: 16,
-              color: accent,
-            ),
+            Icon(Icons.login_rounded, size: 16, color: accent),
             const SizedBox(width: 7),
             Flexible(
               child: Text(
-                isSignedIn ? 'Sign out' : 'Sign in with Google',
+                'Sign in with Google',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: accent,
                   fontWeight: AppFontWeight.semibold,
@@ -1266,7 +1222,6 @@ class _ProfileSyncErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.errorContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.error.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -1295,115 +1250,10 @@ class _ProfileSyncErrorBanner extends StatelessWidget {
   }
 }
 
-// ─── Profile summary (view mode) ─────────────────────────────────────────
-
-class _ProfileSummary extends StatelessWidget {
-  final Widget identity;
-  final int classNo;
-  final String board;
-  final String language;
-  final String school;
-
-  const _ProfileSummary({
-    required this.identity,
-    required this.classNo,
-    required this.board,
-    required this.language,
-    required this.school,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.cardPad),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          identity,
-          const SizedBox(height: 20),
-          Divider(height: 1, color: cs.outline),
-          const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final singleColumn =
-                  constraints.maxWidth < 240 ||
-                  MediaQuery.textScalerOf(context).scale(AppFontSize.body) > 20;
-              final width = singleColumn
-                  ? constraints.maxWidth
-                  : (constraints.maxWidth - 16) / 2;
-              return Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(
-                      label: 'Class',
-                      value: 'Class $classNo',
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(
-                      label: 'Board',
-                      value: boardLabel(board),
-                    ),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(label: 'Language', value: language),
-                  ),
-                  SizedBox(
-                    width: width,
-                    child: _ProfileDetail(
-                      label: 'School',
-                      value: school.isEmpty ? 'Not added' : school,
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfileDetail extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _ProfileDetail({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: AppFontWeight.semibold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 // ─── Student form (edit mode) ────────────────────────────────────────────
 
 class _StudentForm extends StatelessWidget {
+  final _ProfileSection section;
   final bool isSignedIn;
 
   final bool isSaving;
@@ -1415,10 +1265,9 @@ class _StudentForm extends StatelessWidget {
   final ValueChanged<int> onClassChanged;
   final ValueChanged<String> onLanguageChanged;
   final ValueChanged<String> onBoardChanged;
-  final VoidCallback onSave;
-  final VoidCallback onCancel;
 
   const _StudentForm({
+    required this.section,
     required this.isSignedIn,
     required this.isSaving,
     required this.selectedClass,
@@ -1429,117 +1278,91 @@ class _StudentForm extends StatelessWidget {
     required this.onClassChanged,
     required this.onLanguageChanged,
     required this.onBoardChanged,
-    required this.onSave,
-    required this.onCancel,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isBusy = isSaving;
-    final langLabel =
-        const {
-          'en': 'English',
-          'or': 'Odia',
-          'hi': 'Hindi',
-        }[preferredLanguage] ??
-        'English';
+    final classes = availableClassNumbersForBoard(board).toList()..sort();
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _TextInput(
-          label: 'Name',
-          hint: 'Your name',
-          controller: nameController,
-          enabled: isSignedIn && !isBusy,
-          onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
-        ),
-        const SizedBox(height: 8),
-        _Field<int>(
-          label: 'Class',
-          value: 'Class $selectedClass',
-          onTap: isBusy
-              ? null
-              : () => _showClassPicker(
-                  context,
-                  onClassChanged,
-                  selectedClass,
-                  board,
-                ),
-        ),
-        const SizedBox(height: 8),
-        _Field<String>(
-          label: 'Board',
-          value: boardLabel(board),
-          onTap: isBusy
-              ? null
-              : () => _showBoardPicker(context, onBoardChanged, board),
-        ),
-        const SizedBox(height: 8),
-        _Field<String>(
-          label: 'Preferred language',
-          value: langLabel,
-          onTap: isBusy
-              ? null
-              : () => _showLanguagePicker(
-                  context,
-                  onLanguageChanged,
-                  preferredLanguage,
-                ),
-        ),
-        const SizedBox(height: 8),
-        _TextInput(
-          label: 'School name',
-          hint: 'e.g. SSVM',
-          controller: schoolController,
-          enabled: isSignedIn && !isBusy,
-          onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
-        ),
-        if (!isSignedIn) ...[
-          const SizedBox(height: 10),
-          Text(
-            'Sign in to change your name and school.',
-            style: Theme.of(context).textTheme.bodySmall,
+        if (section == _ProfileSection.full) ...[
+          Text('Personal details', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 8),
+          _TextInput(
+            label: 'Name',
+            hint: 'Your name',
+            controller: nameController,
+            enabled: isSignedIn && !isBusy,
+            onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
           ),
+          const SizedBox(height: 8),
+          _TextInput(
+            label: 'School name',
+            hint: 'Your school',
+            controller: schoolController,
+            enabled: isSignedIn && !isBusy,
+            onDisabledTap: isSignedIn ? null : () => _showSignInNudge(context),
+          ),
+          if (!isSignedIn)
+            Text(
+              'Sign in to change your name and school.',
+              style: theme.textTheme.bodySmall,
+            ),
+          const SizedBox(height: 20),
+          Text('Learning preferences', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
         ],
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                // Cancel stays live even mid-load: it only drops back to the
-                // summary, and a student must always be able to back out.
-                onPressed: isSaving ? null : onCancel,
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: cs.outline),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(999),
+        if (section != _ProfileSection.language) ...[
+          _ProfileOptionPicker(
+            label: 'Your board',
+            value: board,
+            onChanged: isBusy ? null : onBoardChanged,
+            options: [
+              for (final option in boards)
+                DropdownMenuItem(
+                  value: option.id,
+                  enabled: availableBoardIds.contains(option.id),
+                  child: Text(
+                    availableBoardIds.contains(option.id)
+                        ? option.name
+                        : '${option.name} · Coming soon',
                   ),
                 ),
-                child: Text(
-                  'Cancel',
-                  style: Theme.of(context).textTheme.labelLarge,
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('Your class', style: theme.textTheme.labelLarge),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final classNo in classes)
+                ChoiceChip(
+                  label: Text('Class $classNo'),
+                  selected: selectedClass == classNo,
+                  onSelected: isBusy ? null : (_) => onClassChanged(classNo),
                 ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton.icon(
-                onPressed: isBusy ? null : onSave,
-                icon: isSaving
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2.2),
-                      )
-                    : const Icon(Icons.check_rounded, size: 18),
-                label: Text(isSignedIn ? 'Save profile' : 'Save'),
-              ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
+        if (section != _ProfileSection.curriculum) ...[
+          if (section == _ProfileSection.full) const SizedBox(height: 16),
+          _ProfileOptionPicker(
+            label: 'Answer language',
+            value: preferredLanguage,
+            onChanged: isBusy ? null : onLanguageChanged,
+            options: const [
+              DropdownMenuItem(value: 'or', child: Text('ଓଡ଼ିଆ · Odia')),
+              DropdownMenuItem(value: 'en', child: Text('English')),
+              DropdownMenuItem(value: 'hi', child: Text('हिन्दी · Hindi')),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -1551,202 +1374,44 @@ class _StudentForm extends StatelessWidget {
         const SnackBar(content: Text('Sign in to edit your name and school.')),
       );
   }
-
-  void _showClassPicker(
-    BuildContext context,
-    ValueChanged<int> onChanged,
-    int current,
-    String board,
-  ) {
-    final availableClasses = availableClassNumbersForBoard(board);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: 12,
-            itemBuilder: (_, i) {
-              final c = i + 1;
-              final isAvailable = availableClasses.contains(c);
-              return ListTile(
-                title: Text('Class $c'),
-                subtitle: isAvailable ? null : const Text('Coming soon'),
-                trailing: c == current
-                    ? Icon(
-                        Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary,
-                      )
-                    : null,
-                enabled: isAvailable,
-                onTap: isAvailable
-                    ? () {
-                        Navigator.of(ctx).pop();
-                        onChanged(c);
-                      }
-                    : null,
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  void _showBoardPicker(
-    BuildContext context,
-    ValueChanged<String> onChanged,
-    String current,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: boards.map((b) {
-              final isAvailable = availableBoardIds.contains(b.id);
-              return ListTile(
-                title: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: b.name),
-                      TextSpan(
-                        text: b.id == 'scert_odisha'
-                            ? ' (Odia Medium)'
-                            : ' (CBSE)',
-                        style: TextStyle(color: AppColors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-                subtitle: Text(
-                  isAvailable ? b.state : '${b.state} · Coming soon',
-                ),
-                trailing: b.id == current
-                    ? Icon(
-                        Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary,
-                      )
-                    : null,
-                enabled: isAvailable,
-                onTap: isAvailable
-                    ? () {
-                        Navigator.of(ctx).pop();
-                        onChanged(b.id);
-                      }
-                    : null,
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showLanguagePicker(
-    BuildContext context,
-    ValueChanged<String> onChanged,
-    String current,
-  ) {
-    const langs = {'en': 'English', 'or': 'Odia', 'hi': 'Hindi'};
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: langs.entries.map((e) {
-              return ListTile(
-                title: Text(e.value),
-                trailing: e.key == current
-                    ? Icon(
-                        Icons.check_rounded,
-                        color: Theme.of(ctx).colorScheme.primary,
-                      )
-                    : null,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  onChanged(e.key);
-                },
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
 }
 
-class _Field<T> extends StatelessWidget {
+class _ProfileOptionPicker extends StatelessWidget {
+  const _ProfileOptionPicker({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
   final String label;
   final String value;
-  final VoidCallback? onTap;
-
-  const _Field({required this.label, required this.value, this.onTap});
+  final List<DropdownMenuItem<String>> options;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            fontSize: AppFontSize.small,
-            fontWeight: AppFontWeight.semibold,
-            color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-          ),
+    final change = onChanged;
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        enabled: change != null,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: options.any((option) => option.value == value) ? value : null,
+          hint: Text('Select $label'),
+          items: options,
+          isExpanded: true,
+          menuMaxHeight: 320,
+          onChanged: change == null
+              ? null
+              : (selection) {
+                  if (selection != null) change(selection);
+                },
         ),
-        const SizedBox(height: 4),
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(minHeight: 44),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surface3Dark : AppColors.surface3,
-              border: Border.all(
-                color: isDark ? AppColors.hairline2Dark : AppColors.hairline2,
-              ),
-              borderRadius: BorderRadius.circular(AppSpacing.inputRadius),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    value,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontSize: AppFontSize.body,
-                      fontWeight: AppFontWeight.medium,
-                      color: cs.onSurface,
-                    ),
-                  ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 19,
-                  color: isDark ? AppColors.ink3Dark : AppColors.ink3,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

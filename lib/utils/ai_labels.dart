@@ -11,6 +11,29 @@ String planLabel(String planKey) {
   };
 }
 
+/// When a daily allowance refills, worded to follow "refreshes" or "resets":
+/// "at midnight" for the usual 00:00 reset, otherwise "at 6:30 PM" in the
+/// student's local time, and "tomorrow" when the server did not say.
+String refreshPhrase(DateTime? resetsAt) {
+  if (resetsAt == null) return 'tomorrow';
+  final local = resetsAt.toLocal();
+  if (local.hour == 0 && local.minute == 0) return 'at midnight';
+  final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+  final minute = local.minute.toString().padLeft(2, '0');
+  final period = local.hour < 12 ? 'AM' : 'PM';
+  return 'at $hour:$minute $period';
+}
+
+/// A short local date such as "12 Dec", for when Plus starts or ends.
+String shortDate(DateTime date) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  final local = date.toLocal();
+  return '${local.day} ${months[local.month - 1]}';
+}
+
 /// Identifies one book in the vector DB.
 ///
 /// A subject key alone does NOT identify a book: it is reused across classes and

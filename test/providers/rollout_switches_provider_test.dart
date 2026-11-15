@@ -63,6 +63,15 @@ void main() {
     return container;
   }
 
+  // The cache write is real disk I/O, so wait for it rather than pumping.
+  Future<void> untilCached(String uid) async {
+    final key = CacheStore.key(uid: uid, name: 'rollout_switches');
+    for (var i = 0; i < 200 && !box.containsKey(key); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    expect(box.containsKey(key), isTrue);
+  }
+
   group('RolloutSwitches', () {
     test('keeps the caller default for a switch the server omits', () {
       final switches = RolloutSwitches.fromJson({
@@ -122,7 +131,7 @@ void main() {
       final first = containerFor(MockClient((_) async => _switches({'books': false})));
       await first.read(authStateProvider.future);
       first.read(rolloutSwitchesProvider);
-      await pumpEventQueue();
+      await untilCached('student-a');
 
       final offline = containerFor(
         MockClient((_) async => throw const SocketException('offline')),
@@ -136,7 +145,7 @@ void main() {
       final first = containerFor(MockClient((_) async => _switches({'books': false})));
       await first.read(authStateProvider.future);
       first.read(rolloutSwitchesProvider);
-      await pumpEventQueue();
+      await untilCached('student-a');
 
       final other = containerFor(
         MockClient((_) async => http.Response('boom', 500)),

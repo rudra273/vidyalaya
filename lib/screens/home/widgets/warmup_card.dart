@@ -5,11 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme.dart';
 import '../../../data/seed/warmup_data.dart';
 import '../../../providers/core_providers.dart';
+import '../../../providers/learn_assist_provider.dart';
 import '../../../providers/progress_provider.dart';
 import '../../../providers/user_selection_provider.dart';
 import '../../../utils/haptics.dart';
 import '../../../widgets/calm_widgets.dart';
 import '../../../widgets/pressable.dart';
+import '../../../widgets/ai_robot_mark.dart';
 
 // ─── Today's warm-up ──────────────────────────────────────────────────────
 // One multiple-choice question a day, from the static seed pool. A correct
@@ -91,6 +93,7 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final aiAvailable = ref.watch(aiAccessProvider) == AiAccess.available;
     final question = _question;
     final accent = AppColors.subjectColor(
       question.subject,
@@ -103,7 +106,6 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
       padding: const EdgeInsets.all(AppSpacing.cardPad - 2),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border.all(color: cs.outline),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: Column(
@@ -128,13 +130,10 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
               if (_revealed)
                 Row(
                   children: [
-                    Icon(
-                      _wasCorrect
-                          ? Icons.check_circle_rounded
-                          : Icons.info_rounded,
-                      size: 15,
-                      color: _wasCorrect ? cs.primary : muted,
-                    ),
+                    if (_wasCorrect)
+                      const AiBot(size: 22, mood: BotMood.cheering)
+                    else
+                      Icon(Icons.info_rounded, size: 15, color: muted),
                     const SizedBox(width: 5),
                     Text(
                       _wasCorrect ? 'Correct' : 'Answer below',
@@ -199,37 +198,41 @@ class _WarmupCardState extends ConsumerState<WarmupCard> {
             Row(
               children: [
                 Expanded(
-                  child: Pressable(
-                    onTap: () {
-                      Haptics.light(ref);
-                      context.push(
-                        '/learn/ai'
-                        '?prefill=${Uri.encodeComponent(question.question)}'
-                        '&style=simple',
-                      );
-                    },
-                    scale: 0.98,
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.auto_awesome_rounded,
-                          size: 15,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: 7),
-                        Flexible(
-                          child: Text(
-                            'Ask the AI to explain this',
-                            style: TextStyle(
-                              fontSize: AppFontSize.body,
-                              fontWeight: AppFontWeight.semibold,
-                              color: cs.primary,
-                            ),
+                  // The AI shortcut shows only when the AI can answer for
+                  // this class; otherwise the spacer keeps "Next" on the right.
+                  child: !aiAvailable
+                      ? const SizedBox.shrink()
+                      : Pressable(
+                          onTap: () {
+                            Haptics.light(ref);
+                            context.push(
+                              '/learn/ai'
+                              '?prefill=${Uri.encodeComponent(question.question)}'
+                              '&style=simple',
+                            );
+                          },
+                          scale: 0.98,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 15,
+                                color: cs.primary,
+                              ),
+                              const SizedBox(width: 7),
+                              Flexible(
+                                child: Text(
+                                  'Ask the AI to explain this',
+                                  style: TextStyle(
+                                    fontSize: AppFontSize.body,
+                                    fontWeight: AppFontWeight.semibold,
+                                    color: cs.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(width: 8),
                 // Keep practising past the daily question.

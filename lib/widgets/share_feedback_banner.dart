@@ -32,7 +32,6 @@ class ShareFeedbackBanner extends ConsumerWidget {
       padding: const EdgeInsets.all(AppSpacing.cardPad - 2),
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border.all(color: cs.outline),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: rateDismissed

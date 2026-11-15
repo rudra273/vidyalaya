@@ -1,36 +1,23 @@
-# Vidyakalp — Google Play assets
+# Vidyakalp Google Play assets
 
-Upload-ready files:
+## Version 1.2.1
 
-- `app-icon-512x512.png` — 512 × 512 RGBA PNG
-- `feature-graphic-1024x500.png` — 1024 × 500 RGB PNG
-- `screenshots/*.png` — nine 1080 × 1920 RGB PNG phone screenshots
+- [App icon](app-icon-512x512.png) — 512 × 512 sRGB RGBA PNG, exported from the current book-cover artwork.
+- [Home](screenshots/01-home.png)
+- [AI Learning](screenshots/02-ai-learning.png)
+- [AI chat](screenshots/05-ai-qa.png)
+- [Explore](screenshots/03-explore.png)
+- [Profile](screenshots/10-profile.png)
 
-The screenshots preserve the supplied app UI and add a branded phone frame,
-educational background, and short student-focused headline. The launcher icon is
-exported directly from the current iOS/Android app artwork rather than redrawn.
+The five phone screenshots are 1080 × 1920 RGB PNGs. They use current Flutter
+screens rendered with demo data inside the existing campaign layout.
 
-`screenshots-preview.jpg` is a contact sheet for review and should not be uploaded
-as a store screenshot.
+The other campaign screenshots and the [feature graphic](feature-graphic-1024x500.png)
+remain available in this folder. The [contact sheet](screenshots-preview.jpg)
+is for review. Google Play allows up to eight screenshots per device type, so
+select up to three earlier images if uploading all five refreshed screenshots.
 
-The generated background sources and composition script are included. The script
-expects original phone screenshots at its configured temporary attachment paths;
-those source screenshots are not bundled and must be supplied before rebuilding.
-
-The saved campaign images were rebranded using built-in ImageGen with this brief:
-replace the brand lettering with “Vidyakalp”, preserving the existing style,
-layout, phone UI, and other text.
-
-The launcher icon uses these exact lines:
-
-- Vidyakalp
-- Odia Medium • CBSE
-- AI Answer Guide
-
-Its built-in ImageGen edit brief replaces the two tagline lines with the wording
-above while preserving the book illustration, palette, wordmark, corner badge,
-divider, and ribbon. Splash artwork keeps the brand wordmark alone.
-
-Platform icons are regenerated from `assets/icon/vidyalaya.png` with
-`dart run flutter_launcher_icons`, and splash branding with
-`dart run flutter_native_splash:create`. Asset filenames stay unchanged.
+`build_assets.py` composes supplied raw captures into the campaign layout. Its
+historical batch inputs refer to temporary attachment paths, so those files are
+required to rebuild that batch. See [app artwork](../../assets/icon/README.md)
+for the launcher and splash sources.

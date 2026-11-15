@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme.dart';
+import '../../providers/phone_reminders_provider.dart';
 import '../../providers/core_providers.dart';
 import '../../data/models/timetable_period.dart';
 import '../../data/models/time_slot.dart';
@@ -60,8 +61,9 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
     super.dispose();
   }
 
-  void _saveData() {
-    ref.read(userPrefsRepositoryProvider).saveTimetable(_timetable);
+  Future<void> _saveData() async {
+    await ref.read(userPrefsRepositoryProvider).saveTimetable(_timetable);
+    if (mounted) await ref.read(phoneRemindersProvider.notifier).refresh();
   }
 
   Future<void> _manageTimeSlots() async {
@@ -127,9 +129,12 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = isDark ? AppColors.ink3Dark : AppColors.ink3;
+    final ink2 = isDark ? AppColors.ink2Dark : AppColors.ink2;
+    final surface2 = isDark ? AppColors.surface2Dark : AppColors.surface2;
+    final surface3 = isDark ? AppColors.surface3Dark : AppColors.surface3;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text('Timetable', style: Theme.of(context).textTheme.headlineSmall),
         leading: IconButton(
@@ -147,7 +152,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
           controller: _tabController,
           isScrollable: true,
           labelColor: cs.primary,
-          unselectedLabelColor: AppColors.textMuted,
+          unselectedLabelColor: muted,
           indicatorColor: cs.primary,
           tabs: _days.map((day) => Tab(text: day)).toList(),
         ),
@@ -185,7 +190,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.event_note_rounded, size: 64, color: AppColors.textMuted.withValues(alpha: 0.5)),
+                    Icon(Icons.event_note_rounded, size: 64, color: muted.withValues(alpha: 0.5)),
                     const SizedBox(height: 20),
                     Text('No classes', style: Theme.of(context).textTheme.displaySmall),
                     const SizedBox(height: 8),
@@ -193,7 +198,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                       'Set up your Bell Schedule or tap + to add a custom class.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textMuted,
+                            color: muted,
                           ),
                     ),
                   ],
@@ -204,7 +209,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
 
           return ListView.builder(
             padding: const EdgeInsets.fromLTRB(AppSpacing.screenPadding, 16,
-                AppSpacing.screenPadding, 100), // padding for FAB
+                AppSpacing.screenPadding, 120), // keeps the FAB clear of the last card
             itemCount: rows.length,
             itemBuilder: (context, index) {
               final row = rows[index];
@@ -216,17 +221,22 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: surface2,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.restaurant, size: 16, color: AppColors.textMuted),
+                        Icon(
+                            slot.name.toLowerCase().contains('lunch')
+                                ? Icons.restaurant
+                                : Icons.coffee_outlined,
+                            size: 16,
+                            color: ink2),
                         const SizedBox(width: 8),
                         Text('${slot.name} (${slot.startTime} - ${slot.endTime})',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted)),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: ink2)),
                       ],
                     ),
                   ),
@@ -242,8 +252,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: cs.outlineVariant),
-                      color: Colors.transparent,
+                      color: cs.surface,
                     ),
                     child: Row(
                       children: [
@@ -251,10 +260,10 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest,
+                            color: surface3,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(Icons.add, color: AppColors.textMuted),
+                          child: Icon(Icons.add, color: muted),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -264,14 +273,14 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                               Text(
                                 'Empty Slot (${slot.name})',
                                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.textMuted,
+                                  color: muted,
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 '${slot.startTime} - ${slot.endTime}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textMuted,
+                                  color: muted,
                                 ),
                               ),
                             ],
@@ -289,9 +298,8 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? cs.surface : Colors.white,
+                  color: cs.surface,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: cs.outline),
                 ),
                 child: Row(
                   children: [
@@ -299,7 +307,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.getSubjectColor(period.subject).$1,
+                        color: AppColors.getSubjectColorFor(period.subject, Theme.of(context).brightness).$1,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(
@@ -308,7 +316,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                           style: TextStyle(
                             fontSize: AppFontSize.title,
                             fontWeight: AppFontWeight.bold,
-                            color: AppColors.getSubjectColor(period.subject).$2,
+                            color: AppColors.getSubjectColorFor(period.subject, Theme.of(context).brightness).$2,
                           ),
                         ),
                       ),
@@ -327,7 +335,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                             Text(
                               '${period.startTime} - ${period.endTime}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppColors.textMuted,
+                                color: muted,
                               ),
                             ),
                           ],
@@ -335,7 +343,7 @@ class _TimetableScreenState extends ConsumerState<TimetableScreen> with SingleTi
                       ),
                     ),
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
+                      icon: Icon(Icons.more_vert, color: muted),
                       onSelected: (value) {
                         if (value == 'edit') {
                           _showUpdateSheet(day, period);

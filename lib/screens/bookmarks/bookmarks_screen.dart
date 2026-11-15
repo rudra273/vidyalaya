@@ -181,11 +181,16 @@ class BookmarksScreen extends ConsumerWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return const EmptyState(
+    return EmptyState(
       icon: Icons.bookmark_outline_rounded,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.cHindiDark
+          : AppColors.cHindi,
       title: 'No bookmarks yet',
       subtitle:
           'Open a book and tap the bookmark icon to save pages for quick access.',
+      ctaLabel: 'Open Books',
+      onCtaTap: () => context.push('/library'),
     );
   }
 
