@@ -585,12 +585,12 @@ class _ToolButton extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: item.glyph == null
-                        ? Icon(item.icon, size: 30, color: ink)
+                        ? Icon(item.icon, size: 33, color: ink)
                         : ToolGlyphView(
                             glyph: item.glyph!,
                             color: ink,
                             behind: tile,
-                            size: 30,
+                            size: 33,
                           ),
                   ),
                   if (item.badge)
