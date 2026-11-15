@@ -18,6 +18,7 @@ import '../../widgets/home_ai_chat.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/pressable.dart';
 import '../../widgets/share_feedback_banner.dart';
+import '../../widgets/tool_glyph.dart';
 import '../../data/seed/vocabulary_data.dart';
 import '../../data/seed/warmup_data.dart';
 import '../../providers/user_selection_provider.dart';
@@ -161,24 +162,28 @@ class HomeScreen extends ConsumerWidget {
                       Icons.menu_book_rounded,
                       dark ? AppColors.cAiDark : AppColors.cAi,
                       '/library',
+                      glyph: ToolGlyph.books,
                     ),
                   _ToolItem(
                     'Quizzes',
                     Icons.quiz_rounded,
                     dark ? AppColors.cEnglishDark : AppColors.cEnglish,
                     '/learn/quiz',
+                    glyph: ToolGlyph.quizzes,
                   ),
                   _ToolItem(
                     'Notes',
                     Icons.edit_note_rounded,
                     dark ? AppColors.cSocialDark : AppColors.cSocial,
                     '/notes',
+                    glyph: ToolGlyph.notes,
                   ),
                   _ToolItem(
                     'Timetable',
                     Icons.calendar_month_rounded,
                     dark ? AppColors.cScienceDark : AppColors.cScience,
                     '/timetable',
+                    glyph: ToolGlyph.timetable,
                   ),
                   if (booksEnabled)
                     _ToolItem(
@@ -186,12 +191,14 @@ class HomeScreen extends ConsumerWidget {
                       Icons.bookmark_rounded,
                       dark ? AppColors.cHindiDark : AppColors.cHindi,
                       '/bookmarks',
+                      glyph: ToolGlyph.bookmarks,
                     ),
                   _ToolItem(
                     'Vocabulary',
                     Icons.translate_rounded,
                     dark ? AppColors.cFormulasDark : AppColors.cFormulas,
                     '/learn/vocabulary',
+                    glyph: ToolGlyph.vocabulary,
                   ),
                   _ToolItem(
                     'Games',
@@ -521,10 +528,16 @@ class _ToolItem {
     this.icon,
     this.color,
     this.route, {
+    this.glyph,
     this.badge = false,
   });
   final String label;
+
+  /// Shown when the tool has no drawn [glyph] (Games keeps its puzzle piece).
   final IconData icon;
+
+  /// The tool's own bold picture.
+  final ToolGlyph? glyph;
   final Color color;
   final String route;
   final bool badge;
@@ -540,6 +553,13 @@ class _ToolButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    // A solid tile in the tool's colour with a white picture (near-black on
+    // the brighter dark-mode colours), so each tool reads at a glance.
+    final top = dark ? item.color : Color.lerp(item.color, Colors.white, 0.14)!;
+    final bottom = dark
+        ? Color.lerp(item.color, Colors.black, 0.22)!
+        : item.color;
+    final ink = dark ? const Color(0xFF0B1210) : Colors.white;
     return Semantics(
       button: true,
       label: item.label,
@@ -557,13 +577,29 @@ class _ToolButton extends StatelessWidget {
                     width: 58,
                     height: 58,
                     decoration: BoxDecoration(
-                      color: Color.alphaBlend(
-                        item.color.withValues(alpha: dark ? 0.18 : 0.13),
-                        cs.surface,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [top, bottom],
                       ),
                       borderRadius: BorderRadius.circular(18),
+                      // A solid darker edge underneath, like the app's
+                      // chunky buttons.
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color.lerp(bottom, Colors.black, 0.28)!,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    child: Icon(item.icon, size: 26, color: item.color),
+                    alignment: Alignment.center,
+                    child: item.glyph == null
+                        ? Icon(item.icon, size: 32, color: ink)
+                        : ToolGlyphView(
+                            glyph: item.glyph!,
+                            color: ink,
+                            behind: Color.lerp(top, bottom, 0.5)!,
+                          ),
                   ),
                   if (item.badge)
                     Positioned(
@@ -586,7 +622,7 @@ class _ToolButton extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: 10),
               Text(
                 item.label,
                 maxLines: 1,
