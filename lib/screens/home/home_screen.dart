@@ -553,13 +553,11 @@ class _ToolButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
-    // A solid tile in the tool's colour with a white picture (near-black on
-    // the brighter dark-mode colours), so each tool reads at a glance.
-    final top = dark ? item.color : Color.lerp(item.color, Colors.white, 0.14)!;
-    final bottom = dark
-        ? Color.lerp(item.color, Colors.black, 0.22)!
-        : item.color;
-    final ink = dark ? const Color(0xFF0B1210) : Colors.white;
+    // A white tile with the picture in the tool's own colour, so each tool
+    // reads at a glance without seven blocks of colour on the page.
+    final tile = dark ? AppColors.surface2Dark : Colors.white;
+    final edge = dark ? const Color(0xFF0A0C0B) : AppColors.cardEdge;
+    final ink = item.color;
     return Semantics(
       button: true,
       label: item.label,
@@ -574,31 +572,25 @@ class _ToolButton extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 58,
-                    height: 58,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [top, bottom],
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                      // A solid darker edge underneath, like the app's
-                      // chunky buttons.
+                      color: tile,
+                      borderRadius: BorderRadius.circular(16),
+                      // A solid edge underneath, like the app's chunky
+                      // buttons.
                       boxShadow: [
-                        BoxShadow(
-                          color: Color.lerp(bottom, Colors.black, 0.28)!,
-                          offset: const Offset(0, 3),
-                        ),
+                        BoxShadow(color: edge, offset: const Offset(0, 3)),
                       ],
                     ),
                     alignment: Alignment.center,
                     child: item.glyph == null
-                        ? Icon(item.icon, size: 32, color: ink)
+                        ? Icon(item.icon, size: 30, color: ink)
                         : ToolGlyphView(
                             glyph: item.glyph!,
                             color: ink,
-                            behind: Color.lerp(top, bottom, 0.5)!,
+                            behind: tile,
+                            size: 30,
                           ),
                   ),
                   if (item.badge)

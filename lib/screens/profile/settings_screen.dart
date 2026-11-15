@@ -9,6 +9,7 @@ import '../../providers/theme_provider.dart';
 import '../../utils/haptics.dart';
 import '../../widgets/calm_widgets.dart';
 import '../../widgets/support_section.dart';
+import '../../widgets/vidyakalp_logo.dart';
 import 'widgets/settings_group.dart';
 
 /// **App Settings** — appearance, data, about.
@@ -129,13 +130,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  Text(
-                    'Vidyakalp',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontSize: AppFontSize.title,
-                      color: isDark ? AppColors.ink2Dark : AppColors.ink2,
-                    ),
-                  ),
+                  const VidyakalpLogo(size: 28),
                   const SizedBox(height: 3),
                   Text(
                     'Version $kAppVersionName',

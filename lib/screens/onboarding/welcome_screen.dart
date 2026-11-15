@@ -10,6 +10,7 @@ import '../../providers/user_selection_provider.dart';
 import '../../widgets/ai_robot_mark.dart';
 import '../../widgets/chunky_button.dart';
 import '../../widgets/pressable.dart';
+import '../../widgets/vidyakalp_logo.dart';
 
 // ─── Welcome flow ─────────────────────────────────────────────────────────
 // Three short steps before Home:
@@ -258,17 +259,9 @@ class _HelloStep extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/icon/vmark.png',
-                      width: 30,
-                      height: 30,
-                      semanticLabel: 'Vidyakalp logo',
-                    ),
-                    const SizedBox(width: 10),
-                    Text('Vidyakalp', style: theme.textTheme.headlineSmall),
-                  ],
+                const Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: VidyakalpLogo(size: 32),
                 ),
                 const Spacer(),
                 const SizedBox(height: 24),
