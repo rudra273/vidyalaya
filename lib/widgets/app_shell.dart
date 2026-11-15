@@ -22,9 +22,9 @@ class AppShell extends ConsumerWidget {
   /// of an icon (a null icon below). Library is reached from Home.
   static const List<(String, NavIcon?, String)> _allTabs = [
     ('/', NavIcon.home, 'Home'),
-    ('/ai', NavIcon.ai, 'AI'),
-    ('/ask', null, 'Ask'),
     ('/explore', NavIcon.explore, 'Explore'),
+    ('/ask', null, 'Ask'),
+    ('/ai', NavIcon.ai, 'AI'),
     ('/profile', NavIcon.profile, 'Profile'),
   ];
 
